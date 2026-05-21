@@ -1,1 +1,18 @@
 .vercel
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# IDE configuration folders
+.vscode/
+.idea/
