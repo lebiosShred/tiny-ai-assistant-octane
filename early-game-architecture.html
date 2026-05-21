@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<!--
+    ╔══════════════════════════════════════════════════════════════╗
+    ║  TINY SALES ARCHITECTURE — EDITABLE SECTIONS INDEX         ║
+    ║  Search for ✏️ EDIT to jump to any changeable section.     ║
+    ╠══════════════════════════════════════════════════════════════╣
+    ║                                                              ║
+    ║  COMPONENT 01 — PRE-SCREEN CALENDAR                         ║
+    ║    ✏️ EDIT:TEAM-ROSTER ....... Team members & schedules     ║
+    ║    ✏️ EDIT:DIRECT-LINKS ...... Amendra & Kevin calendars    ║
+    ║    ✏️ EDIT:FORM-FIELDS ....... Booking form fields          ║
+    ║    ✏️ EDIT:HUBSPOT-CONFIG .... Meeting link settings        ║
+    ║    ✏️ EDIT:CONTEXT-PAGE ...... Landing page structure       ║
+    ║    ✏️ EDIT:CRM-WORKFLOW ...... Automation triggers          ║
+    ║                                                              ║
+    ║  COMPONENT 02 — PRE-SCREEN PREPARATION                      ║
+    ║    ✏️ EDIT:CLAUDE-PREP ....... Project knowledge files      ║
+    ║    ✏️ EDIT:ONEDRIVE .......... Connection approach          ║
+    ║    ✏️ EDIT:PREP-PROMPT ....... 10-point briefing prompt     ║
+    ║                                                              ║
+    ║  COMPONENT 03 — PRE-SCREEN CALL                             ║
+    ║    ✏️ EDIT:FATHOM-SETUP ... Recording config             ║
+    ║    ✏️ EDIT:QUESTIONS-TM1-NEW . Variant A questions          ║
+    ║    ✏️ EDIT:QUESTIONS-TM1-EX .. Variant B questions          ║
+    ║    ✏️ EDIT:QUESTIONS-AI-NEW .. Variant C questions          ║
+    ║    ✏️ EDIT:SCORING-PROMPT .... Transcript mapping prompt    ║
+    ║                                                              ║
+    ║  COMPONENT 04 — CENTRAL CALL DIRECTORY                      ║
+    ║    ✏️ EDIT:DIRECTORY-SETUP ... Fathom + HubSpot config      ║
+    ║                                                              ║
+    ║  COMPONENT 05 — AUTOMATED REPORTS                           ║
+    ║    ✏️ EDIT:CLAUDE-REPORTS .... Reports project knowledge    ║
+    ║    ✏️ EDIT:REPORT-RECAP ...... Recap email prompt           ║
+    ║    ✏️ EDIT:REPORT-SUMMARY .... Summary sheet prompt         ║
+    ║    ✏️ EDIT:REPORT-NOTES ...... Detailed notes prompt        ║
+    ║    ✏️ EDIT:REPORT-PROPOSAL ... Proposal draft prompt        ║
+    ║    ✏️ EDIT:REPORT-ACTIONS .... Action items prompt          ║
+    ║                                                              ║
+    ║  SCENARIO WALKTHROUGH                                        ║
+    ║    ✏️ EDIT:SCENARIO .......... Walkthrough content          ║
+    ║                                                              ║
+    ║  PHASE 2 — OPTIMIZE                                         ║
+    ║    ✏️ EDIT:OPTIMIZE .......... Automation roadmap           ║
+    ║                                                              ║
+    ╚══════════════════════════════════════════════════════════════╝
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Sales Pipeline -- Octane</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --card-bg: transparent;
+            --border: transparent;
+            --border-hover: transparent;
+            --white: #ffffff;
+            --grey-light: rgba(255, 255, 255, 0.85);
+            --grey: rgba(255, 255, 255, 0.5);
+            --grey-dark: rgba(255, 255, 255, 0.15);
+            --accent: #4daeeb;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            padding: 5rem 2rem 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            margin-bottom: 0.75rem;
+        }
+
+        .header p {
+            font-size: 1.05rem;
+            color: var(--grey-light);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        .header-line {
+            width: 48px;
+            height: 2px;
+            background: var(--grey);
+            margin: 1.5rem auto 0;
+            border-radius: 1px;
+        }
+
+        /* ── Legend ── */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            padding: 1.5rem 2rem 3rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.8rem;
+            color: var(--white);
+            font-weight: 500;
+        }
+
+        .legend-shape { width: 14px; height: 14px; flex-shrink: 0; }
+        .legend-shape.human { border-radius: 50%; background: var(--white); }
+        .legend-shape.tool { border-radius: 2px; background: var(--grey-light); }
+        .legend-shape.ai { width: 11px; height: 11px; background: var(--grey-dark); border: 1px solid var(--grey); transform: rotate(45deg); margin: 0 1.5px; }
+        .legend-shape.output { border-radius: 2px; background: transparent; border: 1.5px dashed var(--grey-light); }
+
+        /* ── Pipeline ── */
+        .pipeline {
+            max-width: 640px;
+            margin: 0 auto 5rem;
+            padding: 0 1.5rem;
+            position: relative;
+        }
+
+        /* Vertical connector line */
+        .pipeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, var(--grey-dark) 40px, var(--grey-dark) calc(100% - 40px), transparent);
+            transform: translateX(-50%);
+        }
+
+        /* ── Component Card ── */
+        .component {
+            position: relative;
+            margin-bottom: 4rem;
+            animation: fadeUp 0.5s ease both;
+        }
+
+        .component:nth-child(1) { animation-delay: 0.1s; }
+        .component:nth-child(2) { animation-delay: 0.2s; }
+        .component:nth-child(3) { animation-delay: 0.3s; }
+        .component:nth-child(4) { animation-delay: 0.4s; }
+        .component:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .component-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1.5px solid var(--white);
+            background: var(--bg);
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin: 0 auto 1.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .component-card {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 2.25rem 0;
+            transition: none;
+        }
+
+        .component-card:hover {
+            border-color: transparent;
+        }
+
+        .component-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: var(--grey);
+            margin-bottom: 0.4rem;
+        }
+
+        .component-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.5px;
+        }
+
+        .component-desc {
+            font-size: 0.95rem;
+            color: var(--grey-light);
+            line-height: 1.7;
+            margin-bottom: 1.75rem;
+        }
+
+        /* ── Flow Steps ── */
+        .flow {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-radius: 0;
+            background: transparent;
+            border: none;
+            transition: none;
+        }
+
+        .flow-step:hover {
+            background: transparent;
+            border-color: transparent;
+        }
+
+        .flow-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .flow-icon.human { background: var(--white); color: var(--bg); border-radius: 50%; }
+        .flow-icon.tool { background: var(--grey-light); color: var(--bg); border-radius: 4px; }
+        .flow-icon.ai { background: var(--grey-dark); color: var(--white); border: 1px solid var(--grey); border-radius: 4px; transform: rotate(45deg); width: 28px; height: 28px; margin: 2px; }
+        .flow-icon.ai span { display: block; transform: rotate(-45deg); }
+        .flow-icon.output { background: transparent; color: var(--white); border-radius: 4px; border: 1.5px dashed var(--grey-light); }
+
+        .flow-text {
+            font-size: 0.9rem;
+            color: var(--white);
+            line-height: 1.5;
+        }
+
+        .flow-text strong {
+            font-weight: 600;
+        }
+
+        /* ── Arrow Connector between flow steps ── */
+        .flow-arrow {
+            display: flex;
+            justify-content: center;
+            padding: 0.15rem 0;
+            color: var(--grey);
+            font-size: 0.75rem;
+            user-select: none;
+        }
+
+        /* ── Route Split (Component 01) ── */
+        .route-section {
+            margin-bottom: 1rem;
+        }
+
+        .route-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--grey-light);
+            margin-bottom: 0.6rem;
+            padding-left: 0.25rem;
+        }
+
+        .route-row {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .route-card {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 0;
+            border-radius: 0;
+            background: transparent;
+            border: none;
+            transition: none;
+        }
+
+        .route-card:hover {
+            background: transparent;
+            border-color: transparent;
+        }
+
+        .route-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .route-detail {
+            font-size: 0.75rem;
+            color: var(--grey-light);
+            margin-top: 0.1rem;
+        }
+
+        .route-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 1.25rem 0;
+        }
+
+        /* ── Handoff ── */
+        .handoff {
+            margin-top: 1rem;
+            padding: 1rem 0;
+            border-radius: 0;
+            border: none;
+            border-top: 1px dashed rgba(255, 255, 255, 0.2);
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+            background: transparent;
+        }
+
+        .handoff-text {
+            font-size: 0.85rem;
+            color: var(--white);
+            font-style: italic;
+        }
+
+        .handoff-text strong {
+            font-style: normal;
+        }
+
+        /* ── Tool Split (Component 05) ── */
+        .tool-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .tool-split-col h4 {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--grey-light);
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .output-tag {
+            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--white);
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 0.4rem;
+            transition: background 0.2s ease;
+        }
+
+        .output-tag:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 2.5rem 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--grey-light);
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Scenario Modal ── */
+        .scenario-btn {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.85rem 2rem;
+            background: var(--white);
+            color: var(--bg);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--white);
+        }
+
+        .scenario-btn:hover {
+            background: transparent;
+            color: var(--white);
+        }
+
+        .optimize-btn {
+            background: transparent;
+            color: var(--white);
+            border: 1px dashed var(--grey);
+            margin-left: 1rem;
+        }
+
+        .optimize-btn:hover {
+            background: var(--white);
+            color: var(--bg);
+            border-style: solid;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 4rem 1rem;
+            overflow-y: auto;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: #0d0d0d;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 800px;
+            padding: 3rem;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            margin: auto;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--grey-light);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--white);
+        }
+
+        .scenario-body {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--grey-light);
+        }
+
+        .scenario-body h2 {
+            font-size: 1.8rem;
+            color: var(--white);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .scenario-body h3 {
+            font-size: 1.2rem;
+            color: var(--white);
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .scenario-body p {
+            margin-bottom: 1.25rem;
+        }
+
+        .scenario-body blockquote {
+            padding: 1rem 1.5rem;
+            border-left: 3px solid var(--grey);
+            background: rgba(255, 255, 255, 0.05);
+            margin: 1.5rem 0;
+            font-style: italic;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .scenario-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.85rem;
+        }
+
+        .scenario-table th, .scenario-table td {
+            padding: 1rem;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+
+        .scenario-table th {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--white);
+            font-weight: 600;
+        }
+
+        .scenario-table td strong {
+            color: var(--white);
+        }
+
+        /* ── HOW Section ── */
+        .how-toggle {
+            display: inline-block;
+            margin-top: 1.25rem;
+            padding: 0.6rem 1.25rem;
+            background: transparent;
+            color: var(--grey-light);
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border: 1px dashed var(--grey);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .how-toggle:hover { color: var(--white); border-color: var(--white); }
+        .how-toggle.active { color: var(--white); border-color: var(--white); border-style: solid; }
+
+        .how-section {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, margin 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            margin-top: 0;
+        }
+        .how-section.open {
+            max-height: 3000px;
+            opacity: 1;
+            margin-top: 1.5rem;
+        }
+
+        .how-inner {
+            padding: 1.5rem 0;
+            border: none;
+            border-radius: 0;
+            background: transparent;
+        }
+
+        .how-inner h4 {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--grey-light);
+            margin: 1.25rem 0 0.5rem;
+        }
+        .how-inner h4:first-child { margin-top: 0; }
+
+        .how-inner p, .how-inner li {
+            font-size: 0.85rem;
+            color: var(--grey-light);
+            line-height: 1.65;
+        }
+
+        .how-inner ul {
+            list-style: none;
+            padding: 0;
+        }
+        .how-inner ul li {
+            padding: 0.35rem 0 0.35rem 1.25rem;
+            position: relative;
+        }
+        .how-inner ul li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--grey);
+        }
+
+        .how-inner code {
+            display: block;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            font-size: 0.8rem;
+            color: var(--grey-light);
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            margin: 0.75rem 0;
+        }
+
+        .how-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.75rem 0;
+            font-size: 0.8rem;
+        }
+        .how-table th, .how-table td {
+            padding: 0.65rem 0.75rem;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+        .how-table th {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--white);
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .header { padding: 3rem 1.5rem 2rem; }
+            .header h1 { font-size: 2rem; }
+            .pipeline { padding: 0 1rem; }
+            .pipeline::before { display: none; }
+            .component-card { padding: 1.75rem 1.25rem; }
+            .route-row { flex-direction: column; }
+            .tool-split { grid-template-columns: 1fr; }
+        }
+
+        /* ═══ EDIT MODE ═══ */
+        .edit-toolbar {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 8px 12px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+        .edit-toolbar:hover { border-color: var(--border-hover); }
+        .edit-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--grey-light);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .edit-btn:hover { background: rgba(255,255,255,0.06); color: var(--white); }
+        .edit-btn.active {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--white);
+            color: var(--white);
+        }
+        .edit-btn.save-btn { border-color: #2d6a2d; color: #6abf6a; }
+        .edit-btn.save-btn:hover { background: rgba(45,106,45,0.2); color: #8fd98f; }
+        .edit-btn.download-btn { border-color: #2d4a6a; color: #6a9fbf; }
+        .edit-btn.download-btn:hover { background: rgba(45,74,106,0.2); color: #8fc3df; }
+        .edit-btn.hidden { display: none; }
+
+        .edit-status {
+            font-size: 0.7rem;
+            color: var(--grey);
+            font-family: 'Inter', sans-serif;
+            padding: 0 4px;
+        }
+
+        body.edit-mode [contenteditable="true"] {
+            outline: 1px dashed rgba(255,255,255,0.2);
+            outline-offset: 4px;
+            border-radius: 4px;
+            transition: outline-color 0.2s ease;
+            min-height: 1em;
+        }
+        body.edit-mode [contenteditable="true"]:hover {
+            outline-color: rgba(255,255,255,0.4);
+        }
+        body.edit-mode [contenteditable="true"]:focus {
+            outline: 2px solid rgba(255,255,255,0.6);
+            outline-offset: 4px;
+            background: rgba(255,255,255,0.02);
+        }
+        body.edit-mode .component-card { position: relative; }
+        body.edit-mode .edit-label {
+            display: block;
+            position: absolute;
+            top: -10px;
+            right: 12px;
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.3);
+            background: var(--bg);
+            padding: 0 6px;
+            font-family: 'Inter', sans-serif;
+        }
+        .edit-label { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Tiny Sales Pipeline</h1>
+        <p>Manual-First Sales Architecture -- Octane Software Solutions</p>
+        <button class="scenario-btn" onclick="toggleModal('scenarioModal')">View Walkthrough Scenario</button>
+        <button class="scenario-btn optimize-btn" onclick="toggleModal('optimizeModal')">Optimize Process Version</button>
+        <div class="header-line"></div>
+    </div>
+
+    <!-- Floating Edit Toolbar -->
+    <div class="edit-toolbar" id="editToolbar">
+        <button class="edit-btn" id="editToggle" onclick="toggleEditMode()">
+            <span id="editIcon">✏️</span> <span id="editLabel">Edit</span>
+        </button>
+        <button class="edit-btn save-btn hidden" id="saveBtn" onclick="saveEdits()">
+            💾 Save
+        </button>
+        <button class="edit-btn download-btn hidden" id="downloadBtn" onclick="downloadHTML()">
+            ⬇ Download
+        </button>
+        <span class="edit-status hidden" id="editStatus"></span>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-shape human"></div> Human Action</div>
+        <div class="legend-item"><div class="legend-shape tool"></div> Platform / Tool</div>
+        <div class="legend-item"><div class="legend-shape ai"></div> AI Engine</div>
+        <div class="legend-item"><div class="legend-shape output"></div> Output</div>
+    </div>
+
+    <div class="pipeline">
+
+        <!-- ════════ Component 01 ════════ -->
+        <div class="component">
+            <div class="component-number">01</div>
+            <div class="component-card">
+                <div class="component-label">Component 01</div>
+                <div class="component-title">Pre-Screen Calendar</div>
+                <div class="component-desc">A single booking link serves prospects globally. Routing is shift-deterministic based on selected time slot (configured as a Round-Robin page in HubSpot to merge availability). Enforces a 12-hour buffer. 28 x 30-minute slots per day across a combined 14-hour window.</div>
+
+                <!-- ✏️ EDIT:TEAM-ROSTER -- Change team members, time slots, or add/remove reps -->
+                <div class="route-section">
+                    <div class="route-label">Shift-Based Link (HubSpot Round-Robin Setup)</div>
+                    <div class="route-row">
+                        <div class="route-card">
+                            <div class="flow-icon human" style="width:28px;height:28px;font-size:0.65rem;">C</div>
+                            <div>
+                                <div class="route-name">Albert</div>
+                                <div class="route-detail">7am -- 2pm AEST</div>
+                            </div>
+                        </div>
+                        <div class="route-card">
+                            <div class="flow-icon human" style="width:28px;height:28px;font-size:0.65rem;">C</div>
+                            <div>
+                                <div class="route-name">Isha</div>
+                                <div class="route-detail">2pm -- 9pm AEST</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="route-divider"></div>
+
+                <!-- ✏️ EDIT:DIRECT-LINKS — Change direct calendar owners -->
+                <div class="route-section">
+                    <div class="route-label">Direct Links (Email / Outbound)</div>
+                    <div class="route-row">
+                        <div class="route-card">
+                            <div class="flow-icon human" style="width:28px;height:28px;font-size:0.65rem;">C</div>
+                            <div>
+                                <div class="route-name">Amendra</div>
+                                <div class="route-detail">Direct Calendar</div>
+                            </div>
+                        </div>
+                        <div class="route-card">
+                            <div class="flow-icon human" style="width:28px;height:28px;font-size:0.65rem;">C</div>
+                            <div>
+                                <div class="route-name">Kevin</div>
+                                <div class="route-detail">Direct Calendar</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="route-divider"></div>
+
+                <div class="flow">
+                    <!-- ✏️ EDIT:FORM-FIELDS — Change what the booking form collects -->
+                    <div class="flow-step">
+                        <div class="flow-icon tool">HS</div>
+                        <div class="flow-text"><strong>Form Collects:</strong> Name, Company Email, Company, Title, Service Interest, URL, Topic</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon tool">HS</div>
+                        <div class="flow-text"><strong>CRM Auto-Action:</strong> Create Ticket &rarr; Alert Assigned Rep &rarr; Block Calendar</div>
+                    </div>
+                </div>
+                <button class="how-toggle" onclick="toggleHow(this)">HOW — Implementation</button>
+                <div class="how-section">
+                    <div class="how-inner">
+                        <!-- ✏️ EDIT:HUBSPOT-CONFIG — Change meeting link settings, buffer, capacity -->
+                        <h4>HubSpot Meeting Link Config</h4>
+                        <ul>
+                            <li>HubSpot → Sales → Meetings → Create <strong>Round Robin</strong> link</li>
+                            <li>Add Albert + Isha as team members</li>
+                            <li>Set each rep's availability in their HubSpot calendar profile</li>
+                            <li>Scheduling tab: set <strong>Minimum notice time = 12 hours</strong></li>
+                            <li>Scheduling tab: disable same-day availability</li>
+                            <li>Duration: 30 minutes | Modes: Phone or Teams/Zoom</li>
+                            <li>Capacity: <strong>28 x 30-minute slots per day</strong> across the combined 14-hour window</li>
+                            <li>Single link serves all geographies (Australia, New Zealand, Middle East)</li>
+                        </ul>
+                        <h4>Form Fields</h4>
+                        <table class="how-table">
+                            <tr><th>Field</th><th>Type</th><th>Required</th></tr>
+                            <tr><td>Full Name</td><td>Text</td><td>Yes</td></tr>
+                            <tr><td>Company Email</td><td>Email</td><td>Yes</td></tr>
+                            <tr><td>Company Name</td><td>Text</td><td>Yes</td></tr>
+                            <tr><td>Position / Title</td><td>Text</td><td>Yes</td></tr>
+                            <tr><td>Service Interest</td><td>Dropdown: Planning & Analytics / AI</td><td>Yes</td></tr>
+                            <tr><td>Company URL</td><td>URL</td><td>Yes</td></tr>
+                            <tr><td>Discussion Topic</td><td>Textarea</td><td>Yes</td></tr>
+                        </table>
+                        <!-- ✏️ EDIT:CONTEXT-PAGE — Change landing page structure -->
+                        <h4>Context Page (Not Standalone Calendar)</h4>
+                        <ul>
+                            <li>Create a branded landing page embedding the HubSpot widget</li>
+                            <li>Structure: Heading → What to expect → Meet your rep (photos) → Embedded calendar → Footer</li>
+                            <li>Reference: <em>salesstar.com/steve-hughson-meeting</em></li>
+                            <li>This page URL becomes the single public booking link + QR code target</li>
+                        </ul>
+                        <!-- ✏️ EDIT:CRM-WORKFLOW — Change automation triggers and actions -->
+                        <h4>CRM Automation (Workflow)</h4>
+                        <ul>
+                            <li>Trigger: "Meeting booked" event</li>
+                            <li>Actions: Create Contact (if new) → Create Ticket → Set ticket owner → Send internal alert → Block calendar</li>
+                        </ul>
+                        <h4>Event Skip Path (Batch Processing)</h4>
+                        <ul>
+                            <li>Event leads (e.g. Forefront) bypass the calendar route.</li>
+                            <li>Leads are scored 1-10 via Claude API batch analysis.</li>
+                            <li>Score 8+: Moved to "Warm Outreach" bucket.</li>
+                            <li>Score < 8: Moved to automated Nurture Sequence.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════ Component 02 ════════ -->
+        <div class="component">
+            <div class="component-number">02</div>
+            <div class="component-card">
+                <div class="component-label">Component 02</div>
+                <div class="component-title">Pre-Screen Preparation</div>
+                <div class="component-desc">Rep gathers 5 manual inputs and feeds them into a Claude Project with an engineered Prep Prompt Template. Claude returns a 10-point briefing so the rep enters the call with an unfair advantage.</div>
+                <div class="flow">
+                    <div class="flow-step">
+                        <div class="flow-icon human">SR</div>
+                        <div class="flow-text"><strong>Sales Rep</strong> gathers client name, booking form, LinkedIn PDF, company URL, and AI/TM1 track</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon ai"><span>AI</span></div>
+                        <div class="flow-text"><strong>Claude Project</strong> processes via Prep Prompt Template + Octane knowledge base</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon output">&#10003;</div>
+                        <div class="flow-text"><strong>10-Point Briefing</strong> -- LinkedIn analysis, competitors, pain points, conversation starters</div>
+                    </div>
+                </div>
+                <button class="how-toggle" onclick="toggleHow(this)">HOW — Implementation</button>
+                <div class="how-section">
+                    <div class="how-inner">
+                        <!-- ✏️ EDIT:CLAUDE-PREP — Change project name or knowledge files -->
+                        <h4>Claude Project Setup</h4>
+                        <ul>
+                            <li>Create Claude Project: <strong>"Octane Pre-Screen Prep"</strong></li>
+                            <li>Upload as permanent Project Knowledge: service catalog, competitor profiles, case studies, pricing frameworks</li>
+                            <li>Training data: <a href="https://docs.google.com/spreadsheets/d/1jIDnq2QAhU_eMcZZvNkAvRfyb0JIvBWs2NyjMviIiG8/edit?usp=sharing" target="_blank" style="color:var(--grey-light);text-decoration:underline;">Training Data Spreadsheet</a></li>
+                        </ul>
+                        <!-- ✏️ EDIT:ONEDRIVE — Change connection approach -->
+                        <h4>OneDrive Connection</h4>
+                        <ul>
+                            <li><strong>Phase 1 (now):</strong> Rep manually downloads relevant files and uploads to the Claude conversation. Adds ~30 seconds.</li>
+                            <li><strong>Phase 2 (later):</strong> Configure Claude MCP with OneDrive connector for direct folder browsing</li>
+                        </ul>
+                        <!-- ✏️ EDIT:PREP-PROMPT — Change the 10-point briefing prompt template -->
+                        <h4>Prep Prompt Template</h4>
+                        <code>You are a sales preparation assistant for Octane Software Solutions.
+
+I'm about to have a 30-minute pre-screen call. Using the inputs below
+and your knowledge of Octane's services, produce a 10-POINT BRIEFING.
+
+--- INPUTS ---
+1. Client: [Name], [Position] at [Company]
+2. Booking form answers: [paste]
+3. LinkedIn profile: [attach PDF]
+4. Company URL: [URL]
+5. Service track: [TM1 / AI]
+
+--- PRODUCE ---
+1. LinkedIn profile analysis
+2. Recent social media activity
+3. Company overview (products, revenue signals, industry)
+4. Relevant Octane services
+5. Key competitors they may be evaluating
+6. Competing applications in their stack
+7. Complementary applications
+8. TM1/AI applications relevant to their industry
+9. Likely pain points
+10. 3 conversation starters that demonstrate relevance
+    (NOT generic discovery questions)</code>
+                        <h4>Rep Workflow</h4>
+                        <ul>
+                            <li>Receive HubSpot alert → Copy form answers from contact record</li>
+                            <li>Download prospect's LinkedIn PDF</li>
+                            <li>Open Claude Project → Paste template + inputs → Attach PDF</li>
+                            <li>Claude generates briefing in ~60 seconds</li>
+                            <li>Review briefing before the call (total: 5–8 min)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════ Component 03 ════════ -->
+        <div class="component">
+            <div class="component-number">03</div>
+            <div class="component-card">
+                <div class="component-label">Component 03</div>
+                <div class="component-title">Pre-Screen Call</div>
+                <div class="draft-badge" style="border: 1px dashed #ff9800; background: rgba(255, 152, 0, 0.05); color: #ff9800; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin: 0.75rem 0 1rem; display: inline-block;">⚠️ PENDING FINALIZATION (DRAFT STATUS)</div>
+                <div class="component-desc">30-minute discovery call. Rep focuses on rapport and a 12-question framework (3 variants: TM1 new, TM1 existing, AI new -- DRAFT STATUS). Zero typing. Fathom (primary) or Jamie AI (GDPR-compliant fallback) captures everything.</div>
+                <div class="flow">
+                    <div class="flow-step">
+                        <div class="flow-icon human">SR</div>
+                        <div class="flow-text"><strong>Sales Rep</strong> conducts 30m call via Teams / Phone</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon tool">FA</div>
+                        <div class="flow-text"><strong>Fathom / Jamie AI</strong> -- auto-records audio, transcribes conversation (Jamie AI is GDPR-compliant local fallback)</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon ai"><span>AI</span></div>
+                        <div class="flow-text"><strong>Zapier/Make.com + Claude API</strong> maps transcript answers to 12-question framework automatically</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon output">&#10003;</div>
+                        <div class="flow-text"><strong>Completed Questionnaire</strong> + qualification score (Hot / Warm / Cold)</div>
+                    </div>
+                </div>
+                <div class="handoff">
+                    <div class="handoff-text">&#8599; <strong>Handoff:</strong> Rep books Positional Meeting with <strong>Amendra</strong> before ending the call</div>
+                </div>
+                <button class="how-toggle" onclick="toggleHow(this)">HOW — Implementation</button>
+                <div class="how-section">
+                    <div class="how-inner">
+                        <!-- ✏️ EDIT:FATHOM-SETUP — Change recording tool config -->
+                        <h4>Fathom Setup</h4>
+                        <ul>
+                            <li>Create Fathom free accounts for Albert, Isha, Amendra, Kevin, Steny</li>
+                            <li>Connect to Microsoft Teams</li>
+                            <li>Enable auto-join for all Teams meetings</li>
+                            <li>Connect HubSpot integration (Settings → Integrations → HubSpot)</li>
+                        </ul>
+                        <!-- ✏️ EDIT:JAMIE-AI-SETUP — Change Jamie AI fallback recording config -->
+                        <h4>Jamie AI Setup (GDPR Fallback)</h4>
+                        <ul>
+                            <li>Deploy Jamie AI local application on SDRs' desktop devices</li>
+                            <li>Configure for invisible, bot-free background recording on sensitive calls</li>
+                            <li>Process transcripts locally with data hosted in Frankfurt, Germany</li>
+                            <li>Reps export the Jamie AI transcript and manually attach it to the HubSpot Ticket</li>
+                        </ul>
+                        <!-- ✏️ EDIT:QUESTIONS-TM1-NEW — Change questions for first-time TM1 prospects -->
+                        <h4>12-Question Framework (DRAFT) — Variant A: First-Time TM1</h4>
+                        <table class="how-table">
+                            <tr><th>#</th><th>Question</th></tr>
+                            <tr><td>1</td><td>What planning/budgeting tools are you currently using?</td></tr>
+                            <tr><td>2</td><td>How many people are involved in your planning process?</td></tr>
+                            <tr><td>3</td><td>What's the most painful part of your current planning cycle?</td></tr>
+                            <tr><td>4</td><td>How long does your monthly close or forecast cycle take?</td></tr>
+                            <tr><td>5</td><td>Are your models in Excel? How complex?</td></tr>
+                            <tr><td>6</td><td>What triggered you to look at TM1 now?</td></tr>
+                            <tr><td>7</td><td>Have you evaluated other planning tools? Which ones?</td></tr>
+                            <tr><td>8</td><td>Who else is involved in this decision?</td></tr>
+                            <tr><td>9</td><td>What does success look like?</td></tr>
+                            <tr><td>10</td><td>What's your timeline for making a decision?</td></tr>
+                            <tr><td>11</td><td>Is there a budget allocated?</td></tr>
+                            <tr><td>12</td><td>What would need to be true for you to move forward with us?</td></tr>
+                        </table>
+                        <!-- ✏️ EDIT:QUESTIONS-TM1-EX — Change questions for existing TM1 users -->
+                        <h4>12-Question Framework (DRAFT) — Variant B: Existing TM1 User</h4>
+                        <table class="how-table">
+                            <tr><th>#</th><th>Question</th></tr>
+                            <tr><td>1</td><td>How long have you been running TM1?</td></tr>
+                            <tr><td>2</td><td>What version? Cloud or on-premise?</td></tr>
+                            <tr><td>3</td><td>Do you have an internal TM1 developer or admin?</td></tr>
+                            <tr><td>4</td><td>What's working well with your current setup?</td></tr>
+                            <tr><td>5</td><td>What's broken or frustrating right now?</td></tr>
+                            <tr><td>6</td><td>How many models/cubes are you running?</td></tr>
+                            <tr><td>7</td><td>What triggered you to look for external support now?</td></tr>
+                            <tr><td>8</td><td>Have you worked with a TM1 partner before? What happened?</td></tr>
+                            <tr><td>9</td><td>What does your ideal support arrangement look like?</td></tr>
+                            <tr><td>10</td><td>Who else is involved in this decision?</td></tr>
+                            <tr><td>11</td><td>What's your timeline?</td></tr>
+                            <tr><td>12</td><td>What would need to be true for you to move forward with us?</td></tr>
+                        </table>
+                        <!-- ✏️ EDIT:QUESTIONS-AI-NEW — Change questions for first-time AI prospects -->
+                        <h4>12-Question Framework (DRAFT) — Variant C: First-Time AI User</h4>
+                        <table class="how-table">
+                            <tr><th>#</th><th>Question</th></tr>
+                            <tr><td>1</td><td>What processes feel most manual or repetitive?</td></tr>
+                            <tr><td>2</td><td>Have you experimented with any AI tools internally?</td></tr>
+                            <tr><td>3</td><td>What data sources does your team work with most?</td></tr>
+                            <tr><td>4</td><td>What would you automate first if you could?</td></tr>
+                            <tr><td>5</td><td>How do you currently handle reporting and analytics?</td></tr>
+                            <tr><td>6</td><td>What triggered your interest in AI/automation now?</td></tr>
+                            <tr><td>7</td><td>Have you evaluated other AI consultancies?</td></tr>
+                            <tr><td>8</td><td>Who else is involved in this decision?</td></tr>
+                            <tr><td>9</td><td>What does success look like for an AI initiative?</td></tr>
+                            <tr><td>10</td><td>What's your timeline?</td></tr>
+                            <tr><td>11</td><td>Is there a budget allocated?</td></tr>
+                            <tr><td>12</td><td>What would need to be true for you to move forward with us?</td></tr>
+                        </table>
+                        <!-- ✏️ EDIT:SCORING-PROMPT — Change qualification scoring logic -->
+                        <h4>Post-Call Transcript Mapping Prompt</h4>
+                        <code>Map this transcript to the 12-question framework.
+Prospect type: [First-time TM1 / Existing TM1 / First-time AI]
+
+For each question: extract the prospect's answer.
+If not discussed, note "Not discussed — flag for follow-up."
+
+Then provide:
+• QUALIFICATION SCORE: Hot / Warm / Cold
+• SCORING RATIONALE: 2–3 sentences
+• RECOMMENDED NEXT STEP
+
+Scoring: HOT = budget + timeline + authority + clear pain
+WARM = 2–3 of above | COLD = exploratory only</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════ Component 04 ════════ -->
+        <div class="component">
+            <div class="component-number">04</div>
+            <div class="component-card">
+                <div class="component-label">Component 04</div>
+                <div class="component-title">Central Call Directory</div>
+                <div class="component-desc">All recorded calls are natively synced to HubSpot by Fathom (or manually uploaded for GDPR-compliant Jamie AI fallback). The HubSpot Calls Index serves as the org-wide chronological directory, and transcripts are auto-attached to specific tickets.</div>
+                <div class="flow">
+                    <div class="flow-step">
+                        <div class="flow-icon tool">FA</div>
+                        <div class="flow-text"><strong>Fathom / Jamie AI</strong> -- Fathom auto-pushes, or reps manually upload Jamie AI transcripts to HubSpot Ticket Timeline</div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-icon tool">HS</div>
+                        <div class="flow-text"><strong>HubSpot CRM</strong> -- transcript + recording auto-attached to contact & ticket</div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-icon human">AT</div>
+                        <div class="flow-text"><strong>Anthony</strong> reviews calls in the HubSpot Calls Index / Tickets for coaching</div>
+                    </div>
+                </div>
+                <button class="how-toggle" onclick="toggleHow(this)">HOW — Implementation</button>
+                <div class="how-section">
+                    <div class="how-inner">
+                        <!-- ✏️ EDIT:DIRECTORY-SETUP — Change directory tool or access config -->
+                        <h4>HubSpot Calls Index = Primary Directory</h4>
+                        <ul>
+                            <li>HubSpot provides a native chronological listing of all calls org-wide</li>
+                            <li>Configure custom <strong>Call Types</strong> in HubSpot Settings (Calling > Call Types): Prospect Call, Audit Call, Pulse Check, and Internal Meeting</li>
+                            <li>Filter by: Call Type, participant, date range, team member</li>
+                            <li>Full transcript view + audio playback built into HubSpot</li>
+                            <li>Create Coaching Playlists and Clip key moments directly in CRM</li>
+                            <li>Anthony uses his existing HubSpot login to access all calls</li>
+                        </ul>
+                        <h4>Fathom Integration</h4>
+                        <ul>
+                            <li>Fathom → Settings → Integrations → HubSpot</li>
+                            <li>Enable: Auto-log calls to HubSpot</li>
+                            <li>Map: Recording + Transcript → Contact Activity Timeline</li>
+                        </ul>
+                        <h4>Single Access Path</h4>
+                        <table class="how-table">
+                            <tr><th>Who</th><th>Uses</th><th>Why</th></tr>
+                            <tr><td>Anthony (coaching)</td><td>HubSpot Calls Index</td><td>Filterable chronological list of all rep calls</td></tr>
+                            <tr><td>Sales Reps (deal prep)</td><td>HubSpot Ticket</td><td>All prospect context in one place</td></tr>
+                            <tr><td>Sales Reps (GDPR calls)</td><td>HubSpot Ticket Timeline</td><td>GDPR-native, Frankfurt hosting, bot-free Jamie AI transcripts (manually uploaded)</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════ Component 05 ════════ -->
+        <div class="component">
+            <div class="component-number">05</div>
+            <div class="component-card">
+                <div class="component-label">Component 05</div>
+                <div class="component-title">Sales Reports (Manual-First)</div>
+                <div class="component-desc">5 report types generated via Claude Projects to build rep muscle memory. Reps manually copy transcripts from Fathom/Jamie AI and paste them into Claude, then copy reports back to HubSpot.</div>
+                <div class="tool-split">
+                    <div class="tool-split-col" style="flex: 100%;">
+                        <h4>Claude Projects (Manual Copy-Paste in Phase 1)</h4>
+                        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+                            <div class="output-tag">Recap Email</div>
+                            <div class="output-tag">Summary Sheet</div>
+                            <div class="output-tag">Detailed Notes</div>
+                            <div class="output-tag">Proposal Draft</div>
+                            <div class="output-tag">Questionnaire Mapping</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="how-toggle" onclick="toggleHow(this)">HOW — Implementation</button>
+                <div class="how-section">
+                    <div class="how-inner">
+                        <!-- ✏️ EDIT:CLAUDE-REPORTS — Change reports project name or knowledge files -->
+                        <h4>Claude Project: "Octane Sales Reports"</h4>
+                        <ul>
+                            <li>Create a separate Claude Project for report generation</li>
+                            <li>Upload Project Knowledge: service catalog, SOW templates, pricing frameworks, brand voice guidelines</li>
+                        </ul>
+                        <h4>Report 1: Questionnaire Mapping</h4>
+                        <p>Uses the transcript mapping prompt from Component 03 (see above)</p>
+                        <!-- ✏️ EDIT:REPORT-RECAP — Change recap email prompt -->
+                        <h4>Report 2: Recap Email</h4>
+                        <code>Generate a concise client-facing email summarising the 3 most important points from this call to replace the '. xx.' placeholders in the template below.
+
+--- TEMPLATE ---
+[Subject] observations from 🧐 our session
+[copy]
+Hey {{client’s name}},
+I have some takeaways I’d like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
+. xx. 
+. xx.
+. xx.
+You should have received an invitation confirming our appointment together.
+Kind regards,
+Anthony.
+
+--- TRANSCRIPT ---
+[Paste transcript]</code>
+                        <!-- ✏️ EDIT:REPORT-SUMMARY — Change summary sheet prompt -->
+                        <h4>Report 3: Summary Sheet</h4>
+                        <code>Generate a structured internal summary:
+
+SUMMARY: [Company] — [Date]
+ATTENDEES: [Names]
+SERVICE TRACK: [TM1 / AI]
+KEY POINTS: (3–5 bullets)
+SENTIMENT: (Positive / Neutral / Cautious)
+NEXT STEPS: (What was agreed)
+RED FLAGS: (Concerns or objections raised)
+
+--- TRANSCRIPT ---
+[Paste transcript]</code>
+                        <!-- ✏️ EDIT:REPORT-NOTES — Change detailed notes prompt -->
+                        <h4>Report 4: Detailed Notes</h4>
+                        <code>Generate detailed meeting notes. Capture context,
+nuance, and points that don't fit structured formats.
+Organize chronologically by topic.
+Include direct quotes where the prospect reveals
+key priorities or concerns.
+
+--- TRANSCRIPT ---
+[Paste transcript]</code>
+                        <!-- ✏️ EDIT:REPORT-PROPOSAL — Change proposal draft prompt -->
+                        <h4>Report 5: Proposal Draft</h4>
+                        <code>Draft a preliminary proposal drawing on the ACCUMULATED
+context of the client relationship (not just a single call).
+Paste transcripts from ALL relevant calls below.
+
+1. UNDERSTANDING OF REQUIREMENTS
+2. PROPOSED SOLUTION
+3. APPROACH & METHODOLOGY (phases, timeline)
+4. TEAM & RESOURCES
+5. NEXT STEPS
+
+Do NOT include pricing. This is a discussion document.
+Tone: consultative, specific to their situation.
+
+--- TRANSCRIPT(S) ---
+[Paste ALL relevant call transcripts to build cumulative context]</code>
+                        <!-- ✏️ EDIT:REPORT-ACTIONS — Change action items prompt (Omitted in video spec) -->
+                        <h4>Phase 1 Manual-First Workflow</h4>
+                        <ul>
+                            <li>Rep copies the transcript from Fathom (or Jamie AI) or the HubSpot contact timeline (for 3CX calls).</li>
+                            <li>Rep opens Claude and navigates to the "Octane Sales Reports" Project.</li>
+                            <li>Rep pastes the transcript, runs the report prompts, and reviews the output to internalize qualifying criteria.</li>
+                            <li>Rep copies the formatted output from Claude and pastes it directly into the HubSpot Ticket Note.</li>
+                            <li><strong>Rep records 2-Minute Screencast via Vidyard</strong> (0:00-0:30 Lead Temp, 0:30-1:00 Pain Points, 1:00-1:30 Gut Feel, 1:30-2:00 Prep Notes). Vidyard auto-logs to HubSpot Contact Timeline.</li>
+                        </ul>
+                        <h4>Phase 2 Automation Upgrade</h4>
+                        <ul>
+                            <li>Fathom automatically syncs the meeting transcript to the HubSpot Contact Record.</li>
+                            <li>A webhook triggers Zapier/Make.com, which pulls the transcript and sends it to the Claude API.</li>
+                            <li>Claude runs the Mega-Prompt to generate all reports in a single run.</li>
+                            <li>Zapier/Make.com writes the consolidated output directly back into the HubSpot Ticket as a Note.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════ Component 06 ════════ -->
+        <div class="component">
+            <div class="component-number">06</div>
+            <div class="component-card">
+                <div class="component-label">Component 06</div>
+                <div class="component-title">Positional Meeting (Handoff)</div>
+                <div class="component-desc">The Positional Meeting is triaged to the correct Senior Partner. <strong>Kevin</strong> conducts IBM TM1/Planning Analytics demos. <strong>Steny</strong> handles Artificial Intelligence tracks. They enter the call fully briefed by the automated outputs from Component 05.</div>
+                <div class="flow">
+                    <div class="flow-step">
+                        <div class="flow-icon human">PT</div>
+                        <div class="flow-text"><strong>Partner (Kevin/Steny/Amendra)</strong> reviews the Questionnaire Mapping &amp; 2-Minute Screencast prior to call</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon human">PT</div>
+                        <div class="flow-text"><strong>Partner</strong> conducts the Positional Meeting via Teams</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon tool">FA</div>
+                        <div class="flow-text"><strong>Fathom</strong> auto-joins and transcribes the technical constraints</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════ Component 07 ════════ -->
+        <div class="component">
+            <div class="component-number">07</div>
+            <div class="component-card">
+                <div class="component-label">Component 07</div>
+                <div class="component-title">Commercial SOW Generation</div>
+                <div class="component-desc">The preliminary Proposal Draft from Component 05 is finalized into a formal Statement of Work (SOW) using the specific technical constraints uncovered during the Positional Meeting.</div>
+                <div class="flow">
+                    <div class="flow-step">
+                        <div class="flow-icon ai"><span>AI</span></div>
+                        <div class="flow-text"><strong>Claude</strong> processes the Positional Meeting transcript against the SOW Template</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon output">&#10003;</div>
+                        <div class="flow-text"><strong>Finalized SOW</strong> including pricing, timeline, and resource allocation</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon tool">HS</div>
+                        <div class="flow-text"><strong>HubSpot Quotes</strong> generates the trackable PDF and sends to client</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════ Component 08 ════════ -->
+        <div class="component">
+            <div class="component-number">08</div>
+            <div class="component-card">
+                <div class="component-label">Component 08</div>
+                <div class="component-title">Deal Pipeline &amp; Close</div>
+                <div class="component-desc">The final stage of the Tiny Sales Pipeline. The deal is tracked through negotiation to a Closed Won status, triggering the handoff to the delivery and engineering teams.</div>
+                <div class="flow">
+                    <div class="flow-step">
+                        <div class="flow-icon tool">HS</div>
+                        <div class="flow-text"><strong>HubSpot</strong> tracks document opens, page views, and signature status</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon human">PT</div>
+                        <div class="flow-text"><strong>Partner</strong> negotiates final terms and secures approval</div>
+                    </div>
+                    <div class="flow-arrow">&#8595;</div>
+                    <div class="flow-step">
+                        <div class="flow-icon output">&#10003;</div>
+                        <div class="flow-text"><strong>Closed Won</strong> &rarr; Triggers Octane Delivery Onboarding Sequence</div>
+                    </div>
+                </div>
+                <button class="how-toggle" onclick="toggleHow(this)">HOW — Pipeline Stages</button>
+                <div class="how-section">
+                    <div class="how-inner">
+                        <h4>HubSpot Deal Board Config</h4>
+                        <p>The deal progresses through these 7 mandatory pipeline stages in HubSpot (as demonstrated in the briefing):</p>
+                        <ol>
+                            <li><strong>Lead Captured</strong> -- Initial prospect details logged in CRM</li>
+                            <li><strong>MQL</strong> -- Marketing Qualified Lead status verified</li>
+                            <li><strong>Prescreen Booked</strong> -- Pre-screen call scheduled via round-robin or direct link</li>
+                            <li><strong>Prescreen Completed</strong> -- Pre-screen call done, transcript and 6 reports attached</li>
+                            <li><strong>Discovery Booked</strong> -- Positional Meeting scheduled with Steny, Kevin, or Amendra</li>
+                            <li><strong>Discovery Completed</strong> -- Positional Meeting done, technical constraints documented</li>
+                            <li><strong>Positioning Meeting</strong> -- Formal solution and proposal presented to the prospect</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        Octane Software Solutions -- Tiny Sales Pipeline v2.0
+    </div>
+
+    <!-- ✏️ EDIT:SCENARIO — Change the walkthrough example -->
+    <!-- Scenario Modal -->
+    <div class="modal-overlay" id="scenarioModal" onclick="closeOnOutsideClick(event, 'scenarioModal')">
+        <div class="modal-content">
+            <button class="modal-close" onclick="toggleModal('scenarioModal')">&times;</button>
+            <div class="scenario-body">
+                <h2>Real-Life Scenario Walkthrough</h2>
+                <blockquote>
+                    <strong>Prospect:</strong> Sarah Chen, Head of FP&A at Meridian Logistics<br>
+                    <strong>Service Interest:</strong> TM1 Support (existing user)<br>
+                    <strong>Outcome:</strong> Hot lead &rarr; Positional Meeting booked
+                </blockquote>
+
+                <h3>Component 01: Pre-Screen Calendar</h3>
+                <p><strong>Tue 10:14 AM:</strong> Sarah visits the site and clicks "Book a Discovery Call". The round-robin routes her to Albert's availability block (7am-2pm AEST). Due to the 12-hour buffer, she books for Wednesday 9:00 AM. HubSpot auto-creates her contact record, generates a ticket, and blocks Albert's calendar.</p>
+
+                <h3>Component 02: Pre-Screen Preparation</h3>
+                <p><strong>Tue 2:30 PM:</strong> Albert inputs Sarah's LinkedIn PDF, company URL, and form answers into the Claude Prep Project. Claude outputs a 10-Point Briefing revealing her ASX-listed company suffers from "planning tool frustrations". Albert learns Meridian's TM1 consolidation takes 45 minutes and their developer left 3 weeks ago.</p>
+
+                <h3>Component 03: Pre-Screen Call</h3>
+                <p><strong>Wed 9:00 AM:</strong> Albert opens the Teams call using Claude's conversation starter. Fathom auto-joins to record. Albert works through the 12-question framework conversationally without typing. Scoring the lead as "HOT", he books Sarah for a Positional Meeting with Kevin before ending the call at 9:30 AM.</p>
+
+                <h3>Component 04: Central Call Directory</h3>
+                <p><strong>Wed 9:35 AM:</strong> Fathom finishes processing. The transcript and recording appear in the HubSpot Calls Index for Anthony to review later. Simultaneously, the HubSpot integration auto-attaches the transcript and call data to Sarah's ticket.</p>
+
+                <h3>Component 05: Automated Reports</h3>
+                <p><strong>Wed 10:15 AM:</strong> Zapier/Make.com detects the new transcript in HubSpot, triggers the Claude API Mega-Prompt, and automatically generates the recap email, summary sheet, detailed notes, proposal draft, and questionnaire mapping. The AI writes this directly back to the HubSpot ticket as a Note. Albert opens <strong>Vidyard</strong>, records his mandatory 2-Minute Screencast (screen + camera), and Vidyard auto-logs it to Sarah's HubSpot timeline. Kevin is fully briefed before Thursday's meeting.</p>
+
+                <h3>Why This Architecture Works</h3>
+                <table class="scenario-table">
+                    <tr>
+                        <th>Old Way (No System)</th>
+                        <th>Tiny Sales Pipeline</th>
+                    </tr>
+                    <tr>
+                        <td>Client emails info@, gets a reply 2 days later</td>
+                        <td><strong>Client self-books in 3 minutes</strong>, rep is alerted instantly</td>
+                    </tr>
+                    <tr>
+                        <td>Rep Googles the client, skims LinkedIn</td>
+                        <td><strong>Claude produces a 10-point briefing</strong> in 60 seconds</td>
+                    </tr>
+                    <tr>
+                        <td>Rep takes notes, misses half the detail</td>
+                        <td><strong>Fathom captures every word</strong>, rep focuses 100% on rapport</td>
+                    </tr>
+                    <tr>
+                        <td>Manager asks "how did it go?"</td>
+                        <td><strong>Manager listens to the actual call</strong> and coaches from evidence</td>
+                    </tr>
+                    <tr>
+                        <td>Handoff is a forwarded email</td>
+                        <td><strong>Partner receives full transcript &amp; briefing</strong> before meeting</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optimize Modal -->
+    <!-- ✏️ EDIT:OPTIMIZE — Change the Phase 2 automation roadmap -->
+    <div class="modal-overlay" id="optimizeModal" onclick="closeOnOutsideClick(event, 'optimizeModal')">
+        <div class="modal-content">
+            <button class="modal-close" onclick="toggleModal('optimizeModal')">&times;</button>
+            <div class="scenario-body">
+                <h2>Phase 2: Agentic Automation Architecture</h2>
+                <blockquote>
+                    <strong>Objective:</strong> Eliminate human-in-the-loop data transfer. Move from "Manual-First" to "Zero-Touch Automation".<br>
+                    <strong>Tech Stack Addition:</strong> Zapier/Make.com (Integration Platform) + Claude API + Apollo.io API.
+                </blockquote>
+
+                <h3>Component 01 & 02: Zero-Touch Preparation</h3>
+                <p><strong>Current Bottleneck:</strong> The Sales Rep manually downloads LinkedIn PDFs and pastes form data into Claude.</p>
+                <p><strong>Optimized Flow:</strong>
+                    <br>1. Client books via HubSpot.
+                    <br>2. A webhook triggers <strong>Zapier/Make.com</strong>.
+                    <br>3. Zapier/Make.com calls an enrichment API (Apollo/Clearbit) to scrape the prospect's LinkedIn and company website.
+                    <br>4. Zapier/Make.com feeds this data directly into the <strong>Claude API</strong>.
+                    <br>5. Claude generates the 10-Point Briefing, and Zapier/Make.com injects it straight into the <strong>HubSpot Ticket Notes</strong>.
+                    <br><span style="color:var(--white);"><em>Result: Rep opens HubSpot 5 minutes before the call and the prep is already done. Zero manual clicking.</em></span>
+                </p>
+
+                <h3>Component 03 & 05: Fully Automated Synthesis</h3>
+                <p><strong>Current Bottleneck:</strong> The Rep must manually paste the transcript into Claude to map the 12-question framework and generate a proposal.</p>
+                <p><strong>Optimized Flow:</strong>
+                    <br>1. Fathom/Jamie AI finishes recording and pushes transcript to HubSpot.
+                    <br>2. Zapier/Make.com pulls the raw transcript and sends it to the Claude API with the Mega-Prompt.
+                    <br>3. Claude outputs a structured JSON response (mapping answers and assigning a qualification score).
+                    <br>4. Zapier/Make.com parses the JSON, updates <strong>HubSpot Custom Properties</strong> automatically, and generates a Proposal Draft document attached to the ticket.
+                    <br><span style="color:var(--white);"><em>Result: The handoff to Kevin/Steny happens automatically the second the call ends. The rep does absolutely zero admin work beyond a 2-min screencast.</em></span>
+                </p>
+
+                <h3>System Scaling: P1-P9 Tooling Upgrade Path</h3>
+                <table class="scenario-table">
+                    <tr>
+                        <th>Phase</th>
+                        <th>Tool / Action</th>
+                        <th>Operational Impact</th>
+                    </tr>
+                    <tr>
+                        <td><strong>P1</strong></td>
+                        <td>Vidyard Free</td>
+                        <td>Standardized screencast for deal handoffs. Auto-logs to HubSpot timeline.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>P2</strong></td>
+                        <td>Fathom Free</td>
+                        <td>Auto-joins calls, transcribes meetings, native HubSpot logging.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>P3</strong></td>
+                        <td>Zapier/Make.com (Basic)</td>
+                        <td>Pushes transcripts to Claude API and logs custom ticket mapping to HubSpot notes.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>P4</strong></td>
+                        <td>Apollo.io Basic</td>
+                        <td>Enriches inbound booking leads automatically prior to Claude prep briefs.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>P5</strong></td>
+                        <td>Fathom Paid (Upgrade)</td>
+                        <td>Unlocks field-level CRM synchronization for faster handoffs.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>P6</strong></td>
+                        <td>n8n (Self-Hosted)</td>
+                        <td>VPS self-hosted server drops Zapier costs entirely, processing transcripts locally (GDPR-native).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>P7</strong></td>
+                        <td>PandaDoc</td>
+                        <td>Automates SOW/Proposal template generation directly from CRM data.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>P8</strong></td>
+                        <td>Retorio AI Coaching</td>
+                        <td>Allows role-play practice and customer response simulation for new reps.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>P9</strong></td>
+                        <td>Jamie AI (Germany)</td>
+                        <td>Bot-free meeting recording fallback with EU local hosting (GDPR-native).</td>
+                    </tr>
+                </table>
+
+                <h3>ROI of Optimization</h3>
+                <table class="scenario-table">
+                    <tr>
+                        <th>Metric</th>
+                        <th>Manual-First (Current)</th>
+                        <th>Agentic Automation (Optimized)</th>
+                    </tr>
+                    <tr>
+                        <td>Prep Time per Call</td>
+                        <td>5 - 8 minutes</td>
+                        <td><strong style="color:var(--white);">0 minutes</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Post-Call Admin</td>
+                        <td>10 - 15 minutes</td>
+                        <td><strong style="color:var(--white);">0 minutes</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Data Consistency</td>
+                        <td>High (Rep dependent)</td>
+                        <td><strong style="color:var(--white);">Perfect (API enforced)</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Amendra's Visibility</td>
+                        <td>Delayed until rep acts</td>
+                        <td><strong style="color:var(--white);">Instant upon call completion</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.toggle('active');
+            const anyActive = document.querySelectorAll('.modal-overlay.active').length > 0;
+            document.body.style.overflow = anyActive ? 'hidden' : '';
+        }
+
+        function closeOnOutsideClick(event, modalId) {
+            if (event.target.classList.contains('modal-overlay')) {
+                toggleModal(modalId);
+            }
+        }
+
+        function toggleHow(btn) {
+            const section = btn.nextElementSibling;
+            const isOpen = section.classList.contains('open');
+            section.classList.toggle('open');
+            btn.classList.toggle('active');
+            btn.textContent = isOpen ? 'HOW \u2014 Implementation' : 'HOW \u2014 Hide';
+        }
+
+        /* === EDIT MODE === */
+        let editActive = false;
+
+        const EDITABLE_SELECTORS = [
+            '.component-title',
+            '.component-desc',
+            '.flow-text',
+            '.route-name',
+            '.route-detail',
+            '.route-label',
+            '.handoff-text',
+            '.how-inner h4',
+            '.how-inner li',
+            '.how-inner p',
+            '.how-inner code',
+            '.how-table td',
+            '.how-table th',
+            '.scenario-body h2',
+            '.scenario-body h3',
+            '.scenario-body p',
+            '.scenario-body blockquote',
+            '.scenario-body li',
+            '.tool-split h4',
+            '.tool-split li',
+            '.header h1',
+            '.header > p',
+        ];
+
+        function toggleEditMode() {
+            editActive = !editActive;
+            const body = document.body;
+            const toggle = document.getElementById('editToggle');
+            const saveBtn = document.getElementById('saveBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const editStatus = document.getElementById('editStatus');
+            const editLabel = document.getElementById('editLabel');
+
+            if (editActive) {
+                body.classList.add('edit-mode');
+                toggle.classList.add('active');
+                editLabel.textContent = 'Editing';
+                saveBtn.classList.remove('hidden');
+                downloadBtn.classList.remove('hidden');
+                editStatus.classList.remove('hidden');
+                editStatus.textContent = 'Click any text to edit';
+
+                const selector = EDITABLE_SELECTORS.join(', ');
+                document.querySelectorAll(selector).forEach(el => {
+                    el.setAttribute('contenteditable', 'true');
+                    el.setAttribute('spellcheck', 'false');
+                });
+
+                // Expand all HOW sections so content is accessible
+                document.querySelectorAll('.how-section').forEach(s => {
+                    if (!s.classList.contains('open')) {
+                        s.classList.add('open');
+                        const btn = s.previousElementSibling;
+                        if (btn && btn.classList.contains('how-toggle')) {
+                            btn.classList.add('active');
+                            btn.textContent = 'HOW \u2014 Hide';
+                        }
+                    }
+                });
+            } else {
+                body.classList.remove('edit-mode');
+                toggle.classList.remove('active');
+                editLabel.textContent = 'Edit';
+                saveBtn.classList.add('hidden');
+                downloadBtn.classList.add('hidden');
+                editStatus.classList.add('hidden');
+
+                document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                    el.removeAttribute('contenteditable');
+                    el.removeAttribute('spellcheck');
+                });
+            }
+        }
+
+        function saveEdits() {
+            const editableContent = {};
+            let count = 0;
+            document.querySelectorAll('[contenteditable="true"]').forEach((el, i) => {
+                const key = generateKey(el, i);
+                editableContent[key] = el.innerHTML;
+                count++;
+            });
+            localStorage.setItem('earlyGameEdits', JSON.stringify(editableContent));
+            localStorage.setItem('earlyGameEditsTime', new Date().toISOString());
+
+            const status = document.getElementById('editStatus');
+            status.textContent = '\u2713 Saved ' + count + ' sections (' + new Date().toLocaleTimeString() + ')';
+            status.style.color = '#6abf6a';
+            setTimeout(() => {
+                status.style.color = '';
+                status.textContent = 'Click any text to edit';
+            }, 3000);
+        }
+
+        function downloadHTML() {
+            const wasEditing = editActive;
+            // Clean up for export
+            document.querySelectorAll('[contenteditable]').forEach(el => {
+                el.removeAttribute('contenteditable');
+                el.removeAttribute('spellcheck');
+            });
+            document.body.classList.remove('edit-mode');
+
+            const toolbar = document.getElementById('editToolbar');
+            const origDisplay = toolbar.style.display;
+            toolbar.style.display = 'none';
+
+            const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+            toolbar.style.display = origDisplay;
+
+            // Restore edit mode
+            if (wasEditing) {
+                document.body.classList.add('edit-mode');
+                const selector = EDITABLE_SELECTORS.join(', ');
+                document.querySelectorAll(selector).forEach(el => {
+                    el.setAttribute('contenteditable', 'true');
+                    el.setAttribute('spellcheck', 'false');
+                });
+            }
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tiny-sales-pipeline.html';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            const status = document.getElementById('editStatus');
+            status.textContent = '\u2b07 Downloaded!';
+            status.style.color = '#6a9fbf';
+            setTimeout(() => {
+                status.style.color = '';
+                status.textContent = 'Click any text to edit';
+            }, 3000);
+        }
+
+        function generateKey(el, index) {
+            const tag = el.tagName.toLowerCase();
+            const cls = el.className || '';
+            const parent = el.closest('.component');
+            const compNum = parent ? (parent.querySelector('.component-number')?.textContent || 'x') : 'global';
+            return compNum + '_' + tag + '_' + cls + '_' + index;
+        }
+
+        function loadSavedEdits() {
+            const saved = localStorage.getItem('earlyGameEdits');
+            if (!saved) return;
+            try {
+                const edits = JSON.parse(saved);
+                const selector = EDITABLE_SELECTORS.join(', ');
+                document.querySelectorAll(selector).forEach((el, i) => {
+                    const key = generateKey(el, i);
+                    if (edits[key] && edits[key] !== el.innerHTML) {
+                        el.innerHTML = edits[key];
+                    }
+                });
+            } catch(e) {
+                console.warn('Could not load saved edits:', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadSavedEdits);
+    </script>
+</body>
+</html>
+
