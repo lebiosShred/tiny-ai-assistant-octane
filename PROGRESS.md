@@ -1,6 +1,6 @@
-# Tiny Sales Pipeline -- Progress Log
+# Early Game Sales Pipeline -- Progress Log
 
-**Last Updated:** May 21, 2026  
+**Last Updated:** May 22, 2026  
 **Status:** In Progress (Ready for Rep/Owner Calendar Integration)  
 **Lead Engineer:** CJ Amiel (Octane Software Solutions)  
 
@@ -10,7 +10,7 @@
 
 | Deliverable | Status | Description |
 | :--- | :--- | :--- |
-| **Pipeline Rebranding** | ✅ Completed | Updated all files (`HOW-PROPOSAL.md`, `early-game-architecture.html`, `executive-summary.html`, `README.md`) to reflect the **"Tiny"** name. |
+| **Pipeline Rebranding** | ✅ Completed | Reverted pipeline branding back to the original **"Early Game"** name across all deliverables. |
 | **Workflow Diagram** | ✅ Completed | Embedded a responsive dark-themed Mermaid flowchart at the top and in Section 2 of `executive-summary.html`. |
 | **Tool Stack Mapping** | ✅ Completed | Defined the $0 extra-spend tooling stack (HubSpot, Fathom, Jamie AI, Vidyard, 3CX, Teams). |
 
@@ -34,17 +34,17 @@
   * [ ] Map pre-screen booking form fields (Name, Email, Website, Phone, LinkedIn, Service Interest, Discuss Details).
   * [ ] Generate the high-resolution QR code pointing to the final calendar page.
 
-### Component 02: Claude Prep Dossier
+### Component 02: Pre-Screen Preparation (Tiny)
 * **Status:** 🟩 Architecture Confirmed
 * **Workflow:**
   * Prospect books call → HubSpot Ticket auto-creates.
   * Rep copies the Company URL from HubSpot.
-  * Rep runs the URL through Claude Desktop using the research prompt.
-  * Claude parses the site and outputs a structured client prep dossier in under 60 seconds.
+  * Rep runs the URL and inputs through the **"Tiny - Pre-Screen Prep"** Claude Project.
+  * Tiny (AI Sales Assistant) parses the data and outputs a structured 10-point briefing in under 60 seconds.
 
 ### Component 03: The Call & Script
-* **Status:** 🟧 Draft (Awaiting Approval)
-* **Status Details:** The 12-question pre-screen call framework is currently a draft and pending team/Anthony approval.
+* **Status:** 🟩 Completed (Offerings Aligned)
+* **Status Details:** Aligned the 12-question framework (Variants A, B, C) with specific technical variables (GL systems, Excel complexity, version/deployment status, RAM/HDD usage, log sizes, reporting tools) matching Octane's service catalog.
 * **Integration Logic:**
   * All Teams/Zoom calls auto-joined by **Fathom** for transcription and recording.
   * Fathom auto-syncs call records directly to HubSpot contact/deal timelines.
@@ -57,11 +57,12 @@
   * Direct keyword-searching across all call timelines.
   * One-click snippet clipping to train reps.
 
-### Component 05: Claude Sales Reports
+### Component 05: Claude Sales Reports (Tiny)
 * **Status:** 🟩 Architecture Confirmed
 * **Workflow:**
   * Post-call, the Fathom transcript is exported.
-  * Rep pastes the transcript into Claude to produce a formatted Call Conversion Report.
+  * Rep pastes the transcript into the **"Tiny - Sales Reports"** Claude Project.
+  * Tiny (AI Sales Assistant) processes the transcript to produce a formatted Call Conversion Report (6 structured report types, including Action Items and Proposal Drafts).
   * The report is attached to the HubSpot deal record for management review.
 
 ---

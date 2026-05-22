@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Executive Summary: Tiny Sales Pipeline</title>
+    <title>Executive Summary: Early Game Sales Pipeline</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -416,7 +416,7 @@
         
         <div class="header">
             <div class="header-label">Executive Summary</div>
-            <h1><span class="context-term" data-tooltip="The standardized first-interaction protocol for Octane prospects, code-named 'Tiny', covering everything from booking to the first proposal.">Tiny</span> Sales Pipeline</h1>
+            <h1><span class="context-term" data-tooltip="The standardized first-interaction protocol for Octane prospects, code-named 'Early Game', covering everything from booking to the first proposal.">Early Game</span> Sales Pipeline</h1>
             <p>Standardizing the first prospect interaction. Zero new spend, fully automated reporting, and native coaching integration.</p>
             
             <div class="header-meta">
@@ -429,10 +429,10 @@
         <div class="mermaid-container" style="margin-bottom: 4rem; background: rgba(255, 255, 255, 0.02); padding: 2.5rem 1.5rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
             <div class="mermaid" style="width: 100%; max-width: 800px; margin: 0 auto;">
                 graph LR
-                    C1[01. Pre-Screen Calendar] --> C2[02. Claude Prep Dossier]
+                    C1[01. Pre-Screen Calendar] --> C2[02. Tiny - Pre-Screen Prep]
                     C2 --> C3[03. The Call & Script]
                     C3 --> C4[04. HubSpot Coaching Hub]
-                    C4 --> C5[05. Claude Sales Reports]
+                    C4 --> C5[05. Tiny - Sales Reports]
                     
                     style C1 fill:#111,stroke:#4daeeb,stroke-width:1px,color:#fff
                     style C2 fill:#111,stroke:#4daeeb,stroke-width:1px,color:#fff
@@ -460,10 +460,22 @@
                 <div class="tool-utilization">
                     <h4>Exact Pipeline Utilization</h4>
                     <ul>
-                        <li><strong>Component 01 (Pre-Screen Calendar):</strong> Drives timezone-aware, shift-based routing (configured as Round-Robin in HubSpot to merge availability) with 12-hour booking buffers. Custom forms capture prospect context and automatically deploy Tickets into the "<span class="context-term" data-tooltip="The standardized first-interaction protocol for Octane prospects, code-named 'Tiny', covering everything from booking to the first proposal.">Tiny</span>" sales pipeline via workflows.</li>
+                        <li><strong>Component 01 (Pre-Screen Calendar):</strong> Drives timezone-aware, shift-based routing (configured as Round-Robin in HubSpot to merge availability) with 12-hour booking buffers. Custom forms capture prospect context and automatically deploy Tickets into the "<span class="context-term" data-tooltip="The standardized first-interaction protocol for Octane prospects, code-named 'Early Game', covering everything from booking to the first proposal.">Early Game</span>" sales pipeline via workflows.</li>
                         <li><strong>Component 03 (Call Ingestion):</strong> Automatically ingests cold call audio metadata from 3CX and video transcripts from Fathom directly into the prospect's CRM timeline without rep intervention.</li>
                         <li><strong>Component 04 (Call Directory):</strong> Serves as Anthony's definitive Coaching Hub. Enables chronological filtering across all reps, global transcript searching, one-click clipping, and the curation of <span class="context-term" data-tooltip="A native HubSpot feature allowing Amendra to curate and share specific audio clips from cold calls.">Coaching Playlists</span> natively inside the CRM.</li>
                     </ul>
+                    <div style="margin-top: 1.5rem; border-top: 1px dashed rgba(255, 255, 255, 0.15); padding-top: 1.25rem;">
+                        <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 1rem;">HubSpot Deal Board Stages</h4>
+                        <ol style="font-size: 0.95rem; color: var(--grey-light); padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; list-style-type: decimal;">
+                            <li><strong>Lead Captured:</strong> Initial contact details and lead capture.</li>
+                            <li><strong>MQL:</strong> Marketing Qualified Lead status verified.</li>
+                            <li><strong>Prescreen Booked:</strong> Pre-screen call scheduled.</li>
+                            <li><strong>Prescreen Completed:</strong> Pre-screen call completed.</li>
+                            <li><strong>Discovery Booked:</strong> Positional meeting/deep dive scheduled.</li>
+                            <li><strong>Discovery Completed:</strong> Discovery findings documented.</li>
+                            <li><strong>Positioning Meeting:</strong> Presentation of proposed services/solutions.</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
 
@@ -483,8 +495,8 @@
                 <div class="tool-utilization">
                     <h4>Exact Pipeline Utilization</h4>
                     <ul>
-                        <li><strong>Component 02 (Pre-Screen Prep):</strong> Reps use the "<span class="context-term" data-tooltip="A dedicated Claude AI Project loaded with Octane's OneDrive knowledge base to auto-generate prospect dossiers.">Octane Pre-Screen Prep</span>" Project (loaded with OneDrive catalogs). Ingests LinkedIn PDFs and HubSpot form data to instantly output a 10-point prospect dossier with 3 specific conversation starters.</li>
-                        <li><strong>Component 05 (Automated Reports):</strong> <strong>Manual Copy-Paste via Claude Projects.</strong> Reps manually copy and paste transcripts from Fathom/Jamie AI into the "<span class="context-term" data-tooltip="A dedicated Claude AI Project loaded with Octane's prompt library and report formats.">Octane Sales Reports</span>" Project to generate 5 structured artifacts (Questionnaire Mapping, Recap Email, Summary Sheet, Detailed Notes, Proposal Draft) to build qualifying muscle memory, copy-pasting them back into HubSpot. <em>(Phase 2 Upgrade: Zero-touch automation via Zapier/Make.com + Claude API).</em></li>
+                        <li><strong>Component 02 (Pre-Screen Prep):</strong> Reps use the "<strong>Tiny - Pre-Screen Prep</strong>" Claude Project (powered by the <strong>Tiny</strong> AI Sales Assistant and loaded with OneDrive catalogs). Ingests LinkedIn PDFs and HubSpot form data to instantly output a structured 10-point briefing with 3 specific conversation starters.</li>
+                        <li><strong>Component 05 (Automated Reports):</strong> <strong>Manual Copy-Paste via Claude Projects.</strong> Reps manually copy and paste transcripts from Fathom/Jamie AI into the "<strong>Tiny - Sales Reports</strong>" Claude Project (powered by <strong>Tiny</strong>) to generate 6 structured artifacts (Questionnaire Mapping, Recap Email, Summary Sheet, Detailed Notes, Proposal Draft, and Action Items) to build qualifying muscle memory, copy-pasting them back into HubSpot. <em>(Phase 2 Upgrade: Zero-touch automation via Zapier/Make.com + Claude API).</em></li>
                     </ul>
                 </div>
             </div>
@@ -544,13 +556,13 @@
                 </div>
                 <div class="tool-specs">
                     <div class="spec-row"><strong>Role</strong> Video Hosting & Base Knowledge Storage</div>
-                    <div class="spec-row"><strong>Data I/O</strong> Teams → Fathom | OneDrive → Claude (Manual)</div>
+                    <div class="spec-row"><strong>Data I/O</strong> Teams → Fathom | OneDrive → Tiny (Manual)</div>
                 </div>
                 <div class="tool-utilization">
                     <h4>Exact Pipeline Utilization</h4>
                     <ul>
                         <li><strong>Teams (Component 01 & 03):</strong> Acts as the underlying VOIP carrier for all scheduled video meetings booked via the HubSpot calendar, providing the raw audio/video payload that Fathom requires for transcription.</li>
-                        <li><strong>OneDrive (Component 02):</strong> Functions as the definitive static repository for Octane's service catalogs, product sheets, and past job specifications. Reps download this baseline data and feed it into Claude to maintain AI contextual accuracy.</li>
+                        <li><strong>OneDrive (Component 02):</strong> Functions as the definitive static repository for Octane's service catalogs, product sheets, and past job specifications. Reps download this baseline data and feed it into the <strong>Tiny</strong> AI assistant to maintain contextual accuracy.</li>
                     </ul>
                 </div>
             </div>
@@ -561,10 +573,10 @@
         <div class="mermaid-container" style="margin-bottom: 4rem; background: rgba(255, 255, 255, 0.02); padding: 2.5rem 1.5rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
             <div class="mermaid" style="width: 100%; max-width: 800px; margin: 0 auto;">
                 graph LR
-                    C1[01. Pre-Screen Calendar] --> C2[02. Claude Prep Dossier]
+                    C1[01. Pre-Screen Calendar] --> C2[02. Tiny - Pre-Screen Prep]
                     C2 --> C3[03. The Call & Script]
                     C3 --> C4[04. HubSpot Coaching Hub]
-                    C4 --> C5[05. Claude Sales Reports]
+                    C4 --> C5[05. Tiny - Sales Reports]
                     
                     style C1 fill:#111,stroke:#4daeeb,stroke-width:1px,color:#fff
                     style C2 fill:#111,stroke:#4daeeb,stroke-width:1px,color:#fff
@@ -582,7 +594,7 @@
                 <h3 class="node-title">Pre-Screen Calendar</h3>
                 <div class="node-content">
                     <div class="node-desc">
-                         Prospects land on a branded Octane pre-screen page setting clear expectations. They book a time via a shift-based combined calendar link (Albert &amp; Isha, configured as Round-Robin in HubSpot) or direct calendar links (Amendra &amp; Kevin), preventing same-day bookings and ensuring the rep has time to prepare.
+                         Prospects land on a branded Octane pre-screen page setting clear expectations. They book a time via a shift-based combined calendar link (Albert &amp; Isha, configured as Round-Robin in HubSpot) or direct calendar links (Amendra &amp; Steny), preventing same-day bookings and ensuring the rep has time to prepare.
                     </div>
                     <div class="node-tech">
                         <span class="tech-label">System</span>
@@ -597,11 +609,11 @@
                 <h3 class="node-title">Pre-Screen Preparation</h3>
                 <div class="node-content">
                     <div class="node-desc">
-                         Before the call, the rep gathers 5 manual inputs (including LinkedIn profile and intake answers) and feeds them into the Claude Prep prompt. The AI instantly returns a 10-point dossier with likely objections and 3 conversation starters.
+                          Before the call, the rep gathers 6 manual inputs (including LinkedIn profile, company email, and intake answers) and feeds them into the <strong>Tiny - Pre-Screen Prep</strong> Claude Project. The <strong>Tiny</strong> AI Sales Assistant instantly returns a structured 10-point briefing with likely objections and 3 conversation starters.
                     </div>
                     <div class="node-tech">
                         <span class="tech-label">System</span>
-                        <span class="tech-value">🤖 Claude AI (Prep Prompt)</span>
+                        <span class="tech-value">🤖 Tiny AI Assistant (Claude Prep)</span>
                     </div>
                 </div>
             </div>
@@ -609,10 +621,10 @@
             <!-- Node 3 -->
             <div class="graph-node">
                 <span class="node-tag">Component 03</span>
-                <h3 class="node-title">The Call &amp; Transcription (Draft)</h3>
+                <h3 class="node-title">The Call &amp; Transcription</h3>
                 <div class="node-content">
                     <div class="node-desc">
-                        The rep runs the call focusing entirely on the prospect, without taking notes. They follow the 12-question qualification script (DRAFT -- pending finalization by the team). The conversation is recorded and transcribed in the background.
+                        The rep runs the call focusing entirely on the prospect, without taking notes. They follow the 12-question qualification script (aligned with Octane's services). The conversation is recorded and transcribed in the background.
                     </div>
                     <div class="node-tech">
                         <span class="tech-label">System</span>
@@ -642,11 +654,11 @@
                 <h3 class="node-title">Sales Reports (Manual-First)</h3>
                 <div class="node-content">
                     <div class="node-desc">
-                         Reps manually copy and paste transcripts from Fathom/Jamie AI into the "Octane Sales Reports" Claude Project to generate 5 structured artifacts (Questionnaire Mapping, Recap Email, Summary Sheet, Detailed Notes, Proposal Draft) to build qualifying muscle memory, then record a 2-minute Vidyard screencast. <em>(Phase 2 Upgrade: Webhooks trigger Zapier/Make.com + Claude API to automate the pipeline).</em>
+                          Reps manually copy and paste transcripts from Fathom/Jamie AI into the <strong>"Tiny - Sales Reports"</strong> Claude Project to generate 6 structured artifacts (Questionnaire Mapping, Recap Email, Summary Sheet, Detailed Notes, Proposal Draft, and Action Items) via the <strong>Tiny</strong> AI Sales Assistant, then record a 2-minute Vidyard screencast. <em>(Phase 2 Upgrade: Webhooks trigger Zapier/Make.com + Claude API to automate the pipeline).</em>
                     </div>
                     <div class="node-tech">
                         <span class="tech-label">System</span>
-                        <span class="tech-value">🤖 Claude Projects (Manual) / ⚡ Zapier + Claude API (Phase 2) + 🎥 Vidyard</span>
+                        <span class="tech-value">🤖 Tiny AI Assistant (Claude Reports) / ⚡ Zapier + Claude API (Phase 2) + 🎥 Vidyard</span>
                     </div>
                 </div>
             </div>
@@ -661,7 +673,7 @@
             </div>
             <div class="timeline-card">
                 <div class="timeline-week">Week 2</div>
-                <div class="timeline-task">Claude AI Prompts (Prep & Reports) Engineered</div>
+                <div class="timeline-task">Tiny AI Assistant (Claude Prep & Reports) Engineered</div>
             </div>
             <div class="timeline-card">
                 <div class="timeline-week">Week 3</div>

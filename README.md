@@ -1,4 +1,4 @@
-# Anthony -- Tiny Sales Pipeline
+# Anthony -- Early Game Sales Pipeline
 
 > **Commissioned by:** Anthony Coundouris + Sheila Ocana (Run Frictionless)
 > **Tech Lead / Builder:** Amendra Pratap (Octane Software Solutions)
@@ -17,9 +17,9 @@ Written by Anthony Coundouris and Sheila Ocana, this document defines the object
 
 ## What This Project Is
 
-This folder contains the **Tiny Sales Pipeline** for Octane Software Solutions -- the technical implementation of Anthony's Sales Process Technical Brief. It is a fully documented, manual-first sales pipeline that takes a prospect from first contact to Closed Won.
+This folder contains the **Early Game Sales Pipeline** for Octane Software Solutions -- the technical implementation of Anthony's Sales Process Technical Brief. It is a fully documented, manual-first sales pipeline that takes a prospect from first contact to Closed Won.
 
-The architecture is built as a single, self-contained HTML page (`early-game-architecture.html` -- dynamically downloadable as `tiny-sales-pipeline.html`) that visualizes the entire 8-component pipeline with interactive walkthroughs.
+The architecture is built as a single, self-contained HTML page (`early-game-architecture.html` -- dynamically downloadable as `early-game-sales-pipeline.html`) that visualizes the entire 8-component pipeline with interactive walkthroughs.
 
 ---
 
@@ -37,11 +37,11 @@ The architecture is built as a single, self-contained HTML page (`early-game-arc
 
 | # | Component | Brief Requirement | Implementation Status |
 |---|---|---|---|
-| 01 | **Pre-Screen Calendar** | Single booking link, shift-based combined calendar (Albert 7am--2pm / Isha 2pm--9pm AEST, configured as Round-Robin in HubSpot), 12-hour buffer, no same-day bookings, embedded on a context page (not standalone), QR code for offline, separate links for Amendra + Kevin. Info collected: name, company email, company, position, service interest, URL, discussion topic. | Architected |
-| 02 | **Pre-Screen Preparation** | Claude project with permanent OneDrive connection. 5 manual inputs. Produces 10-point briefing (LinkedIn analysis, company overview, Octane services, competitors, competing apps, complementary apps, TM1/AI apps, relevance assessment, pain points, conversation starters). | Architected |
-| 03 | **Pre-Screen Call** | 30-minute call. 12-question framework (3 variants: TM1 new, TM1 existing, AI new -- DRAFT STATUS). Zero typing. Transcript answers mapped to questionnaire. Book Positional Meeting with Amendra before call ends. | Architected (Draft) |
+| 01 | **Pre-Screen Calendar** | Single booking link, shift-based combined calendar (Albert 7am--2pm / Isha 2pm--9pm AEST, configured as Round-Robin in HubSpot), 12-hour buffer, no same-day bookings, embedded on a context page (not standalone), QR code for offline, separate links for Amendra + Steny. Info collected: name, company email, company, position, service interest, URL, discussion topic. | Architected |
+| 02 | **Pre-Screen Preparation** | Claude project (**Tiny - Pre-Screen Prep**) with permanent OneDrive connection. 6 manual inputs. Produces 10-point briefing via **Tiny (AI Sales Assistant)**. | Architected |
+| 03 | **Pre-Screen Call** | 30-minute call. 12-question framework (3 variants: TM1 new, TM1 existing, AI new -- Offerings Aligned). Zero typing. Transcript answers mapped to questionnaire. Book Positional Meeting with Amendra before call ends. | Architected |
 | 04 | **Central Call Directory** | All recordings attached to HubSpot tickets AND visible in a single centralized directory. Chronological across the org, filterable by rep, usable for coaching prep without navigating HubSpot. Must support: audio playback, transcripts, report extraction, single-click report generation. | Architected |
-| 05 | **Automated Reports** | 5 report types from transcripts via Claude: (1) Questionnaire answers (3 variants), (2) Recap email, (3) Summary sheet, (4) Detailed notes, (5) Proposal draft. | Architected |
+| 05 | **Automated Reports** | 6 report types from transcripts via **Tiny (AI Sales Assistant)** Claude Project (**Tiny - Sales Reports**): (1) Questionnaire answers (3 variants), (2) Recap email, (3) Summary sheet, (4) Detailed notes, (5) Proposal draft, (6) Action items. | Architected |
 | 06 | **Positional Meeting** | Senior Partner (Amendra/Steny/Kevin) conducts technical deep-dive, fully briefed by Component 05 outputs. Fathom AI records. | Architected (extension beyond brief) |
 | 07 | **Commercial SOW Generation** | Claude processes Positional Meeting transcript against SOW Template. HubSpot Quotes generates trackable PDF. | Architected (extension beyond brief) |
 | 08 | **Deal Pipeline & Close** | HubSpot tracks document opens, page views, signature status. Closed Won triggers delivery onboarding. | Architected (extension beyond brief) |

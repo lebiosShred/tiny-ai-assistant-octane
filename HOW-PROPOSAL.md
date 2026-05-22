@@ -1,9 +1,9 @@
-# HOW: Tiny Sales Pipeline -- Implementation Proposal
+# HOW: Early Game Sales Pipeline -- Implementation Proposal
 
 > **Prepared by:** CJ Amiel (Octane Software Solutions)
 > **For:** Anthony Coundouris + Sheila Ocana
 > **Date:** May 2025 (Updated May 2026)
-> **Scope:** Build 5 components of the Tiny Sales Pipeline
+> **Scope:** Build 5 components of the Early Game Sales Pipeline
 
 ---
 
@@ -44,6 +44,8 @@ A single booking system with timezone-aware shift-based routing, embedded on a b
 | Meeting type | Round-Robin (Required by HubSpot to combine calendars) |
 | Duration | 30 minutes |
 | Reps in rotation | Albert (7am–2pm AEST), Isha (2pm–9pm AEST) |
+| Capacity | 28 x 30-minute slots per day across 14-hour window |
+| Geographic coverage | Single link for Australia, New Zealand, Middle East |
 | Scheduling buffer | 12 hours minimum lead time |
 | Same-day bookings | Disabled |
 | Meeting modes | Phone or Online (Teams/Zoom) |
@@ -70,7 +72,7 @@ A single booking system with timezone-aware shift-based routing, embedded on a b
 - Configure these as custom properties in HubSpot > Settings > Properties
 - Map them to the meeting booking form under the meeting link settings
 
-**1.3 Direct Calendar Links (Amendra + Kevin)**
+**1.3 Direct Calendar Links (Amendra + Steny)**
 
 - Create two separate HubSpot meeting links (not round-robin, individual)
 - These are used for outbound/email campaigns only — not published on the website
@@ -100,13 +102,27 @@ Build approach:
 
 When a booking is confirmed, HubSpot automatically:
 1. Creates a Contact record (if new)
-2. Creates a Ticket in the "Tiny" pipeline
+2. Creates a Ticket in the "Early Game" pipeline
 3. Sends an alert to the assigned rep
 4. Blocks the rep's calendar
 
 Configure via HubSpot Workflows:
 - Trigger: "Meeting booked" event
 - Actions: Create ticket > Set ticket owner to meeting host > Send internal notification email
+
+**1.6.1 HubSpot Deal Board Stages**
+
+The "Early Game" sales pipeline Ticket progresses through 7 mandatory stages on the HubSpot Deal Board:
+
+| Stage # | Stage Name | Description |
+|---|---|---|
+| 1 | **Lead Captured** | Initial prospect details logged in CRM |
+| 2 | **MQL** | Marketing Qualified Lead status verified |
+| 3 | **Prescreen Booked** | Pre-screen call scheduled via round-robin or direct link |
+| 4 | **Prescreen Completed** | Pre-screen call done, transcript and 6 reports attached |
+| 5 | **Discovery Booked** | Positional Meeting scheduled with Steny, Kevin, or Amendra |
+| 6 | **Discovery Completed** | Positional Meeting done, technical constraints documented |
+| 7 | **Positioning Meeting** | Formal solution and proposal presented to the prospect |
 
 **1.7 The "Event Skip Path" (Batch Processing)**
 
@@ -120,19 +136,29 @@ For bulk leads gathered at events (e.g., Forefront), manual pre-screening is ine
 ## Component 02: Pre-Screen Preparation
 
 ### What We're Building
-A Claude-powered research assistant that produces a 10-point briefing for every prospect before the pre-screen call.
+An AI Sales Assistant named **Tiny** (code-named after Sheila's dog because "she's very small and cute but delivers big value"). Tiny operates as a Claude-powered research assistant that automatically digests client data to produce a structured 10-point pre-screening briefing.
+
+In Phase 1, Tiny is configured as a Claude Project. The sales representatives (Albert and Isha) manually feed prospect information into Tiny before every pre-screening call to gain a critical intelligence advantage.
 
 ### HOW — Step by Step
 
 **2.1 Claude Project Setup**
 
-- Create a Claude Project named "Octane Pre-Screen Prep"
+- Create a Claude Project named **"Tiny - Pre-Screen Prep"**
 - Upload the following as permanent Project Knowledge:
   - Octane service catalog (TM1 Support, AI/Agentic, DataFusion)
   - Competitor profiles (key competitors in TM1/Planning Analytics space)
   - Case studies and client examples
   - Product sheets and pricing frameworks
   - The training data spreadsheet referenced in the brief
+
+**2.1b Platform Selection & Trade-offs (Claude vs. watsonx Orchestrate)**
+
+During the design phase, the team deliberated on the underlying platform for the Tiny AI Assistant:
+- **watsonx Orchestrate:** As Octane's primary AI offering, watsonx Orchestrate has zero incremental licensing costs for the business. However, it requires significant build time and technical integration before the sales team can use it.
+- **Claude Projects (Selected for Phase 1):** Claude Projects provide an immediate, out-of-the-box UI for SDRs to run manual-first prep prompts. It provides the fastest go-to-market speed with no initial development overhead.
+- **Token Costs & Limits:** Amendra noted that high prep volume means Claude will frequently require manual token/credit top-ups, which introduces minor operational friction.
+- **Future State (Phase 2):** If Claude's API token costs become a burden, the team will evaluate switching the backend to watsonx Orchestrate or leveraging Open Router API endpoints to manage token budgets.
 
 **2.2 OneDrive Connection**
 
@@ -149,7 +175,7 @@ Current Claude limitations: Claude Projects cannot natively connect to OneDrive.
 
 **2.3 Prep Prompt Template**
 
-The rep pastes this into the Claude Project conversation along with the 5 inputs:
+The rep pastes this into the Claude Project conversation along with the 6 inputs:
 
 ```
 You are a sales preparation assistant for Octane Software Solutions.
@@ -164,6 +190,7 @@ information below and your knowledge of Octane's services, produce a
 3. LinkedIn profile: [attach PDF]
 4. Company URL: [URL]
 5. Service track: [TM1 / AI]
+6. Company Email: [paste company email]
 
 --- PRODUCE THESE 10 POINTS ---
 1. LinkedIn profile analysis — role history, tenure, seniority, network signals
@@ -204,9 +231,9 @@ PRE-SCREEN BRIEFING: Sarah Chen — Meridian Logistics
 1. Rep receives HubSpot alert that a booking is confirmed
 2. Rep opens the prospect's HubSpot contact record → copies form answers
 3. Rep downloads the prospect's LinkedIn PDF (LinkedIn > More > Save to PDF)
-4. Rep opens Claude Project "Octane Pre-Screen Prep"
+4. Rep opens Claude Project **"Tiny - Pre-Screen Prep"**
 5. Rep pastes the prompt template, fills in the 6 inputs, attaches LinkedIn PDF
-6. Claude generates the 10-point briefing (~60 seconds)
+6. Tiny generates the 10-point briefing (~60 seconds)
 7. Rep reviews briefing before the call
 
 Total rep time: 5-8 minutes.
@@ -252,61 +279,58 @@ The team uses three recording tools depending on the call type and security/GDPR
 
 **3.2 The 12-Question Framework**
 
-> [!WARNING]
-> The 12-question framework is currently in **DRAFT** status, pending finalization by the team. The current questions are placeholder drafts.
-
 Three variants based on prospect type. The rep reads these conversationally -- they do NOT type answers during the call. 3CX or Fathom captures everything.
 
-**Variant A: First-Time TM1 User (DRAFT)**
+**Variant A: First-Time TM1 User (Finalized & Aligned)**
 
 | # | Question |
 |---|---|
-| 1 | What planning or budgeting tools are you currently using? |
-| 2 | How many people are involved in your planning process? |
-| 3 | What's the most painful part of your current planning cycle? |
-| 4 | How long does your monthly close or forecast cycle take? |
-| 5 | Are your models in Excel, and if so, how complex are they? |
-| 6 | What triggered you to look at TM1 / Planning Analytics now? |
-| 7 | Have you evaluated other planning tools? Which ones? |
-| 8 | Who else is involved in this decision? |
-| 9 | What does success look like if this project works? |
-| 10 | What's your timeline for making a decision? |
-| 11 | Is there a budget allocated for this initiative? |
-| 12 | What would need to be true for you to move forward with us? |
+| 1 | What general ledger/ERP system (e.g., SAP, MS Business Central, Sun Systems, NetSuite) are you using, and does it currently integrate with your planning tool? |
+| 2 | How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting, and are there issues with version control? |
+| 3 | What specific planning workflows (e.g., actuals, payroll allocations, cost analysis, budgeting, forecasting) are you executing, and are allocations (like payroll across business units) inconsistent or time-consuming? |
+| 4 | What reporting tools (e.g., Power BI, Qlik, Tableau, Excel PAX/PAW) do you use for management reporting, and do you manually export CSV files to reconcile data? |
+| 5 | Do users need to drill down from high-level reports to transaction-level GL data, and do you perform multi-currency transactions at the transaction level? |
+| 6 | Do you have internal developers/admins to manage these systems, or is there a key-person risk if someone leaves? |
+| 7 | How many planning contributors, read-only users, and administrators are involved, and would they need formal end-user or developer training? |
+| 8 | What repetitive financial tasks (e.g., monthly slides or reports) feel most manual, and would conversational AI access to financial queries benefit your executives? |
+| 9 | What is your target timeline for going live, and do you need a parallel run (e.g., completing by a specific month like June)? |
+| 10 | Is there a budget allocated for licensing and delivery, and what is your internal approval/purchase order process? |
+| 11 | Have you evaluated other tools (e.g. Workday, Anaplan, TM1), and who else is involved in the final decision? |
+| 12 | What does success look like, and would a 60-day trial of connectors (like DataFusion) or a free Proof of Concept (POC) help validate the solution? |
 
-**Variant B: Existing TM1 User (DRAFT)**
-
-| # | Question |
-|---|---|
-| 1 | How long have you been running TM1 / Planning Analytics? |
-| 2 | What version are you on? Cloud or on-premise? |
-| 3 | Do you have an internal TM1 developer or admin? |
-| 4 | What's working well with your current TM1 setup? |
-| 5 | What's broken or frustrating about it right now? |
-| 6 | How many models/cubes are you running? |
-| 7 | What triggered you to look for external support now? |
-| 8 | Have you worked with a TM1 partner before? What happened? |
-| 9 | What does your ideal support arrangement look like? |
-| 10 | Who else is involved in this decision? |
-| 11 | What's your timeline? |
-| 12 | What would need to be true for you to move forward with us? |
-
-**Variant C: First-Time AI User (DRAFT)**
+**Variant B: Existing TM1 User (Finalized & Aligned)**
 
 | # | Question |
 |---|---|
-| 1 | What processes in your business feel most manual or repetitive? |
-| 2 | Have you experimented with any AI tools internally? |
-| 3 | What data sources does your team work with most? |
-| 4 | What would you automate first if you could? |
-| 5 | How do you currently handle reporting and analytics? |
-| 6 | What triggered your interest in AI / automation now? |
-| 7 | Have you evaluated other AI consultancies? |
-| 8 | Who else is involved in this decision? |
-| 9 | What does success look like for an AI initiative? |
-| 10 | What's your timeline for getting started? |
-| 11 | Is there a budget allocated? |
-| 12 | What would need to be true for you to move forward with us? |
+| 1 | What version of TM1/Planning Analytics are you running, and is it deployed on-premise or in the IBM Cloud? |
+| 2 | How many TM1 instances do you run (e.g., production-only, or separate dev and test environments)? |
+| 3 | How many models, cubes, dimensions, and user groups are you currently running? |
+| 4 | Have you checked your system's performance, RAM usage, hard disk space, or feeder memory usage? Are they approaching high limits? |
+| 5 | Are log files being automatically cleared, and what is the typical size of your TM1 log files (e.g., is it under or over the 50MB standard)? |
+| 6 | What are the typical report load times for your end-users, and are they above the 5-second threshold (e.g. 15-25 seconds)? |
+| 7 | Do you have dedicated in-house TM1 administrators/developers, or are you dependent on key individuals? |
+| 8 | Are you currently working with another TM1 vendor? Are you locked into a rigid contract with separate rates for support and development? |
+| 9 | What is your current backlog of enhancements, bugs, or data reconciliation tasks, and how is it prioritized? |
+| 10 | Have your TM1 developers and power users had formal training, and would they benefit from free access to professional training courses? |
+| 11 | Are you using Power BI, Tableau, or Qlik, and do you have a direct database connection or are you manually handling CSVs? |
+| 12 | Who has final authority to approve support changes, and what is the timeline to transition support (e.g. target date like October 31)? |
+
+**Variant C: First-Time AI User (Finalized & Aligned)**
+
+| # | Question |
+|---|---|
+| 1 | How many slides are in your monthly executive financial reports, and how much time does the finance team spend manually extracting, cleansing, and formatting data for them? |
+| 2 | What enterprise systems and data sources (e.g., TM1, Adobe Analytics, Google Ad Manager, Adobe AdSlot, BigQuery, SQL) need to connect for automated reporting? |
+| 3 | Would executives and managers benefit from asking natural language questions (e.g. "AskFinance") to query financial data in real time? |
+| 4 | What other areas in the business (e.g. Sales, Editorial, HR, Customer Support, IT, Procurement, Legal) have repetitive workflows ripe for automation? |
+| 5 | Have you experimented with or deployed any generative AI or automation tools internally? |
+| 6 | What is your primary cloud environment (e.g. GCP, AWS, Azure, on-premise) and how do you manage data security? |
+| 7 | Do you require specific role-based access controls and security protocols for financial data queried by AI? |
+| 8 | Would you be open to a 2-to-6 week co-creation Proof of Concept (POC) to demonstrate value before full production rollout? |
+| 9 | Can you commit a primary business contact and technical resource to collaborate during a 2-to-6 week POC? |
+| 10 | Are you willing to commit to a Decision Workshop within 10 days of POC completion to confirm next steps? |
+| 11 | Are you aware of the indicative costs for enterprise generative AI licensing ($160k+/yr) and implementation services ($125k+)? |
+| 12 | What is your timeline for starting an AI pilot, and who are the key executive stakeholders involved? |
 
 **3.3 Post-Call: Transcript → Questionnaire Mapping**
 
@@ -420,7 +444,7 @@ Anthony's coaching process using HubSpot's built-in tools:
 
 **4.4 Report Extraction from Directory**
 
-For the 5 structured report types (Component 05), the rep copies the transcript from either:
+For the 6 structured report types (Component 05), the rep copies the transcript from either:
 - **Fathom** (for Teams meetings) -- open the call, copy transcript
 - **HubSpot contact timeline** (for 3CX calls) -- open the call activity, copy transcript
 
@@ -431,21 +455,21 @@ The transcript is then pasted into Claude for structured report generation.
 ## Component 05: Sales Reports (Manual-First)
 
 ### What We're Building
-5 structured report types generated from call transcripts using Claude Projects and prompt templates.
+6 structured report types generated from call transcripts using **Tiny (the AI Sales Assistant)** via dedicated prompt templates.
 
 ### HOW — Step by Step
 
 **5.1 The "Manual-First" Workflow (Phase 1)**
 
-To build muscle memory and ensure that the sales staff (Albert and Isha) fully master the qualifying criteria, the early-game pipeline runs on a manual-first workflow. Reps are expected to copy and paste call transcripts between Fathom (or Jamie AI) and Claude. 
+To build muscle memory and ensure that the sales staff (Albert and Isha) fully master the qualifying criteria, the early-game pipeline runs on a manual-first workflow. Reps are expected to copy and paste call transcripts between Fathom (or Jamie AI) and Tiny. 
 
 **The Manual Step-by-Step Flow:**
 1. **Retrieve Transcript:** Once a call ends, the rep opens the call transcript from **Fathom** (for video meetings) or the **HubSpot contact timeline** (for 3CX audio recordings).
-2. **Access Claude:** The rep opens Claude and accesses the dedicated **"Octane Sales Reports" Project**.
-3. **Execute Prompts:** The rep pastes the call transcript and runs the prompts for the required reports (Recap Email, Summary Sheet, Detailed Notes, Proposal Draft, and Questionnaire Mapping).
-4. **Verify & Learn:** The rep reviews Claude's output. This review step is crucial: it forces the rep to digest the prospect's responses and internalize the qualifying parameters before handoff.
+2. **Access Tiny:** The rep opens Claude and accesses the dedicated **"Tiny - Sales Reports" Project**.
+3. **Execute Prompts:** The rep pastes the call transcript and runs the prompts for the required reports (Recap Email, Summary Sheet, Detailed Notes, Proposal Draft, Questionnaire Mapping, and Action Items).
+4. **Verify & Learn:** The rep reviews Tiny's output. This review step is crucial: it forces the rep to digest the prospect's responses and internalize the qualifying parameters before handoff.
 5. **Log in CRM:** The rep copies the verified reports and pastes them into the **HubSpot Ticket** as a consolidated Note.
-6. **SDR Reality:** Isha finishes the call, runs the copy-paste flow in Claude, and updates HubSpot within 5 minutes. She then records her 2-Minute Screencast via **Vidyard** (Section 5.1b), completing the deal handover.
+6. **SDR Reality:** Isha finishes the call, runs the copy-paste flow with Tiny, and updates HubSpot within 5 minutes. She then records her 2-Minute Screencast via **Vidyard** (Section 5.1b), completing the deal handover.
 
 **5.1b The 2-Minute Screencast (Vidyard)**
 
@@ -475,18 +499,19 @@ Once the manual process is operating reliably and the reps fully understand the 
 
 **5.2 Claude Project Setup**
 
-To facilitate the Phase 1 manual workflow, reps use a Claude Project named **"Octane Sales Reports"** with the following uploaded knowledge:
+To facilitate the Phase 1 manual workflow, reps use a Claude Project named **"Tiny - Sales Reports"** with the following uploaded knowledge:
 - Octane service catalog
 - SOW templates
 - Pricing frameworks
 - Brand voice guidelines
 
-**5.3 The 5 Report Prompt Templates**
+**5.3 The 6 Report Prompt Templates**
 
 **Report 1: Questionnaire Mapping**
 (Already defined in Component 03, Section 3.3 above)
 
 **Report 2: Recap Email**
+[⏲ < 2 hours]
 ```text
 Generate a concise client-facing email summarising the 3 most important points from this call to replace the '. xx.' placeholders in the template below.
 
@@ -535,20 +560,54 @@ prospect reveals key priorities or concerns.
 
 **Report 5: Proposal Draft**
 ```
-Using this call transcript (and any previous call context), draft a
-preliminary proposal for the prospect. Structure:
+Using the call transcript and the collected answers to the 12 questions, draft a preliminary, tailored proposal. Use the following structured outline and guidelines:
 
-1. UNDERSTANDING OF REQUIREMENTS (what the prospect needs)
-2. PROPOSED SOLUTION (how Octane addresses it)
-3. APPROACH & METHODOLOGY (phases, timeline)
-4. TEAM & RESOURCES (who from Octane would be involved)
-5. NEXT STEPS (what needs to happen to proceed)
+1. UNDERSTANDING OF REQUIREMENTS
+- Summarize the client's current background, systems, pain points, and goals.
+- Explicitly detail GL systems, Excel complexity, or existing TM1 setup metrics depending on the track.
 
-Do NOT include pricing. This is a discussion document, not a final SOW.
-Tone: consultative, specific to their situation.
+2. PROPOSED SOLUTION
+- Pitch the corresponding Octane service package(s) based on the collected variables:
+  - First-Time TM1: Pitch TM1 Projects (Phase 1, 2, or 3) and/or DataFusion (if using Power BI/Qlik/Tableau).
+  - Existing TM1: Pitch Octane Blue / Red DevOps Support (starting with 40-hour DevOps Blue, transitioning to Red, highlighting no distinction between support and dev, rollover hours, rotation of consultants), TM1 Upgrade Services (if legacy/unlicensed version), or a TM1 Flight Check (if experiencing RAM/HDD/log file/performance red flags).
+  - First-Time AI: Pitch watsonx Orchestrate & watsonx.ai (integrating TM1, Adobe, Google, GCP) starting with a 2-6 week co-creation Proof of Concept (POC) based on the standard POC template.
+- Highlight standard inclusions and exclusions for the proposed packages:
+  - TM1 Projects: Include 5 standard report conversions, 1 instance per environment (Dev/Test/Prod), training platforms. Exclude DB service account creation, local PA cloud exports.
+  - Octane Blue: Include 24/7 SLA-based ticketing (Urgent <1hr, High 4hr, Medium 8hr, Low 24hr), rollover hours, monthly health checks, free training library.
+  - TM1 Flight Check: Include 6-day analysis, user interviews, RAM/HDD assessment.
+  - DataFusion: Include 60-day free trial, setup + email support, low-code interface.
+  - watsonx Orchestrate POC: Include co-creation, working demo, client resources.
+
+3. APPROACH & METHODOLOGY
+- Detail standard project phases and timelines (e.g., 6-week TM1 Upgrade, 2-6 week POC, 6-week Phase 1 TM1 project).
+- Outline the critical path milestones (e.g., resource plan approval, handover checklist, kickoff).
+
+4. TEAM & RESOURCES
+- Explain Octane's staffing model (onshore/offshore hybrid, dedicated lead and shared support resources, team lead oversight, certified developer requirements).
+
+5. NEXT STEPS & DISCOVERY OPEN ITEMS
+- Identify any missing technical variables from the 12 questions (e.g., RAM usage not confirmed, GL system not specified) as "Discovery Open Items" for the upcoming Positional Meeting.
+- Outline the kickoff steps (e.g., booking the decision workshop or setup call).
+
+Do NOT include custom pricing amounts. Only state standard list-price frameworks (e.g., Octane Blue support is A$4,560/month, DataFusion is A$6,950 setup, Training is A$1,850/day).
+Tone: consultative, professional, and specific to the prospect's inputs.
 
 --- TRANSCRIPT(S) ---
 [Paste transcript(s)]
+```
+
+**Report 6: Action Items**
+```
+Identify all action items, follow-up tasks, and commitments made during this call.
+For each item, specify:
+1. The action required (specific and descriptive).
+2. The owner (prospect, rep, or specific partner if named).
+3. The context or deadline mentioned (if any).
+
+Format as a clean bulleted list grouped by Owner.
+
+--- TRANSCRIPT ---
+[Paste transcript]
 ```
 
 ---
@@ -566,7 +625,7 @@ Tone: consultative, specific to their situation.
 
 ## What This Proposal Does NOT Cover
 
-These items are outside the 5-component scope but are architected in the Tiny Sales Pipeline HTML:
+These items are outside the 5-component scope but are architected in the Early Game Sales Pipeline HTML:
 
 - **Component 06:** Middle Game Triage (Once the positional meeting closes out, leads are triaged: **Kevin** handles TM1 / Planning Analytics demos, **Steny** handles Artificial Intelligence tracks).
 - **Component 07:** Commercial SOW generation via Claude
