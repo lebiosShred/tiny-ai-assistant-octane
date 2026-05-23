@@ -18,7 +18,7 @@ function loadKnowledgeBase() {
                 return;
             }
             
-            let concatenated = "\n\n=== GROUNDED KNOWLEDGE BASE ===\n";
+            let concatenated = "\n\n<knowledge_base>\n";
             let readCount = 0;
             const contents = {};
             
@@ -33,9 +33,10 @@ function loadKnowledgeBase() {
                     if (readCount === mdFiles.length) {
                         mdFiles.forEach(f => {
                             if (contents[f]) {
-                                concatenated += `\n--- FILE: ${f} ---\n${contents[f]}\n`;
+                                concatenated += `  <playbook file="${f}">\n${contents[f]}\n  </playbook>\n`;
                             }
                         });
+                        concatenated += "</knowledge_base>\n";
                         resolve(concatenated);
                     }
                 });
@@ -72,14 +73,16 @@ export default async function handler(req, res) {
     const payload = req.body;
     
     if (knowledgeBase && Array.isArray(payload.messages)) {
+        const safetyRules = `\n\n<safety_rules>\n- Refer ONLY to pricing, SLAs, and packaging facts explicitly contained within the <knowledge_base> tags.\n- If a client asks for a pricing framework or metric not listed in the knowledge base, do NOT invent a number. Write "Pricing details for this custom request must be confirmed during the upcoming Positional Meeting" and list it as a Discovery Open Item.\n- Output all deliverables in the exact HTML format requested.\n</safety_rules>\n`;
+        
         // Look for system prompt to append knowledge base
         const systemMsg = payload.messages.find(m => m.role === 'system');
         if (systemMsg) {
-            systemMsg.content += knowledgeBase;
+            systemMsg.content += knowledgeBase + safetyRules;
         } else {
             payload.messages.unshift({
                 role: 'system',
-                content: `You are a professional B2B sales operations assistant.${knowledgeBase}`
+                content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}`
             });
         }
     }
