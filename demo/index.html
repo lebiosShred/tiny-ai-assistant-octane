@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny AI Sales Assistant - SaaS Dashboard</title>
+    <meta name="description" content="Functional sales enablement application for prospect pre-screening briefings and call transcript report synthesis.">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand-section">
+                <img src="tiny.png" alt="Tiny" class="brand-icon">
+                <span class="brand-logo">Tiny AI Assistant</span>
+                <span class="brand-badge">Active</span>
+            </div>
+        </header>
+
+
+
+        <!-- Main Dashboard Workspace -->
+        <div class="dashboard-grid">
+            
+            <!-- Left Panel (Inputs) -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">✍️ Sales Rep Inputs</span>
+                </div>
+                
+                <div class="panel-body">
+                    <!-- Tab Selector -->
+                    <div class="tabs-header">
+                        <button class="tab-btn active" id="tab-prep-btn">1. Prospect Prep</button>
+                        <button class="tab-btn" id="tab-synthesize-btn">2. Call Synthesizer</button>
+                        <button class="tab-btn" id="tab-battlecard-btn">3. SDR Battlecards</button>
+                    </div>
+
+                    <!-- Tab 1 Content: Prospect Prep -->
+                    <div class="tab-content active" id="tab-prep-content">
+                        <form id="prep-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
+                            <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label for="prep-name">Prospect Full Name *</label>
+                                    <input type="text" id="prep-name" class="form-input" placeholder="e.g. Sarah Chen" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label for="prep-title">Position / Title</label>
+                                    <input type="text" id="prep-title" class="form-input" placeholder="e.g. Head of FP&A">
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label for="prep-company">Company Name *</label>
+                                    <input type="text" id="prep-company" class="form-input" placeholder="e.g. Meridian Logistics" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label for="prep-url">Company Website URL</label>
+                                    <input type="text" id="prep-url" class="form-input" placeholder="e.g. meridianlogistics.com.au">
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label for="prep-email">Company Email *</label>
+                                    <input type="email" id="prep-email" class="form-input" placeholder="e.g. sarah.chen@meridianlogistics.com.au" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="prep-track">Service Track Interest</label>
+                                <select id="prep-track" class="form-input select-input">
+                                    <option value="TM1 Support & Managed Support">IBM Planning Analytics (TM1) Support</option>
+                                    <option value="Agentic AI Operations & Watsonx">Agentic AI Operations & Integration</option>
+                                    <option value="DataFusion & Analytics Stack">DataFusion & Power BI Connectivity</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="prep-intake">HubSpot Booking Form Intake Answers</label>
+                                <textarea id="prep-intake" class="form-input textarea-input" placeholder="Paste booking form responses here..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="prep-linkedin">LinkedIn Profile Bio / Experience</label>
+                                <div class="file-drop-zone" id="linkedin-drop-zone">
+                                    <span id="linkedin-drop-text">📁 Drop LinkedIn PDF/TXT here, or click to upload</span>
+                                    <input type="file" id="prep-linkedin-file" accept=".pdf,.txt,.docx" style="display: none;">
+                                </div>
+                                <textarea id="prep-linkedin" class="form-input textarea-input" placeholder="Or paste LinkedIn profile experience details here..." style="margin-top: 0.5rem;"></textarea>
+                            </div>
+                            <div class="action-row">
+                                <button type="button" class="template-loader" id="prep-load-sample-btn">💡 Load Sample Sarah Chen</button>
+                                <button type="submit" class="btn btn-primary" id="prep-submit-btn">⚡ Generate Prep Briefing</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab 2 Content: Call report Synthesizer -->
+                    <div class="tab-content" id="tab-synthesize-content">
+                        <form id="synth-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
+                            <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label for="synth-variant">Prescreen Script Variant</label>
+                                    <select id="synth-variant" class="form-input select-input">
+                                        <option value="Variant A">Variant A: First-Time TM1 User</option>
+                                        <option value="Variant B">Variant B: Existing TM1 User</option>
+                                        <option value="Variant C">Variant C: First-Time AI User</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label for="synth-screencast">Vidyard 2-Minute Screencast Link</label>
+                                    <input type="url" id="synth-screencast" class="form-input" placeholder="e.g. https://share.vidyard.com/watch/...">
+                                </div>
+                            </div>
+                            <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
+                                <label for="synth-transcript">Fathom / Jamie AI Call Transcript *</label>
+                                <textarea id="synth-transcript" class="form-input textarea-input textarea-transcript" placeholder="Paste verbatim call transcript here..." required style="flex: 1;"></textarea>
+                            </div>
+                            <div class="action-row">
+                                <button type="button" class="template-loader" id="synth-load-sample-btn">💡 Load Sample Transcript</button>
+                                <button type="submit" class="btn btn-primary" id="synth-submit-btn">⚡ Synthesize Call</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab 3 Content: SDR Battlecards -->
+                    <div class="tab-content" id="tab-battlecard-content">
+                        <div class="battlecard-container" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1; height: 100%;">
+                            <div class="form-group" style="margin-bottom: 0.25rem;">
+                                <label for="battlecard-selector">Prescreen Call Variant Reference</label>
+                                <select id="battlecard-selector" class="form-input select-input">
+                                    <option value="A">Variant A: First-Time TM1 User</option>
+                                    <option value="B">Variant B: Existing TM1 User</option>
+                                    <option value="C">Variant C: First-Time AI User</option>
+                                </select>
+                            </div>
+                            <div class="battlecard-body" id="battlecard-body" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; padding-right: 0.25rem; max-height: 480px;">
+                                <!-- Loaded via app.js -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel (Console Output) -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">🤖 AI Coprocessor Console</span>
+                </div>
+                
+                <div class="panel-body" style="padding: 0; position: relative;">
+                    
+                    <div class="output-console" id="output-console">
+                        
+                        <!-- Empty State -->
+                        <div class="empty-state" id="output-empty-state">
+                            <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar">
+                            <h3>Coprocessor Ready</h3>
+                            <p>Select a workspace tool, fill in prospect details or paste a call transcript, and execute the coprocessor to generate deliverables.</p>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div class="loading-overlay" id="output-loading">
+                            <div class="spinner"></div>
+                            <span class="loading-text" id="loading-text-label">Processing...</span>
+                        </div>
+
+                        <!-- Results Container -->
+                        <div class="output-results" id="output-results" style="display: none; width: 100%; height: 100%; flex-direction: column; padding: 1.25rem;">
+                            <!-- Floating Action Buttons -->
+                            <div class="output-actions">
+                                <button class="output-btn" id="copy-content-btn">📋 Copy</button>
+                                <button class="output-btn" id="download-content-btn">⬇ Download</button>
+                            </div>
+
+                            <!-- Delimiter Documents Tab Navigation -->
+                            <div class="docs-nav" id="output-doc-nav" style="display: none;">
+                                <button class="doc-tab-btn active" data-doc="summary" onclick="setDocTab('summary')">Qualification Summary</button>
+                                <button class="doc-tab-btn" data-doc="questionnaire" onclick="setDocTab('questionnaire')">12Q Mapping</button>
+                                <button class="doc-tab-btn" data-doc="recapEmail" onclick="setDocTab('recapEmail')">Recap Email</button>
+                                <button class="doc-tab-btn" data-doc="summarySheet" onclick="setDocTab('summarySheet')">Summary Sheet</button>
+                                <button class="doc-tab-btn" data-doc="detailedNotes" onclick="setDocTab('detailedNotes')">Detailed Notes</button>
+                                <button class="doc-tab-btn" data-doc="proposal" onclick="setDocTab('proposal')">Proposal Draft</button>
+                                <button class="doc-tab-btn" data-doc="actionItems" onclick="setDocTab('actionItems')">Action Items</button>
+                            </div>
+
+                            <!-- Document Content Panel -->
+                            <div id="output-doc-content" style="flex: 1; overflow-y: auto; padding-right: 0.5rem; margin-top: 0.5rem;">
+                                <!-- AI Content Output Here -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
