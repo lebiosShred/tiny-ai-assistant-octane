@@ -220,12 +220,14 @@ ${transcript}
 </untrusted_call_transcript>
 
 --- OUTPUT INSTRUCTIONS ---
-You must generate all 7 documents in a single response, separated EXACTLY by the specified markdown delimiter strings. Do not include any other markdown fences or conversations outside of these blocks. Format the content in clean HTML using standard tags like <p>, <ul>, <li>, <strong>, <pre>, and <br>.
+You must generate all 7 documents in a single response, separated EXACTLY by the specified markdown delimiter strings. Do not include any other markdown fences or conversations outside of these blocks. Format the content in clean HTML using standard tags like <p>, <ul>, <ol>, <li>, <strong>, <pre>, and <br>.
+Ensure all HTML tags are balanced: every opening tag (like <p>, <ul>, <ol>, <li>, <strong>) MUST have a matching closing tag (like </p>, </ul>, </ol>, </li>, </strong>). Do not nest lists (<ul> or <ol>) inside <p> tags. Always close your <p> tags before starting a list, and start new <p> tags after the list if needed. Every <ul> and <ol> list block must be explicitly closed with </ul> and </ol> respectively.
 
 Use these delimiters:
 
 [DOCUMENT: QUESTIONNAIRE]
 Map the prospect's answers to each of the 12 questions. Quote relevant segments of the transcript for accuracy. If a question was not explicitly addressed, write "Not discussed" and flag it.
+Format as: <p><strong>[Number]. [Question Text]:</strong> Answer text. <em>"Verbatim quote"</em></p>
 
 [DOCUMENT: SUMMARY]
 Evaluate the prospect and output:
@@ -233,10 +235,15 @@ Evaluate the prospect and output:
 - SCORING RATIONALE: 2-3 sentences explaining the score
 - RECOMMENDED NEXT STEP: Specific next steps
 - RED FLAGS: Any concerns or objections raised
+Format exactly as:
+<h4>QUALIFICATION SCORE: [SCORE]</h4>
+<p><strong>SCORING RATIONALE:</strong> [Rationale text]</p>
+<p><strong>RECOMMENDED NEXT STEP:</strong> [Next step text]</p>
+<p><strong>RED FLAGS:</strong> [Red flags text]</p>
 
 [DOCUMENT: RECAP_EMAIL]
 Generate a concise, client-facing recap email based on the observations from the call. Replace '. xx .' placeholders in the template below with the 3 most important takeaways from the session. 
-Also, you MUST explicitly insert a paragraph at the bottom referencing the Vidyard Screencast Link (${screencastUrl || "Not provided"}) if one is provided (do not write it if not provided):
+Also, you MUST explicitly insert a paragraph at the bottom referencing the Vidyard Screencast Link (${screencastUrl || "Not provided"}) if one is provided (do not write it if not provided). Ensure the link is wrapped in a proper HTML hyperlink tag, for example: <a href="LINK">LINK</a>.
 Hey [client's name],
 I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
 . xx .
@@ -245,6 +252,17 @@ I have some takeaways I'd like to share from our call together. Feel free to rep
 You should have received an invitation confirming our appointment together.
 Kind regards,
 Anthony.
+Format exactly as:
+<p>Hey [client's name],</p>
+<p>I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.</p>
+<ul>
+    <li>[Takeaway 1]</li>
+    <li>[Takeaway 2]</li>
+    <li>[Takeaway 3]</li>
+</ul>
+<p>I have also recorded a 2-minute video briefing summarizing our discussion, which you can review here: <a href="LINK">LINK</a></p>
+<p>You should have received an invitation confirming our appointment together.</p>
+<p>Kind regards,<br>Anthony.</p>
 
 [DOCUMENT: SUMMARY_SHEET]
 Generate a brief, structured internal summary sheet:
@@ -253,16 +271,31 @@ ATTENDEES: [Names]
 SERVICE TRACK: [TM1 / AI]
 KEY DISCUSSION POINTS: (3-5 bullet points)
 PROSPECT SENTIMENT: (Positive / Neutral / Cautious)
-Screencast URL: Include the Screencast Link here if provided.
+Screencast URL: Include the Screencast Link here if provided, wrapped in a proper HTML hyperlink tag, for example: <a href="LINK">LINK</a>.
+Format exactly as:
+<p><strong>SUMMARY:</strong> [Company] — [Date]</p>
+<ul>
+    <li><strong>ATTENDEES:</strong> [Names]</li>
+    <li><strong>SERVICE TRACK:</strong> [TM1 / AI]</li>
+    <li><strong>KEY DISCUSSION POINTS:</strong>
+        <ul>
+            <li>[Point 1]</li>
+            <li>[Point 2]</li>
+            <li>[Point 3]</li>
+        </ul>
+    </li>
+    <li><strong>PROSPECT SENTIMENT:</strong> [Sentiment]</li>
+    <li><strong>Screencast URL:</strong> <a href="LINK">LINK</a></li>
+</ul>
 
 [DOCUMENT: DETAILED_NOTES]
 Detailed chronological meeting notes capturing context, technical systems discussed, and direct quotes.
+Format using <p> paragraphs, <ul>/<li> lists, and <blockquote> tags. Ensure every tag is explicitly closed. Do not nest lists inside paragraph tags.
 
 [DOCUMENT: PROPOSAL]
 Draft a preliminary, consultative proposal document. Do NOT include custom pricing amounts. Only state standard list-price frameworks from the Reference Catalog. Include sections:
 1. UNDERSTANDING OF REQUIREMENTS
 - Summarize the client's current background, systems, pain points, and goals.
-- Explicitly detail GL systems, Excel complexity, or existing TM1 setup metrics depending on the track.
 2. PROPOSED SOLUTION
 - Recommend the corresponding Octane service package(s) based on the actual prospect needs identified in the transcript and custom questions (do NOT rely solely on the static Variant/Track classification if the conversation focus differs):
   * Pitch "TM1 Upgrade Services" or "TM1 Flight Check" if the prospect has legacy versions, performance bottlenecks, RAM/HDD issues, or slow report load times.
@@ -280,14 +313,16 @@ Draft a preliminary, consultative proposal document. Do NOT include custom prici
 5. NEXT STEPS & DISCOVERY OPEN ITEMS
 - Identify any missing technical variables from the 12 questions (e.g., RAM usage not confirmed, GL system not specified) as "Discovery Open Items" for the upcoming Positional Meeting.
 - Outline kickoff steps (e.g., booking decision workshop).
+Format using <h4> section headers, <p> paragraphs, and <ul>/<li> lists. Ensure all tags are correctly closed. Never leave a <ul> list block unclosed.
 
 [DOCUMENT: ACTION_ITEMS]
-Identify all action items, follow-up tasks, and commitments made during this call. For each item, specify:
-1. The action required (specific and descriptive).
-2. The owner (prospect, rep, or specific partner if named).
-3. The context or deadline mentioned (if any).
-Format as a clean bulleted list grouped by Owner.
-`;
+Identify all action items, follow-up tasks, and commitments made during this call. For each item, you MUST explicitly include any specific deadlines, dates, or times mentioned in the transcript (for example, "next Tuesday at 10:00 AM AEST") inside the action text.
+Format exactly as:
+<p><strong>Actions for [Owner Name]:</strong></p>
+<ul>
+    <li>[Action item 1 (with date/time if mentioned)]</li>
+    <li>[Action item 2 (with date/time if mentioned)]</li>
+</ul>`;
 
         const messages = [
             {
