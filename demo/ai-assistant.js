@@ -446,13 +446,13 @@ ${screencastSegment}
         };
 
         const patterns = {
-            questionnaire: /\[DOCUMENT:\s*QUESTIONNAIRE\]([\s\S]*?)(?=\[DOCUMENT:|$)/i,
-            summary: /\[DOCUMENT:\s*SUMMARY\]([\s\S]*?)(?=\[DOCUMENT:|$)/i,
-            recapEmail: /\[DOCUMENT:\s*RECAP_EMAIL\]([\s\S]*?)(?=\[DOCUMENT:|$)/i,
-            summarySheet: /\[DOCUMENT:\s*SUMMARY_SHEET\]([\s\S]*?)(?=\[DOCUMENT:|$)/i,
-            detailedNotes: /\[DOCUMENT:\s*DETAILED_NOTES\]([\s\S]*?)(?=\[DOCUMENT:|$)/i,
-            proposal: /\[DOCUMENT:\s*PROPOSAL\]([\s\S]*?)(?=\[DOCUMENT:|$)/i,
-            actionItems: /\[DOCUMENT:\s*ACTION_ITEMS\]([\s\S]*?)(?=\[DOCUMENT:|$)/i
+            questionnaire: /\[DOCUMENT:?\s*QUESTIONNAIRE\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
+            summary: /\[DOCUMENT:?\s*SUMMARY\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
+            recapEmail: /\[DOCUMENT:?\s*(RECAP_EMAIL|RECAP\s*EMAIL|RECAP)\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
+            summarySheet: /\[DOCUMENT:?\s*(SUMMARY_SHEET|SUMMARY\s*SHEET)\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
+            detailedNotes: /\[DOCUMENT:?\s*(DETAILED_NOTES|DETAILED\s*NOTES|NOTES)\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
+            proposal: /\[DOCUMENT:?\s*PROPOSAL\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
+            actionItems: /\[DOCUMENT:?\s*(ACTION_ITEMS|ACTION\s*ITEMS|ACTIONS)\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i
         };
 
         for (const [key, regex] of Object.entries(patterns)) {
