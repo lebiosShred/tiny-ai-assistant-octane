@@ -94,13 +94,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM Elements - Settings removed from UI
 
-    // Tabs
-    const tabPrepBtn = document.getElementById('tab-prep-btn');
-    const tabSynthesizeBtn = document.getElementById('tab-synthesize-btn');
-    const tabBattlecardBtn = document.getElementById('tab-battlecard-btn');
-    const tabPrepContent = document.getElementById('tab-prep-content');
-    const tabSynthesizeContent = document.getElementById('tab-synthesize-content');
-    const tabBattlecardContent = document.getElementById('tab-battlecard-content');
+    // Stepper elements
+    const stepIndicators = [
+        document.getElementById('step-1-indicator'),
+        document.getElementById('step-2-indicator'),
+        document.getElementById('step-3-indicator')
+    ];
+    const stepContents = [
+        document.getElementById('step-1-content'),
+        document.getElementById('step-2-content'),
+        document.getElementById('step-3-content')
+    ];
+    const step1NextBtn = document.getElementById('step-1-next-btn');
+    const step2BackBtn = document.getElementById('step-2-back-btn');
+    const step2NextBtn = document.getElementById('step-2-next-btn');
+    const step3BackBtn = document.getElementById('step-3-back-btn');
 
     // Dossier Tab Form
     const prepLoadSampleBtn = document.getElementById('prep-load-sample-btn');
@@ -152,36 +160,75 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- Tab Switching ---
-    tabPrepBtn.addEventListener('click', () => {
-        tabPrepBtn.classList.add('active');
-        tabSynthesizeBtn.classList.remove('active');
-        tabBattlecardBtn.classList.remove('active');
-        tabPrepContent.classList.add('active');
-        tabSynthesizeContent.classList.remove('active');
-        tabBattlecardContent.classList.remove('active');
+    // --- Stepper Navigation ---
+    let currentStep = 1;
+
+    function goToStep(stepNum) {
+        if (stepNum < 1 || stepNum > 3) return;
+        currentStep = stepNum;
+
+        // Update step contents visibility
+        stepContents.forEach((content, index) => {
+            if (index + 1 === stepNum) {
+                content.classList.add('active');
+            } else {
+                content.classList.remove('active');
+            }
+        });
+
+        // Update stepper indicators visual states
+        stepIndicators.forEach((indicator, index) => {
+            const stepIndex = index + 1;
+            if (stepIndex === stepNum) {
+                indicator.classList.add('active');
+                indicator.classList.remove('completed');
+            } else if (stepIndex < stepNum) {
+                indicator.classList.remove('active');
+                indicator.classList.add('completed');
+            } else {
+                indicator.classList.remove('active');
+                indicator.classList.remove('completed');
+            }
+        });
+
         resetOutput();
+        
+        // Render battlecards if in step 2
+        if (stepNum === 2) {
+            renderBattlecards();
+        }
+    }
+
+    // Step Navigation Event Listeners
+    step1NextBtn.addEventListener('click', () => goToStep(2));
+    step2BackBtn.addEventListener('click', () => goToStep(1));
+    step2NextBtn.addEventListener('click', () => goToStep(3));
+    step3BackBtn.addEventListener('click', () => goToStep(2));
+
+    // --- Dynamic Track-to-Variant Sync ---
+    function syncServiceTrackToVariant() {
+        const track = prepTrackSelect.value;
+        if (track === "TM1 Support & Managed Support") {
+            battlecardSelector.value = "B";
+            synthVariantSelect.value = "Variant B";
+        } else if (track === "Agentic AI Operations & Watsonx") {
+            battlecardSelector.value = "C";
+            synthVariantSelect.value = "Variant C";
+        } else {
+            battlecardSelector.value = "A";
+            synthVariantSelect.value = "Variant A";
+        }
+    }
+
+    prepTrackSelect.addEventListener('change', () => {
+        syncServiceTrackToVariant();
+        if (currentStep === 2) {
+            renderBattlecards();
+        }
     });
 
-    tabSynthesizeBtn.addEventListener('click', () => {
-        tabSynthesizeBtn.classList.add('active');
-        tabPrepBtn.classList.remove('active');
-        tabBattlecardBtn.classList.remove('active');
-        tabSynthesizeContent.classList.add('active');
-        tabPrepContent.classList.remove('active');
-        tabBattlecardContent.classList.remove('active');
-        resetOutput();
-    });
-
-    tabBattlecardBtn.addEventListener('click', () => {
-        tabBattlecardBtn.classList.add('active');
-        tabPrepBtn.classList.remove('active');
-        tabSynthesizeBtn.classList.remove('active');
-        tabBattlecardContent.classList.add('active');
-        tabPrepContent.classList.remove('active');
-        tabSynthesizeContent.classList.remove('active');
-        renderBattlecards();
-    });
+    // Run sync initially
+    syncServiceTrackToVariant();
 
     // --- Output Visual States Helper ---
     function resetOutput() {
@@ -237,6 +284,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (linkedinDropText) {
             linkedinDropText.innerHTML = '📁 Drop LinkedIn PDF/TXT here, or click to upload';
         }
+        syncServiceTrackToVariant();
+        step1NextBtn.style.display = 'inline-flex';
         showToast("Prefilled Sarah Chen Dossier template!");
     });
 
@@ -288,6 +337,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             const resultHtml = await TinyAI.generateProspectDossier(params, apiConfig);
             const formattedHtml = formatMarkdown(resultHtml);
             showResults(formattedHtml, false);
+            step1NextBtn.style.display = 'inline-flex';
         } catch (err) {
             resetOutput();
             showToast(`Error: ${err.message}`);
