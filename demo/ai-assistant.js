@@ -461,13 +461,13 @@ ${screencastSegment}
         };
 
         const patterns = {
-            questionnaire: /\[DOCUMENT:?\s*QUESTIONNAIRE\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
-            summary: /\[DOCUMENT:?\s*SUMMARY\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
-            recapEmail: /\[DOCUMENT:?\s*(RECAP_EMAIL|RECAP\s*EMAIL|RECAP)\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
-            summarySheet: /\[DOCUMENT:?\s*(SUMMARY_SHEET|SUMMARY\s*SHEET)\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
-            detailedNotes: /\[DOCUMENT:?\s*(DETAILED_NOTES|DETAILED\s*NOTES|NOTES)\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
-            proposal: /\[DOCUMENT:?\s*PROPOSAL\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i,
-            actionItems: /\[DOCUMENT:?\s*(ACTION_ITEMS|ACTION\s*ITEMS|ACTIONS)\]([\s\S]*?)(?=\s*(?:\*\*|##|#)*\s*\[DOCUMENT|$)/i
+            questionnaire: /(?:\[|\b)DOCUMENT:?\s*QUESTIONNAIRE(?:\s*\]|\b)([\s\S]*?)(?=\s*[*#_]*\s*\[?DOCUMENT|$)/i,
+            summary: /(?:\[|\b)DOCUMENT:?\s*SUMMARY(?:\s*\]|\b)([\s\S]*?)(?=\s*[*#_]*\s*\[?DOCUMENT|$)/i,
+            recapEmail: /(?:\[|\b)DOCUMENT:?\s*(?:RECAP_EMAIL|RECAP\s*EMAIL|RECAP)(?:\s*\]|\b)([\s\S]*?)(?=\s*[*#_]*\s*\[?DOCUMENT|$)/i,
+            summarySheet: /(?:\[|\b)DOCUMENT:?\s*(?:SUMMARY_SHEET|SUMMARY\s*SHEET)(?:\s*\]|\b)([\s\S]*?)(?=\s*[*#_]*\s*\[?DOCUMENT|$)/i,
+            detailedNotes: /(?:\[|\b)DOCUMENT:?\s*(?:DETAILED_NOTES|DETAILED\s*NOTES|NOTES)(?:\s*\]|\b)([\s\S]*?)(?=\s*[*#_]*\s*\[?DOCUMENT|$)/i,
+            proposal: /(?:\[|\b)DOCUMENT:?\s*PROPOSAL(?:\s*\]|\b)([\s\S]*?)(?=\s*[*#_]*\s*\[?DOCUMENT|$)/i,
+            actionItems: /(?:\[|\b)DOCUMENT:?\s*(?:ACTION_ITEMS|ACTION\s*ITEMS|ACTIONS)(?:\s*\]|\b)([\s\S]*?)(?=\s*[*#_]*\s*\[?DOCUMENT|$)/i
         };
 
         for (const [key, regex] of Object.entries(patterns)) {
@@ -476,6 +476,8 @@ ${screencastSegment}
                 let content = match[1].trim();
                 // Strip starting/ending markdown blocks if any
                 content = content.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+                // Clean up trailing markdown symbols leftover from lazy matching
+                content = content.replace(/[\s*#_\[\-]+$/, '').trim();
                 docs[key] = content;
             }
         }
