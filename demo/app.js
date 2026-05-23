@@ -191,8 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        resetOutput();
-        
         // Render battlecards if in step 2
         if (stepNum === 2) {
             renderBattlecards();
@@ -338,6 +336,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             const formattedHtml = formatMarkdown(resultHtml);
             showResults(formattedHtml, false);
             step1NextBtn.style.display = 'inline-flex';
+            goToStep(2);
         } catch (err) {
             resetOutput();
             showToast(`Error: ${err.message}`);
