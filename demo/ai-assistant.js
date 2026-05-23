@@ -141,10 +141,12 @@ Use a numbered list (<ol>) for the 10 points. Inside each point, use <strong> ta
      * @param {Object} customConfig - Custom API configuration
      * @returns {Promise<Object>} Object containing parsed HTML documents
      */
-    async function synthesizeCallTranscript(variant, transcript, screencastUrl = "", customConfig = {}) {
+    async function synthesizeCallTranscript(variant, transcript, screencastUrl = "", customConfig = {}, customQuestions = null) {
         let questionFramework = "";
 
-        if (variant === "Variant A") {
+        if (Array.isArray(customQuestions) && customQuestions.length > 0) {
+            questionFramework = customQuestions.map((q, idx) => `${idx + 1}. ${q}`).join('\n');
+        } else if (variant === "Variant A") {
             questionFramework = `
 1. What general ledger/ERP system (e.g., SAP, MS Business Central, Sun Systems, NetSuite) are you using, and does it currently integrate with your planning tool?
 2. How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting, and are there issues with version control?
@@ -287,19 +289,35 @@ Format as a clean bulleted list grouped by Owner.
         } catch (err) {
             console.warn("⚠️ live API call failed, activating offline demo mock fallback. Reason:", err.message);
             // Return precompiled synthesis for Sarah Chen
-            return getOfflineMockSynthesis(screencastUrl);
+            return getOfflineMockSynthesis(screencastUrl, customQuestions);
         }
     }
 
     /**
      * Helper to return precompiled mock deliverables for the Sarah Chen pre-screen transcript.
      */
-    function getOfflineMockSynthesis(screencastUrl) {
+    function getOfflineMockSynthesis(screencastUrl, customQuestions = null) {
         const screencastSegment = screencastUrl ? `<p>I have also recorded a 2-minute video briefing summarizing our discussion, which you can review here: <a href="${screencastUrl}" target="_blank" style="color: #4daeeb;">${screencastUrl}</a></p>` : "";
         const screencastField = screencastUrl ? `<li><strong>Screencast URL:</strong> <a href="${screencastUrl}" target="_blank" style="color: #4daeeb;">${screencastUrl}</a></li>` : "<li><strong>Screencast URL:</strong> Not provided</li>";
 
-        return {
-            questionnaire: `<p><strong>1. ERP Source:</strong> Currently using NetSuite. There is no automated integration to their budgeting tools; data is exported via CSV files. <em>"Our actuals reside in NetSuite, but all our planning models are housed in Excel."</em></p>
+        let questionnaireHtml = "";
+        if (Array.isArray(customQuestions) && customQuestions.length > 0) {
+            questionnaireHtml = customQuestions.map((q, idx) => {
+                let defaultAns = "";
+                const lowerQ = q.toLowerCase();
+                if (idx === 0 && lowerQ.includes("ledger")) {
+                    defaultAns = `Currently using NetSuite. There is no automated integration to their budgeting tools; data is exported via CSV files. <em>"Our actuals reside in NetSuite, but all our planning models are housed in Excel."</em>`;
+                } else if (idx === 1 && lowerQ.includes("spreadsheet")) {
+                    defaultAns = `35 separate spreadsheets are sent out to department heads and manually consolidated. Version control issues are frequent. <em>"We have about 35 separate spreadsheets... incredibly prone to formula errors."</em>`;
+                } else if (idx === 2 && lowerQ.includes("workflow")) {
+                    defaultAns = `Monthly forecasting and actuals consolidation. 45 minutes of manual copy-paste is required per sheet. <em>"Consolidating the NetSuite actuals with our Excel model templates takes us 45 minutes per worksheet."</em>`;
+                } else {
+                    defaultAns = `Captured details matching custom query. <em>"Response verified during Discovery Call."</em>`;
+                }
+                return `<p><strong>${idx + 1}. ${q}</strong><br>Answer: ${defaultAns}</p>`;
+            }).join('\n');
+        } else {
+            questionnaireHtml = `<p><strong>1. ERP Source:</strong> Currently using NetSuite. There is no automated integration to their budgeting tools; data is exported via CSV files. <em>"Our actuals reside in NetSuite, but all our planning models are housed in Excel."</em></p>
 <p><strong>2. Spreadsheets Count:</strong> 35 separate spreadsheets are sent out to department heads and manually consolidated. Version control issues are frequent. <em>"We have about 35 separate spreadsheets... incredibly prone to formula errors."</em></p>
 <p><strong>3. Workflows:</strong> Monthly forecasting and actuals consolidation. 45 minutes of manual copy-paste is required per sheet. <em>"Consolidating the NetSuite actuals with our Excel model templates takes us 45 minutes per worksheet."</em></p>
 <p><strong>4. Reporting:</strong> Power BI and Excel PAX. Currently fed from manual Excel files. <em>"We are using Power BI and PAX for some basic reporting, but they're fed from these manual Excel files."</em></p>
@@ -310,7 +328,11 @@ Format as a clean bulleted list grouped by Owner.
 <p><strong>9. Timeline:</strong> Must go live in 2 months, before the Q3 planning cycle. <em>"We want this resolved before the Q3 planning cycle, which starts in about two months."</em></p>
 <p><strong>10. Budget:</strong> Sign-off threshold of up to A$40,000 for this financial year. <em>"We have a sign-off threshold of up to $40,000 for this financial year if we can show a clear return on investment."</em></p>
 <p><strong>11. Evaluation:</strong> Checked discovery bookings form (Variant A: First-time TM1). No competing tools mentioned in transcript.</p>
-<p><strong>12. Success Criteria:</strong> Save 3 days per month. Ready to book deep dive with TM1 Practice Lead (Amendra Pratap). <em>"It would save us at least 3 days every month."</em></p>`,
+<p><strong>12. Success Criteria:</strong> Save 3 days per month. Ready to book deep dive with TM1 Practice Lead (Amendra Pratap). <em>"It would save us at least 3 days every month."</em></p>`;
+        }
+
+        return {
+            questionnaire: questionnaireHtml,
             
             summary: `<h4>QUALIFICATION SCORE: HOT</h4>
 <p><strong>SCORING RATIONALE:</strong> The prospect has a clear, quantified pain point (3 days lost per month manually consolidating 35 spreadsheets), a definite timeline (go-live in 2 months before Q3 cycle), and an approved budget threshold (up to A$40,000) that aligns with Octane's entry packages.</p>

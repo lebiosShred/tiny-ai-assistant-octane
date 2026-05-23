@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Global state for synthesized documents
     let currentDocs = null;
     let activeDocTab = 'summary';
+    let currentQuestions = [];
 
     function formatMarkdown(text) {
         if (!text) return "";
@@ -206,16 +207,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Dynamic Track-to-Variant Sync ---
     function syncServiceTrackToVariant() {
         const track = prepTrackSelect.value;
+        let variant = "A";
         if (track === "TM1 Support & Managed Support") {
             battlecardSelector.value = "B";
             synthVariantSelect.value = "Variant B";
+            variant = "B";
         } else if (track === "Agentic AI Operations & Watsonx") {
             battlecardSelector.value = "C";
             synthVariantSelect.value = "Variant C";
+            variant = "C";
         } else {
             battlecardSelector.value = "A";
             synthVariantSelect.value = "Variant A";
+            variant = "A";
         }
+        currentQuestions = JSON.parse(JSON.stringify(BATTLECARDS[variant] || []));
     }
 
     prepTrackSelect.addEventListener('change', () => {
@@ -224,9 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderBattlecards();
         }
     });
-
-    // Run sync initially
-    syncServiceTrackToVariant();
 
     // --- Output Visual States Helper ---
     function resetOutput() {
@@ -363,7 +366,8 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
 
         try {
             const apiConfig = getApiConfig();
-            const docs = await TinyAI.synthesizeCallTranscript(variant, transcript, screencastUrl, apiConfig);
+            const customQuestions = currentQuestions.map(q => q.q);
+            const docs = await TinyAI.synthesizeCallTranscript(variant, transcript, screencastUrl, apiConfig, customQuestions);
             
             // Validate output
             if (!docs.summary && !docs.proposal) {
@@ -709,22 +713,29 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
     // Render Battlecard Body
     function renderBattlecards() {
         const variant = battlecardSelector.value;
-        const questions = BATTLECARDS[variant] || [];
         
         battlecardBody.innerHTML = "";
         
-        questions.forEach((item, index) => {
+        currentQuestions.forEach((item, index) => {
             const num = index + 1;
             const section = document.createElement('div');
             section.className = "battlecard-section";
             section.style.marginBottom = "0.85rem";
             
+            // Determine if reset button should be displayed
+            const defaultText = BATTLECARDS[variant][index] ? BATTLECARDS[variant][index].q : item.q;
+            const hasChanged = item.q !== defaultText;
+            const resetDisplay = hasChanged ? 'inline-flex' : 'none';
+
             section.innerHTML = `
                 <div class="battlecard-section-title">Question ${num}</div>
                 <div class="battlecard-item">
                     <div class="battlecard-q" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
-                        <span style="color: #000000 !important; font-size: 0.85rem !important; line-height: 1.4 !important; font-weight: 500;">${item.q}</span>
-                        <button class="battlecard-copy-btn" data-text="${item.q}" style="flex-shrink: 0;">📋 Copy</button>
+                        <div contenteditable="true" class="battlecard-q-text" data-index="${index}" style="color: #000000 !important; font-size: 0.85rem !important; line-height: 1.4 !important; font-weight: 500; outline: none; border-bottom: 1px dashed rgba(0,0,0,0.15); width: 100%; padding-bottom: 2px; flex: 1;">${item.q}</div>
+                        <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
+                            <button class="battlecard-copy-btn" style="font-size: 0.75rem; text-decoration: underline; color: var(--primary); background: transparent; border: none; cursor: pointer; padding: 0;">📋 Copy</button>
+                            <button class="battlecard-reset-btn" data-index="${index}" style="font-size: 0.75rem; text-decoration: underline; color: rgba(0,0,0,0.4); background: transparent; border: none; cursor: pointer; padding: 0; display: ${resetDisplay};">⟲ Reset</button>
+                        </div>
                     </div>
                     <div class="battlecard-tips" style="margin-top: 0.35rem; font-size: 0.8rem !important; color: rgba(0,0,0,0.6) !important; font-style: italic;">Tip: ${item.tip}</div>
                 </div>
@@ -737,7 +748,9 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
         const copyBtns = battlecardBody.querySelectorAll('.battlecard-copy-btn');
         copyBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                const text = btn.getAttribute('data-text');
+                const qTextEl = btn.closest('.battlecard-item').querySelector('.battlecard-q-text');
+                const text = qTextEl ? qTextEl.innerText.trim() : "";
+                
                 navigator.clipboard.writeText(text)
                     .then(() => {
                         const originalText = btn.innerText;
@@ -755,10 +768,57 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                     });
             });
         });
+
+        // Add inline change event listeners to save editable text
+        const qTextElements = battlecardBody.querySelectorAll('.battlecard-q-text');
+        qTextElements.forEach(qText => {
+            const idx = parseInt(qText.getAttribute('data-index'));
+            
+            qText.addEventListener('input', () => {
+                const newText = qText.innerText.trim();
+                currentQuestions[idx].q = newText;
+                
+                // Show/hide reset button
+                const resetBtn = qText.closest('.battlecard-item').querySelector('.battlecard-reset-btn');
+                const defaultText = BATTLECARDS[variant][idx].q;
+                if (newText !== defaultText) {
+                    resetBtn.style.display = 'inline-flex';
+                } else {
+                    resetBtn.style.display = 'none';
+                }
+            });
+            
+            qText.style.transition = "border-bottom-color 0.2s ease";
+            qText.addEventListener('focus', () => {
+                qText.style.borderBottomColor = 'var(--primary)';
+            });
+            qText.addEventListener('blur', () => {
+                qText.style.borderBottomColor = 'rgba(0,0,0,0.15)';
+            });
+        });
+
+        // Add reset button listeners
+        const resetBtns = battlecardBody.querySelectorAll('.battlecard-reset-btn');
+        resetBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-index'));
+                const defaultText = BATTLECARDS[variant][idx].q;
+                currentQuestions[idx].q = defaultText;
+                
+                const qText = btn.closest('.battlecard-item').querySelector('.battlecard-q-text');
+                if (qText) {
+                    qText.innerText = defaultText;
+                }
+                btn.style.display = 'none';
+                showToast(`Question ${idx + 1} reset to default.`);
+            });
+        });
     }
 
     // Bind battlecard selector change event
     battlecardSelector.addEventListener('change', () => {
+        const variant = battlecardSelector.value;
+        currentQuestions = JSON.parse(JSON.stringify(BATTLECARDS[variant] || []));
         renderBattlecards();
     });
 
@@ -857,5 +917,8 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             showToast("Unsupported file type. Please upload a .txt, .pdf, or .docx file.");
         }
     }
+
+    // Run sync initially after all functions and datasets are defined
+    syncServiceTrackToVariant();
 
 });
