@@ -1,6 +1,50 @@
 import https from 'https';
+import fs from 'fs';
+import path from 'path';
 
-export default function handler(req, res) {
+// Helper to read and concatenate knowledge files
+function loadKnowledgeBase() {
+    return new Promise((resolve) => {
+        const knowledgeDir = path.join(process.cwd(), 'knowledge');
+        fs.readdir(knowledgeDir, (err, files) => {
+            if (err) {
+                console.warn("⚠️ Failed to read knowledge directory:", err.message);
+                resolve("");
+                return;
+            }
+            const mdFiles = files.filter(f => f.endsWith('.md'));
+            if (mdFiles.length === 0) {
+                resolve("");
+                return;
+            }
+            
+            let concatenated = "\n\n=== GROUNDED KNOWLEDGE BASE ===\n";
+            let readCount = 0;
+            const contents = {};
+            
+            // Read files and preserve order
+            mdFiles.forEach(file => {
+                const filePath = path.join(knowledgeDir, file);
+                fs.readFile(filePath, 'utf8', (err2, data) => {
+                    readCount++;
+                    if (!err2) {
+                        contents[file] = data;
+                    }
+                    if (readCount === mdFiles.length) {
+                        mdFiles.forEach(f => {
+                            if (contents[f]) {
+                                concatenated += `\n--- FILE: ${f} ---\n${contents[f]}\n`;
+                            }
+                        });
+                        resolve(concatenated);
+                    }
+                });
+            });
+        });
+    });
+}
+
+export default async function handler(req, res) {
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method Not Allowed' });
         return;
@@ -23,7 +67,24 @@ export default function handler(req, res) {
         return;
     }
 
-    const payload = JSON.stringify(req.body);
+    // Load knowledge base files and inject into the prompt
+    const knowledgeBase = await loadKnowledgeBase();
+    const payload = req.body;
+    
+    if (knowledgeBase && Array.isArray(payload.messages)) {
+        // Look for system prompt to append knowledge base
+        const systemMsg = payload.messages.find(m => m.role === 'system');
+        if (systemMsg) {
+            systemMsg.content += knowledgeBase;
+        } else {
+            payload.messages.unshift({
+                role: 'system',
+                content: `You are a professional B2B sales operations assistant.${knowledgeBase}`
+            });
+        }
+    }
+
+    const jsonPayload = JSON.stringify(payload);
 
     const options = {
         hostname: 'api.mistral.ai',
@@ -33,7 +94,7 @@ export default function handler(req, res) {
         headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(payload)
+            'Content-Length': Buffer.byteLength(jsonPayload)
         }
     };
 
@@ -49,6 +110,7 @@ export default function handler(req, res) {
         res.status(502).json({ error: `Proxy connection error: ${err.message}` });
     });
 
-    proxyReq.write(payload);
+    proxyReq.write(jsonPayload);
     proxyReq.end();
 }
+

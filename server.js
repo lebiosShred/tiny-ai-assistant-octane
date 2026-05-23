@@ -18,6 +18,45 @@ const MIME_TYPES = {
     '.svg': 'image/svg+xml'
 };
 
+function loadKnowledgeBase() {
+    return new Promise((resolve) => {
+        const knowledgeDir = path.join(PUBLIC_DIR, 'knowledge');
+        fs.readdir(knowledgeDir, (err, files) => {
+            if (err) {
+                resolve("");
+                return;
+            }
+            const mdFiles = files.filter(f => f.endsWith('.md'));
+            if (mdFiles.length === 0) {
+                resolve("");
+                return;
+            }
+            
+            let concatenated = "\n\n=== GROUNDED KNOWLEDGE BASE ===\n";
+            let readCount = 0;
+            const contents = {};
+            
+            mdFiles.forEach(file => {
+                const filePath = path.join(knowledgeDir, file);
+                fs.readFile(filePath, 'utf8', (err2, data) => {
+                    readCount++;
+                    if (!err2) {
+                        contents[file] = data;
+                    }
+                    if (readCount === mdFiles.length) {
+                        mdFiles.forEach(f => {
+                            if (contents[f]) {
+                                concatenated += `\n--- FILE: ${f} ---\n${contents[f]}\n`;
+                            }
+                        });
+                        resolve(concatenated);
+                    }
+                });
+            });
+        });
+    });
+}
+
 function serveFile(res, filePath) {
     fs.readFile(filePath, (err, content) => {
         if (err) {
@@ -51,7 +90,7 @@ const server = http.createServer((req, res) => {
     if (pathname === '/api/chat' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
-        req.on('end', () => {
+        req.on('end', async () => {
             // Determine API Key: prefer custom Authorization header from client, fallback to server process.env.MISTRAL_API_KEY
             let apiKey = '';
             const authHeader = req.headers['authorization'];
@@ -71,6 +110,31 @@ const server = http.createServer((req, res) => {
                 return;
             }
 
+            // Load and inject knowledge base
+            const knowledgeBase = await loadKnowledgeBase();
+            let payload;
+            try {
+                payload = JSON.parse(body);
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
+                return;
+            }
+
+            if (knowledgeBase && Array.isArray(payload.messages)) {
+                const systemMsg = payload.messages.find(m => m.role === 'system');
+                if (systemMsg) {
+                    systemMsg.content += knowledgeBase;
+                } else {
+                    payload.messages.unshift({
+                        role: 'system',
+                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}`
+                    });
+                }
+            }
+
+            const jsonPayload = JSON.stringify(payload);
+
             const options = {
                 hostname: 'api.mistral.ai',
                 port: 443,
@@ -79,7 +143,7 @@ const server = http.createServer((req, res) => {
                 headers: {
                     'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Content-Length': Buffer.byteLength(jsonPayload)
                 }
             };
 
@@ -93,7 +157,7 @@ const server = http.createServer((req, res) => {
                 res.end(JSON.stringify({ error: `Proxy connection error: ${err.message}` }));
             });
 
-            proxyReq.write(body);
+            proxyReq.write(jsonPayload);
             proxyReq.end();
         });
         return;
