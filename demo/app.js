@@ -110,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const step2BackBtn = document.getElementById('step-2-back-btn');
     const step2NextBtn = document.getElementById('step-2-next-btn');
     const step3BackBtn = document.getElementById('step-3-back-btn');
+    const step2SaveBtn = document.getElementById('step-2-save-btn');
 
     // Dossier Tab Form
     const prepLoadSampleBtn = document.getElementById('prep-load-sample-btn');
@@ -204,8 +205,86 @@ document.addEventListener('DOMContentLoaded', () => {
     step2NextBtn.addEventListener('click', () => goToStep(3));
     step3BackBtn.addEventListener('click', () => goToStep(2));
 
+    step2SaveBtn.addEventListener('click', async () => {
+        const variant = battlecardSelector.value;
+        const questions = currentQuestions.map(q => q.q);
+        
+        step2SaveBtn.disabled = true;
+        const originalText = step2SaveBtn.innerText;
+        step2SaveBtn.innerText = "💾 Saving...";
+
+        try {
+            const res = await fetch('/api/questions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ variant, questions })
+            });
+
+            if (!res.ok) {
+                throw new Error(`HTTP error ${res.status}`);
+            }
+
+            const data = await res.json();
+            
+            // Persist to local storage as fallback backup
+            localStorage.setItem('custom_questions_' + variant, JSON.stringify(questions));
+            
+            showToast("Questions registered on server successfully!");
+        } catch (err) {
+            console.error("Failed to register custom questions on server:", err);
+            // Save to LocalStorage anyway so it's not lost
+            localStorage.setItem('custom_questions_' + variant, JSON.stringify(questions));
+            showToast("Saved locally (Server registration failed).");
+        } finally {
+            step2SaveBtn.disabled = false;
+            step2SaveBtn.innerText = originalText;
+        }
+    });
+
+    // --- Load Custom Questions from Server / LocalStorage ---
+    async function loadCustomQuestions(variant) {
+        try {
+            const res = await fetch(`/api/questions?variant=${variant}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    currentQuestions = data.map((qText, index) => {
+                        const defaultTip = BATTLECARDS[variant] && BATTLECARDS[variant][index] ? BATTLECARDS[variant][index].tip : "Custom question";
+                        return { q: qText, tip: defaultTip };
+                    });
+                    console.log(`Loaded custom questions for Variant ${variant} from server.`);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to load custom questions from server, falling back to local storage:", e);
+        }
+
+        try {
+            const localData = localStorage.getItem('custom_questions_' + variant);
+            if (localData) {
+                const parsed = JSON.parse(localData);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    currentQuestions = parsed.map((qText, index) => {
+                        const defaultTip = BATTLECARDS[variant] && BATTLECARDS[variant][index] ? BATTLECARDS[variant][index].tip : "Custom question";
+                        return { q: qText, tip: defaultTip };
+                    });
+                    console.log(`Loaded custom questions for Variant ${variant} from LocalStorage.`);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to parse local storage questions:", e);
+        }
+
+        currentQuestions = JSON.parse(JSON.stringify(BATTLECARDS[variant] || []));
+        console.log(`Loaded default questions for Variant ${variant}.`);
+    }
+
     // --- Dynamic Track-to-Variant Sync ---
-    function syncServiceTrackToVariant() {
+    async function syncServiceTrackToVariant() {
         const track = prepTrackSelect.value;
         let variant = "A";
         if (track === "TM1 Support & Managed Support") {
@@ -221,11 +300,11 @@ document.addEventListener('DOMContentLoaded', () => {
             synthVariantSelect.value = "Variant A";
             variant = "A";
         }
-        currentQuestions = JSON.parse(JSON.stringify(BATTLECARDS[variant] || []));
+        await loadCustomQuestions(variant);
     }
 
-    prepTrackSelect.addEventListener('change', () => {
-        syncServiceTrackToVariant();
+    prepTrackSelect.addEventListener('change', async () => {
+        await syncServiceTrackToVariant();
         if (currentStep === 2) {
             renderBattlecards();
         }
@@ -816,9 +895,9 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
     }
 
     // Bind battlecard selector change event
-    battlecardSelector.addEventListener('change', () => {
+    battlecardSelector.addEventListener('change', async () => {
         const variant = battlecardSelector.value;
-        currentQuestions = JSON.parse(JSON.stringify(BATTLECARDS[variant] || []));
+        await loadCustomQuestions(variant);
         renderBattlecards();
     });
 

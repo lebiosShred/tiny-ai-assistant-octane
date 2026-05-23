@@ -16,3 +16,7 @@ Thumbs.db
 # IDE configuration folders
 .vscode/
 .idea/
+
+# Local custom questions database
+custom-questions.json
+

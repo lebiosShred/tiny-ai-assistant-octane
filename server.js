@@ -99,6 +99,73 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // API Questions Route
+    if (pathname === '/api/questions') {
+        const questionsFile = path.join(PUBLIC_DIR, 'custom-questions.json');
+        
+        if (req.method === 'GET') {
+            const variant = parsedUrl.searchParams.get('variant');
+            if (!variant) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Missing variant query parameter.' }));
+                return;
+            }
+            fs.readFile(questionsFile, 'utf8', (err, data) => {
+                if (err) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify([]));
+                    return;
+                }
+                try {
+                    const parsed = JSON.parse(data);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(parsed[variant] || []));
+                } catch (e) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify([]));
+                }
+            });
+            return;
+        }
+
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => { body += chunk; });
+            req.on('end', () => {
+                try {
+                    const { variant, questions } = JSON.parse(body);
+                    if (!variant || !Array.isArray(questions)) {
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Invalid payload. Expecting variant and questions array.' }));
+                        return;
+                    }
+
+                    fs.readFile(questionsFile, 'utf8', (err, data) => {
+                        let existing = {};
+                        if (!err) {
+                            try { existing = JSON.parse(data); } catch (e) {}
+                        }
+                        existing[variant] = questions;
+
+                        fs.writeFile(questionsFile, JSON.stringify(existing, null, 2), 'utf8', (err2) => {
+                            if (err2) {
+                                res.writeHead(500, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ error: 'Failed to write custom questions to file.' }));
+                                return;
+                            }
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ status: 'success', message: 'Questions registered on server.' }));
+                        });
+                    });
+                } catch (e) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Invalid JSON body.' }));
+                }
+            });
+            return;
+        }
+    }
+
     // Static Files Resolution
     let relativePath = pathname === '/' ? '/demo/index.html' : pathname;
     
