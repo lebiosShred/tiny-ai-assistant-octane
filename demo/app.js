@@ -802,8 +802,8 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             section.style.marginBottom = "0.85rem";
             
             // Determine if reset button should be displayed
-            const defaultText = BATTLECARDS[variant][index] ? BATTLECARDS[variant][index].q : item.q;
-            const hasChanged = item.q !== defaultText;
+            const defaultText = BATTLECARDS[variant][index] ? BATTLECARDS[variant][index].q : null;
+            const hasChanged = defaultText !== null && item.q !== defaultText;
             const resetDisplay = hasChanged ? 'inline-flex' : 'none';
 
             section.innerHTML = `
@@ -814,6 +814,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                         <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
                             <button class="battlecard-copy-btn" style="font-size: 0.75rem; text-decoration: underline; color: var(--primary); background: transparent; border: none; cursor: pointer; padding: 0;">📋 Copy</button>
                             <button class="battlecard-reset-btn" data-index="${index}" style="font-size: 0.75rem; text-decoration: underline; color: rgba(0,0,0,0.4); background: transparent; border: none; cursor: pointer; padding: 0; display: ${resetDisplay};">⟲ Reset</button>
+                            <button class="battlecard-remove-btn" data-index="${index}" style="font-size: 0.75rem; text-decoration: underline; color: #ff4d4d; background: transparent; border: none; cursor: pointer; padding: 0;">❌ Remove</button>
                         </div>
                     </div>
                     <div class="battlecard-tips" style="margin-top: 0.35rem; font-size: 0.8rem !important; color: rgba(0,0,0,0.6) !important; font-style: italic;">Tip: ${item.tip}</div>
@@ -859,8 +860,8 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                 
                 // Show/hide reset button
                 const resetBtn = qText.closest('.battlecard-item').querySelector('.battlecard-reset-btn');
-                const defaultText = BATTLECARDS[variant][idx].q;
-                if (newText !== defaultText) {
+                const defaultText = BATTLECARDS[variant][idx] ? BATTLECARDS[variant][idx].q : null;
+                if (defaultText !== null && newText !== defaultText) {
                     resetBtn.style.display = 'inline-flex';
                 } else {
                     resetBtn.style.display = 'none';
@@ -881,15 +882,28 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
         resetBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.getAttribute('data-index'));
-                const defaultText = BATTLECARDS[variant][idx].q;
-                currentQuestions[idx].q = defaultText;
-                
-                const qText = btn.closest('.battlecard-item').querySelector('.battlecard-q-text');
-                if (qText) {
-                    qText.innerText = defaultText;
+                const defaultText = BATTLECARDS[variant][idx] ? BATTLECARDS[variant][idx].q : null;
+                if (defaultText !== null) {
+                    currentQuestions[idx].q = defaultText;
+                    
+                    const qText = btn.closest('.battlecard-item').querySelector('.battlecard-q-text');
+                    if (qText) {
+                        qText.innerText = defaultText;
+                    }
+                    btn.style.display = 'none';
+                    showToast(`Question ${idx + 1} reset to default.`);
                 }
-                btn.style.display = 'none';
-                showToast(`Question ${idx + 1} reset to default.`);
+            });
+        });
+
+        // Add remove button listeners
+        const removeBtns = battlecardBody.querySelectorAll('.battlecard-remove-btn');
+        removeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-index'));
+                currentQuestions.splice(idx, 1);
+                renderBattlecards();
+                showToast("Question removed.");
             });
         });
     }
@@ -903,6 +917,24 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
 
     // Initialize battlecards by default
     renderBattlecards();
+
+    // Bind add question button
+    const battlecardAddBtn = document.getElementById('battlecard-add-btn');
+    if (battlecardAddBtn) {
+        battlecardAddBtn.addEventListener('click', () => {
+            currentQuestions.push({
+                q: "New custom question...",
+                tip: "Custom question added by representative."
+            });
+            renderBattlecards();
+            showToast("New question added. Click to edit.");
+            
+            // Scroll to bottom
+            setTimeout(() => {
+                battlecardBody.scrollTop = battlecardBody.scrollHeight;
+            }, 50);
+        });
+    }
 
     // --- LinkedIn Drag and Drop Listeners ---
     linkedinDropZone.addEventListener('click', (e) => {
