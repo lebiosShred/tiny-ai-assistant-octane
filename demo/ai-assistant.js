@@ -198,6 +198,19 @@ ${variant}
 Questions:
 ${questionFramework}
 
+--- SPEAKER IDENTIFICATION ---
+The transcript may use labels like 'Albert (SDR)', 'SDR:', 'Sarah Chen:', 'Prospect:', 'Speaker 1', or 'Speaker 2'.
+Before analyzing, map the speakers: the person asking discovery questions is the Octane Sales Representative (SDR), and the person describing business requirements, pain points, budget, and timelines is the Client Prospect. Attribute all pain points and qualifications to the Prospect, not the SDR.
+
+--- OCTANE REFERENCE CATALOG ---
+When proposing solutions, align with these official specifications:
+- DevOps Blue Support: A$4,560/month base support. Rollover hours, monthly health checks, free professional training library. 24/7 SLA-based ticketing: Urgent <1hr, High 4hr, Medium 8hr, Low 24hr. No distinction between support and development.
+- DevOps Red Support: Advanced tier for larger instances or high deployment cadence.
+- TM1 Flight Check: Fixed A$5,800. A 6-day complete analysis of system health (RAM, disk, log file rotation, model efficiency, user interviews).
+- DataFusion Connector: Setup price A$6,950. Automates data transfer from source ERPs (like NetSuite, SAP) to a central database. Inclusions: 5 standard report conversions, 1 instance per environment (Dev/Test/Prod). Exclusions: DB service account creation.
+- Custom training: Standard custom training rate is A$1,850/day.
+- AI Pilots / watsonx POCs: Indicative SaaS pricing starting at $160,000/yr for licensing and $125,000 for implementation. Includes 2-to-6 week co-creation phase, working demo, and client resource allocation.
+
 --- INPUTS ---
 Screencast Link: ${screencastUrl || "Not provided"}
 
@@ -244,17 +257,19 @@ Screencast URL: Include the Screencast Link here if provided.
 Detailed chronological meeting notes capturing context, technical systems discussed, and direct quotes.
 
 [DOCUMENT: PROPOSAL]
-Draft a preliminary, consultative proposal document. Do NOT include custom pricing amounts. Only state standard list-price frameworks. Include sections:
+Draft a preliminary, consultative proposal document. Do NOT include custom pricing amounts. Only state standard list-price frameworks from the Reference Catalog. Include sections:
 1. UNDERSTANDING OF REQUIREMENTS
 - Summarize the client's current background, systems, pain points, and goals.
 - Explicitly detail GL systems, Excel complexity, or existing TM1 setup metrics depending on the track.
 2. PROPOSED SOLUTION
-- Pitch the corresponding Octane service package(s) based on the collected variables:
-  * Variant A: Pitch TM1 Projects (Phase 1, 2, or 3) and/or DataFusion (if using Power BI/Qlik/Tableau). Inclusions: 5 standard report conversions, 1 instance per env (Dev/Test/Prod), training platforms. Exclusions: DB service account creation, local PA cloud exports.
-  * Variant B: Pitch Octane Blue / Red DevOps Support (starting with 40-hour DevOps Blue, transitioning to Red, highlighting no distinction between support and dev, rollover hours, rotation of consultants), TM1 Upgrade Services (if legacy/unlicensed version), or a TM1 Flight Check (if experiencing RAM/HDD/log file/performance red flags). Inclusions: 24/7 SLA-based ticketing (Urgent <1hr, High 4hr, Medium 8hr, Low 24hr) for DevOps Blue, rollover hours, monthly health checks, free training library. Flight Check includes 6-day analysis, user interviews, RAM/HDD assessment.
-  * Variant C: Pitch watsonx Orchestrate & watsonx.ai (integrating TM1, Adobe, Google, GCP) starting with a 2-to-6 week co-creation Proof of Concept (POC) based on the standard POC template (including co-creation, working demo, client resources).
+- Recommend the corresponding Octane service package(s) based on the actual prospect needs identified in the transcript and custom questions (do NOT rely solely on the static Variant/Track classification if the conversation focus differs):
+  * Pitch "TM1 Upgrade Services" or "TM1 Flight Check" if the prospect has legacy versions, performance bottlenecks, RAM/HDD issues, or slow report load times.
+  * Pitch "Octane Blue/Red DevOps Support" if the prospect needs dedicated administrators/developers, backlog support, or has key-person risk.
+  * Pitch "DataFusion Connectors" if the prospect consolidates manual CSVs/Excel sheets and uses tools like NetSuite, SAP, Power BI, or Tableau.
+  * Pitch "watsonx Orchestrate & watsonx.ai Co-Creation POC" if the prospect wants automated natural language query tools, generative AI agents, or cross-department automation.
+  * Pitch "TM1 Projects (Phase 1, 2, or 3)" for new implementations.
 - Highlight standard inclusions and exclusions for the proposed packages.
-- Only state standard list-price frameworks: DevOps Blue support is A$4,560/month, DataFusion setup is A$6,950, Training is A$1,850/day, AI pilots are indicative $160k+/yr licensing and $125k+ implementation.
+- Only state standard list-price frameworks from the Reference Catalog: DevOps Blue support is A$4,560/month, DataFusion setup is A$6,950, Training is A$1,850/day, AI pilots are indicative $160k+/yr licensing and $125k+ implementation.
 3. APPROACH & METHODOLOGY
 - Detail standard project phases and timelines (e.g., 6-week TM1 Upgrade, 2-6 week POC, 6-week Phase 1 TM1 project).
 - Outline critical path milestones (e.g., resource plan approval, handover checklist, kickoff).
