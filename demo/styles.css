@@ -152,19 +152,74 @@ body {
 
 /* API Settings Panel */
 .settings-panel {
-    background: #000000;
+    background: rgba(15, 15, 15, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-glass);
-    border-radius: 8px;
-    padding: 1rem;
+    border-radius: 12px;
+    padding: 1.5rem;
     margin-top: 0.25rem;
     display: none;
     flex-direction: column;
-    gap: 0.75rem;
-    animation: slideDown 0.25s ease forwards;
+    gap: 1rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), inset 0 0 15px rgba(255, 255, 255, 0.02);
+    animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    z-index: 100;
 }
 
 .settings-panel.active {
     display: flex;
+}
+
+.settings-panel h3 {
+    color: var(--primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.settings-panel .section-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 0.75rem;
+    opacity: 0.9;
+}
+
+.settings-panel label {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.settings-panel .form-input {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+}
+
+.settings-panel .form-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.settings-panel .form-input:focus {
+    border-color: var(--primary) !important;
+    background: rgba(255, 255, 255, 0.07) !important;
+    box-shadow: 0 0 8px var(--primary-glow) !important;
+}
+
+.settings-panel select.form-input {
+    background-color: rgb(20, 20, 20) !important;
+    color: #ffffff !important;
+}
+
+.settings-panel select.form-input option {
+    background-color: #0d0d0d !important;
+    color: #ffffff !important;
+}
+
+.settings-status-msg {
+    transition: all 0.2s ease;
 }
 
 .settings-row {
@@ -804,3 +859,150 @@ body {
     padding-left: 0.5rem;
     border-left: 2px solid rgba(0, 0, 0, 0.1);
 }
+
+/* Settings Panel - Knowledge File Drop Zone override */
+.settings-panel .file-drop-zone {
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.02);
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 6px;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+}
+.settings-panel .file-drop-zone:hover,
+.settings-panel .file-drop-zone.dragover {
+    border-color: var(--primary);
+    background: rgba(77, 174, 235, 0.08);
+    color: #ffffff;
+}
+
+/* Knowledge File List Styles */
+.knowledge-file-list {
+    flex: 1;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem;
+    max-height: 140px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+/* Custom Scrollbar for file list */
+.knowledge-file-list::-webkit-scrollbar {
+    width: 6px;
+}
+.knowledge-file-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+.knowledge-file-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+.knowledge-file-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Individual File Item inside list */
+.knowledge-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.6rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.85);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.knowledge-file-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.knowledge-file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1;
+}
+
+.knowledge-file-name {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.knowledge-file-size {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-left: 0.25rem;
+}
+
+.knowledge-file-badge {
+    font-size: 0.65rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.knowledge-file-badge.system {
+    background: rgba(77, 174, 235, 0.15);
+    color: var(--primary);
+    border: 1px solid rgba(77, 174, 235, 0.25);
+}
+
+.knowledge-file-badge.user {
+    background: rgba(46, 213, 115, 0.15);
+    color: #2ed573;
+    border: 1px solid rgba(46, 213, 115, 0.25);
+}
+
+.knowledge-file-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: 0.5rem;
+}
+
+.knowledge-delete-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 99, 71, 0.6);
+    cursor: pointer;
+    padding: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.knowledge-delete-btn:hover {
+    color: rgba(255, 99, 71, 1);
+    background: rgba(255, 99, 71, 0.1);
+}
+
+.knowledge-delete-btn:disabled {
+    color: rgba(255, 255, 255, 0.15);
+    cursor: not-allowed;
+    background: transparent;
+}
+

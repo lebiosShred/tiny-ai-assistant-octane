@@ -1,0 +1,15 @@
+{
+  "type": "crm-card",
+  "data": {
+    "title": "Tiny AI Assistant Checklist & Briefings",
+    "description": "Interactive playbooks, battlecards, pre-screen briefings, and call syntheses.",
+    "location": "crm.record.sidebar",
+    "objectTypes": [
+      "contacts",
+      "deals"
+    ],
+    "module": {
+      "file": "./tiny-card.jsx"
+    }
+  }
+}

@@ -18,7 +18,105 @@
                 <span class="brand-logo">Tiny AI Assistant</span>
                 <span class="brand-badge">Active</span>
             </div>
+            <button class="btn btn-secondary" id="settings-toggle-btn" style="height: 32px; padding: 0 12px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">⚙ Settings</button>
         </header>
+
+        <!-- Collapsable Settings Panel -->
+        <div class="settings-panel" id="settings-panel">
+            <div class="settings-header">
+                <h3>⚙ Assistant Configurations & Custom System Instructions</h3>
+            </div>
+            
+            <div class="settings-body">
+                <!-- API Credentials Group -->
+                <div class="settings-section">
+                    <h4 class="section-title">API Authentication</h4>
+                    <div class="settings-row">
+                        <div class="form-group" style="flex: 1.5; min-width: 250px;">
+                            <label for="settings-api-key">Mistral API Key</label>
+                            <input type="password" id="settings-api-key" class="form-input form-input-code" placeholder="Enter custom API Key (or leave empty to use server default)">
+                        </div>
+                        <div class="form-group" style="flex: 1.5; min-width: 250px;">
+                            <label for="settings-api-url">API Base URL</label>
+                            <input type="text" id="settings-api-url" class="form-input form-input-code" placeholder="e.g. /api/chat">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 180px;">
+                            <label for="settings-api-model">Model Name</label>
+                            <input type="text" id="settings-api-model" class="form-input form-input-code" placeholder="e.g. mistral-small-latest">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tone Preset Group -->
+                <div class="settings-section" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
+                    <h4 class="section-title">Persona Tone & Behavior Presets</h4>
+                    <div class="form-group" style="max-width: 400px; margin-bottom: 1rem;">
+                        <label for="settings-tone-preset">Tone / Vibe Preset *</label>
+                        <select id="settings-tone-preset" class="form-input select-input">
+                            <option value="professional">Clinical / Professional B2B (Default)</option>
+                            <option value="empathetic">Empathetic / Warm B2B</option>
+                            <option value="skeptical">Skeptical / Critical Analyst</option>
+                            <option value="detailed">High-Detail Consultant</option>
+                            <option value="concise">Concisely Direct</option>
+                            <option value="custom">Custom (Manual Prompts Modification)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- System Prompts Group -->
+                <div class="settings-section" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
+                    <h4 class="section-title">Custom System Instructions</h4>
+                    <div style="display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                        <div class="form-group" style="flex: 1; min-width: 320px;">
+                            <label for="settings-prep-prompt">Prospect Call Prep Dossier Prompt (Component 02)</label>
+                            <textarea id="settings-prep-prompt" class="form-input textarea-input" style="min-height: 100px; font-family: monospace; font-size: 0.8rem; background: #000; color: #fff; border-color: rgba(255,255,255,0.15);"></textarea>
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 320px;">
+                            <label for="settings-synth-prompt">Call Transcript Synthesizer Prompt (Component 05)</label>
+                            <textarea id="settings-synth-prompt" class="form-input textarea-input" style="min-height: 100px; font-family: monospace; font-size: 0.8rem; background: #000; color: #fff; border-color: rgba(255,255,255,0.15);"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Knowledge Base Files Group -->
+                <div class="settings-section" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
+                    <h4 class="section-title">Knowledge Base Documents</h4>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                        Upload training documents (PDF, Word, Markdown, or Text) to expand the assistant's knowledge base. Max size 2MB per file. Core system files cannot be deleted.
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.25rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                        <!-- Upload Drop Zone -->
+                        <div class="knowledge-upload-wrapper">
+                            <label>Add Document</label>
+                            <div class="file-drop-zone" id="knowledge-drop-zone" style="height: 140px; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; justify-content: center; gap: 0.5rem;">
+                                <span id="knowledge-drop-text" style="color: var(--text-muted);">📁 Drop PDF, DOCX, TXT, or MD here, or click</span>
+                                <span id="knowledge-upload-status" style="font-size: 0.75rem; color: var(--primary);"></span>
+                                <input type="file" id="settings-knowledge-file" accept=".pdf,.docx,.txt,.md" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <!-- Stored Documents List -->
+                        <div class="knowledge-list-wrapper" style="display: flex; flex-direction: column;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <label style="margin: 0 !important;">Stored Playbooks & Files</label>
+                                <button type="button" class="btn btn-secondary" id="restore-defaults-btn" style="height: 20px; padding: 0 6px; font-size: 0.65rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.6);">
+                                    🔄 Restore Defaults
+                                </button>
+                            </div>
+                            <div class="knowledge-file-list" id="knowledge-file-list" style="flex: 1; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; background: rgba(0,0,0,0.2); padding: 0.5rem; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem;">
+                                <div style="font-size: 0.8rem; color: var(--text-dark); text-align: center; margin-top: 2rem;">Loading files...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.75rem;">
+                <span class="settings-status-msg" id="settings-status-msg" style="margin-right: auto; align-self: center; font-size: 0.8rem; color: var(--primary);"></span>
+                <button type="button" class="btn btn-secondary" id="settings-cancel-btn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="settings-save-btn">💾 Save Configuration</button>
+            </div>
+        </div>
 
 
 
@@ -224,6 +322,8 @@
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="module" src="app.js"></script>
 </body>
 </html>

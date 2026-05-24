@@ -1,0 +1,7 @@
+{
+  "name": "tiny-ai-assistant-card",
+  "version": "1.0.0",
+  "dependencies": {
+    "@hubspot/ui-extensions": "^0.8.56"
+  }
+}

@@ -10,7 +10,9 @@
 const DEFAULT_CONFIG = {
     apiKey: "",
     apiUrl: "/api/chat",
-    model: "mistral-small-latest"
+    model: "mistral-small-latest",
+    prepSystemPrompt: "You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler.",
+    synthSystemPrompt: "You are a professional B2B sales operations assistant. You analyze call transcripts and produce clean, formatted HTML documents separated by delimiters."
 };
 
     /**
@@ -68,6 +70,7 @@ const DEFAULT_CONFIG = {
      * @returns {Promise<string>} HTML formatted briefing content
      */
     async function generateProspectDossier(params, customConfig = {}) {
+        const config = { ...DEFAULT_CONFIG, ...customConfig };
         const prompt = `You are a sales preparation assistant for Octane Software Solutions.
 I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services (IBM TM1/Planning Analytics managed support, Watsonx Orchestrate agentic AI integrations, and DataFusion connectors), produce a 10-POINT BRIEFING.
 
@@ -99,7 +102,7 @@ Use a numbered list (<ol>) for the 10 points. Inside each point, use <strong> ta
         const messages = [
             {
                 role: "system",
-                content: "You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler."
+                content: config.prepSystemPrompt || DEFAULT_CONFIG.prepSystemPrompt
             },
             {
                 role: "user",
@@ -142,6 +145,7 @@ Use a numbered list (<ol>) for the 10 points. Inside each point, use <strong> ta
      * @returns {Promise<Object>} Object containing parsed HTML documents
      */
     async function synthesizeCallTranscript(variant, transcript, screencastUrl = "", customConfig = {}, customQuestions = null) {
+        const config = { ...DEFAULT_CONFIG, ...customConfig };
         let questionFramework = "";
 
         if (Array.isArray(customQuestions) && customQuestions.length > 0) {
@@ -327,7 +331,7 @@ Format exactly as:
         const messages = [
             {
                 role: "system",
-                content: "You are a professional B2B sales operations assistant. You analyze call transcripts and produce clean, formatted HTML documents separated by delimiters."
+                content: config.synthSystemPrompt || DEFAULT_CONFIG.synthSystemPrompt
             },
             {
                 role: "user",

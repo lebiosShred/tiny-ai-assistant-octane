@@ -3,6 +3,25 @@ import { TinyAI } from './ai-assistant.js';
 document.addEventListener('DOMContentLoaded', () => {
     'use strict';
 
+    // Helper to escape HTML to prevent XSS
+    function escapeHTML(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Fallback sanitizer if DOMPurify fails to load
+    function fallbackSanitize(html) {
+        if (!html) return '';
+        return html
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/on\w+\s*=\s*(['"][^'"]*['"]|[^>\s]+)/gi, '');
+    }
+
     // Global state for synthesized documents
     let currentDocs = null;
     let activeDocTab = 'summary';
@@ -93,7 +112,441 @@ document.addEventListener('DOMContentLoaded', () => {
         return htmlContent;
     }
 
-    // DOM Elements - Settings removed from UI
+    // DOM Elements - Settings Configurations & Prompts
+    const settingsToggleBtn = document.getElementById('settings-toggle-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsApiKey = document.getElementById('settings-api-key');
+    const settingsApiUrl = document.getElementById('settings-api-url');
+    const settingsApiModel = document.getElementById('settings-api-model');
+    const settingsTonePreset = document.getElementById('settings-tone-preset');
+    const settingsPrepPrompt = document.getElementById('settings-prep-prompt');
+    const settingsSynthPrompt = document.getElementById('settings-synth-prompt');
+    const settingsSaveBtn = document.getElementById('settings-save-btn');
+    const settingsCancelBtn = document.getElementById('settings-cancel-btn');
+    const settingsStatusMsg = document.getElementById('settings-status-msg');
+
+    // Knowledge Base Elements
+    const knowledgeDropZone = document.getElementById('knowledge-drop-zone');
+    const knowledgeDropText = document.getElementById('knowledge-drop-text');
+    const knowledgeUploadStatus = document.getElementById('knowledge-upload-status');
+    const settingsKnowledgeFile = document.getElementById('settings-knowledge-file');
+    const knowledgeFileList = document.getElementById('knowledge-file-list');
+    const restoreDefaultsBtn = document.getElementById('restore-defaults-btn');
+
+    // Configure PDF.js Worker
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    }
+
+    if (restoreDefaultsBtn) {
+        restoreDefaultsBtn.addEventListener('click', async () => {
+            if (confirm("Are you sure you want to restore all default system playbooks? This will overwrite any existing files with the same names.")) {
+                try {
+                    restoreDefaultsBtn.disabled = true;
+                    restoreDefaultsBtn.innerText = "⏳ Restoring...";
+                    
+                    const response = await fetch('/api/knowledge/restore', {
+                        method: 'POST'
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Failed to restore default playbooks');
+                    }
+                    showToast("Default playbooks restored successfully.");
+                    await loadKnowledgeFilesList();
+                } catch (error) {
+                    console.error('Error restoring default playbooks:', error);
+                    alert(`Error: ${error.message}`);
+                } finally {
+                    restoreDefaultsBtn.disabled = false;
+                    restoreDefaultsBtn.innerText = "🔄 Restore Defaults";
+                }
+            }
+        });
+    }
+
+    const TONE_PRESETS = {
+        professional: {
+            prep: "You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler.",
+            synth: "You are a professional B2B sales operations assistant. You analyze call transcripts and produce clean, formatted HTML documents separated by delimiters."
+        },
+        empathetic: {
+            prep: "You are a warm, supportive B2B advisor. You highlight relationship-building opportunities, focus on the client's human objectives, and write in an encouraging, collaborative tone.",
+            synth: "You are an empathetic B2B sales enablement partner. You analyze call transcripts to highlight how we can best support the client, build trust, and write in a warm, helpful tone."
+        },
+        skeptical: {
+            prep: "You are a critical, highly skeptical B2B sales auditor. You scrutinize claims, highlight qualifications risks, identify discrepancies in requirements, and focus heavily on hidden red flags.",
+            synth: "You are a critical B2B risk assessment auditor. You scrutinize call transcripts to expose contradictions, qualification gaps, budget weaknesses, and highlight potential project failures."
+        },
+        detailed: {
+            prep: "You are a meticulous, high-detail enterprise consultant. You write extensive, deeply granular briefings covering every operational angle with thorough context.",
+            synth: "You are a senior high-detail enterprise consultant. You produce highly comprehensive, granular documentation of call details, technical systems, and explicit next steps."
+        },
+        concise: {
+            prep: "You are a concise, direct B2B analyst. You focus on extreme brevity, bottom-line-upfront (BLUF), high information density, and bullet points. Zero conversational preamble.",
+            synth: "You are a highly concise B2B operations analyst. You extract call data with maximum brevity, using bulleted summaries and BLUF formats. Zero boilerplate."
+        }
+    };
+
+    function loadSettingsToUI() {
+        settingsApiKey.value = localStorage.getItem('tiny_api_key') || '';
+        settingsApiUrl.value = localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl;
+        settingsApiModel.value = localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model;
+        
+        const savedTone = localStorage.getItem('tiny_tone') || 'professional';
+        settingsTonePreset.value = savedTone;
+        
+        settingsPrepPrompt.value = localStorage.getItem('tiny_prep_system_prompt') || TONE_PRESETS.professional.prep;
+        settingsSynthPrompt.value = localStorage.getItem('tiny_synth_system_prompt') || TONE_PRESETS.professional.synth;
+    }
+
+    // Initialize UI settings values
+    loadSettingsToUI();
+    loadKnowledgeFilesList();
+
+    // Toggle Settings panel
+    settingsToggleBtn.addEventListener('click', () => {
+        const isActive = settingsPanel.classList.toggle('active');
+        if (isActive) {
+            loadSettingsToUI();
+            settingsStatusMsg.innerText = '';
+            loadKnowledgeFilesList();
+        }
+    });
+
+    settingsCancelBtn.addEventListener('click', () => {
+        settingsPanel.classList.remove('active');
+    });
+
+    // Preset selection change handler
+    settingsTonePreset.addEventListener('change', () => {
+        const val = settingsTonePreset.value;
+        if (val !== 'custom' && TONE_PRESETS[val]) {
+            settingsPrepPrompt.value = TONE_PRESETS[val].prep;
+            settingsSynthPrompt.value = TONE_PRESETS[val].synth;
+        }
+    });
+
+    // If manual edits are done on prompts, change preset dropdown to 'custom'
+    function checkCustomPromptOverride() {
+        const currentPrep = settingsPrepPrompt.value.trim();
+        const currentSynth = settingsSynthPrompt.value.trim();
+        
+        let foundMatch = false;
+        for (const [key, preset] of Object.entries(TONE_PRESETS)) {
+            if (preset.prep.trim() === currentPrep && preset.synth.trim() === currentSynth) {
+                settingsTonePreset.value = key;
+                foundMatch = true;
+                break;
+            }
+        }
+        if (!foundMatch) {
+            settingsTonePreset.value = 'custom';
+        }
+    }
+
+    settingsPrepPrompt.addEventListener('input', checkCustomPromptOverride);
+    settingsSynthPrompt.addEventListener('input', checkCustomPromptOverride);
+
+    // Save configurations
+    settingsSaveBtn.addEventListener('click', () => {
+        localStorage.setItem('tiny_api_key', settingsApiKey.value.trim());
+        localStorage.setItem('tiny_api_url', settingsApiUrl.value.trim());
+        localStorage.setItem('tiny_api_model', settingsApiModel.value.trim());
+        localStorage.setItem('tiny_tone', settingsTonePreset.value);
+        localStorage.setItem('tiny_prep_system_prompt', settingsPrepPrompt.value.trim());
+        localStorage.setItem('tiny_synth_system_prompt', settingsSynthPrompt.value.trim());
+        
+        settingsStatusMsg.style.color = 'var(--primary)';
+        settingsStatusMsg.innerText = '✓ Settings Saved Successfully!';
+        
+        showToast("Configurations saved locally.");
+        
+        setTimeout(() => {
+            settingsPanel.classList.remove('active');
+            settingsStatusMsg.innerText = '';
+        }, 1500);
+    });
+
+    // --- Knowledge Base Handlers & Document Parsers ---
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    async function loadKnowledgeFilesList() {
+        if (!knowledgeFileList) return;
+        knowledgeFileList.innerHTML = '<div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); text-align: center; margin-top: 2rem;">Loading files...</div>';
+        try {
+            const response = await fetch('/api/knowledge');
+            if (!response.ok) {
+                throw new Error('Failed to fetch knowledge list');
+            }
+            const files = await response.json();
+            knowledgeFileList.innerHTML = '';
+            
+            if (files.length === 0) {
+                knowledgeFileList.innerHTML = '<div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); text-align: center; margin-top: 2rem;">No documents loaded.</div>';
+                return;
+            }
+
+            files.forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'knowledge-file-item';
+                
+                const fileIcon = file.name.endsWith('.pdf') ? '📄' : 
+                                 file.name.endsWith('.docx') ? '📝' : '📁';
+                
+                const badgeClass = file.isSystem ? 'system' : 'user';
+                const badgeLabel = file.isSystem ? 'System' : 'User';
+                
+                item.innerHTML = `
+                    <div class="knowledge-file-info">
+                        <span>${fileIcon}</span>
+                        <span class="knowledge-file-name" title="${escapeHTML(file.name)}">${escapeHTML(file.name)}</span>
+                        <span class="knowledge-file-size">(${formatBytes(file.sizeBytes)})</span>
+                    </div>
+                    <div class="knowledge-file-actions">
+                        <span class="knowledge-file-badge ${badgeClass}">${badgeLabel}</span>
+                        <button type="button" class="knowledge-delete-btn" data-filename="${escapeHTML(file.name)}" title="Delete file">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+                
+                const deleteBtn = item.querySelector('.knowledge-delete-btn');
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const confirmMsg = file.isSystem ? 
+                        `Warning: You are about to delete a core system playbook "${file.name}". Are you sure you want to proceed?` :
+                        `Are you sure you want to delete "${file.name}"?`;
+                    if (confirm(confirmMsg)) {
+                        await deleteKnowledgeFile(file.name);
+                    }
+                });
+                
+                knowledgeFileList.appendChild(item);
+            });
+        } catch (error) {
+            console.error('Error loading knowledge files:', error);
+            knowledgeFileList.innerHTML = `<div style="font-size: 0.8rem; color: rgba(255,99,71,0.8); text-align: center; margin-top: 2rem;">Failed to load files list.</div>`;
+        }
+    }
+
+    async function deleteKnowledgeFile(fileName) {
+        try {
+            const response = await fetch(`/api/knowledge?fileName=${encodeURIComponent(fileName)}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to delete file');
+            }
+            showToast("Document deleted successfully.");
+            await loadKnowledgeFilesList();
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    async function handleSelectedFile(file) {
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        if (file.size > maxSize) {
+            setUploadStatus('❌ Error: File size exceeds 2MB limit.', 'error');
+            return;
+        }
+
+        const name = file.name.toLowerCase();
+        const extension = name.substring(name.lastIndexOf('.'));
+        const allowedExtensions = ['.pdf', '.docx', '.txt', '.md'];
+        
+        if (!allowedExtensions.includes(extension)) {
+            setUploadStatus('❌ Error: Unsupported file type.', 'error');
+            return;
+        }
+
+        setUploadStatus('⏳ Reading and parsing file...', 'progress');
+
+        try {
+            let extractedText = '';
+            
+            if (extension === '.txt' || extension === '.md') {
+                extractedText = await readTextFile(file);
+            } else if (extension === '.pdf') {
+                if (typeof pdfjsLib === 'undefined') {
+                    throw new Error('PDF parsing library (PDF.js) failed to load.');
+                }
+                const arrayBuffer = await readFileAsArrayBuffer(file);
+                extractedText = await extractTextFromPDF(arrayBuffer);
+            } else if (extension === '.docx') {
+                if (typeof mammoth === 'undefined') {
+                    throw new Error('DOCX parsing library (Mammoth.js) failed to load.');
+                }
+                const arrayBuffer = await readFileAsArrayBuffer(file);
+                extractedText = await extractTextFromDOCX(arrayBuffer);
+            }
+            
+            const trimmedText = extractedText.trim();
+            
+            // Validation for scanned PDF/empty file
+            if (!trimmedText || trimmedText.length < 20) {
+                setUploadStatus('⚠️ Warning: No readable text found. Scanned PDFs are not supported.', 'error');
+                return;
+            }
+
+            // Client-side character limit validation to avoid out-of-memory / token overflow (approx 100,000 chars)
+            if (trimmedText.length > 100000) {
+                setUploadStatus('⚠️ Warning: File is too large (exceeds 100,000 characters limit).', 'error');
+                return;
+            }
+
+            let fileBase64 = null;
+            if (extension === '.pdf' || extension === '.docx') {
+                fileBase64 = await readFileAsBase64(file);
+            }
+
+            setUploadStatus('⏳ Uploading to server...', 'progress');
+            await uploadKnowledgeFile(file.name, trimmedText, fileBase64);
+            
+        } catch (error) {
+            console.error('Error parsing file:', error);
+            setUploadStatus(`❌ Error parsing file: ${error.message}`, 'error');
+        }
+    }
+
+    function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = (err) => reject(err);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function readTextFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (err) => reject(err);
+            reader.readAsText(file);
+        });
+    }
+
+    function readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (err) => reject(err);
+            reader.readAsArrayBuffer(file);
+        });
+    }
+
+    async function extractTextFromPDF(arrayBuffer) {
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n';
+        }
+        return fullText;
+    }
+
+    async function extractTextFromDOCX(arrayBuffer) {
+        const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+        return result.value;
+    }
+
+    function setUploadStatus(message, type) {
+        if (!knowledgeUploadStatus) return;
+        knowledgeUploadStatus.innerText = message;
+        if (type === 'error') {
+            knowledgeUploadStatus.style.color = '#ff6347';
+        } else if (type === 'progress') {
+            knowledgeUploadStatus.style.color = 'var(--primary)';
+        } else {
+            knowledgeUploadStatus.style.color = '#2ed573';
+        }
+    }
+
+    async function uploadKnowledgeFile(fileName, fileText, fileBase64 = null) {
+        try {
+            const payload = { fileName, fileText };
+            if (fileBase64) {
+                payload.fileBase64 = fileBase64;
+            }
+            const response = await fetch('/api/knowledge', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Upload failed');
+            }
+            setUploadStatus('✓ Uploaded successfully!', 'success');
+            showToast("Document added to knowledge base.");
+            await loadKnowledgeFilesList();
+            setTimeout(() => {
+                if (knowledgeUploadStatus.innerText === '✓ Uploaded successfully!') {
+                    knowledgeUploadStatus.innerText = '';
+                }
+            }, 3000);
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            setUploadStatus(`❌ Upload failed: ${error.message}`, 'error');
+        }
+    }
+
+    // Drag & Drop event handlers
+    if (knowledgeDropZone) {
+        knowledgeDropZone.addEventListener('click', () => {
+            settingsKnowledgeFile.click();
+        });
+        
+        knowledgeDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            knowledgeDropZone.classList.add('dragover');
+        });
+        
+        knowledgeDropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            knowledgeDropZone.classList.remove('dragover');
+        });
+        
+        knowledgeDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            knowledgeDropZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                handleSelectedFile(files[0]);
+            }
+        });
+    }
+
+    if (settingsKnowledgeFile) {
+        settingsKnowledgeFile.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                handleSelectedFile(files[0]);
+                settingsKnowledgeFile.value = '';
+            }
+        });
+    }
 
     // Stepper elements
     const stepIndicators = [
@@ -158,7 +611,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
             apiKey: localStorage.getItem('tiny_api_key') || TinyAI.DEFAULT_CONFIG.apiKey,
             apiUrl: localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl,
-            model: localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model
+            model: localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model,
+            prepSystemPrompt: localStorage.getItem('tiny_prep_system_prompt') || TONE_PRESETS.professional.prep,
+            synthSystemPrompt: localStorage.getItem('tiny_synth_system_prompt') || TONE_PRESETS.professional.synth
         };
     }
 
@@ -338,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderActiveDocument();
         } else {
             outputDocNav.style.display = 'none';
-            outputDocContent.innerHTML = window.DOMPurify ? DOMPurify.sanitize(htmlContent) : htmlContent;
+            outputDocContent.innerHTML = window.DOMPurify ? DOMPurify.sanitize(htmlContent) : fallbackSanitize(htmlContent);
         }
     }
 
@@ -511,7 +966,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             case 'actionItems': titleText = "7. Action Items"; break;
         }
 
-        const sanitizedContent = window.DOMPurify ? DOMPurify.sanitize(content) : content;
+        const sanitizedContent = window.DOMPurify ? DOMPurify.sanitize(content) : fallbackSanitize(content);
 
         outputDocContent.innerHTML = `
             <div class="output-document">
@@ -810,7 +1265,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                 <div class="battlecard-section-title">Question ${num}</div>
                 <div class="battlecard-item">
                     <div class="battlecard-q" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
-                        <div contenteditable="true" class="battlecard-q-text" data-index="${index}" style="color: #000000 !important; font-size: 0.85rem !important; line-height: 1.4 !important; font-weight: 500; outline: none; border-bottom: 1px dashed rgba(0,0,0,0.15); width: 100%; padding-bottom: 2px; flex: 1;">${item.q}</div>
+                        <div contenteditable="true" class="battlecard-q-text" data-index="${index}" style="color: #000000 !important; font-size: 0.85rem !important; line-height: 1.4 !important; font-weight: 500; outline: none; border-bottom: 1px dashed rgba(0,0,0,0.15); width: 100%; padding-bottom: 2px; flex: 1;">${escapeHTML(item.q)}</div>
                         <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
                             <button class="battlecard-copy-btn" style="font-size: 0.75rem; text-decoration: underline; color: var(--primary); background: transparent; border: none; cursor: pointer; padding: 0;">📋 Copy</button>
                             <button class="battlecard-reset-btn" data-index="${index}" style="font-size: 0.75rem; text-decoration: underline; color: rgba(0,0,0,0.4); background: transparent; border: none; cursor: pointer; padding: 0; display: ${resetDisplay};">⟲ Reset</button>
@@ -995,7 +1450,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             reader.onload = (event) => {
                 prepLinkedinText.value = event.target.result;
                 if (linkedinDropText) {
-                    linkedinDropText.innerHTML = `📄 Attached: <strong>${file.name}</strong> (Click to change)`;
+                    linkedinDropText.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong> (Click to change)`;
                 }
                 showToast(`Loaded ${file.name} successfully!`);
             };
@@ -1006,7 +1461,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
         } else if (ext === 'pdf' || ext === 'docx') {
             // Simulate extraction progress
             if (linkedinDropText) {
-                linkedinDropText.innerHTML = `⏳ Extracting text from ${file.name}...`;
+                linkedinDropText.innerHTML = `⏳ Extracting text from ${escapeHTML(file.name)}...`;
             }
             linkedinDropZone.style.pointerEvents = 'none';
             
@@ -1019,7 +1474,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                     `- Master of Applied Finance, University of Melbourne`;
                 
                 if (linkedinDropText) {
-                    linkedinDropText.innerHTML = `📄 Attached: <strong>${file.name}</strong> (Click to change)`;
+                    linkedinDropText.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong> (Click to change)`;
                 }
                 linkedinDropZone.style.pointerEvents = '';
                 showToast(`Successfully extracted profile details from ${file.name}!`);
