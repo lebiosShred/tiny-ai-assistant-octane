@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://tiny-ai-assistant-351972137415.us-central1.run.app/api/:path*" },
+    { "source": "/favicon.ico", "destination": "/demo/tiny.png" },
     { "source": "/", "destination": "/demo/index.html" },
     { "source": "/styles.css", "destination": "/demo/styles.css" },
     { "source": "/app.js", "destination": "/demo/app.js" },
