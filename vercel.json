@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/early-game-architecture.html" }
+    { "source": "/", "destination": "/demo/index.html" },
+    { "source": "/styles.css", "destination": "/demo/styles.css" },
+    { "source": "/app.js", "destination": "/demo/app.js" },
+    { "source": "/ai-assistant.js", "destination": "/demo/ai-assistant.js" }
   ]
 }
