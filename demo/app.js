@@ -116,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsToggleBtn = document.getElementById('settings-toggle-btn');
     const settingsPanel = document.getElementById('settings-panel');
     const settingsApiProvider = document.getElementById('settings-api-provider');
-    const settingsApiKey = document.getElementById('settings-api-key');
     const settingsApiUrl = document.getElementById('settings-api-url');
     const settingsApiModel = document.getElementById('settings-api-model');
     const settingsTonePreset = document.getElementById('settings-tone-preset');
@@ -193,7 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (settingsApiProvider) {
             settingsApiProvider.value = localStorage.getItem('tiny_api_provider') || TinyAI.DEFAULT_CONFIG.provider || 'mistral';
         }
-        settingsApiKey.value = localStorage.getItem('tiny_api_key') || '';
         settingsApiUrl.value = localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl;
         settingsApiModel.value = localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model;
         
@@ -257,7 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (settingsApiProvider) {
             localStorage.setItem('tiny_api_provider', settingsApiProvider.value);
         }
-        localStorage.setItem('tiny_api_key', settingsApiKey.value.trim());
         localStorage.setItem('tiny_api_url', settingsApiUrl.value.trim());
         localStorage.setItem('tiny_api_model', settingsApiModel.value.trim());
         localStorage.setItem('tiny_tone', settingsTonePreset.value);
@@ -617,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getApiConfig() {
         return {
             provider: localStorage.getItem('tiny_api_provider') || TinyAI.DEFAULT_CONFIG.provider || 'mistral',
-            apiKey: localStorage.getItem('tiny_api_key') || TinyAI.DEFAULT_CONFIG.apiKey,
+            apiKey: "",
             apiUrl: localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl,
             model: localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model,
             prepSystemPrompt: localStorage.getItem('tiny_prep_system_prompt') || TONE_PRESETS.professional.prep,
