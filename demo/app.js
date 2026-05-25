@@ -2423,6 +2423,29 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
         const variant = battlecardSelector.value;
         await loadCustomQuestions(variant);
         renderBattlecards();
+        
+        // Sync to Step 3 variant select
+        if (variant === "A") {
+            synthVariantSelect.value = "Variant A";
+        } else if (variant === "B") {
+            synthVariantSelect.value = "Variant B";
+        } else if (variant === "C") {
+            synthVariantSelect.value = "Variant C";
+        }
+    });
+
+    // Bind Step 3 variant selector change event
+    synthVariantSelect.addEventListener('change', async () => {
+        const val = synthVariantSelect.value;
+        let variant = "A";
+        if (val === "Variant C") {
+            variant = "C";
+        } else if (val === "Variant B") {
+            variant = "B";
+        }
+        battlecardSelector.value = variant;
+        await loadCustomQuestions(variant);
+        renderBattlecards();
     });
 
     // Initialize battlecards by default

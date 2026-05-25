@@ -1538,7 +1538,7 @@ const server = http.createServer(async (req, res) => {
     // API Knowledge Base Route
     if (pathname === '/api/knowledge') {
         const knowledgeDir = path.join(PUBLIC_DIR, 'knowledge');
-        const SYSTEM_FILES = ['company_info.pdf', 'discovery_scripts.pdf', 'services_catalog.pdf'];
+        const SYSTEM_FILES = ['company_info.pdf', 'discovery_scripts.pdf', 'services_catalog.pdf', 'customer_profiles.md'];
 
         if (req.method === 'GET') {
             fs.readdir(knowledgeDir, (err, files) => {

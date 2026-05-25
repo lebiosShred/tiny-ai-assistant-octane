@@ -1,0 +1,317 @@
+--- PAGE 1 ---
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+SALES PROCESS ​
+TECHNICAL BRIEF 
+ 
+TOLD BY ANTHONY COUNDOURIS + SHEILA OCANA 
+ 
+> runfrictionless.com​
+1 
+
+--- PAGE 2 ---
+ 
+ 
+OBJECTIVE 
+Build a simple sales process designed to deliver leads to the organization 
+BACKGROUND 
+Design and build a simple, disciplined sales process to generate and qualify leads. The current process lacks structure in 
+the early stages, causing deals to stall before they can close. This brief outlines FIVE components of the solution: 
+tooling, workflow, and the scope of work required. 
+Follow a defined process at every step 
+1.​
+Each application must produce accurate, useful content at its respective stage 
+2.​
+Integration and automation are low priority — sales staff are expected to copy and paste between tools where 
+needed 
+3.​
+The process must work reliably before any automation is considered 
+TOOLS UNDER CONSIDERATION 
+Purpose 
+Tool Options 
+CRM 
+HubSpot or Trello 
+Thinking & report creation 
+Claude 
+Call recording & directory 
+Fireflies or HubSpot 
+Calendar booking 
+HubSpot 
+Screen cast video 
+Microsoft Teams 
+In-person meetings 
+Fireflies 
+REFERENCE ASSETS 
+Early game explainer video: Google Drive 
+Process map (Mural): View board 
+Early game deal board https://app.hubspot.com/contacts/2926400/objects/0-136/views/all/board?prefetch=  
+01 — PRE-SCREEN CALENDAR 
+A single booking link is used regardless of whether the attendee is based in Australia, New Zealand, or the Middle East. 
+Availability 
+●​
+Albert: 7:00 AM – 2:00 PM (Sydney time) 
+●​
+Isha: 2:00 PM – 9:00 PM (Sydney time) 
+> runfrictionless.com​
+2 
+
+--- PAGE 3 ---
+ 
+●​
+28 x 30-minute slots per day across a combined 14-hour window 
+Booking rules 
+●​
+Same-day bookings are not permitted 
+●​
+A 12-hour buffer applies to all bookings 
+●​
+Sessions can be conducted by phone or online meeting 
+●​
+Teams or Zoom call 
+Calendar page 
+The booking widget should be embedded within a page that gives the attendee context about what to expect — not 
+presented as a standalone calendar. See example: salesstar.com/steve-hughson-meeting 
+Information collected at booking: 
+●​
+Person name, company name, and position 
+●​
+Service interest: Planning & Analytics or AI 
+●​
+Company URL 
+●​
+What they would like to discuss 
+Additional calendars required: 
+1.​
+Amendra (separate calendar link) 
+2.​
+Steny (separate calendar link) 
+QR code: A QR code linking to the booking page is required for offline use. 
+02 — PRE-SCREEN PREPARATION 
+Before each pre-screen call, the assigned sales person (Albert or Isha) prepares using a sales assistant. This assistant 
+has a permanent connection to OneDrive Client folders where it can read and understand every job that has ever been 
+specified. 
+Manual inputs uploaded to Claude 
+1.​
+Client name, company, and position 
+2.​
+Completed booking form 
+3.​
+LinkedIn profile (PDF export) 
+4.​
+Company URL 
+5.​
+AI or TM1 
+6.​
+Company Email 
+What Claude is asked to produce 
+1.​
+Analysis of the client's LinkedIn profile and recent social media activity 
+2.​
+Overview of the company's products and services 
+3.​
+Octane’s services  
+4.​
+Octane's competitors 
+5.​
+Competing applications 
+6.​
+Complementary applications 
+7.​
+TM1 and AI applications 
+8.​
+Assessment of how TM1 or AI may be relevant to this client 
+9.​
+Likely pain points 
+> runfrictionless.com​
+3 
+
+--- PAGE 4 ---
+ 
+10.​ Conversation starters — enabling the sales person to demonstrate relevance from the first moment, without 
+needing to ask basic discovery questions 
+Training data 
+https://docs.google.com/spreadsheets/d/1jIDnq2QAhU_eMcZZvNkAvRfyb0JIvBWs2NyjMviIiG8/edit?usp=sharing  
+03 — PRE-SCREEN CALL 
+Duration: 30 minutes (Albert or Isha) 
+Objectives 
+1.​
+Build rapport using Claude's pre-screen prep as background 
+2.​
+Read through a structured questionnaire (~12 questions) 
+3.​
+Sales person does not need to type during the call — answers are captured via transcript 
+4.​
+After the call, transcript answers are mapped to the questionnaire and a complete summary document is 
+produced 
+5.​
+Before ending the call, the sales person books a Positional Meeting with Amendra. Booking modes include: 
+Training data 
+04 — CENTRAL CALL RECORDING DIRECTORY 
+All recorded calls (pre-screen and positional meetings) must be: 
+1.​
+Attached to the correct ticket in HubSpot 
+2.​
+Visible in a single, centralised directory accessible to all sales staff and the sales trainer 
+Directory requirements 
+1.​
+Calls displayed chronologically across the organisation — not buried within individual client records 
+2.​
+Accessible by individual sales person or across the whole team 
+3.​
+Usable for preparation (e.g. reviewing calls before a workshop without navigating HubSpot) 
+Functionality required 
+1.​
+Listen to audio recordings 
+2.​
+Read call transcripts 
+3.​
+Extract content using report templates (e.g. summary report, recap report) 
+4.​
+Generate reports with a single click or copy-paste action for sending to clients 
+Call recording requirements (ChatGPT) ​
+Fireflies demo 
+05 — AUTOMATED REPORTS 
+For selected recorded calls, sales staff need to be able to generate structured reports from the transcript without 
+manual writing. Claude is the intended tool for report generation. The sales person pastes the transcript (or relevant 
+excerpts) into Claude and selects the appropriate report type. 
+Report types 
+> runfrictionless.com​
+4 
+
+--- PAGE 5 ---
+ 
+1.​
+Questionnaire answers. Transcript answers mapped to a predetermined question set. There are three versions 
+depending on client type (First-time TM1 user, Existing TM1 user and First-time AI user) 
+2.​
+Recap email. A concise email summarising the three most salient points covered on the call. Intended for sending 
+to the client immediately after the meeting. 
+3.​
+Summary sheet. A brief, structured overview of what was discussed — suitable for internal use or sharing with a 
+colleague who needs to get up to speed quickly. 
+4.​
+Notes. A more detailed account of the conversation, capturing context, nuance, and any points that don't fit 
+neatly into a structured format. 
+5.​
+Proposal. A drafted proposal generated from one or more call recordings. This draws on the accumulated context 
+of the client relationship rather than a single call. 
+6.​
+Action items. A clear list of who needs to do what following the call, with ownership assigned where identifiable 
+from the transcript. 
+SCOPE OF WORK 
+Amiel 
+Produce a proposal covering HOW each of the components will be built 
+Build five components 
+Sheila 
+Develop SOPs and training materials for sales staff 
+Anthony (Sales Trainer) 
+Review all five components 
+Provide input on the Claude prompt and pre-screen preparation training 
+Assist with training sales staff 
+ 
+ 
+> runfrictionless.com​
+5 
+
+--- PAGE 6 ---
+ 
+ 
+SIX CONCEPTS  
+If you are as excited as I am about building a sales system, you are going to have to get familiar with five concepts. A lot 
+of the examples cited in the book are from retail, even though this book is written to be read by founders of internet 
+startups. I find using retail experiences an easy way to explain a concepts, because all of us have had retail experiences. 
+Here are six key concepts we need to wrap our heads around: 
+1.​
+customer’s goal 
+2.​
+friction 
+3.​
+drop off 
+4.​
+4Qs 
+5.​
+intel 
+6.​
+words and pictures 
+CUSTOMER’S GOAL 
+The purpose of a sales system is to achieve the customer’s goal in the shortest possible time.  
+Customer want to spend money and they want to buy your product. In their minds they have a goal the want to 
+achieve, and time frame for which they want to achieve that goal. Our aim when building a sales system is not to make 
+sales efficient for the company, but help customers achieve their goal in the shortest possible time.  
+Often companies make the mistake of trying to be efficient at the expense of the customer's goal. Customers can 
+sense when they are being herded. Example the introduction of self check-in at airports was an exercise in making 
+operations efficient, not improving the customer experience. When self check in was first introduced it was clunky and 
+required the traveller to key in many data points while holding passport and luggage.  
+Friction 
+Frictionless 
+test  
+predict 
+manual 
+automated 
+inefficient 
+scale up 
+iterate 
+close a deal 
+bootstrap 
+series a 
+ 
+ 
+> runfrictionless.com​
+6 
+
+--- PAGE 7 ---
+ 
+ 
+ 
+ 
+> BUY ME 
+ 
+Disclaimer 
+None of run frictionless, any of its affiliates, providers or their respective officers, directors, 
+employees, agents, independent contractors or licensors (referred to collectively as the run 
+frictionless Parties) guarantees the accuracy, adequacy, timeliness, reliability, completeness, or 
+usefulness of any of the content and run frictionless disclaims liability for errors or omissions in the 
+content. 
+The Document and all of the content is provided “as is”, without any warranty, either express or 
+implied, including the implied warranties of merchantability, fitness for a particular purpose, 
+non-infringement or title. The Document could contain technical inaccuracies or typographical 
+errors. 
+run frictionless  Parties do not warrant as to the results of your use of the content or that the 
+Document is free of viruses or other harmful components. Use of this Document is at your own risk. 
+This does not affect those warranties which cannot be excluded or restricted under the applicable 
+laws. 
+We may discontinue or make changes in the content and the Document at any time without prior 
+notice and without any liability. Any dated information is published as of its date only, and run 
+frictionless  Parties do not undertake any obligation or responsibility to update or amend any such 
+information. We reserve the right to terminate any or all Document offerings or transmissions 
+without prior notice. 
+Third Party Documents 
+This Document may contain links to websites controlled, owned, or operated by third-party entities, 
+organisations or people (the Third Party Documents). Links to Third Party Documents on the 
+Document are provided solely for your convenience. If you use these links, you leave the Document. 
+We have not reviewed all of these Third Party Documents and do not control and are not 
+responsible for these websites or their content or availability. run frictionless  therefore does not 
+endorse or make any representations about them, or any material found there, or any results that 
+may be obtained from using them. If you decide to access any of the Third Party Documents linked 
+to the Document, you do so entirely at your own risk. 
+Copyright © run frictionless  2018 
+> runfrictionless.com​
+7 

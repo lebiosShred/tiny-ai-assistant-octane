@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Discovery Call with Octane Software Solutions</title>
+    <meta name="description" content="Schedule a free 30-minute discovery call with Octane Software Solutions. Discuss your Planning & Analytics (TM1) or AI needs -- no obligation, zero pressure.">
+    <meta property="og:title" content="Book a Discovery Call with Octane Software Solutions">
+    <meta property="og:description" content="Schedule a free 30-minute discovery call. Let's explore how Octane can help your organisation grow.">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="book.css">
+</head>
+<body>
+
+    <!-- ====== Hero: Two-Column Layout (Context + Calendar) ====== -->
+    <section class="hero" id="hero">
+        <div class="container">
+            <div class="hero__grid">
+
+                <!-- Left Column: Context -->
+                <div class="hero__context">
+                    <h1 class="hero__title">
+                        Book a Meeting
+                        <span>with Octane</span>
+                    </h1>
+
+                    <p class="hero__desc">
+                        <strong>We deliver Planning & Analytics (TM1) and AI solutions that drive measurable, predictable and profitable growth.</strong>
+                    </p>
+                    <p class="hero__desc">
+                        Octane Software Solutions is not just a consulting firm -- we are a <strong>strategic technology partner</strong> that helps organisations transform their data operations. Our approach goes beyond conventional implementations, focusing on building <strong>scalable systems</strong> that deliver sustainable results.
+                    </p>
+
+                    <div class="hero__social">
+                        <a href="#" class="hero__social-link hero__social-link--linkedin" title="LinkedIn" aria-label="LinkedIn">in</a>
+                        <a href="tel:+61000000000" class="hero__social-link hero__social-link--phone" title="Call us" aria-label="Phone">📞</a>
+                        <a href="mailto:sales@octanesolutions.com.au" class="hero__social-link hero__social-link--email" title="Email" aria-label="Email">✉</a>
+                    </div>
+
+                    <!-- SDR Hosts Display -->
+                    <div class="hosts-display">
+                        <div class="hosts-avatars">
+                            <div class="host-avatar-circle">
+                                <img src="/demo/albert.png" alt="Albert" class="host-img">
+                            </div>
+                            <div class="host-avatar-circle host-avatar-circle--overlap">
+                                <img src="/demo/isha.png" alt="Isha" class="host-img host-img--tall">
+                            </div>
+                        </div>
+                        <div class="hosts-text">
+                            <p class="hosts-title">Meeting Hosts</p>
+                            <p class="hosts-subtitle">You will be matched with Albert or Isha based on availability.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Interactive Booking Widget -->
+                <div class="hero__calendar" id="booking-widget-container">
+                    
+                    <!-- STEP 1: Select Booking Reason -->
+                    <div id="booking-step-reason" class="booking-step">
+                        <div class="hero__calendar-header">Book a Meeting</div>
+                        <div class="hero__calendar-body">
+                            <label for="meeting-reason" class="booking-label">What is the reason for your meeting?</label>
+                            <div class="select-wrapper">
+                                <select id="meeting-reason" class="booking-select" required>
+                                    <option value="" disabled selected>Select an option...</option>
+                                    <option value="Pre-Screen Discovery Call | 30 mins">Pre-Screen Discovery Call | 30 mins</option>
+                                    <option value="Positional Meeting | 45 mins">Positional Meeting | 45 mins</option>
+                                    <option value="TM1 Demo Session | 60 mins">TM1 Demo Session | 60 mins</option>
+                                    <option value="Planning & Analytics Consultation | 45 mins">Planning & Analytics Consultation | 45 mins</option>
+                                    <option value="AI Solutions Discussion | 45 mins">AI Solutions Discussion | 45 mins</option>
+                                    <option value="other">Other (please specify)</option>
+                                </select>
+                            </div>
+
+                            <!-- Custom Text Field (Shown only when 'Other' is selected) -->
+                            <div id="other-reason-wrapper" class="other-reason-wrapper" style="display: none;">
+                                <label for="other-reason" class="booking-label">Please specify your reason:</label>
+                                <textarea id="other-reason" class="booking-textarea" rows="3" placeholder="Describe what you need help with..."></textarea>
+                            </div>
+
+                            <button type="button" id="btn-next-step" class="booking-btn booking-btn--primary" disabled>
+                                Next: View Availability <span>→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: Calendar Embed -->
+                    <div id="booking-step-calendar" class="booking-step" style="display: none;">
+                        <div class="hero__calendar-header hero__calendar-header--with-back">
+                            <button type="button" id="btn-back-step" class="btn-back" title="Change reason" aria-label="Go back">←</button>
+                            <div class="header-details">
+                                <div class="header-details__title">Meeting with Octane</div>
+                                <div class="header-details__subtitle" id="selected-reason-display">Reason: None</div>
+                            </div>
+                        </div>
+                        <div class="hero__calendar-body">
+                            <!--
+                                =======================================================
+                                HUBSPOT CALENDAR WIDGET EMBED INSTRUCTIONS
+                                =======================================================
+                                Replace everything inside this <div> with the actual
+                                HubSpot meeting embed code:
+
+                                OPTION A -- HubSpot Embed Script (Recommended):
+                                <script type="text/javascript"
+                                  src="https://static.hsappstatic.net/MeetingsEmbed/ex/MeetingsEmbedCode.js">
+                                </script>
+                                <div class="meetings-iframe-container"
+                                  data-src="https://meetings.hubspot.com/YOUR-LINK?embed=true">
+                                </div>
+
+                                OPTION B -- Direct iFrame:
+                                <iframe
+                                  src="https://meetings.hubspot.com/YOUR-LINK?embed=true"
+                                  style="width:100%;height:100%;min-height:450px;border:none;"
+                                  title="Book a call with Octane">
+                                </iframe>
+
+                                Replace YOUR-LINK with the round-robin meeting link
+                                configured for Albert + Isha.
+                                =======================================================
+                            -->
+                            <div class="meetings-iframe-placeholder">
+                                <!-- Placeholders matching the selections for demonstration -->
+                                <div class="selected-meeting-info-card">
+                                    <div class="selected-meeting-title" id="selected-meeting-title">Discovery Call</div>
+                                    <div class="selected-meeting-desc" id="selected-meeting-desc">Please choose a convenient date and time on the calendar below.</div>
+                                </div>
+                                
+                                <div class="scheduler-container">
+                                    <!-- Left: Calendar Day Picker -->
+                                    <div class="calendar-mock-iframe">
+                                        <div class="calendar-mock-header">
+                                            <span>May 2026</span>
+                                        </div>
+                                        <div class="calendar-mock-grid" id="calendar-days-grid">
+                                            <button type="button" class="calendar-day" data-day="25">25</button>
+                                            <button type="button" class="calendar-day calendar-day--active" data-day="26">26</button>
+                                            <button type="button" class="calendar-day" data-day="27">27</button>
+                                            <button type="button" class="calendar-day" data-day="28">28</button>
+                                            <button type="button" class="calendar-day" data-day="29">29</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Right: Time Slots Picker -->
+                                    <div class="time-slots-container">
+                                        <div class="time-slots-header" id="time-slots-header">Times for May 26</div>
+                                        <div class="time-slots-grid" id="time-slots-grid">
+                                            <!-- Injected dynamically by JS -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Booking Confirmation Details -->
+                                <div id="booking-confirmation-details" class="booking-confirmation-details" style="display: none;">
+                                    <p class="confirmation-summary-text">Selected: <strong id="summary-date-time">May 26 @ 10:30 AM</strong></p>
+                                    <button type="button" id="btn-confirm-booking" class="booking-btn booking-btn--primary">Confirm Booking</button>
+                                </div>
+                            </div>
+                            <div class="calendar-dev-hint">
+                                ⚠ Replace this placeholder with your HubSpot embed code. See HTML comments for instructions.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- ====== Testimonials ====== -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <h2 class="testimonials__heading"><strong>See Why Our Clients Would Recommend Us...</strong></h2>
+            <div class="testimonials__grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-card__quote-mark">&ldquo;</div>
+                    <p class="testimonial-card__text">
+                        Exceptional attention to detail and deep understanding of our planning requirements. The team delivered a solution that transformed our budgeting process completely.
+                    </p>
+                    <div class="testimonial-card__author">
+                        <div class="testimonial-card__avatar">JM</div>
+                        <div>
+                            <div class="testimonial-card__name">James M.</div>
+                            <div class="testimonial-card__company">CFO, Enterprise Client</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-card__quote-mark">&ldquo;</div>
+                    <p class="testimonial-card__text">
+                        Working with Octane has been a game-changer. Their TM1 expertise combined with AI-driven insights gave us visibility we never had before.
+                    </p>
+                    <div class="testimonial-card__author">
+                        <div class="testimonial-card__avatar">SK</div>
+                        <div>
+                            <div class="testimonial-card__name">Sarah K.</div>
+                            <div class="testimonial-card__company">Head of Analytics</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-card__quote-mark">&ldquo;</div>
+                    <p class="testimonial-card__text">
+                        Professional, responsive, and genuinely invested in our success. The implementation was seamless and ROI was visible within the first quarter.
+                    </p>
+                    <div class="testimonial-card__author">
+                        <div class="testimonial-card__avatar">DP</div>
+                        <div>
+                            <div class="testimonial-card__name">Daniel P.</div>
+                            <div class="testimonial-card__company">Operations Director</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- ====== QR Code ====== -->
+    <section class="qr-section" id="qr">
+        <div class="container">
+            <div class="qr-wrapper">
+                <div class="qr-box" id="qr-code-box"></div>
+                <div class="qr-info">
+                    <div class="qr-info__title">Share This Page</div>
+                    <p class="qr-info__desc">Scan or download the QR code for business cards, brochures, or event collateral.</p>
+                    <button class="qr-btn" id="qr-download-btn" type="button">⬇ Download PNG</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- ====== QR Code Library ====== -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+    <!-- ====== Page Script ====== -->
+    <script>
+    (function() {
+        'use strict';
+
+        // === Booking Widget Flow ===
+        const stepReason = document.getElementById('booking-step-reason');
+        const stepCalendar = document.getElementById('booking-step-calendar');
+        const selectReason = document.getElementById('meeting-reason');
+        const otherReasonWrapper = document.getElementById('other-reason-wrapper');
+        const otherReasonText = document.getElementById('other-reason');
+        const btnNext = document.getElementById('btn-next-step');
+        const btnBack = document.getElementById('btn-back-step');
+        const selectedReasonDisplay = document.getElementById('selected-reason-display');
+        const selectedMeetingTitle = document.getElementById('selected-meeting-title');
+        const selectedMeetingDesc = document.getElementById('selected-meeting-desc');
+
+        // Reasons details mapping
+        const reasonDetails = {
+            'Pre-Screen Discovery Call | 30 mins': {
+                title: 'Pre-Screen Discovery Call',
+                desc: '30-minute introductory call to discuss your business challenges, data architecture, and potential alignment with Octane.'
+            },
+            'Positional Meeting | 45 mins': {
+                title: 'Positional Meeting',
+                desc: '45-minute deep-dive consultation with a senior systems architect. We will review your analytics/TM1 requirements in detail.'
+            },
+            'TM1 Demo Session | 60 mins': {
+                title: 'TM1 Demo Session',
+                desc: '1-hour live demonstration of Octane\'s custom planning templates, dynamic dashboarding, and integration platforms.'
+            },
+            'Planning & Analytics Consultation | 45 mins': {
+                title: 'Planning & Analytics Consultation',
+                desc: '45-minute technical roadmap session focusing on budgeting automation, reporting modernization, and TM1 licensing.'
+            },
+            'AI Solutions Discussion | 45 mins': {
+                title: 'AI Solutions Discussion',
+                desc: '45-minute expert session reviewing how generative AI, agentic tools, and LLMs can optimize your corporate workflows.'
+            }
+        };
+
+        // Enable button based on selection validity
+        function validateSelection() {
+            const val = selectReason.value;
+            if (!val) {
+                btnNext.disabled = true;
+            } else if (val === 'other') {
+                btnNext.disabled = !otherReasonText.value.trim();
+            } else {
+                btnNext.disabled = false;
+            }
+        }
+
+        selectReason.addEventListener('change', () => {
+            if (selectReason.value === 'other') {
+                otherReasonWrapper.style.display = 'block';
+                otherReasonText.setAttribute('required', 'true');
+                otherReasonText.focus();
+            } else {
+                otherReasonWrapper.style.display = 'none';
+                otherReasonText.removeAttribute('required');
+            }
+            validateSelection();
+        });
+
+        otherReasonText.addEventListener('input', validateSelection);
+
+        btnNext.addEventListener('click', () => {
+            const val = selectReason.value;
+            let displayReason = val;
+            let title = 'Custom Consultation';
+            let desc = 'Please choose a convenient date and time on the calendar below.';
+
+            if (val === 'other') {
+                displayReason = otherReasonText.value.trim();
+                title = 'Custom Consultation';
+                desc = `Special request details: "${displayReason}"`;
+            } else if (reasonDetails[val]) {
+                title = reasonDetails[val].title;
+                desc = reasonDetails[val].desc;
+            }
+
+            // Update details
+            selectedReasonDisplay.textContent = `Reason: ${displayReason}`;
+            selectedMeetingTitle.textContent = title;
+            selectedMeetingDesc.textContent = desc;
+
+            // Transition views
+            stepReason.style.display = 'none';
+            stepCalendar.style.display = 'block';
+        });
+
+        btnBack.addEventListener('click', () => {
+            stepCalendar.style.display = 'none';
+            stepReason.style.display = 'block';
+        });
+
+        // === Calendar Interaction ===
+        const calendarGrid = document.getElementById('calendar-days-grid');
+        const timeSlotsHeader = document.getElementById('time-slots-header');
+        const timeSlotsGrid = document.getElementById('time-slots-grid');
+        const confirmationDetails = document.getElementById('booking-confirmation-details');
+        const summaryDateTime = document.getElementById('summary-date-time');
+        const btnConfirm = document.getElementById('btn-confirm-booking');
+
+        let selectedDay = '26'; // Default
+        let selectedTime = '';
+
+        // Pre-configured times for demonstration
+        const timesData = {
+            '25': ['9:30 AM', '11:00 AM', '2:00 PM', '4:30 PM'],
+            '26': ['9:00 AM', '10:30 AM', '1:00 PM', '3:30 PM'],
+            '27': ['10:00 AM', '11:30 AM', '2:30 PM', '5:00 PM'],
+            '28': ['9:00 AM', '11:00 AM', '1:30 PM', '4:00 PM'],
+            '29': ['8:30 AM', '10:00 AM', '12:30 PM', '3:00 PM']
+        };
+
+        function renderTimeSlots(day) {
+            timeSlotsHeader.textContent = `Times for May ${day}`;
+            timeSlotsGrid.innerHTML = '';
+            selectedTime = '';
+            confirmationDetails.style.display = 'none';
+
+            const times = timesData[day] || timesData['26'];
+            times.forEach(time => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'time-slot-btn';
+                btn.textContent = time;
+                btn.setAttribute('data-time', time);
+                
+                btn.addEventListener('click', () => {
+                    // Reset others
+                    const activeSlots = timeSlotsGrid.querySelectorAll('.time-slot-btn--active');
+                    activeSlots.forEach(s => s.classList.remove('time-slot-btn--active'));
+                    
+                    // Set active
+                    btn.classList.add('time-slot-btn--active');
+                    selectedTime = time;
+                    
+                    // Show confirmation
+                    summaryDateTime.textContent = `May ${day} @ ${time}`;
+                    confirmationDetails.style.display = 'block';
+                });
+                
+                timeSlotsGrid.appendChild(btn);
+            });
+        }
+
+        calendarGrid.addEventListener('click', (e) => {
+            const dayBtn = e.target.closest('.calendar-day');
+            if (!dayBtn) return;
+
+            // Remove active from other days
+            const activeDays = calendarGrid.querySelectorAll('.calendar-day--active');
+            activeDays.forEach(d => d.classList.remove('calendar-day--active'));
+
+            // Set active day
+            dayBtn.classList.add('calendar-day--active');
+            selectedDay = dayBtn.getAttribute('data-day');
+            
+            // Render slots
+            renderTimeSlots(selectedDay);
+        });
+
+        // Initialize default time slots for May 26
+        renderTimeSlots('26');
+
+        btnConfirm.addEventListener('click', () => {
+            alert(`Booking Confirmed!\nReason: ${selectReason.value === 'other' ? otherReasonText.value.trim() : selectReason.value}\nTime: May ${selectedDay} at ${selectedTime}`);
+        });
+
+
+        // === QR Code Generation ===
+        const bookingUrl = window.location.href.split('#')[0].split('?')[0];
+        const qrBox = document.getElementById('qr-code-box');
+        const qrBtn = document.getElementById('qr-download-btn');
+
+        try {
+            const qr = qrcode(0, 'M');
+            qr.addData(bookingUrl);
+            qr.make();
+
+            const moduleCount = qr.getModuleCount();
+            const cellSize = 6;
+            const margin = 12;
+            const size = moduleCount * cellSize + margin * 2;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, size, size);
+
+            ctx.fillStyle = '#1A1A1A';
+            for (let r = 0; r < moduleCount; r++) {
+                for (let c = 0; c < moduleCount; c++) {
+                    if (qr.isDark(r, c)) {
+                        ctx.fillRect(margin + c * cellSize, margin + r * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+
+            qrBox.appendChild(canvas);
+
+            qrBtn.addEventListener('click', () => {
+                const link = document.createElement('a');
+                link.download = 'octane-booking-qr.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        } catch (e) {
+            const img = document.createElement('img');
+            img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(bookingUrl) + '&color=1A1A1A&bgcolor=FFFFFF';
+            img.alt = 'QR Code';
+            qrBox.appendChild(img);
+
+            qrBtn.addEventListener('click', () => {
+                window.open(img.src, '_blank');
+            });
+        }
+    })();
+    </script>
+
+</body>
+</html>
