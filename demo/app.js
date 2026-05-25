@@ -667,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     step2SaveBtn.addEventListener('click', async () => {
         const variant = battlecardSelector.value;
-        const questions = currentQuestions.map(q => q.q);
+        const questions = currentQuestions.map(q => ({ q: q.q, a: q.a || "" }));
         
         step2SaveBtn.disabled = true;
         const originalText = step2SaveBtn.innerText;
@@ -710,9 +710,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.ok) {
                 const data = await res.json();
                 if (Array.isArray(data) && data.length > 0) {
-                    currentQuestions = data.map((qText, index) => {
+                    currentQuestions = data.map((item, index) => {
+                        const q = typeof item === 'object' && item !== null ? item.q : item;
+                        const a = typeof item === 'object' && item !== null ? (item.a || '') : '';
                         const defaultTip = BATTLECARDS[variant] && BATTLECARDS[variant][index] ? BATTLECARDS[variant][index].tip : "Custom question";
-                        return { q: qText, tip: defaultTip };
+                        return { q, a, tip: defaultTip };
                     });
                     console.log(`Loaded custom questions for Variant ${variant} from server.`);
                     return;
@@ -727,9 +729,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (localData) {
                 const parsed = JSON.parse(localData);
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                    currentQuestions = parsed.map((qText, index) => {
+                    currentQuestions = parsed.map((item, index) => {
+                        const q = typeof item === 'object' && item !== null ? item.q : item;
+                        const a = typeof item === 'object' && item !== null ? (item.a || '') : '';
                         const defaultTip = BATTLECARDS[variant] && BATTLECARDS[variant][index] ? BATTLECARDS[variant][index].tip : "Custom question";
-                        return { q: qText, tip: defaultTip };
+                        return { q, a, tip: defaultTip };
                     });
                     console.log(`Loaded custom questions for Variant ${variant} from LocalStorage.`);
                     return;
@@ -1270,14 +1274,18 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                 <div class="battlecard-section-title">Question ${num}</div>
                 <div class="battlecard-item">
                     <div class="battlecard-q" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
-                        <div contenteditable="true" class="battlecard-q-text" data-index="${index}" style="color: #000000 !important; font-size: 0.85rem !important; line-height: 1.4 !important; font-weight: 500; outline: none; border-bottom: 1px dashed rgba(0,0,0,0.15); width: 100%; padding-bottom: 2px; flex: 1;">${escapeHTML(item.q)}</div>
+                        <div contenteditable="false" class="battlecard-q-text" data-index="${index}" style="color: #000000 !important; font-size: 0.85rem !important; line-height: 1.4 !important; font-weight: 500; outline: none; border-bottom: 1px dashed transparent; width: 100%; padding-bottom: 2px; flex: 1;">${escapeHTML(item.q)}</div>
                         <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
+                            <button class="battlecard-edit-btn" data-index="${index}" style="font-size: 0.75rem; text-decoration: underline; color: var(--primary); background: transparent; border: none; cursor: pointer; padding: 0;">✏️ Edit</button>
                             <button class="battlecard-copy-btn" style="font-size: 0.75rem; text-decoration: underline; color: var(--primary); background: transparent; border: none; cursor: pointer; padding: 0;">📋 Copy</button>
                             <button class="battlecard-reset-btn" data-index="${index}" style="font-size: 0.75rem; text-decoration: underline; color: rgba(0,0,0,0.4); background: transparent; border: none; cursor: pointer; padding: 0; display: ${resetDisplay};">⟲ Reset</button>
                             <button class="battlecard-remove-btn" data-index="${index}" style="font-size: 0.75rem; text-decoration: underline; color: #ff4d4d; background: transparent; border: none; cursor: pointer; padding: 0;">❌ Remove</button>
                         </div>
                     </div>
-                    <div class="battlecard-tips" style="margin-top: 0.35rem; font-size: 0.8rem !important; color: rgba(0,0,0,0.6) !important; font-style: italic;">Tip: ${item.tip}</div>
+                    <div class="battlecard-answer-wrapper" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                        <label style="font-size: 0.7rem; font-weight: 600; color: rgba(0,0,0,0.4); text-transform: uppercase;">Answer / Notes</label>
+                        <textarea class="form-input textarea-input battlecard-a-text" data-index="${index}" placeholder="Type prospect answer or notes here..." style="min-height: 60px; font-size: 0.8rem; padding: 0.35rem 0.5rem; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; background: #ffffff; color: #000000; width: 100%; resize: vertical; box-sizing: border-box;"></textarea>
+                    </div>
                 </div>
             `;
             
@@ -1309,31 +1317,72 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             });
         });
 
-        // Add inline change event listeners to save editable text
+        // Helper to save question text
+        function saveQuestionText(qText, btn, idx) {
+            qText.setAttribute('contenteditable', 'false');
+            qText.style.borderBottomColor = 'transparent';
+            btn.innerText = "✏️ Edit";
+            
+            const newText = qText.innerText.trim();
+            currentQuestions[idx].q = newText;
+            
+            // Show/hide reset button
+            const resetBtn = qText.closest('.battlecard-item').querySelector('.battlecard-reset-btn');
+            const defaultText = BATTLECARDS[variant][idx] ? BATTLECARDS[variant][idx].q : null;
+            if (defaultText !== null && newText !== defaultText) {
+                resetBtn.style.display = 'inline-flex';
+            } else {
+                resetBtn.style.display = 'none';
+            }
+        }
+
+        // Add edit button listeners
+        const editBtns = battlecardBody.querySelectorAll('.battlecard-edit-btn');
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = parseInt(btn.getAttribute('data-index'));
+                const qText = btn.closest('.battlecard-item').querySelector('.battlecard-q-text');
+                if (qText) {
+                    const isEditing = qText.getAttribute('contenteditable') === 'true';
+                    if (isEditing) {
+                        saveQuestionText(qText, btn, idx);
+                        showToast("Question saved.");
+                    } else {
+                        qText.setAttribute('contenteditable', 'true');
+                        qText.style.borderBottomColor = 'var(--primary)';
+                        qText.focus();
+                        btn.innerText = "💾 Save";
+                        showToast("Editing question...");
+                    }
+                }
+            });
+        });
+
+        // Add inline change event listeners to save editable text on blur
         const qTextElements = battlecardBody.querySelectorAll('.battlecard-q-text');
         qTextElements.forEach(qText => {
             const idx = parseInt(qText.getAttribute('data-index'));
             
-            qText.addEventListener('input', () => {
-                const newText = qText.innerText.trim();
-                currentQuestions[idx].q = newText;
-                
-                // Show/hide reset button
-                const resetBtn = qText.closest('.battlecard-item').querySelector('.battlecard-reset-btn');
-                const defaultText = BATTLECARDS[variant][idx] ? BATTLECARDS[variant][idx].q : null;
-                if (defaultText !== null && newText !== defaultText) {
-                    resetBtn.style.display = 'inline-flex';
-                } else {
-                    resetBtn.style.display = 'none';
-                }
+            qText.addEventListener('blur', () => {
+                const btn = qText.closest('.battlecard-item').querySelector('.battlecard-edit-btn');
+                saveQuestionText(qText, btn, idx);
             });
             
             qText.style.transition = "border-bottom-color 0.2s ease";
             qText.addEventListener('focus', () => {
                 qText.style.borderBottomColor = 'var(--primary)';
             });
-            qText.addEventListener('blur', () => {
-                qText.style.borderBottomColor = 'rgba(0,0,0,0.15)';
+        });
+
+        // Add answer change listeners
+        const aTextElements = battlecardBody.querySelectorAll('.battlecard-a-text');
+        aTextElements.forEach(aText => {
+            const idx = parseInt(aText.getAttribute('data-index'));
+            aText.value = currentQuestions[idx].a || "";
+            
+            aText.addEventListener('input', () => {
+                currentQuestions[idx].a = aText.value;
             });
         });
 
