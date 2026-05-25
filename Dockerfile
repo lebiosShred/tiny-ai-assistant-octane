@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Copy the server file, public directories, and assets
 COPY server.js ./
+COPY openapi.json ./
 COPY demo/ ./demo/
 COPY knowledge/ ./knowledge/
 COPY knowledge_backup/ ./knowledge_backup/
