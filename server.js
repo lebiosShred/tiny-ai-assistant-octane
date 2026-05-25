@@ -199,18 +199,36 @@ function serveFile(res, filePath) {
 
 // --- HubSpot Webhook Integration Helpers ---
 
-function verifyHubSpotSignature(method, url, rawBody, timestamp, signature, clientSecret) {
+function verifyHubSpotSignature(method, url, rawBody, timestamp, signature, clientSecret, req = null) {
     const now = Date.now();
     if (Math.abs(now - parseInt(timestamp, 10)) > 300000) {
         return false;
     }
-    const sourceString = method + url + rawBody + timestamp;
-    const hash = crypto
+    
+    // 1. Try relative URL verification (pathname)
+    const sourceString1 = method + url + rawBody + timestamp;
+    const hash1 = crypto
         .createHmac('sha256', clientSecret)
-        .update(sourceString)
+        .update(sourceString1)
         .digest('base64');
+        
+    // 2. Try absolute URL verification if request object is available
+    let hash2 = null;
+    if (req && req.headers && req.headers.host) {
+        const protocol = req.headers['x-forwarded-proto'] || 'https';
+        const fullUrl = `${protocol}://${req.headers.host}${req.url}`;
+        const sourceString2 = method + fullUrl + rawBody + timestamp;
+        hash2 = crypto
+            .createHmac('sha256', clientSecret)
+            .update(sourceString2)
+            .digest('base64');
+    }
+    
     try {
-        return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(signature));
+        const sigBuffer = Buffer.from(signature);
+        const match1 = crypto.timingSafeEqual(Buffer.from(hash1), sigBuffer);
+        const match2 = hash2 ? crypto.timingSafeEqual(Buffer.from(hash2), sigBuffer) : false;
+        return match1 || match2;
     } catch (e) {
         return false;
     }
@@ -722,6 +740,7 @@ Format exactly as:
             name: contactName,
             variant: variant,
             screencast: recordingUrl,
+            transcript: transcript,
             content: briefing // contains delimiters
         });
 
@@ -1051,7 +1070,7 @@ const server = http.createServer(async (req, res) => {
             
             let isValid = false;
             if (clientSecret && signature && timestamp) {
-                isValid = verifyHubSpotSignature(req.method, pathname, rawBody, timestamp, signature, clientSecret);
+                isValid = verifyHubSpotSignature(req.method, pathname, rawBody, timestamp, signature, clientSecret, req);
             } else if (!clientSecret) {
                 console.warn("⚠️ HUBSPOT_CLIENT_SECRET is not set. Bypassing signature verification.");
                 isValid = true;

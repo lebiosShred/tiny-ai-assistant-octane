@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
             listContainer.appendChild(card);
         });
 
-        // Bind mock audio players
+        // Bind audio players (real streaming or external redirect)
         filtered.forEach(item => {
             if (item.type === 'synthesis') {
                 const cardEl = listContainer.querySelector(`.directory-audio-player[data-id="${item.id}"]`);
@@ -224,9 +224,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const volBtn = cardEl.querySelector('.audio-volume-icon');
                     
                     let isPlaying = false;
-                    let duration = 150; // 2m 30s
+                    let duration = 150; // default 2m 30s
                     let currentTime = 0;
-                    let intervalId = null;
+                    let audio = null;
+                    const recordingUrl = item.screencast;
+                    
+                    const isDirectAudio = recordingUrl && (
+                        recordingUrl.toLowerCase().endsWith('.mp3') || 
+                        recordingUrl.toLowerCase().endsWith('.wav') || 
+                        recordingUrl.toLowerCase().endsWith('.m4a') || 
+                        recordingUrl.toLowerCase().endsWith('.ogg') ||
+                        recordingUrl.toLowerCase().includes('/audio-stream')
+                    );
                     
                     const formatTime = (secs) => {
                         const m = Math.floor(secs / 60);
@@ -236,8 +245,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     playBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        
+                        // Handle external player pages (Vidyard, Fathom)
+                        if (recordingUrl && !isDirectAudio) {
+                            showToast("Opening recording page in new tab...");
+                            window.open(recordingUrl, '_blank');
+                            return;
+                        }
+                        
+                        if (!recordingUrl) {
+                            showToast("No call recording file associated.");
+                            return;
+                        }
+                        
                         if (isPlaying) {
-                            clearInterval(intervalId);
+                            if (audio) audio.pause();
                             playBtn.innerText = '▶';
                             isPlaying = false;
                         } else {
@@ -247,32 +269,52 @@ document.addEventListener('DOMContentLoaded', () => {
                                     btn.click();
                                 }
                             });
-                            playBtn.innerText = '⏸';
-                            isPlaying = true;
-                            intervalId = setInterval(() => {
-                                currentTime += 1;
-                                if (currentTime >= duration) {
-                                    clearInterval(intervalId);
-                                    playBtn.innerText = '▶';
-                                    currentTime = 0;
-                                    progress.style.width = '0%';
+                            
+                            if (!audio) {
+                                audio = new Audio(recordingUrl);
+                                audio.addEventListener('loadedmetadata', () => {
+                                    duration = audio.duration;
                                     timeLabel.innerText = `0:00 / ${formatTime(duration)}`;
-                                    isPlaying = false;
-                                } else {
+                                });
+                                audio.addEventListener('timeupdate', () => {
+                                    currentTime = audio.currentTime;
                                     const percent = (currentTime / duration) * 100;
                                     progress.style.width = `${percent}%`;
                                     timeLabel.innerText = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-                                }
-                            }, 1000);
+                                });
+                                audio.addEventListener('ended', () => {
+                                    playBtn.innerText = '▶';
+                                    progress.style.width = '0%';
+                                    timeLabel.innerText = `0:00 / ${formatTime(duration)}`;
+                                    isPlaying = false;
+                                });
+                            }
+                            
+                            audio.play().catch(err => {
+                                console.error('Audio playback failed:', err);
+                                showToast("Failed to stream audio file: " + err.message);
+                            });
+                            playBtn.innerText = '⏸';
+                            isPlaying = true;
                         }
                     });
                     
                     volBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        if (volBtn.innerText === '🔊') {
-                            volBtn.innerText = '🔇';
+                        if (audio) {
+                            if (audio.muted) {
+                                audio.muted = false;
+                                volBtn.innerText = '🔊';
+                            } else {
+                                audio.muted = true;
+                                volBtn.innerText = '🔇';
+                            }
                         } else {
-                            volBtn.innerText = '🔊';
+                            if (volBtn.innerText === '🔊') {
+                                volBtn.innerText = '🔇';
+                            } else {
+                                volBtn.innerText = '🔊';
+                            }
                         }
                     });
                 }
@@ -304,6 +346,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Failed to load call record details');
             }
             const item = await response.json();
+            
+            // Parse content string to object if type is synthesis
+            if (item.type === 'synthesis' && typeof item.content === 'string') {
+                try {
+                    item.content = TinyAI.parseSynthesisResponse(item.content);
+                } catch (parseErr) {
+                    console.error('Error parsing synthesis content:', parseErr);
+                }
+            }
             
             // Dual interaction check
             if (currentView === 'directory' && !forcePipelineRestore) {
@@ -375,6 +426,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentQuestions = item.customQuestions;
             } else {
                 loadCustomQuestions(item.variant || 'Variant A');
+                if (item.content && item.content.questionnaireAnswers) {
+                    try {
+                        const extractedAnswers = extractAnswersFromQuestionnaireHTML(item.content.questionnaireAnswers);
+                        currentQuestions.forEach((q, idx) => {
+                            if (extractedAnswers[idx] !== undefined) {
+                                q.a = extractedAnswers[idx];
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Failed to extract custom questions answers:', e);
+                    }
+                }
             }
             
             let docs = item.content;
@@ -467,11 +530,6 @@ document.addEventListener('DOMContentLoaded', () => {
             audioSection.style.display = item.type === 'synthesis' ? 'block' : 'none';
         }
         
-        // Setup detail play button
-        const detailPlayBtn = document.getElementById('detail-audio-play-btn');
-        const detailProgress = document.getElementById('detail-audio-progress');
-        const detailTimeLabel = document.getElementById('detail-audio-time');
-        
         if (detailPlayBtn && detailProgress && detailTimeLabel) {
             detailPlayBtn.innerText = '▶';
             detailProgress.style.width = '0%';
@@ -480,7 +538,16 @@ document.addEventListener('DOMContentLoaded', () => {
             let isPlaying = false;
             let duration = 150;
             let currentTime = 0;
-            let intervalId = null;
+            let audio = null;
+            const recordingUrl = item.screencast;
+            
+            const isDirectAudio = recordingUrl && (
+                recordingUrl.toLowerCase().endsWith('.mp3') || 
+                recordingUrl.toLowerCase().endsWith('.wav') || 
+                recordingUrl.toLowerCase().endsWith('.m4a') || 
+                recordingUrl.toLowerCase().endsWith('.ogg') ||
+                recordingUrl.toLowerCase().includes('/audio-stream')
+            );
             
             const formatTime = (secs) => {
                 const m = Math.floor(secs / 60);
@@ -493,28 +560,51 @@ document.addEventListener('DOMContentLoaded', () => {
             
             newPlayBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                
+                // Handle external player pages (Vidyard, Fathom)
+                if (recordingUrl && !isDirectAudio) {
+                    showToast("Opening recording page in new tab...");
+                    window.open(recordingUrl, '_blank');
+                    return;
+                }
+                
+                if (!recordingUrl) {
+                    showToast("No call recording file associated.");
+                    return;
+                }
+                
                 if (isPlaying) {
-                    clearInterval(intervalId);
+                    if (audio) audio.pause();
                     newPlayBtn.innerText = '▶';
                     isPlaying = false;
                 } else {
                     newPlayBtn.innerText = '⏸';
                     isPlaying = true;
-                    intervalId = setInterval(() => {
-                        currentTime += 1;
-                        if (currentTime >= duration) {
-                            clearInterval(intervalId);
-                            newPlayBtn.innerText = '▶';
-                            currentTime = 0;
-                            detailProgress.style.width = '0%';
+                    
+                    if (!audio) {
+                        audio = new Audio(recordingUrl);
+                        audio.addEventListener('loadedmetadata', () => {
+                            duration = audio.duration;
                             detailTimeLabel.innerText = `0:00 / ${formatTime(duration)}`;
-                            isPlaying = false;
-                        } else {
+                        });
+                        audio.addEventListener('timeupdate', () => {
+                            currentTime = audio.currentTime;
                             const percent = (currentTime / duration) * 100;
                             detailProgress.style.width = `${percent}%`;
                             detailTimeLabel.innerText = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-                        }
-                    }, 1000);
+                        });
+                        audio.addEventListener('ended', () => {
+                            newPlayBtn.innerText = '▶';
+                            detailProgress.style.width = '0%';
+                            detailTimeLabel.innerText = `0:00 / ${formatTime(duration)}`;
+                            isPlaying = false;
+                        });
+                    }
+                    
+                    audio.play().catch(err => {
+                        console.error('Detail audio playback failed:', err);
+                        showToast("Failed to stream audio file: " + err.message);
+                    });
                 }
             });
         }

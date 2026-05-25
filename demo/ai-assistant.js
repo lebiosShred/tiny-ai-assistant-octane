@@ -690,6 +690,12 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
      * Helper to return precompiled mock deliverables for the Sarah Chen pre-screen transcript.
      */
     function getOfflineMockSynthesis(screencastUrl, customQuestions = null) {
+        if (typeof window !== 'undefined' && typeof window.getOfflineMockSynthesisOverride === 'function') {
+            const overrideResult = window.getOfflineMockSynthesisOverride(screencastUrl, customQuestions);
+            if (overrideResult) {
+                return overrideResult;
+            }
+        }
         const screencastSegment = screencastUrl ? `<p>I have also recorded a 2-minute video briefing summarizing our discussion, which you can review here: <a href="${screencastUrl}" target="_blank" style="color: #4daeeb;">${screencastUrl}</a></p>` : "";
         const screencastField = screencastUrl ? `<li><strong>Screencast URL:</strong> <a href="${screencastUrl}" target="_blank" style="color: #4daeeb;">${screencastUrl}</a></li>` : "<li><strong>Screencast URL:</strong> Not provided</li>";
 
@@ -861,5 +867,6 @@ export const TinyAI = {
     generateActionItems,
     generateProposal,
     generateRequirementEmail,
+    parseSynthesisResponse,
     DEFAULT_CONFIG
 };
