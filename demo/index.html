@@ -36,8 +36,8 @@
                             <label for="settings-api-provider">LLM Provider</label>
                             <select id="settings-api-provider" class="form-input select-input">
                                 <option value="mistral">Mistral AI</option>
+                                <option value="anthropic">Anthropic (Claude)</option>
                                 <option value="openai" disabled>OpenAI (Coming Soon)</option>
-                                <option value="anthropic" disabled>Anthropic (Coming Soon)</option>
                             </select>
                         </div>
                         <div class="form-group" style="flex: 1.5; min-width: 250px;">
@@ -49,6 +49,8 @@
                             <select id="settings-api-model" class="form-input select-input">
                                 <option value="mistral-large-latest">Mistral Large (Mistral AI)</option>
                                 <option value="mistral-small-latest">Mistral Small (Mistral AI)</option>
+                                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
+                                <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Anthropic)</option>
                             </select>
                         </div>
                     </div>
@@ -327,10 +329,33 @@
     <!-- Toast Notification -->
     <div class="toast" id="toast">Copied to clipboard!</div>
 
+    <!-- watsonx Orchestrate Chatbot Root Container -->
+    <div id="root"></div>
+
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="module" src="app.js"></script>
+
+    <!-- watsonx Orchestrate Embed Code -->
+    <script>
+      window.wxOConfiguration = {
+        orchestrationID: "20250731-1611-5869-4024-6e99f4269f1b_20251013-0928-4707-90f5-b7083dde17bd",
+        hostURL: "https://ap-southeast-1.dl.watson-orchestrate.ibm.com",
+        rootElementID: "root",
+        chatOptions: {
+            agentId: "bba19eb6-8038-4f06-8afe-20d4198c7121", 
+        }
+      };
+      setTimeout(function () {
+        const script = document.createElement('script');
+        script.src = `${window.wxOConfiguration.hostURL}/wxochat/wxoLoader.js?embed=true`;
+        script.addEventListener('load', function () {
+            wxoLoader.init();
+        });
+        document.head.appendChild(script);
+      }, 0);                     
+    </script>
 </body>
 </html>

@@ -60,6 +60,93 @@ function loadKnowledgeBase() {
     });
 }
 
+function searchWeb(query) {
+    return new Promise((resolve) => {
+        const apiKey = (process.env.TAVILY_API_KEY || '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').trim();
+        if (!apiKey) {
+            console.warn("⚠️ TAVILY_API_KEY is not configured.");
+            resolve("");
+            return;
+        }
+
+        const payload = JSON.stringify({
+            api_key: apiKey,
+            query: query,
+            search_depth: "basic",
+            include_answer: false,
+            max_results: 3
+        });
+
+        const options = {
+            hostname: 'api.tavily.com',
+            port: 443,
+            path: '/search',
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'content-length': Buffer.byteLength(payload)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let resBody = '';
+            res.on('data', chunk => resBody += chunk);
+            res.on('end', () => {
+                if (res.statusCode !== 200) {
+                    console.error(`⚠️ Tavily API returned status ${res.statusCode}: ${resBody}`);
+                    resolve("");
+                    return;
+                }
+                try {
+                    const data = JSON.parse(resBody);
+                    if (!data.results || !Array.isArray(data.results)) {
+                        resolve("");
+                        return;
+                    }
+                    const formatted = data.results.map(r => `Source: ${r.title} (${r.url})\nContent: ${r.content}\n`).join("\n");
+                    resolve(formatted);
+                } catch (e) {
+                    console.error("⚠️ Failed to parse Tavily API response:", e);
+                    resolve("");
+                }
+            });
+        });
+
+        req.on('error', (err) => {
+            console.error("⚠️ Tavily request error:", err);
+            resolve("");
+        });
+
+        req.write(payload);
+        req.end();
+    });
+}
+
+function logAuditEvent(req, action, details = {}) {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const timestamp = new Date().toISOString();
+
+    const logEntry = {
+        timestamp,
+        ip,
+        userAgent,
+        action,
+        details
+    };
+
+    // Log structured JSON to stdout for Cloud Logging / Stackdriver
+    console.log(`[AUDIT] ${JSON.stringify(logEntry)}`);
+
+    // Append to GCS mounted bucket persistent file (knowledge/audit_log.jsonl)
+    const logFilePath = path.join(PUBLIC_DIR, 'knowledge', 'audit_log.jsonl');
+    fs.appendFile(logFilePath, JSON.stringify(logEntry) + '\n', 'utf8', (err) => {
+        if (err) {
+            console.error('❌ Failed to write audit log to file:', err);
+        }
+    });
+}
+
 function serveFile(res, filePath) {
     fs.readFile(filePath, (err, content) => {
         if (err) {
@@ -648,6 +735,66 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
 
+            // Audit log Chat Completion request
+            let chatAction = 'CHAT_COMPLETION';
+            let chatDetails = {};
+            if (Array.isArray(payload.messages)) {
+                const userMsg = payload.messages.find(m => m.role === 'user');
+                if (userMsg) {
+                    if (userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis')) {
+                        chatAction = 'GENERATE_DOSSIER';
+                        const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
+                        const companyMatch = userMsg.content.match(/at\s+([^\n]+)/i);
+                        chatDetails.prospect = clientMatch ? clientMatch[1].trim() : 'Unknown';
+                        chatDetails.company = companyMatch ? companyMatch[1].trim().split('\n')[0].trim() : 'Unknown';
+                    } else if (userMsg.content.includes('--- SPEAKER IDENTIFICATION ---') || userMsg.content.includes('Fathom / Jamie AI Call Transcript')) {
+                        chatAction = 'SYNTHESIZE_CALL';
+                        const companyMatch = userMsg.content.match(/SUMMARY:\s*([^—\n]+)/i);
+                        chatDetails.company = companyMatch ? companyMatch[1].trim() : 'Unknown';
+                    }
+                }
+            }
+            chatDetails.provider = payload.provider || 'mistral';
+            chatDetails.model = payload.model || 'mistral-large-latest';
+            logAuditEvent(req, chatAction, chatDetails);
+
+            // Trigger web search if this is a pre-screen call preparation request
+            let webSearchResults = '';
+            if (Array.isArray(payload.messages)) {
+                const userMsg = payload.messages.find(m => m.role === 'user');
+                if (userMsg && (userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis'))) {
+                    // Extract client name and company name
+                    const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
+                    const companyMatch = userMsg.content.match(/at\s+([^\n]+)/i);
+                    
+                    let prospectName = '';
+                    let companyName = '';
+                    if (clientMatch) {
+                        prospectName = clientMatch[1].trim();
+                    }
+                    if (companyMatch) {
+                        companyName = companyMatch[1].trim().split('\n')[0].trim();
+                    }
+                    
+                    let query = '';
+                    if (prospectName && companyName) {
+                        query = `"${prospectName}" "${companyName}"`;
+                    } else if (companyName) {
+                        query = `"${companyName}" news OR products`;
+                    } else if (prospectName) {
+                        query = `"${prospectName}" LinkedIn`;
+                    }
+                    
+                    if (query) {
+                        console.log(`🌐 Performing Tavily web search for: ${query}`);
+                        webSearchResults = await searchWeb(query);
+                        if (webSearchResults) {
+                            console.log(`🌐 Web search completed. Results size: ${webSearchResults.length} chars.`);
+                        }
+                    }
+                }
+            }
+
             if (knowledgeBase && Array.isArray(payload.messages)) {
                 const safetyRules = `
 
@@ -667,15 +814,109 @@ const server = http.createServer(async (req, res) => {
 </safety_rules>
 `;
                 
+                let webSearchContext = '';
+                if (webSearchResults) {
+                    webSearchContext = `\n\n<web_search_results>\n${webSearchResults}\n</web_search_results>\nUse the above live web search results as additional context to enrich your analysis, especially for recent social media activity, role changes, company updates, and conversation starters. Ensure the details are grounded in these search results.\n`;
+                }
+
                 const systemMsg = payload.messages.find(m => m.role === 'system');
                 if (systemMsg) {
-                    systemMsg.content += knowledgeBase + safetyRules;
+                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext;
                 } else {
                     payload.messages.unshift({
                         role: 'system',
-                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}`
+                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}`
                     });
                 }
+            }
+
+            // Check provider
+            if (payload.provider === 'anthropic') {
+                let anthropicKey = req.headers['authorization'] ? req.headers['authorization'].substring(7).trim() : '';
+                if (!anthropicKey || anthropicKey === 'N1V4ErGCSlQSLdDrc7vhkSfpf334TgRo') {
+                    anthropicKey = (process.env.ANTHROPIC_API_KEY || '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').trim();
+                }
+
+                let systemPrompt = '';
+                const messages = [];
+                if (Array.isArray(payload.messages)) {
+                    for (const msg of payload.messages) {
+                        if (msg.role === 'system') {
+                            systemPrompt += msg.content + '\n';
+                        } else {
+                            messages.push({
+                                role: msg.role === 'assistant' ? 'assistant' : 'user',
+                                content: msg.content
+                            });
+                        }
+                    }
+                }
+
+                let claudeModel = payload.model;
+                if (!claudeModel || !claudeModel.startsWith('claude-')) {
+                    claudeModel = 'claude-3-5-sonnet-20241022';
+                }
+
+                const anthropicPayload = JSON.stringify({
+                    model: claudeModel,
+                    max_tokens: 4000,
+                    system: systemPrompt.trim(),
+                    messages: messages,
+                    temperature: payload.temperature !== undefined ? payload.temperature : 0.2
+                });
+
+                const anthropicOptions = {
+                    hostname: 'api.anthropic.com',
+                    port: 443,
+                    path: '/v1/messages',
+                    method: 'POST',
+                    headers: {
+                        'x-api-key': anthropicKey,
+                        'anthropic-version': '2023-06-01',
+                        'content-type': 'application/json',
+                        'content-length': Buffer.byteLength(anthropicPayload)
+                    }
+                };
+
+                const proxyReq = https.request(anthropicOptions, (proxyRes) => {
+                    let resBody = '';
+                    proxyRes.on('data', chunk => resBody += chunk);
+                    proxyRes.on('end', () => {
+                        if (proxyRes.statusCode !== 200) {
+                            res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
+                            res.end(resBody);
+                            return;
+                        }
+                        try {
+                            const anthropicData = JSON.parse(resBody);
+                            const textContent = anthropicData.content && anthropicData.content[0] ? anthropicData.content[0].text : '';
+                            const mistralData = {
+                                choices: [
+                                    {
+                                        message: {
+                                            role: 'assistant',
+                                            content: textContent
+                                        }
+                                    }
+                                ]
+                            };
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify(mistralData));
+                        } catch (e) {
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: `Failed to parse Anthropic response: ${e.message}`, raw: resBody }));
+                        }
+                    });
+                });
+
+                proxyReq.on('error', (err) => {
+                    res.writeHead(502, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: `Anthropic connection error: ${err.message}` }));
+                });
+
+                proxyReq.write(anthropicPayload);
+                proxyReq.end();
+                return;
             }
 
             const jsonPayload = JSON.stringify(payload);
@@ -830,6 +1071,7 @@ const server = http.createServer(async (req, res) => {
                                 res.end(JSON.stringify({ error: 'Failed to write custom questions to file.' }));
                                 return;
                             }
+                            logAuditEvent(req, 'SAVE_QUESTIONS', { variant: variant, count: questions.length });
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ status: 'success', message: 'Questions registered on server.' }));
                         });
@@ -893,6 +1135,7 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
                 const briefing = await handleCallPrep(contactId);
+                logAuditEvent(req, 'HUBSPOT_PREP', { contactId: contactId });
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'success', briefing }));
             } catch (err) {
@@ -927,6 +1170,7 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
                 const briefing = await handleCallSynthesis(callId);
+                logAuditEvent(req, 'HUBSPOT_SYNTHESIZE', { callId: callId });
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'success', briefing }));
             } catch (err) {
@@ -962,6 +1206,7 @@ const server = http.createServer(async (req, res) => {
                 fs.copyFile(srcPath, destPath, (copyErr) => {
                     copiedCount++;
                     if (copiedCount === files.length) {
+                        logAuditEvent(req, 'RESTORE_DEFAULT_PLAYBOOKS', { count: files.length });
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ status: 'success', message: 'Default system playbooks restored successfully.' }));
                     }
@@ -1092,10 +1337,12 @@ const server = http.createServer(async (req, res) => {
                                     res.end(JSON.stringify({ error: 'Failed to write text cache file.' }));
                                     return;
                                 }
+                                logAuditEvent(req, 'UPLOAD_PLAYBOOK', { fileName: cleanName });
                                 res.writeHead(200, { 'Content-Type': 'application/json' });
                                 res.end(JSON.stringify({ status: 'success', message: 'Knowledge file uploaded successfully.', file: cleanName }));
                             });
                         } else {
+                            logAuditEvent(req, 'UPLOAD_PLAYBOOK', { fileName: cleanName });
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ status: 'success', message: 'Knowledge file uploaded successfully.', file: cleanName }));
                         }
@@ -1136,10 +1383,12 @@ const server = http.createServer(async (req, res) => {
                 if (fileName.endsWith('.pdf') || fileName.endsWith('.docx')) {
                     const auxPath = targetPath + '.md';
                     fs.unlink(auxPath, () => {
+                        logAuditEvent(req, 'DELETE_PLAYBOOK', { fileName: fileName });
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ status: 'success', message: 'Knowledge file deleted successfully.' }));
                     });
                 } else {
+                    logAuditEvent(req, 'DELETE_PLAYBOOK', { fileName: fileName });
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ status: 'success', message: 'Knowledge file deleted successfully.' }));
                 }

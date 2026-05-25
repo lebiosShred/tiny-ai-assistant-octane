@@ -46,7 +46,8 @@ const DEFAULT_CONFIG = {
             body: JSON.stringify({
                 model: config.model,
                 messages: messages,
-                temperature: 0.2 // Lower temp for factual sales extraction
+                temperature: 0.2, // Lower temp for factual sales extraction
+                provider: config.provider
             })
         });
 
