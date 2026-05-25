@@ -1085,6 +1085,27 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    // API Web Search Route (for watsonx agent custom tools)
+    if (pathname === '/api/search' && req.method === 'GET') {
+        const query = parsedUrl.searchParams.get('q');
+        if (!query) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing query parameter q.' }));
+            return;
+        }
+        try {
+            console.log(`🌐 Performing web search from endpoint for: ${query}`);
+            const results = await searchWeb(query);
+            logAuditEvent(req, 'WEB_SEARCH', { query: query });
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ results: results || "No results found." }));
+        } catch (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Web search failed: ${err.message}` }));
+        }
+        return;
+    }
+
     // API HubSpot Latest Call Resolver Route
     if (pathname === '/api/hubspot/latest-call' && req.method === 'GET') {
         const contactId = parsedUrl.searchParams.get('contactId');

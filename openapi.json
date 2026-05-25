@@ -1,0 +1,103 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Tiny AI Assistant API",
+    "version": "1.1.0",
+    "description": "API for prospect call prep dossiers, transcript reports, and web search."
+  },
+  "servers": [
+    {
+      "url": "https://tiny-ai-assistant-351972137415.us-central1.run.app"
+    }
+  ],
+  "paths": {
+    "/api/chat": {
+      "post": {
+        "summary": "Run Chat Completions",
+        "description": "Sends messages to Mistral or Anthropic models for sales prep or transcript synthesis.",
+        "operationId": "runChat",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "enum": ["mistral", "anthropic"],
+                    "default": "mistral"
+                  },
+                  "model": {
+                    "type": "string",
+                    "default": "mistral-large-latest"
+                  },
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": { "type": "string" },
+                        "content": { "type": "string" }
+                      },
+                      "required": ["role", "content"]
+                    }
+                  }
+                },
+                "required": ["messages"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful completion response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/search": {
+      "get": {
+        "summary": "Search the Web",
+        "description": "Performs a live web search using Tavily and returns the summarized results.",
+        "operationId": "searchWeb",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "The search query term or phrase.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful web search response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "string",
+                      "description": "Summarized search results."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
