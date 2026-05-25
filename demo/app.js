@@ -909,7 +909,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
 
         try {
             const apiConfig = getApiConfig();
-            const customQuestions = currentQuestions.map(q => q.q);
+            const customQuestions = currentQuestions.map(q => ({ q: q.q, a: q.a || "" }));
             const docs = await TinyAI.synthesizeCallTranscript(variant, transcript, screencastUrl, apiConfig, customQuestions);
             
             // Validate output

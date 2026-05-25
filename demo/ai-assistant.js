@@ -150,7 +150,14 @@ Use a numbered list (<ol>) for the 10 points. Inside each point, use <strong> ta
         let questionFramework = "";
 
         if (Array.isArray(customQuestions) && customQuestions.length > 0) {
-            questionFramework = customQuestions.map((q, idx) => `${idx + 1}. ${q}`).join('\n');
+            questionFramework = customQuestions.map((item, idx) => {
+                if (typeof item === 'object' && item !== null) {
+                    const qText = item.q;
+                    const aText = item.a ? `\n   - Representative Notes: ${item.a}` : '';
+                    return `${idx + 1}. ${qText}${aText}`;
+                }
+                return `${idx + 1}. ${item}`;
+            }).join('\n');
         } else if (variant === "Variant A") {
             questionFramework = `
 1. What general ledger/ERP system (e.g., SAP, MS Business Central, Sun Systems, NetSuite) are you using, and does it currently integrate with your planning tool?
@@ -206,6 +213,16 @@ ${questionFramework}
 --- SPEAKER IDENTIFICATION ---
 The transcript may use labels like 'Albert (SDR)', 'SDR:', 'Sarah Chen:', 'Prospect:', 'Speaker 1', or 'Speaker 2'.
 Before analyzing, map the speakers: the person asking discovery questions is the Octane Sales Representative (SDR), and the person describing business requirements, pain points, budget, and timelines is the Client Prospect. Attribute all pain points and qualifications to the Prospect, not the SDR.
+
+--- RECONCILING REPRESENTATIVE NOTES AND TRANSCRIPT ---
+Under "Questions:", some questions may include "Representative Notes" capturing answers, facts, or observations typed by the sales representative during the call.
+You must treat these "Representative Notes" as high-fidelity, human-verified truth. 
+If there is a discrepancy in spelling, metrics, or details between the raw transcript and the Representative Notes (e.g., mismatched version numbers or names), the Representative Notes must take precedence.
+
+When mapping the questionnaire in [DOCUMENT: QUESTIONNAIRE]:
+1. If a question contains "Representative Notes", you must integrate these notes into the final answer. Reconcile them with the transcript to supply any additional verbatim quotes or details. If the transcript did not discuss the question, formulate the answer based solely on the Representative Notes.
+2. If both the Representative Notes and the transcript are silent on a question, write "Not discussed" and flag it.
+3. For all other deliverables (Summary, Recap Email, Summary Sheet, Detailed Notes, Proposal, Action Items), integrate the Representative Notes as high-fidelity context alongside the transcript.
 
 --- OCTANE REFERENCE CATALOG ---
 When proposing solutions, align with these official specifications:
