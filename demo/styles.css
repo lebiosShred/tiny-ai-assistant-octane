@@ -1006,3 +1006,65 @@ body {
     background: transparent;
 }
 
+/* Custom Watsonx Chat Button Overrides */
+.chatButton {
+    background-image: url('tiny.png') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-color: #1e1e1e !important;
+    border: 2px solid var(--primary) !important;
+    box-shadow: 0 0 15px var(--primary-glow) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.chatButton:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 25px var(--primary) !important;
+}
+
+.chatButton svg {
+    display: none !important;
+}
+
+/* Custom Tooltip Speech Bubble */
+.tiny-popover {
+    position: fixed;
+    right: 105px;
+    bottom: 40px;
+    background: #0f172a;
+    border: 1px solid var(--primary);
+    box-shadow: 0 4px 20px rgba(15, 98, 254, 0.4);
+    padding: 0.6rem 1.1rem;
+    border-radius: 12px;
+    z-index: 999999;
+    font-family: 'Inter', 'Roboto', sans-serif;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tiny-popover.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.tiny-popover-arrow {
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: #0f172a;
+    border-right: 1px solid var(--primary);
+    border-top: 1px solid var(--primary);
+}
+
+

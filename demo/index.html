@@ -353,6 +353,55 @@
         script.src = `${window.wxOConfiguration.hostURL}/wxochat/wxoLoader.js?embed=true`;
         script.addEventListener('load', function () {
             wxoLoader.init();
+            
+            // Dynamic Pop-up Injector for Watsonx Orchestrate Chatbot
+            (function() {
+                // Create popover elements
+                const popover = document.createElement('div');
+                popover.className = 'tiny-popover';
+                popover.innerHTML = 'Ask Tiny Anything <div class="tiny-popover-arrow"></div>';
+                document.body.appendChild(popover);
+
+                // Poll for the chatButton existence
+                const interval = setInterval(() => {
+                    const btn = document.querySelector('.chatButton');
+                    if (btn) {
+                        clearInterval(interval);
+                        
+                        // Show popover shortly after load
+                        setTimeout(() => {
+                            const floatMain = document.querySelector('.wxo-float-main');
+                            if (!floatMain || !floatMain.classList.contains('wxo-chat-open')) {
+                                popover.classList.add('visible');
+                            }
+                        }, 1000);
+
+                        // Listen to click events on the button to toggle popover
+                        btn.addEventListener('click', () => {
+                            setTimeout(() => {
+                                const floatMain = document.querySelector('.wxo-float-main');
+                                if (floatMain && floatMain.classList.contains('wxo-chat-open')) {
+                                    popover.classList.remove('visible');
+                                } else {
+                                    popover.classList.add('visible');
+                                }
+                            }, 100);
+                        });
+
+                        // Poll for state transitions to restore popover when minimized
+                        setInterval(() => {
+                            const floatMain = document.querySelector('.wxo-float-main');
+                            if (floatMain) {
+                                if (floatMain.classList.contains('wxo-chat-open')) {
+                                    popover.classList.remove('visible');
+                                } else {
+                                    popover.classList.add('visible');
+                                }
+                            }
+                        }, 500);
+                    }
+                }, 200);
+            })();
         });
         document.head.appendChild(script);
       }, 0);                     
