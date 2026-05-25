@@ -860,6 +860,27 @@ body {
     border-left: 2px solid rgba(0, 0, 0, 0.1);
 }
 
+/* Mode toggle styles */
+#battlecard-container.mode-live .battlecard-answer-wrapper {
+    display: none !important;
+}
+#battlecard-container.mode-live .battlecard-edit-btn,
+#battlecard-container.mode-live .battlecard-reset-btn,
+#battlecard-container.mode-live .battlecard-remove-btn {
+    display: none !important;
+}
+#battlecard-container.mode-live .add-question-wrapper {
+    display: none !important;
+}
+#battlecard-container.mode-live #step-2-save-btn {
+    display: none !important;
+}
+
+#battlecard-container.mode-review .battlecard-answer-wrapper {
+    display: flex !important;
+}
+
+
 /* Settings Panel - Knowledge File Drop Zone override */
 .settings-panel .file-drop-zone {
     border: 1px dashed rgba(255, 255, 255, 0.2);
@@ -1221,6 +1242,162 @@ body {
 .directory-badge-type.synthesis {
     background: rgba(144, 19, 254, 0.1);
     color: #9013fe;
+}
+
+/* Stepper Wrapping Adjustments */
+.stepper-header {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+}
+
+.step-indicator {
+    max-width: 170px !important;
+    flex-shrink: 1 !important;
+    min-width: 60px;
+}
+
+.step-label {
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    word-break: break-word;
+}
+
+/* OneDrive Browser and Connection styles */
+.onedrive-status-bar {
+    transition: all 0.2s ease;
+}
+
+.onedrive-browser {
+    border: 1px solid rgba(0, 120, 215, 0.15);
+    background: #ffffff !important;
+    color: #333333 !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.onedrive-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.onedrive-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    font-size: 0.75rem;
+    color: #333333;
+    transition: all 0.15s ease;
+}
+
+.onedrive-item:hover {
+    background: rgba(0, 120, 215, 0.05);
+    border-color: rgba(0, 120, 215, 0.2);
+}
+
+.onedrive-item-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.onedrive-item-name {
+    font-weight: 500;
+}
+
+.onedrive-item-size {
+    color: rgba(0, 0, 0, 0.4);
+    font-size: 0.65rem;
+}
+
+.onedrive-btn-attach {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #0078d4;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s ease;
+}
+
+.onedrive-btn-attach:hover {
+    background: #005a9e;
+}
+
+.onedrive-attached-badge {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Card Mock Audio Player Styles */
+.directory-audio-player {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    margin-top: 0.35rem;
+}
+
+.audio-play-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #000000;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.15s ease;
+}
+
+.audio-play-btn:hover {
+    transform: scale(1.05);
+    background: var(--primary-hover);
+}
+
+.audio-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+}
+
+.audio-progress {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 2px;
+    width: 0%;
+}
+
+.audio-time {
+    font-size: 0.65rem;
+    color: rgba(0, 0, 0, 0.5);
+    font-family: monospace;
+    font-weight: bold;
+    min-width: 65px;
+    text-align: right;
+}
+
+.audio-volume-icon {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.4);
+    cursor: pointer;
 }
 
 

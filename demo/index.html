@@ -140,7 +140,7 @@
                     </div>
                     <div class="left-panel-tabs">
                         <button class="left-tab-btn active" id="tab-active-pipeline">Active Call Pipeline</button>
-                        <button class="left-tab-btn" id="tab-call-directory">04 — Call Directory</button>
+                        <button class="left-tab-btn" id="tab-call-directory">04 — CENTRAL CALL RECORDING DIRECTORY</button>
                     </div>
                 </div>
                 
@@ -151,22 +151,23 @@
                         <div class="stepper-header">
                             <div class="step-indicator active" id="step-1-indicator" data-step="1">
                                 <span class="step-num">1</span>
-                                <span class="step-label">02 - Prep</span>
+                                <span class="step-label">02 — PREPARATION FOR REQUIREMENT SESSION</span>
                             </div>
                             <div class="step-connector"></div>
                             <div class="step-indicator" id="step-2-indicator" data-step="2">
                                 <span class="step-num">2</span>
-                                <span class="step-label">03 - Req Session</span>
+                                <span class="step-label">03 — REQUIREMENT SESSION</span>
                             </div>
                             <div class="step-connector"></div>
                             <div class="step-indicator" id="step-3-indicator" data-step="3">
                                 <span class="step-num">3</span>
-                                <span class="step-label">05 - Auto Reports</span>
+                                <span class="step-label">05 — AUTOMATED REPORTS</span>
                             </div>
                         </div>
 
                         <!-- Step 1 Content: Prospect Prep -->
                         <div class="step-content active" id="step-1-content">
+                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">02 — PREPARATION FOR REQUIREMENT SESSION</h3>
                             <form id="prep-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
                                 <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
                                     <div class="form-group" style="flex: 1; min-width: 200px;">
@@ -192,6 +193,19 @@
                                         <input type="email" id="prep-email" class="form-input" placeholder="e.g. sarah.chen@meridianlogistics.com.au" required>
                                     </div>
                                 </div>
+                                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label for="prep-phone">Prospect Phone Number *</label>
+                                        <input type="tel" id="prep-phone" class="form-input" placeholder="e.g. +61 2 9876 5432" required>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label for="prep-rep">Sales Representative (SDR) *</label>
+                                        <select id="prep-rep" class="form-input select-input" required>
+                                            <option value="Albert">Albert</option>
+                                            <option value="Isha">Isha</option>
+                                        </select>
+                                    </div>
+                                </div>
                                 <div class="form-group">
                                     <label for="prep-track">Service Track Interest</label>
                                     <select id="prep-track" class="form-input select-input">
@@ -199,6 +213,41 @@
                                         <option value="Agentic AI Operations & Watsonx">Agentic AI Operations & Integration</option>
                                         <option value="DataFusion & Analytics Stack">DataFusion & Power BI Connectivity</option>
                                     </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>OneDrive Client folders connection</label>
+                                    <div class="onedrive-status-bar" style="display: flex; align-items: center; justify-content: space-between; background: rgba(0, 120, 215, 0.05); border: 1px solid rgba(0, 120, 215, 0.15); padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <span class="status-dot green" style="width: 8px; height: 8px; border-radius: 50%; background: #2ed573; box-shadow: 0 0 6px #2ed573; display: inline-block;"></span>
+                                            <span style="font-size: 0.8rem; font-weight: 500; color: #0078d4; display: inline-flex; align-items: center; gap: 4px;">📂 Connected to OneDrive Client Folders</span>
+                                        </div>
+                                        <span style="font-size: 0.75rem; color: rgba(0, 0, 0, 0.5); font-weight: 500;">Drive: <span style="font-family: monospace;">Shared Documents</span></span>
+                                    </div>
+                                    <div class="onedrive-search-wrapper" style="display: flex; gap: 0.5rem;">
+                                        <div style="position: relative; flex: 1;">
+                                            <input type="text" id="prep-onedrive-search" class="form-input" placeholder="🔍 Search past job specifications & SOWs in OneDrive..." style="padding-left: 1.75rem; background: #ffffff; color: #000000; border-color: rgba(0, 120, 215, 0.2);">
+                                            <span style="position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: #0078d4;">📁</span>
+                                        </div>
+                                        <button type="button" class="btn btn-secondary" id="prep-onedrive-browse-btn" style="border-color: rgba(0, 120, 215, 0.2); color: #0078d4; background: rgba(0, 120, 215, 0.02); height: 34px; font-size: 0.8rem;">Browse Folders</button>
+                                    </div>
+                                    
+                                    <!-- Embedded mock file browser (collapsible) -->
+                                    <div class="onedrive-browser" id="onedrive-browser" style="display: none; border: 1px solid rgba(0, 120, 215, 0.15); border-radius: 6px; margin-top: 0.5rem; background: #fafafa; padding: 0.5rem; max-height: 150px; overflow-y: auto;">
+                                        <div class="onedrive-folder-path" style="font-size: 0.75rem; font-weight: 600; color: #0078d4; padding-bottom: 0.35rem; border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 0.35rem; display: flex; align-items: center; justify-content: space-between;">
+                                            <span>📂 root / Clients / <span id="onedrive-current-folder">Active Clients</span></span>
+                                            <button type="button" id="onedrive-back-btn" style="font-size: 0.65rem; padding: 1px 4px; background: transparent; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 4px; cursor: pointer; display: none;">↰ Up</button>
+                                        </div>
+                                        <div class="onedrive-items-list" id="onedrive-items-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                            <!-- Loaded dynamically in app.js -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Attached OneDrive SOW badge -->
+                                    <div id="onedrive-attached-badge" style="display: none; align-items: center; gap: 6px; background: rgba(0, 120, 215, 0.05); border: 1px solid rgba(0, 120, 215, 0.12); padding: 0.35rem 0.50rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem;">
+                                        <span style="font-size: 0.85rem;">📄</span>
+                                        <span style="flex: 1; font-weight: 500; color: #0078d4;" id="onedrive-attached-name">Meridian_Logistics_SOW_2025.pdf</span>
+                                        <button type="button" id="onedrive-attached-remove" style="background: transparent; border: none; color: #ff4d4d; cursor: pointer; font-size: 0.85rem; padding: 0; font-weight: bold;">❌</button>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="prep-intake">HubSpot Booking Form Intake Answers</label>
@@ -224,7 +273,8 @@
 
                         <!-- Step 2 Content: Live Call Companion -->
                         <div class="step-content" id="step-2-content">
-                            <div class="battlecard-container" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1; height: 100%;">
+                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">03 — REQUIREMENT SESSION</h3>
+                            <div class="battlecard-container mode-live" id="battlecard-container" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1; height: 100%;">
                                 <div class="form-group" style="margin-bottom: 0.25rem; flex: none;">
                                     <label for="battlecard-selector">Prescreen Call Variant Reference</label>
                                     <select id="battlecard-selector" class="form-input select-input" disabled style="opacity: 0.8; background: #fafafa;">
@@ -232,6 +282,13 @@
                                         <option value="B">Variant B: Existing TM1 User</option>
                                         <option value="C">Variant C: First-Time AI User</option>
                                     </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0.5rem; flex: none;">
+                                    <label>Questionnaire Mode</label>
+                                    <div class="mode-toggle-container" style="display: flex; background: rgba(0,0,0,0.05); padding: 0.2rem; border-radius: 6px; border: 1px solid rgba(0,0,0,0.08);">
+                                        <button type="button" id="mode-live-btn" class="toggle-btn active" style="flex: 1; border: none; background: var(--primary); color: white; padding: 0.4rem; font-size: 0.75rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🎙️ Live Call Mode (Read-Only)</button>
+                                        <button type="button" id="mode-review-btn" class="toggle-btn" style="flex: 1; border: none; background: transparent; color: rgba(0,0,0,0.6); padding: 0.4rem; font-size: 0.75rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem;">📝 Review & Edit Mode</button>
+                                    </div>
                                 </div>
                                 <div class="battlecard-body" id="battlecard-body" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; padding-right: 0.25rem;">
                                     <!-- Loaded via app.js -->
@@ -249,6 +306,7 @@
 
                         <!-- Step 3 Content: Call report Synthesizer -->
                         <div class="step-content" id="step-3-content">
+                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">05 — AUTOMATED REPORTS</h3>
                             <form id="synth-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
                                 <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
                                     <div class="form-group" style="flex: 1; min-width: 200px;">
@@ -279,9 +337,15 @@
 
                     <!-- 04 — Central Call Recording Directory View -->
                     <div id="call-directory-view" style="display: none; flex-direction: column; gap: 1rem; flex: 1; height: 100%;">
+                        <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">04 — CENTRAL CALL RECORDING DIRECTORY</h3>
                         <div class="directory-filter-bar" style="display: flex; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap;">
                             <input type="text" id="directory-search" class="form-input" placeholder="Search by name, company, or track..." style="flex: 1; min-width: 150px;">
-                            <select id="directory-filter-score" class="form-input select-input" style="width: 130px; font-weight: 500;">
+                            <select id="directory-filter-rep" class="form-input select-input" style="width: 140px; font-weight: 500;">
+                                <option value="ALL">All Reps</option>
+                                <option value="Albert">Albert</option>
+                                <option value="Isha">Isha</option>
+                            </select>
+                            <select id="directory-filter-score" class="form-input select-input" style="width: 120px; font-weight: 500;">
                                 <option value="ALL">All Scores</option>
                                 <option value="HOT">Hot</option>
                                 <option value="WARM">Warm</option>
@@ -337,6 +401,7 @@
                                 <button class="doc-tab-btn" data-doc="detailedNotes" onclick="setDocTab('detailedNotes')">Detailed Notes</button>
                                 <button class="doc-tab-btn" data-doc="proposal" onclick="setDocTab('proposal')">Proposal Draft</button>
                                 <button class="doc-tab-btn" data-doc="actionItems" onclick="setDocTab('actionItems')">Action Items</button>
+                                <button class="doc-tab-btn" data-doc="transcript" onclick="setDocTab('transcript')">Call Transcript</button>
                             </div>
 
                             <!-- Document Content Panel -->

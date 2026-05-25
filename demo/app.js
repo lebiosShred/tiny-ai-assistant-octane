@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabActivePipeline) tabActivePipeline.classList.remove('active');
             if (activePipelineView) activePipelineView.style.display = 'none';
             if (callDirectoryView) callDirectoryView.style.display = 'flex';
-            if (leftPanelTitle) leftPanelTitle.innerText = "04 — Call Directory";
+            if (leftPanelTitle) leftPanelTitle.innerText = "04 — CENTRAL CALL RECORDING DIRECTORY";
             loadDirectoryList();
         }
     }
@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const searchTerm = (document.getElementById('directory-search')?.value || '').toLowerCase().trim();
         const scoreFilter = document.getElementById('directory-filter-score')?.value || 'ALL';
+        const repFilter = document.getElementById('directory-filter-rep')?.value || 'ALL';
 
         const filtered = directoryItems.filter(item => {
             const matchSearch = !searchTerm || 
@@ -99,7 +100,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            return matchSearch && matchScore;
+            let matchRep = true;
+            if (repFilter !== 'ALL') {
+                matchRep = item.rep && item.rep.toUpperCase() === repFilter.toUpperCase();
+            }
+
+            return matchSearch && matchScore && matchRep;
         });
 
         if (filtered.length === 0) {
@@ -118,11 +124,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const badgeTypeClass = item.type === 'synthesis' ? 'synthesis' : 'dossier';
             const badgeTypeLabel = item.type === 'synthesis' ? 'Synthesis' : 'Dossier';
+            
+            const repBadge = item.rep ? `<span class="directory-badge-rep" style="background: rgba(0, 120, 215, 0.08); color: #0078d4; font-size: 0.65rem; font-weight: bold; padding: 1px 6px; border-radius: 4px; text-transform: uppercase;">SDR: ${escapeHTML(item.rep)}</span>` : '';
 
             let scoreBadge = '';
             if (item.score) {
                 const scoreLower = item.score.toLowerCase();
                 scoreBadge = `<span class="badge-score ${scoreLower}">${item.score}</span>`;
+            }
+
+            const fileAttachedSegment = item.oneDriveFile ? `<div style="font-size: 0.7rem; color: rgba(0, 120, 215, 0.85); display: flex; align-items: center; gap: 4px; margin-top: 0.25rem; margin-bottom: 0.25rem;">📁 OneDrive SOW: <strong>${escapeHTML(item.oneDriveFile)}</strong></div>` : '';
+
+            let audioPlayerHtml = '';
+            if (item.type === 'synthesis') {
+                audioPlayerHtml = `
+                    <div class="directory-audio-player" data-id="${item.id}" style="margin: 0.5rem 0;">
+                        <button type="button" class="audio-play-btn" title="Play call recording" style="background: var(--primary); color: #000; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.7rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;">▶</button>
+                        <div class="audio-track" style="flex: 1; height: 4px; background: rgba(0,0,0,0.1); border-radius: 2px; position: relative;">
+                            <div class="audio-progress" style="height: 100%; background: var(--primary); width: 0%; border-radius: 2px;"></div>
+                        </div>
+                        <span class="audio-time" style="font-size: 0.65rem; color: rgba(0,0,0,0.55); font-family: monospace;">0:00 / 2:30</span>
+                        <span class="audio-volume-icon" style="font-size: 0.75rem; color: rgba(0,0,0,0.4); cursor: pointer; margin-left: 0.25rem;">🔊</span>
+                    </div>
+                `;
             }
 
             card.innerHTML = `
@@ -131,14 +155,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="directory-card-title">${escapeHTML(item.company)}</div>
                         <div class="directory-card-subtitle">${escapeHTML(item.name)} ${item.title ? `— ${escapeHTML(item.title)}` : ''}</div>
                     </div>
-                    <span class="directory-badge-type ${badgeTypeClass}">${badgeTypeLabel}</span>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        <span class="directory-badge-type ${badgeTypeClass}">${badgeTypeLabel}</span>
+                        ${repBadge}
+                    </div>
                 </div>
+                ${fileAttachedSegment}
                 <div class="directory-card-meta">
                     <span>📅 ${dateStr}</span>
                     ${item.track ? `<span>🏷️ ${escapeHTML(item.track)}</span>` : ''}
                     ${item.variant ? `<span>📋 ${escapeHTML(item.variant)}</span>` : ''}
                     ${scoreBadge}
                 </div>
+                ${audioPlayerHtml}
                 <div class="directory-card-actions">
                     <button class="directory-btn directory-btn-delete" data-id="${item.id}">🗑️ Delete</button>
                     <button class="directory-btn directory-btn-load" data-id="${item.id}">👁️ Load Console</button>
@@ -158,6 +187,72 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             listContainer.appendChild(card);
+        });
+
+        // Bind mock audio players
+        filtered.forEach(item => {
+            if (item.type === 'synthesis') {
+                const cardEl = listContainer.querySelector(`.directory-audio-player[data-id="${item.id}"]`);
+                if (cardEl) {
+                    const playBtn = cardEl.querySelector('.audio-play-btn');
+                    const progress = cardEl.querySelector('.audio-progress');
+                    const timeLabel = cardEl.querySelector('.audio-time');
+                    const volBtn = cardEl.querySelector('.audio-volume-icon');
+                    
+                    let isPlaying = false;
+                    let duration = 150; // 2m 30s
+                    let currentTime = 0;
+                    let intervalId = null;
+                    
+                    const formatTime = (secs) => {
+                        const m = Math.floor(secs / 60);
+                        const s = Math.floor(secs % 60);
+                        return `${m}:${s < 10 ? '0' : ''}${s}`;
+                    };
+                    
+                    playBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (isPlaying) {
+                            clearInterval(intervalId);
+                            playBtn.innerText = '▶';
+                            isPlaying = false;
+                        } else {
+                            // Find and stop any other active playing players
+                            listContainer.querySelectorAll('.audio-play-btn').forEach(btn => {
+                                if (btn !== playBtn && btn.innerText === '⏸') {
+                                    btn.click();
+                                }
+                            });
+                            playBtn.innerText = '⏸';
+                            isPlaying = true;
+                            intervalId = setInterval(() => {
+                                currentTime += 1;
+                                if (currentTime >= duration) {
+                                    clearInterval(intervalId);
+                                    playBtn.innerText = '▶';
+                                    currentTime = 0;
+                                    progress.style.width = '0%';
+                                    timeLabel.innerText = `0:00 / ${formatTime(duration)}`;
+                                    isPlaying = false;
+                                } else {
+                                    const percent = (currentTime / duration) * 100;
+                                    progress.style.width = `${percent}%`;
+                                    timeLabel.innerText = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+                                }
+                            }, 1000);
+                        }
+                    });
+                    
+                    volBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (volBtn.innerText === '🔊') {
+                            volBtn.innerText = '🔇';
+                        } else {
+                            volBtn.innerText = '🔊';
+                        }
+                    });
+                }
+            }
         });
     }
 
@@ -192,6 +287,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 prepCompanyInput.value = item.company || '';
                 prepUrlInput.value = item.url || '';
                 prepEmailInput.value = item.email || '';
+                if (document.getElementById('prep-phone')) {
+                    document.getElementById('prep-phone').value = item.phone || '';
+                }
+                if (document.getElementById('prep-rep')) {
+                    document.getElementById('prep-rep').value = item.rep || 'Albert';
+                }
+                attachedOneDriveFile = item.oneDriveFile || null;
+                const badge = document.getElementById('onedrive-attached-badge');
+                const badgeName = document.getElementById('onedrive-attached-name');
+                if (badge && badgeName) {
+                    if (item.oneDriveFile) {
+                        badgeName.innerText = item.oneDriveFile;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
                 prepTrackSelect.value = item.track || 'TM1 Support & Managed Support';
                 prepIntakeText.value = item.intakeAnswers || '';
                 prepLinkedinText.value = item.linkedinInfo || '';
@@ -208,6 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 synthVariantSelect.value = item.variant || 'Variant A';
                 synthScreencast.value = item.screencast || '';
                 synthTranscriptText.value = item.transcript || '';
+                if (document.getElementById('prep-rep')) {
+                    document.getElementById('prep-rep').value = item.rep || 'Albert';
+                }
                 
                 if (item.variant === 'Variant B') {
                     prepTrackSelect.value = "TM1 Support & Managed Support";
@@ -229,10 +344,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     for (const key in docsCopy) {
                         docsCopy[key] = formatMarkdown(docsCopy[key]);
                     }
+                    if (item.transcript) {
+                        docsCopy.transcript = `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #000000; font-size: 0.85rem; background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid rgba(0,0,0,0.06); border-radius: 6px;">${escapeHTML(item.transcript)}</pre>`;
+                    }
                     currentDocs = docsCopy;
                     activeDocTab = 'summary';
                     showResults(null, true);
                 }
+                
+                // Automatically switch to Review Mode when loading historical synthesis
+                setQuestionnaireMode('review');
+                renderBattlecards();
                 
                 goToStep(3);
                 switchLeftTab('pipeline');
@@ -792,6 +914,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const step2NextBtn = document.getElementById('step-2-next-btn');
     const step3BackBtn = document.getElementById('step-3-back-btn');
     const step2SaveBtn = document.getElementById('step-2-save-btn');
+    
+    // Questionnaire Mode toggle buttons
+    const modeLiveBtn = document.getElementById('mode-live-btn');
+    const modeReviewBtn = document.getElementById('mode-review-btn');
+    const battlecardContainer = document.getElementById('battlecard-container');
 
     // Dossier Tab Form
     const prepLoadSampleBtn = document.getElementById('prep-load-sample-btn');
@@ -884,10 +1011,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Step Navigation Event Listeners
-    step1NextBtn.addEventListener('click', () => goToStep(2));
+    step1NextBtn.addEventListener('click', () => {
+        goToStep(2);
+        setQuestionnaireMode('live');
+    });
     step2BackBtn.addEventListener('click', () => goToStep(1));
     step2NextBtn.addEventListener('click', () => goToStep(3));
-    step3BackBtn.addEventListener('click', () => goToStep(2));
+    step3BackBtn.addEventListener('click', () => {
+        goToStep(2);
+        setQuestionnaireMode('review');
+    });
+    
+    // Questionnaire Mode helper and toggle listeners
+    function setQuestionnaireMode(mode) {
+        if (!modeLiveBtn || !modeReviewBtn || !battlecardContainer) return;
+        
+        if (mode === 'live') {
+            modeLiveBtn.classList.add('active');
+            modeLiveBtn.style.background = 'var(--primary)';
+            modeLiveBtn.style.color = 'white';
+            modeLiveBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+            
+            modeReviewBtn.classList.remove('active');
+            modeReviewBtn.style.background = 'transparent';
+            modeReviewBtn.style.color = 'rgba(0,0,0,0.6)';
+            modeReviewBtn.style.boxShadow = 'none';
+            
+            battlecardContainer.classList.remove('mode-review');
+            battlecardContainer.classList.add('mode-live');
+        } else {
+            modeReviewBtn.classList.add('active');
+            modeReviewBtn.style.background = 'var(--primary)';
+            modeReviewBtn.style.color = 'white';
+            modeReviewBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+            
+            modeLiveBtn.classList.remove('active');
+            modeLiveBtn.style.background = 'transparent';
+            modeLiveBtn.style.color = 'rgba(0,0,0,0.6)';
+            modeLiveBtn.style.boxShadow = 'none';
+            
+            battlecardContainer.classList.remove('mode-live');
+            battlecardContainer.classList.add('mode-review');
+        }
+    }
+
+    if (modeLiveBtn && modeReviewBtn) {
+        modeLiveBtn.addEventListener('click', () => {
+            setQuestionnaireMode('live');
+            showToast("🎙️ Live Call Mode active: notes textareas hidden.");
+        });
+        modeReviewBtn.addEventListener('click', () => {
+            setQuestionnaireMode('review');
+            showToast("📝 Review Mode active: edit answers directly.");
+        });
+    }
+
 
     step2SaveBtn.addEventListener('click', async () => {
         const variant = battlecardSelector.value;
@@ -1039,6 +1217,152 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2500);
     }
 
+    // --- Microsoft OneDrive Integration Simulation ---
+    const ONEDRIVE_DATA = {
+        'Active Clients': [
+            { name: 'Meridian Logistics', isFolder: true },
+            { name: 'Atlas Financials', isFolder: true },
+            { name: 'Apex Retail', isFolder: true },
+            { name: 'Meridian_Logistics_SOW_2025.pdf', isFolder: false, size: 1258291 },
+            { name: 'Atlas_Financials_TM1_Migration_Scope_2025.pdf', isFolder: false, size: 2202009 }
+        ],
+        'Meridian Logistics': [
+            { name: 'Meridian_Logistics_SOW_2025.pdf', isFolder: false, size: 1258291 },
+            { name: 'Meridian_PA_Support_Requirement_Brief_2024.docx', isFolder: false, size: 460800 },
+            { name: 'Meridian_DataFusion_Schema_Specs.txt', isFolder: false, size: 24576 }
+        ],
+        'Atlas Financials': [
+            { name: 'Atlas_Financials_TM1_Migration_Scope_2025.pdf', isFolder: false, size: 2202009 },
+            { name: 'Atlas_Support_SLA_2024.docx', isFolder: false, size: 184320 }
+        ],
+        'Apex Retail': [
+            { name: 'Apex_Retail_Inventory_Planning_Model.xlsx', isFolder: false, size: 1887436 },
+            { name: 'Apex_Retail_AI_Integration_Brief_2025.pdf', isFolder: false, size: 1153433 }
+        ]
+    };
+    let onedriveCurrentFolder = 'Active Clients';
+    let attachedOneDriveFile = null;
+
+    const onedriveBrowseBtn = document.getElementById('prep-onedrive-browse-btn');
+    const onedriveBrowserPanel = document.getElementById('onedrive-browser');
+    const onedriveBackBtn = document.getElementById('onedrive-back-btn');
+    const onedriveSearchInput = document.getElementById('prep-onedrive-search');
+    const onedriveRemoveBtn = document.getElementById('onedrive-attached-remove');
+    const onedriveBadge = document.getElementById('onedrive-attached-badge');
+
+    function renderOneDriveList() {
+        const listEl = document.getElementById('onedrive-items-list');
+        const folderTitle = document.getElementById('onedrive-current-folder');
+        
+        if (!listEl) return;
+        
+        if (folderTitle) folderTitle.innerText = onedriveCurrentFolder;
+        
+        if (onedriveBackBtn) {
+            if (onedriveCurrentFolder !== 'Active Clients') {
+                onedriveBackBtn.style.display = 'inline-block';
+            } else {
+                onedriveBackBtn.style.display = 'none';
+            }
+        }
+        
+        let items = ONEDRIVE_DATA[onedriveCurrentFolder] || [];
+        const query = (onedriveSearchInput?.value || '').toLowerCase().trim();
+        
+        if (query) {
+            items = [];
+            for (const folder in ONEDRIVE_DATA) {
+                ONEDRIVE_DATA[folder].forEach(item => {
+                    if (!item.isFolder && item.name.toLowerCase().includes(query)) {
+                        if (!items.find(existing => existing.name === item.name)) {
+                            items.push(item);
+                        }
+                    }
+                });
+            }
+        }
+        
+        if (items.length === 0) {
+            listEl.innerHTML = '<div style="font-size: 0.7rem; color: rgba(0,0,0,0.4); text-align: center; padding: 1rem 0;">No items found</div>';
+            return;
+        }
+        
+        listEl.innerHTML = '';
+        items.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'onedrive-item';
+            
+            const icon = item.isFolder ? '📁' : '📄';
+            const sizeText = item.isFolder ? '' : ` (${formatBytes(item.size)})`;
+            
+            itemDiv.innerHTML = `
+                <div class="onedrive-item-info">
+                    <span>${icon}</span>
+                    <span class="onedrive-item-name" style="cursor: ${item.isFolder ? 'pointer' : 'default'}; font-weight: ${item.isFolder ? 'bold' : 'normal'}; color: ${item.isFolder ? '#0078d4' : 'inherit'};">${escapeHTML(item.name)}</span>
+                    <span class="onedrive-item-size">${sizeText}</span>
+                </div>
+                ${item.isFolder ? '' : `<button type="button" class="onedrive-btn-attach">Attach</button>`}
+            `;
+            
+            if (item.isFolder) {
+                itemDiv.querySelector('.onedrive-item-name').addEventListener('click', () => {
+                    onedriveCurrentFolder = item.name;
+                    renderOneDriveList();
+                });
+            } else {
+                itemDiv.querySelector('.onedrive-btn-attach').addEventListener('click', () => {
+                    attachedOneDriveFile = item.name;
+                    const badgeName = document.getElementById('onedrive-attached-name');
+                    if (onedriveBadge && badgeName) {
+                        badgeName.innerText = item.name;
+                        onedriveBadge.style.display = 'flex';
+                    }
+                    showToast(`Attached ${item.name} from OneDrive!`);
+                });
+            }
+            
+            listEl.appendChild(itemDiv);
+        });
+    }
+
+    if (onedriveBrowseBtn) {
+        onedriveBrowseBtn.addEventListener('click', () => {
+            if (onedriveBrowserPanel) {
+                const isHidden = onedriveBrowserPanel.style.display === 'none';
+                onedriveBrowserPanel.style.display = isHidden ? 'block' : 'none';
+                if (isHidden) {
+                    renderOneDriveList();
+                }
+            }
+        });
+    }
+
+    if (onedriveBackBtn) {
+        onedriveBackBtn.addEventListener('click', () => {
+            onedriveCurrentFolder = 'Active Clients';
+            renderOneDriveList();
+        });
+    }
+
+    if (onedriveSearchInput) {
+        onedriveSearchInput.addEventListener('input', () => {
+            if (onedriveBrowserPanel) {
+                onedriveBrowserPanel.style.display = 'block';
+            }
+            renderOneDriveList();
+        });
+    }
+
+    if (onedriveRemoveBtn) {
+        onedriveRemoveBtn.addEventListener('click', () => {
+            attachedOneDriveFile = null;
+            if (onedriveBadge) {
+                onedriveBadge.style.display = 'none';
+            }
+            showToast("OneDrive SOW attachment removed.");
+        });
+    }
+
     // --- Templates Loader ---
     prepLoadSampleBtn.addEventListener('click', () => {
         prepNameInput.value = "Sarah Chen";
@@ -1046,6 +1370,21 @@ document.addEventListener('DOMContentLoaded', () => {
         prepCompanyInput.value = "Meridian Logistics";
         prepUrlInput.value = "meridianlogistics.com.au";
         prepEmailInput.value = "sarah.chen@meridianlogistics.com.au";
+        if (document.getElementById('prep-phone')) {
+            document.getElementById('prep-phone').value = "+61 2 9876 5432";
+        }
+        if (document.getElementById('prep-rep')) {
+            document.getElementById('prep-rep').value = "Albert";
+        }
+        
+        // Auto-attach sample OneDrive SOW
+        attachedOneDriveFile = "Meridian_Logistics_SOW_2025.pdf";
+        const badgeName = document.getElementById('onedrive-attached-name');
+        if (onedriveBadge && badgeName) {
+            badgeName.innerText = attachedOneDriveFile;
+            onedriveBadge.style.display = 'flex';
+        }
+
         prepTrackSelect.value = "TM1 Support & Managed Support";
         prepIntakeText.value = "Service track interest: IBM Planning Analytics / TM1 support\nExcel spreadsheets consolidated: 35 sheets currently consolidated manually\nWorkflow description: Monthly actuals vs budget consolidation and reporting\nGL/ERP system: NetSuite ERP\nReporting tools: Power BI, Excel (PAX)\nDiscuss details: We have a major bottleneck during monthly forecasting. Consolidating the NetSuite actuals with our Excel model templates takes us 45 minutes per worksheet. We want to automate this data transfer and move to a unified database.";
         prepLinkedinText.value = "Experience:\n- Head of FP&A at Meridian Logistics (3 years - Present)\n  * Leading financial planning, forecasting, and consolidation processes\n  * Managing a team of 4 financial analysts\n- Senior Financial Analyst at Linfox Logistics (4 years)\nEducation:\n- Master of Applied Finance, University of Melbourne";
@@ -1087,6 +1426,9 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             company: prepCompanyInput.value.trim(),
             url: prepUrlInput.value.trim(),
             email: prepEmailInput.value.trim(),
+            phone: document.getElementById('prep-phone')?.value.trim() || '',
+            rep: document.getElementById('prep-rep')?.value || 'Albert',
+            oneDriveFile: attachedOneDriveFile,
             track: prepTrackSelect.value,
             intakeAnswers: prepIntakeText.value.trim(),
             linkedinInfo: prepLinkedinText.value.trim()
@@ -1114,6 +1456,9 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                 title: params.title,
                 company: params.company,
                 email: params.email,
+                phone: params.phone,
+                rep: params.rep,
+                oneDriveFile: params.oneDriveFile,
                 track: params.track,
                 url: params.url,
                 intakeAnswers: params.intakeAnswers,
@@ -1137,6 +1482,56 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             prepSubmitBtn.disabled = false;
         }
     });
+
+    function extractAnswersFromQuestionnaireHTML(htmlString) {
+        const temp = document.createElement('div');
+        temp.innerHTML = htmlString;
+        const paragraphs = temp.querySelectorAll('p');
+        const extractedAnswers = [];
+        
+        paragraphs.forEach((p, idx) => {
+            let plainText = p.innerText.trim();
+            // Remove question number prefix if any (e.g., "1. ", "10. ")
+            let cleanText = plainText.replace(/^\d+[\.\s\-]+/, '').trim();
+            
+            // Find corresponding question in currentQuestions
+            const qText = currentQuestions[idx] ? currentQuestions[idx].q : "";
+            if (qText) {
+                let cleanQText = qText.replace(/^\d+[\.\s\-]+/, '').trim();
+                
+                // Check if paragraph starts with the question text
+                if (cleanText.toLowerCase().startsWith(cleanQText.toLowerCase())) {
+                    let ans = cleanText.substring(cleanQText.length).trim();
+                    // Strip leading colon/spaces/dashes
+                    ans = ans.replace(/^[:\-\s\u2014]+/, '').trim();
+                    extractedAnswers.push(ans);
+                    return;
+                }
+            }
+            
+            // Fallback 1: split by the first colon
+            const colonIdx = cleanText.indexOf(':');
+            if (colonIdx !== -1) {
+                let ans = cleanText.substring(colonIdx + 1).trim();
+                extractedAnswers.push(ans);
+                return;
+            }
+            
+            // Fallback 2: split by question mark if there is one
+            const qMarkIdx = cleanText.indexOf('?');
+            if (qMarkIdx !== -1) {
+                let ans = cleanText.substring(qMarkIdx + 1).trim();
+                ans = ans.replace(/^[:\-\s\u2014]+/, '').trim();
+                extractedAnswers.push(ans);
+                return;
+            }
+            
+            // Fallback 3: keep the text as is
+            extractedAnswers.push(cleanText);
+        });
+        
+        return extractedAnswers;
+    }
 
     synthForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1162,8 +1557,21 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             if (!docs.summary && !docs.proposal) {
                 throw new Error("API returned empty reports. Ensure your key is valid and prompt is running correctly.");
             }
+            
+            // Extract answers and update currentQuestions before history save so payload has them
+            if (docs && docs.questionnaire) {
+                const extractedAnswers = extractAnswersFromQuestionnaireHTML(docs.questionnaire);
+                currentQuestions.forEach((q, idx) => {
+                    if (extractedAnswers[idx] !== undefined) {
+                        q.a = extractedAnswers[idx];
+                    }
+                });
+                renderBattlecards();
+                // Automatically switch to Review & Edit Mode since call is completed
+                setQuestionnaireMode('review');
+            }
 
-            // Auto-save synthesis to history (before formatting markdown so we store raw version)
+            const updatedCustomQuestions = currentQuestions.map(q => ({ q: q.q, a: q.a || "" }));
             const scoreVal = extractScoreFromHTML(docs.summary);
             const payload = {
                 type: 'synthesis',
@@ -1172,8 +1580,9 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                 variant: variant,
                 screencast: screencastUrl,
                 transcript: transcript,
-                customQuestions: customQuestions,
+                customQuestions: updatedCustomQuestions,
                 score: scoreVal,
+                rep: document.getElementById('prep-rep')?.value || 'Albert',
                 content: docs // object containing 7 documents
             };
             fetch('/api/history', {
@@ -1188,10 +1597,16 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             for (const key in docs) {
                 docs[key] = formatMarkdown(docs[key]);
             }
+            
+            // Inject Call Transcript
+            docs.transcript = `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #000000; font-size: 0.85rem; background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid rgba(0,0,0,0.06); border-radius: 6px;">${escapeHTML(transcript)}</pre>`;
 
             currentDocs = docs;
             activeDocTab = 'summary'; // default tab to show
             showResults(null, true);
+            
+            // Navigate back to Step 2 so SDR can review and refine mapped answers
+            goToStep(2);
         } catch (err) {
             resetOutput();
             showToast(`Error: ${err.message}`);
@@ -1240,6 +1655,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             case 'detailedNotes': titleText = "5. Detailed Meeting Notes"; break;
             case 'proposal': titleText = "6. Consultative Proposal"; break;
             case 'actionItems': titleText = "7. Action Items"; break;
+            case 'transcript': titleText = "8. Raw Call Transcript"; break;
         }
 
         const sanitizedContent = window.DOMPurify ? DOMPurify.sanitize(content) : fallbackSanitize(content);
@@ -1807,11 +2223,15 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
 
     // Call Directory event listeners
     const directorySearch = document.getElementById('directory-search');
+    const directoryFilterRep = document.getElementById('directory-filter-rep');
     const directoryFilterScore = document.getElementById('directory-filter-score');
     const directoryRefreshBtn = document.getElementById('directory-refresh-btn');
 
     if (directorySearch) {
         directorySearch.addEventListener('input', renderDirectoryList);
+    }
+    if (directoryFilterRep) {
+        directoryFilterRep.addEventListener('change', renderDirectoryList);
     }
     if (directoryFilterScore) {
         directoryFilterScore.addEventListener('change', renderDirectoryList);

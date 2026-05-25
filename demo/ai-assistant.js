@@ -377,9 +377,10 @@ Format exactly as:
 
         let questionnaireHtml = "";
         if (Array.isArray(customQuestions) && customQuestions.length > 0) {
-            questionnaireHtml = customQuestions.map((q, idx) => {
+            questionnaireHtml = customQuestions.map((item, idx) => {
+                const qText = typeof item === 'object' && item !== null ? item.q : item;
                 let defaultAns = "";
-                const lowerQ = q.toLowerCase();
+                const lowerQ = qText.toLowerCase();
                 if (idx === 0 && lowerQ.includes("ledger")) {
                     defaultAns = `Currently using NetSuite. There is no automated integration to their budgeting tools; data is exported via CSV files. <em>"Our actuals reside in NetSuite, but all our planning models are housed in Excel."</em>`;
                 } else if (idx === 1 && lowerQ.includes("spreadsheet")) {
@@ -389,7 +390,7 @@ Format exactly as:
                 } else {
                     defaultAns = `Captured details matching custom query. <em>"Response verified during Discovery Call."</em>`;
                 }
-                return `<p><strong>${idx + 1}. ${q}</strong><br>Answer: ${defaultAns}</p>`;
+                return `<p><strong>${idx + 1}. ${qText}</strong><br>Answer: ${defaultAns}</p>`;
             }).join('\n');
         } else {
             questionnaireHtml = `<p><strong>1. ERP Source:</strong> Currently using NetSuite. There is no automated integration to their budgeting tools; data is exported via CSV files. <em>"Our actuals reside in NetSuite, but all our planning models are housed in Excel."</em></p>
