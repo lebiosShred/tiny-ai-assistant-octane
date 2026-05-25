@@ -159,12 +159,91 @@
                                 <!-- Booking Confirmation Details -->
                                 <div id="booking-confirmation-details" class="booking-confirmation-details" style="display: none;">
                                     <p class="confirmation-summary-text">Selected: <strong id="summary-date-time">May 26 @ 10:30 AM</strong></p>
-                                    <button type="button" id="btn-confirm-booking" class="booking-btn booking-btn--primary">Confirm Booking</button>
+                                    <button type="button" id="btn-confirm-booking" class="booking-btn booking-btn--primary">Next: Enter Your Details <span>→</span></button>
                                 </div>
                             </div>
                             <div class="calendar-dev-hint">
                                 ⚠ Replace this placeholder with your HubSpot embed code. See HTML comments for instructions.
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Contact details form -->
+                    <div id="booking-step-details" class="booking-step" style="display: none;">
+                        <div class="hero__calendar-header hero__calendar-header--with-back">
+                            <button type="button" id="btn-back-details" class="btn-back" title="Go back" aria-label="Go back">←</button>
+                            <div class="header-details">
+                                <div class="header-details__title">Your Details</div>
+                                <div class="header-details__subtitle" id="details-reason-display">Reason: None</div>
+                            </div>
+                        </div>
+                        <div class="hero__calendar-body">
+                            <form id="details-form" style="display: flex; flex-direction: column; gap: 0.65rem;">
+                                <div class="form-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                        <label for="booking-name" class="booking-label">Your Name *</label>
+                                        <input type="text" id="booking-name" class="booking-input" required placeholder="e.g. Sarah Chen">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                        <label for="booking-email" class="booking-label">Company Email *</label>
+                                        <input type="email" id="booking-email" class="booking-input" required placeholder="e.g. sarah.chen@company.com">
+                                    </div>
+                                </div>
+                                <div class="form-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                        <label for="booking-company" class="booking-label">Company Name *</label>
+                                        <input type="text" id="booking-company" class="booking-input" required placeholder="e.g. Meridian Logistics">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                        <label for="booking-position" class="booking-label">Your Position *</label>
+                                        <input type="text" id="booking-position" class="booking-input" required placeholder="e.g. Head of FP&A">
+                                    </div>
+                                </div>
+                                <div class="form-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                        <label for="booking-track" class="booking-label">Service Interest *</label>
+                                        <div class="select-wrapper">
+                                            <select id="booking-track" class="booking-select" required style="padding: 0.65rem;">
+                                                <option value="Planning & Analytics (TM1)">Planning & Analytics (TM1)</option>
+                                                <option value="AI">AI</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                        <label for="booking-url" class="booking-label">Company Website URL *</label>
+                                        <input type="url" id="booking-url" class="booking-input" required placeholder="e.g. https://company.com">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="booking-phone" class="booking-label">Phone Number *</label>
+                                    <input type="tel" id="booking-phone" class="booking-input" required placeholder="e.g. +61 2 9876 5432">
+                                </div>
+                                <div class="form-group">
+                                    <label for="booking-discuss" class="booking-label">What would you like to discuss? *</label>
+                                    <textarea id="booking-discuss" class="booking-textarea" required rows="2" placeholder="Describe your requirements or questions..."></textarea>
+                                </div>
+                                <button type="submit" id="btn-submit-booking" class="booking-btn booking-btn--primary">
+                                    Confirm Booking <span>✓</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: Success / Confirmation Summary (For SDR paste) -->
+                    <div id="booking-step-success" class="booking-step" style="display: none;">
+                        <div class="hero__calendar-header">Booking Confirmed!</div>
+                        <div class="hero__calendar-body" style="gap: 0.65rem; overflow-y: auto; max-height: 480px;">
+                            <div class="success-icon" style="font-size: 2rem; text-align: center; color: #00c853; margin-top: 0.25rem;">🎉</div>
+                            <h4 style="text-align: center; margin: 0; color: var(--text-dark); font-size: 0.95rem;">Thank you, <span id="success-name-display">Client</span>!</h4>
+                            <p style="font-size: 0.75rem; text-align: center; color: var(--text-dark-muted); margin-bottom: 0.25rem;" id="success-time-display">Your meeting is scheduled for May 26 @ 10:30 AM.</p>
+                            
+                            <div style="border-top: 1px solid var(--border-light); padding-top: 0.5rem; margin-top: 0.25rem;">
+                                <label class="booking-label" style="font-weight: bold; font-size: 0.75rem; color: var(--accent); margin-bottom: 0.25rem;">Intake Questionnaire Summary (Copy for Tiny AI Prep)</label>
+                                <textarea id="success-intake-copy" class="booking-textarea" readonly rows="7" style="font-family: monospace; font-size: 0.7rem; background: #f9f9f9; color: #333;" onclick="this.select()"></textarea>
+                                <button type="button" class="booking-btn" id="btn-copy-intake" style="background: rgba(77, 174, 235, 0.08); color: var(--accent); font-size: 0.75rem; padding: 0.5rem; margin-top: 0.35rem; border: 1px solid rgba(77, 174, 235, 0.15); height: 32px;">📋 Copy Summary Text</button>
+                            </div>
+                            
+                            <button type="button" id="btn-book-another" class="booking-btn booking-btn--primary" style="margin-top: 0.35rem; padding: 0.65rem;">Book Another Meeting</button>
                         </div>
                     </div>
 
@@ -253,6 +332,26 @@
         // === Booking Widget Flow ===
         const stepReason = document.getElementById('booking-step-reason');
         const stepCalendar = document.getElementById('booking-step-calendar');
+        const stepDetails = document.getElementById('booking-step-details');
+        const stepSuccess = document.getElementById('booking-step-success');
+        const btnBackDetails = document.getElementById('btn-back-details');
+        const detailsReasonDisplay = document.getElementById('details-reason-display');
+        const detailsForm = document.getElementById('details-form');
+        const bookingName = document.getElementById('booking-name');
+        const bookingEmail = document.getElementById('booking-email');
+        const bookingCompany = document.getElementById('booking-company');
+        const bookingPosition = document.getElementById('booking-position');
+        const bookingTrack = document.getElementById('booking-track');
+        const bookingUrl = document.getElementById('booking-url');
+        const bookingPhone = document.getElementById('booking-phone');
+        const bookingDiscuss = document.getElementById('booking-discuss');
+        
+        const successNameDisplay = document.getElementById('success-name-display');
+        const successTimeDisplay = document.getElementById('success-time-display');
+        const successIntakeCopy = document.getElementById('success-intake-copy');
+        const btnCopyIntake = document.getElementById('btn-copy-intake');
+        const btnBookAnother = document.getElementById('btn-book-another');
+
         const selectReason = document.getElementById('meeting-reason');
         const otherReasonWrapper = document.getElementById('other-reason-wrapper');
         const otherReasonText = document.getElementById('other-reason');
@@ -414,7 +513,85 @@
         renderTimeSlots('26');
 
         btnConfirm.addEventListener('click', () => {
-            alert(`Booking Confirmed!\nReason: ${selectReason.value === 'other' ? otherReasonText.value.trim() : selectReason.value}\nTime: May ${selectedDay} at ${selectedTime}`);
+            const val = selectReason.value;
+            let displayReason = val === 'other' ? otherReasonText.value.trim() : val;
+            detailsReasonDisplay.textContent = `Reason: ${displayReason}`;
+            
+            // Pre-fill track selection based on booking reason keyword
+            const reasonLower = displayReason.toLowerCase();
+            if (reasonLower.includes('ai') || reasonLower.includes('artificial') || reasonLower.includes('watsonx')) {
+                bookingTrack.value = 'AI';
+            } else {
+                bookingTrack.value = 'Planning & Analytics (TM1)';
+            }
+            
+            // Pre-fill discuss field
+            bookingDiscuss.value = `Discuss details: ${displayReason}`;
+            
+            stepCalendar.style.display = 'none';
+            stepDetails.style.display = 'block';
+        });
+
+        btnBackDetails.addEventListener('click', () => {
+            stepDetails.style.display = 'none';
+            stepCalendar.style.display = 'block';
+        });
+
+        detailsForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const name = bookingName.value.trim();
+            const email = bookingEmail.value.trim();
+            const company = bookingCompany.value.trim();
+            const position = bookingPosition.value.trim();
+            const track = bookingTrack.value;
+            const url = bookingUrl.value.trim();
+            const phone = bookingPhone.value.trim();
+            const discuss = bookingDiscuss.value.trim();
+            
+            // Format intake summary text exactly as required by SDR parse
+            const summaryText = `Service track interest: ${track === 'AI' ? 'AI' : 'Planning Analytics (TM1)'}
+Excel spreadsheets consolidated: 35 sheets currently consolidated manually (verify on call)
+Workflow description: ${discuss}
+GL/ERP system: NetSuite ERP (verify on call)
+Discuss details: ${discuss}
+Company Website: ${url}
+Position: ${position}
+Company: ${company}
+Email: ${email}
+Phone: ${phone}
+Name: ${name}`;
+
+            // Update Success page details
+            successNameDisplay.textContent = name;
+            successTimeDisplay.textContent = `Your meeting is scheduled for May ${selectedDay} at ${selectedTime}.`;
+            successIntakeCopy.value = summaryText;
+            
+            stepDetails.style.display = 'none';
+            stepSuccess.style.display = 'block';
+        });
+
+        btnCopyIntake.addEventListener('click', () => {
+            successIntakeCopy.select();
+            navigator.clipboard.writeText(successIntakeCopy.value)
+                .then(() => {
+                    alert("Intake summary copied to clipboard! You can paste this in Step 1 of your Tiny Sales Assistant.");
+                })
+                .catch(err => {
+                    console.error("Copy failed:", err);
+                });
+        });
+
+        btnBookAnother.addEventListener('click', () => {
+            // Reset fields
+            selectReason.value = '';
+            otherReasonText.value = '';
+            otherReasonWrapper.style.display = 'none';
+            btnNext.disabled = true;
+            detailsForm.reset();
+            
+            stepSuccess.style.display = 'none';
+            stepReason.style.display = 'block';
         });
 
 

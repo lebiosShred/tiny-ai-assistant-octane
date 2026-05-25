@@ -281,7 +281,9 @@ a:hover { color: var(--accent-hover); }
   width: 100%;
 }
 
-.booking-select {
+.booking-select,
+.booking-textarea,
+.booking-input {
   width: 100%;
   padding: 0.85rem 1rem;
   font-size: 0.95rem;
@@ -290,12 +292,17 @@ a:hover { color: var(--accent-hover); }
   background-color: #FAFAFA;
   border: 1px solid var(--border-light);
   border-radius: var(--radius);
-  appearance: none;
-  cursor: pointer;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-.booking-select:focus {
+.booking-select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.booking-select:focus,
+.booking-textarea:focus,
+.booking-input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(77, 174, 235, 0.15);
