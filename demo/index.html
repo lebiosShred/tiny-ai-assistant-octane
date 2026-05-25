@@ -32,8 +32,16 @@
                 <div class="settings-section">
                     <h4 class="section-title">API Authentication</h4>
                     <div class="settings-row">
+                        <div class="form-group" style="flex: 1; min-width: 150px;">
+                            <label for="settings-api-provider">LLM Provider</label>
+                            <select id="settings-api-provider" class="form-input select-input">
+                                <option value="mistral">Mistral AI</option>
+                                <option value="openai" disabled>OpenAI (Coming Soon)</option>
+                                <option value="anthropic" disabled>Anthropic (Coming Soon)</option>
+                            </select>
+                        </div>
                         <div class="form-group" style="flex: 1.5; min-width: 250px;">
-                            <label for="settings-api-key">Mistral API Key</label>
+                            <label for="settings-api-key">API Key for LLM</label>
                             <input type="password" id="settings-api-key" class="form-input form-input-code" placeholder="Enter custom API Key (or leave empty to use server default)">
                         </div>
                         <div class="form-group" style="flex: 1.5; min-width: 250px;">
@@ -41,8 +49,11 @@
                             <input type="text" id="settings-api-url" class="form-input form-input-code" placeholder="e.g. /api/chat">
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 180px;">
-                            <label for="settings-api-model">Model Name</label>
-                            <input type="text" id="settings-api-model" class="form-input form-input-code" placeholder="e.g. mistral-small-latest">
+                            <label for="settings-api-model">LLM Model / Engine</label>
+                            <select id="settings-api-model" class="form-input select-input">
+                                <option value="mistral-large-latest">Mistral Large (Mistral AI)</option>
+                                <option value="mistral-small-latest">Mistral Small (Mistral AI)</option>
+                            </select>
                         </div>
                     </div>
                 </div>

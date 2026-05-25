@@ -164,7 +164,7 @@ async function generateAICompletion(systemPrompt, userPrompt) {
 `;
 
     const payload = JSON.stringify({
-        model: process.env.MISTRAL_API_MODEL || 'mistral-small-latest',
+        model: process.env.MISTRAL_API_MODEL || 'mistral-large-latest',
         messages: [
             {
                 role: 'system',

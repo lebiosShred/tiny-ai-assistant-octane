@@ -32,7 +32,7 @@ function logTest(name, status, details = "") {
 function _callMistralDirect(messages) {
     return new Promise((resolve, reject) => {
         const payload = JSON.stringify({
-            model: "mistral-small-latest",
+            model: "mistral-large-latest",
             messages: messages,
             temperature: 0.15,
             max_tokens: 8000

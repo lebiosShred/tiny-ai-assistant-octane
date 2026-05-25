@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements - Settings Configurations & Prompts
     const settingsToggleBtn = document.getElementById('settings-toggle-btn');
     const settingsPanel = document.getElementById('settings-panel');
+    const settingsApiProvider = document.getElementById('settings-api-provider');
     const settingsApiKey = document.getElementById('settings-api-key');
     const settingsApiUrl = document.getElementById('settings-api-url');
     const settingsApiModel = document.getElementById('settings-api-model');
@@ -189,6 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function loadSettingsToUI() {
+        if (settingsApiProvider) {
+            settingsApiProvider.value = localStorage.getItem('tiny_api_provider') || TinyAI.DEFAULT_CONFIG.provider || 'mistral';
+        }
         settingsApiKey.value = localStorage.getItem('tiny_api_key') || '';
         settingsApiUrl.value = localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl;
         settingsApiModel.value = localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model;
@@ -250,6 +254,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Save configurations
     settingsSaveBtn.addEventListener('click', () => {
+        if (settingsApiProvider) {
+            localStorage.setItem('tiny_api_provider', settingsApiProvider.value);
+        }
         localStorage.setItem('tiny_api_key', settingsApiKey.value.trim());
         localStorage.setItem('tiny_api_url', settingsApiUrl.value.trim());
         localStorage.setItem('tiny_api_model', settingsApiModel.value.trim());
@@ -609,6 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Local Storage API Settings Load ---
     function getApiConfig() {
         return {
+            provider: localStorage.getItem('tiny_api_provider') || TinyAI.DEFAULT_CONFIG.provider || 'mistral',
             apiKey: localStorage.getItem('tiny_api_key') || TinyAI.DEFAULT_CONFIG.apiKey,
             apiUrl: localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl,
             model: localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model,
