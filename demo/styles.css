@@ -1067,4 +1067,160 @@ body {
     border-top: 1px solid var(--primary);
 }
 
+/* Left Panel Tabs */
+.left-panel-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.left-tab-btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: #f7f7f7;
+    color: rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.left-tab-btn:hover {
+    color: #000000;
+    background: #eef2f5;
+    border-color: rgba(0, 0, 0, 0.18);
+}
+
+.left-tab-btn.active {
+    color: #ffffff;
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 2px 6px var(--primary-glow);
+}
+
+/* Directory filter bar */
+.directory-filter-bar {
+    margin-bottom: 0.5rem;
+}
+
+.directory-filter-bar select {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+/* Directory Cards */
+.directory-card {
+    background: #fafafa;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.directory-card:hover {
+    border-color: var(--primary);
+    background: rgba(77, 174, 235, 0.02);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.directory-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.directory-card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #000000;
+}
+
+.directory-card-subtitle {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.directory-card-meta {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.directory-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.directory-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.directory-btn-load {
+    background: var(--primary);
+    color: #000000;
+    box-shadow: 0 2px 4px var(--primary-glow);
+}
+
+.directory-btn-load:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 8px var(--primary-glow);
+}
+
+.directory-btn-delete {
+    background: transparent;
+    color: rgba(0, 0, 0, 0.45);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.directory-btn-delete:hover {
+    color: #ff4d4d;
+    border-color: #ff4d4d;
+    background: rgba(255, 77, 77, 0.05);
+}
+
+.directory-badge-type {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.directory-badge-type.dossier {
+    background: rgba(0, 168, 204, 0.1);
+    color: #00a8cc;
+}
+
+.directory-badge-type.synthesis {
+    background: rgba(144, 19, 254, 0.1);
+    color: #9013fe;
+}
+
 

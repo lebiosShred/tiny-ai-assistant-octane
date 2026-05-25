@@ -26,6 +26,230 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentDocs = null;
     let activeDocTab = 'summary';
     let currentQuestions = [];
+    
+    // Directory variables and event handlers
+    let directoryItems = [];
+    
+    const tabActivePipeline = document.getElementById('tab-active-pipeline');
+    const tabCallDirectory = document.getElementById('tab-call-directory');
+    const activePipelineView = document.getElementById('active-pipeline-view');
+    const callDirectoryView = document.getElementById('call-directory-view');
+    const leftPanelTitle = document.getElementById('left-panel-title');
+
+    function switchLeftTab(tab) {
+        if (tab === 'pipeline') {
+            if (tabActivePipeline) tabActivePipeline.classList.add('active');
+            if (tabCallDirectory) tabCallDirectory.classList.remove('active');
+            if (activePipelineView) activePipelineView.style.display = 'flex';
+            if (callDirectoryView) callDirectoryView.style.display = 'none';
+            if (leftPanelTitle) leftPanelTitle.innerText = "Tiny Sales Assistant Pipeline";
+        } else {
+            if (tabCallDirectory) tabCallDirectory.classList.add('active');
+            if (tabActivePipeline) tabActivePipeline.classList.remove('active');
+            if (activePipelineView) activePipelineView.style.display = 'none';
+            if (callDirectoryView) callDirectoryView.style.display = 'flex';
+            if (leftPanelTitle) leftPanelTitle.innerText = "04 — Call Directory";
+            loadDirectoryList();
+        }
+    }
+
+    if (tabActivePipeline && tabCallDirectory) {
+        tabActivePipeline.addEventListener('click', () => switchLeftTab('pipeline'));
+        tabCallDirectory.addEventListener('click', () => switchLeftTab('directory'));
+    }
+
+    async function loadDirectoryList() {
+        const listContainer = document.getElementById('directory-list-container');
+        if (!listContainer) return;
+        listContainer.innerHTML = '<div style="font-size: 0.85rem; color: rgba(0,0,0,0.4); text-align: center; margin-top: 3rem;">Loading call directory...</div>';
+        try {
+            const response = await fetch('/api/history');
+            if (!response.ok) {
+                throw new Error('Failed to fetch history list');
+            }
+            directoryItems = await response.json();
+            renderDirectoryList();
+        } catch (error) {
+            console.error('Error loading history list:', error);
+            listContainer.innerHTML = `<div style="font-size: 0.85rem; color: #ff4d4d; text-align: center; margin-top: 3rem;">Failed to load call directory: ${error.message}</div>`;
+        }
+    }
+
+    function renderDirectoryList() {
+        const listContainer = document.getElementById('directory-list-container');
+        if (!listContainer) return;
+
+        const searchTerm = (document.getElementById('directory-search')?.value || '').toLowerCase().trim();
+        const scoreFilter = document.getElementById('directory-filter-score')?.value || 'ALL';
+
+        const filtered = directoryItems.filter(item => {
+            const matchSearch = !searchTerm || 
+                (item.name && item.name.toLowerCase().includes(searchTerm)) ||
+                (item.company && item.company.toLowerCase().includes(searchTerm)) ||
+                (item.track && item.track.toLowerCase().includes(searchTerm)) ||
+                (item.title && item.title.toLowerCase().includes(searchTerm)) ||
+                (item.type && item.type.toLowerCase().includes(searchTerm));
+
+            let matchScore = true;
+            if (scoreFilter !== 'ALL') {
+                if (scoreFilter === 'NONE') {
+                    matchScore = !item.score;
+                } else {
+                    matchScore = item.score && item.score.toUpperCase() === scoreFilter;
+                }
+            }
+
+            return matchSearch && matchScore;
+        });
+
+        if (filtered.length === 0) {
+            listContainer.innerHTML = '<div style="font-size: 0.85rem; color: rgba(0,0,0,0.4); text-align: center; margin-top: 3rem;">No call records found.</div>';
+            return;
+        }
+
+        listContainer.innerHTML = '';
+        filtered.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'directory-card';
+            
+            const dateStr = new Date(item.date).toLocaleDateString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+
+            const badgeTypeClass = item.type === 'synthesis' ? 'synthesis' : 'dossier';
+            const badgeTypeLabel = item.type === 'synthesis' ? 'Synthesis' : 'Dossier';
+
+            let scoreBadge = '';
+            if (item.score) {
+                const scoreLower = item.score.toLowerCase();
+                scoreBadge = `<span class="badge-score ${scoreLower}">${item.score}</span>`;
+            }
+
+            card.innerHTML = `
+                <div class="directory-card-header">
+                    <div>
+                        <div class="directory-card-title">${escapeHTML(item.company)}</div>
+                        <div class="directory-card-subtitle">${escapeHTML(item.name)} ${item.title ? `— ${escapeHTML(item.title)}` : ''}</div>
+                    </div>
+                    <span class="directory-badge-type ${badgeTypeClass}">${badgeTypeLabel}</span>
+                </div>
+                <div class="directory-card-meta">
+                    <span>📅 ${dateStr}</span>
+                    ${item.track ? `<span>🏷️ ${escapeHTML(item.track)}</span>` : ''}
+                    ${item.variant ? `<span>📋 ${escapeHTML(item.variant)}</span>` : ''}
+                    ${scoreBadge}
+                </div>
+                <div class="directory-card-actions">
+                    <button class="directory-btn directory-btn-delete" data-id="${item.id}">🗑️ Delete</button>
+                    <button class="directory-btn directory-btn-load" data-id="${item.id}">👁️ Load Console</button>
+                </div>
+            `;
+
+            card.querySelector('.directory-btn-delete').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (confirm(`Are you sure you want to delete this call record for ${item.company}?`)) {
+                    await deleteHistoryItem(item.id);
+                }
+            });
+
+            card.querySelector('.directory-btn-load').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await loadHistoryItemDetail(item.id);
+            });
+
+            listContainer.appendChild(card);
+        });
+    }
+
+    async function deleteHistoryItem(id) {
+        try {
+            const response = await fetch(`/api/history?id=${encodeURIComponent(id)}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) {
+                throw new Error('Failed to delete call record');
+            }
+            showToast("Call record deleted successfully.");
+            await loadDirectoryList();
+        } catch (error) {
+            console.error('Error deleting call record:', error);
+            alert(`Failed to delete record: ${error.message}`);
+        }
+    }
+
+    async function loadHistoryItemDetail(id) {
+        showLoading("Loading historical session...");
+        try {
+            const response = await fetch(`/api/history/detail?id=${encodeURIComponent(id)}`);
+            if (!response.ok) {
+                throw new Error('Failed to load call record details');
+            }
+            const item = await response.json();
+            
+            if (item.type === 'dossier') {
+                prepNameInput.value = item.name || '';
+                prepTitleInput.value = item.title || '';
+                prepCompanyInput.value = item.company || '';
+                prepUrlInput.value = item.url || '';
+                prepEmailInput.value = item.email || '';
+                prepTrackSelect.value = item.track || 'TM1 Support & Managed Support';
+                prepIntakeText.value = item.intakeAnswers || '';
+                prepLinkedinText.value = item.linkedinInfo || '';
+                
+                const formattedHtml = formatMarkdown(item.content);
+                currentDocs = null;
+                showResults(formattedHtml, false);
+                
+                goToStep(1);
+                step1NextBtn.style.display = 'inline-flex';
+                switchLeftTab('pipeline');
+                showToast(`Restored Call Prep Briefing for ${item.company}`);
+            } else if (item.type === 'synthesis') {
+                synthVariantSelect.value = item.variant || 'Variant A';
+                synthScreencast.value = item.screencast || '';
+                synthTranscriptText.value = item.transcript || '';
+                
+                if (item.variant === 'Variant B') {
+                    prepTrackSelect.value = "TM1 Support & Managed Support";
+                } else if (item.variant === 'Variant C') {
+                    prepTrackSelect.value = "Agentic AI Operations & Watsonx";
+                } else {
+                    prepTrackSelect.value = "DataFusion & Analytics Stack";
+                }
+                
+                if (item.customQuestions) {
+                    currentQuestions = item.customQuestions;
+                } else {
+                    await loadCustomQuestions(item.variant || 'Variant A');
+                }
+                
+                let docs = item.content;
+                if (docs) {
+                    const docsCopy = { ...docs };
+                    for (const key in docsCopy) {
+                        docsCopy[key] = formatMarkdown(docsCopy[key]);
+                    }
+                    currentDocs = docsCopy;
+                    activeDocTab = 'summary';
+                    showResults(null, true);
+                }
+                
+                goToStep(3);
+                switchLeftTab('pipeline');
+                showToast(`Restored Call Report Synthesis for ${item.company}`);
+            }
+        } catch (error) {
+            console.error('Error loading history item detail:', error);
+            resetOutput();
+            showToast(`Failed to restore session: ${error.message}`);
+        }
+    }
+
+    function extractScoreFromHTML(html) {
+        if (!html) return null;
+        const match = html.match(/QUALIFICATION\s*SCORE:\s*(HOT|WARM|COLD)/i);
+        return match ? match[1].toUpperCase() : null;
+    }
 
     function formatMarkdown(text) {
         if (!text) return "";
@@ -882,6 +1106,28 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             const formattedHtml = formatMarkdown(resultHtml);
             showResults(formattedHtml, false);
             step1NextBtn.style.display = 'inline-flex';
+            
+            // Auto-save dossier to history
+            const payload = {
+                type: 'dossier',
+                name: params.name,
+                title: params.title,
+                company: params.company,
+                email: params.email,
+                track: params.track,
+                url: params.url,
+                intakeAnswers: params.intakeAnswers,
+                linkedinInfo: params.linkedinInfo,
+                content: resultHtml
+            };
+            fetch('/api/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(res => res.json())
+              .then(data => console.log("Saved dossier to server history:", data.id))
+              .catch(err => console.warn("Failed to auto-save dossier to history:", err));
+
             goToStep(2);
         } catch (err) {
             resetOutput();
@@ -916,6 +1162,27 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             if (!docs.summary && !docs.proposal) {
                 throw new Error("API returned empty reports. Ensure your key is valid and prompt is running correctly.");
             }
+
+            // Auto-save synthesis to history (before formatting markdown so we store raw version)
+            const scoreVal = extractScoreFromHTML(docs.summary);
+            const payload = {
+                type: 'synthesis',
+                name: prepNameInput.value.trim() || 'Unknown Name',
+                company: prepCompanyInput.value.trim() || 'Unknown Company',
+                variant: variant,
+                screencast: screencastUrl,
+                transcript: transcript,
+                customQuestions: customQuestions,
+                score: scoreVal,
+                content: docs // object containing 7 documents
+            };
+            fetch('/api/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(res => res.json())
+              .then(data => console.log("Saved synthesis to server history:", data.id))
+              .catch(err => console.warn("Failed to auto-save synthesis to history:", err));
 
             // Format markdown bold in all parsed documents
             for (const key in docs) {
@@ -1536,6 +1803,21 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
         } else {
             showToast("Unsupported file type. Please upload a .txt, .pdf, or .docx file.");
         }
+    }
+
+    // Call Directory event listeners
+    const directorySearch = document.getElementById('directory-search');
+    const directoryFilterScore = document.getElementById('directory-filter-score');
+    const directoryRefreshBtn = document.getElementById('directory-refresh-btn');
+
+    if (directorySearch) {
+        directorySearch.addEventListener('input', renderDirectoryList);
+    }
+    if (directoryFilterScore) {
+        directoryFilterScore.addEventListener('change', renderDirectoryList);
+    }
+    if (directoryRefreshBtn) {
+        directoryRefreshBtn.addEventListener('click', loadDirectoryList);
     }
 
     // Run sync initially after all functions and datasets are defined

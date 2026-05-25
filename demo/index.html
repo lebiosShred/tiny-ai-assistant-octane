@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tiny AI Sales Assistant - SaaS Dashboard</title>
+    <title>Tiny Sales Assistant - SaaS Dashboard</title>
     <meta name="description" content="Functional sales enablement application for prospect pre-screening briefings and call transcript report synthesis.">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -15,7 +15,7 @@
         <header class="app-header">
             <div class="brand-section">
                 <img src="tiny.png" alt="Tiny" class="brand-icon">
-                <span class="brand-logo">Tiny AI Assistant</span>
+                <span class="brand-logo">Tiny Sales Assistant</span>
                 <span class="brand-badge">Active</span>
             </div>
             <button class="btn btn-secondary" id="settings-toggle-btn" style="height: 32px; padding: 0 12px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">⚙ Settings</button>
@@ -134,138 +134,165 @@
             
             <!-- Left Panel (Inputs) -->
             <div class="panel">
-                <div class="panel-header">
-                    <span class="panel-title">Sales Rep Inputs</span>
+                <div class="panel-header" style="flex-direction: column; align-items: stretch; gap: 0.5rem; padding-bottom: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span class="panel-title" id="left-panel-title">Tiny Sales Assistant Pipeline</span>
+                    </div>
+                    <div class="left-panel-tabs">
+                        <button class="left-tab-btn active" id="tab-active-pipeline">Active Call Pipeline</button>
+                        <button class="left-tab-btn" id="tab-call-directory">04 — Call Directory</button>
+                    </div>
                 </div>
                 
                 <div class="panel-body">
-                    <!-- Stepper Header -->
-                    <div class="stepper-header">
-                        <div class="step-indicator active" id="step-1-indicator" data-step="1">
-                            <span class="step-num">1</span>
-                            <span class="step-label">Call Prep</span>
+                    <!-- Active Pipeline View Container -->
+                    <div id="active-pipeline-view" style="display: flex; flex-direction: column; gap: 1rem; flex: 1; height: 100%;">
+                        <!-- Stepper Header -->
+                        <div class="stepper-header">
+                            <div class="step-indicator active" id="step-1-indicator" data-step="1">
+                                <span class="step-num">1</span>
+                                <span class="step-label">02 - Prep</span>
+                            </div>
+                            <div class="step-connector"></div>
+                            <div class="step-indicator" id="step-2-indicator" data-step="2">
+                                <span class="step-num">2</span>
+                                <span class="step-label">03 - Req Session</span>
+                            </div>
+                            <div class="step-connector"></div>
+                            <div class="step-indicator" id="step-3-indicator" data-step="3">
+                                <span class="step-num">3</span>
+                                <span class="step-label">05 - Auto Reports</span>
+                            </div>
                         </div>
-                        <div class="step-connector"></div>
-                        <div class="step-indicator" id="step-2-indicator" data-step="2">
-                            <span class="step-num">2</span>
-                            <span class="step-label">Live Call</span>
-                        </div>
-                        <div class="step-connector"></div>
-                        <div class="step-indicator" id="step-3-indicator" data-step="3">
-                            <span class="step-num">3</span>
-                            <span class="step-label">Handoff</span>
-                        </div>
-                    </div>
 
-                    <!-- Step 1 Content: Prospect Prep -->
-                    <div class="step-content active" id="step-1-content">
-                        <form id="prep-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
-                            <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
-                                <div class="form-group" style="flex: 1; min-width: 200px;">
-                                    <label for="prep-name">Prospect Full Name *</label>
-                                    <input type="text" id="prep-name" class="form-input" placeholder="e.g. Sarah Chen" required>
+                        <!-- Step 1 Content: Prospect Prep -->
+                        <div class="step-content active" id="step-1-content">
+                            <form id="prep-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
+                                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label for="prep-name">Prospect Full Name *</label>
+                                        <input type="text" id="prep-name" class="form-input" placeholder="e.g. Sarah Chen" required>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label for="prep-title">Position / Title</label>
+                                        <input type="text" id="prep-title" class="form-input" placeholder="e.g. Head of FP&A">
+                                    </div>
                                 </div>
-                                <div class="form-group" style="flex: 1; min-width: 200px;">
-                                    <label for="prep-title">Position / Title</label>
-                                    <input type="text" id="prep-title" class="form-input" placeholder="e.g. Head of FP&A">
+                                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label for="prep-company">Company Name *</label>
+                                        <input type="text" id="prep-company" class="form-input" placeholder="e.g. Meridian Logistics" required>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label for="prep-url">Company Website URL</label>
+                                        <input type="text" id="prep-url" class="form-input" placeholder="e.g. meridianlogistics.com.au">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label for="prep-email">Company Email *</label>
+                                        <input type="email" id="prep-email" class="form-input" placeholder="e.g. sarah.chen@meridianlogistics.com.au" required>
+                                    </div>
                                 </div>
-                            </div>
-                            <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
-                                <div class="form-group" style="flex: 1; min-width: 200px;">
-                                    <label for="prep-company">Company Name *</label>
-                                    <input type="text" id="prep-company" class="form-input" placeholder="e.g. Meridian Logistics" required>
-                                </div>
-                                <div class="form-group" style="flex: 1; min-width: 200px;">
-                                    <label for="prep-url">Company Website URL</label>
-                                    <input type="text" id="prep-url" class="form-input" placeholder="e.g. meridianlogistics.com.au">
-                                </div>
-                                <div class="form-group" style="flex: 1; min-width: 200px;">
-                                    <label for="prep-email">Company Email *</label>
-                                    <input type="email" id="prep-email" class="form-input" placeholder="e.g. sarah.chen@meridianlogistics.com.au" required>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="prep-track">Service Track Interest</label>
-                                <select id="prep-track" class="form-input select-input">
-                                    <option value="TM1 Support & Managed Support">IBM Planning Analytics (TM1) Support</option>
-                                    <option value="Agentic AI Operations & Watsonx">Agentic AI Operations & Integration</option>
-                                    <option value="DataFusion & Analytics Stack">DataFusion & Power BI Connectivity</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="prep-intake">HubSpot Booking Form Intake Answers</label>
-                                <textarea id="prep-intake" class="form-input textarea-input" placeholder="Paste booking form responses here..."></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="prep-linkedin">LinkedIn Profile Bio / Experience</label>
-                                <div class="file-drop-zone" id="linkedin-drop-zone">
-                                    <span id="linkedin-drop-text">📁 Drop LinkedIn PDF/TXT here, or click to upload</span>
-                                    <input type="file" id="prep-linkedin-file" accept=".pdf,.txt,.docx" style="display: none;">
-                                </div>
-                                <textarea id="prep-linkedin" class="form-input textarea-input" placeholder="Or paste LinkedIn profile experience details here..." style="margin-top: 0.5rem;"></textarea>
-                            </div>
-                            <div class="action-row">
-                                <button type="button" class="template-loader" id="prep-load-sample-btn">💡 Load Sample Sarah Chen</button>
-                                <button type="submit" class="btn btn-primary" id="prep-submit-btn">⚡ Generate Prep Briefing</button>
-                            </div>
-                            <div class="action-row" style="margin-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem; justify-content: flex-end;">
-                                <button type="button" class="btn btn-primary" id="step-1-next-btn" style="display: none;">Next: Start Call ➡</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Step 2 Content: Live Call Companion -->
-                    <div class="step-content" id="step-2-content">
-                        <div class="battlecard-container" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1; height: 100%;">
-                            <div class="form-group" style="margin-bottom: 0.25rem; flex: none;">
-                                <label for="battlecard-selector">Prescreen Call Variant Reference</label>
-                                <select id="battlecard-selector" class="form-input select-input" disabled style="opacity: 0.8; background: #fafafa;">
-                                    <option value="A">Variant A: First-Time TM1 User</option>
-                                    <option value="B">Variant B: Existing TM1 User</option>
-                                    <option value="C">Variant C: First-Time AI User</option>
-                                </select>
-                            </div>
-                            <div class="battlecard-body" id="battlecard-body" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; padding-right: 0.25rem;">
-                                <!-- Loaded via app.js -->
-                            </div>
-                            <div class="add-question-wrapper" style="margin-top: 0.25rem;">
-                                <button type="button" class="btn btn-secondary" id="battlecard-add-btn" style="width: 100%; border-style: dashed; border-color: var(--primary); color: var(--primary); font-size: 0.8rem; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem;">➕ Add Custom Question</button>
-                            </div>
-                            <div class="action-row" style="margin-top: 1rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem; gap: 0.5rem; flex-wrap: wrap;">
-                                <button type="button" class="btn btn-secondary" id="step-2-back-btn">⬅ Back to Prep</button>
-                                <button type="button" class="btn btn-secondary" id="step-2-save-btn" style="border-color: var(--primary); color: var(--primary);">💾 Save Questions</button>
-                                <button type="button" class="btn btn-primary" id="step-2-next-btn">⚡ Call Completed: Go to Handoff ➡</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Step 3 Content: Call report Synthesizer -->
-                    <div class="step-content" id="step-3-content">
-                        <form id="synth-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
-                            <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
-                                <div class="form-group" style="flex: 1; min-width: 200px;">
-                                    <label for="synth-variant">Prescreen Script Variant</label>
-                                    <select id="synth-variant" class="form-input select-input" disabled style="opacity: 0.8; background: #fafafa;">
-                                        <option value="Variant A">Variant A: First-Time TM1 User</option>
-                                        <option value="Variant B">Variant B: Existing TM1 User</option>
-                                        <option value="Variant C">Variant C: First-Time AI User</option>
+                                <div class="form-group">
+                                    <label for="prep-track">Service Track Interest</label>
+                                    <select id="prep-track" class="form-input select-input">
+                                        <option value="TM1 Support & Managed Support">IBM Planning Analytics (TM1) Support</option>
+                                        <option value="Agentic AI Operations & Watsonx">Agentic AI Operations & Integration</option>
+                                        <option value="DataFusion & Analytics Stack">DataFusion & Power BI Connectivity</option>
                                     </select>
                                 </div>
-                                <div class="form-group" style="flex: 1; min-width: 200px;">
-                                    <label for="synth-screencast">Vidyard 2-Minute Screencast Link</label>
-                                    <input type="url" id="synth-screencast" class="form-input" placeholder="e.g. https://share.vidyard.com/watch/...">
+                                <div class="form-group">
+                                    <label for="prep-intake">HubSpot Booking Form Intake Answers</label>
+                                    <textarea id="prep-intake" class="form-input textarea-input" placeholder="Paste booking form responses here..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="prep-linkedin">LinkedIn Profile Bio / Experience</label>
+                                    <div class="file-drop-zone" id="linkedin-drop-zone">
+                                        <span id="linkedin-drop-text">📁 Drop LinkedIn PDF/TXT here, or click to upload</span>
+                                        <input type="file" id="prep-linkedin-file" accept=".pdf,.txt,.docx" style="display: none;">
+                                    </div>
+                                    <textarea id="prep-linkedin" class="form-input textarea-input" placeholder="Or paste LinkedIn profile experience details here..." style="margin-top: 0.5rem;"></textarea>
+                                </div>
+                                <div class="action-row">
+                                    <button type="button" class="template-loader" id="prep-load-sample-btn">💡 Load Sample Sarah Chen</button>
+                                    <button type="submit" class="btn btn-primary" id="prep-submit-btn">⚡ Generate Prep Briefing</button>
+                                </div>
+                                <div class="action-row" style="margin-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem; justify-content: flex-end;">
+                                    <button type="button" class="btn btn-primary" id="step-1-next-btn" style="display: none;">Next: Start Call ➡</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Step 2 Content: Live Call Companion -->
+                        <div class="step-content" id="step-2-content">
+                            <div class="battlecard-container" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1; height: 100%;">
+                                <div class="form-group" style="margin-bottom: 0.25rem; flex: none;">
+                                    <label for="battlecard-selector">Prescreen Call Variant Reference</label>
+                                    <select id="battlecard-selector" class="form-input select-input" disabled style="opacity: 0.8; background: #fafafa;">
+                                        <option value="A">Variant A: First-Time TM1 User</option>
+                                        <option value="B">Variant B: Existing TM1 User</option>
+                                        <option value="C">Variant C: First-Time AI User</option>
+                                    </select>
+                                </div>
+                                <div class="battlecard-body" id="battlecard-body" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; padding-right: 0.25rem;">
+                                    <!-- Loaded via app.js -->
+                                </div>
+                                <div class="add-question-wrapper" style="margin-top: 0.25rem;">
+                                    <button type="button" class="btn btn-secondary" id="battlecard-add-btn" style="width: 100%; border-style: dashed; border-color: var(--primary); color: var(--primary); font-size: 0.8rem; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem;">➕ Add Custom Question</button>
+                                </div>
+                                <div class="action-row" style="margin-top: 1rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-secondary" id="step-2-back-btn">⬅ Back to Prep</button>
+                                    <button type="button" class="btn btn-secondary" id="step-2-save-btn" style="border-color: var(--primary); color: var(--primary);">💾 Save Questions</button>
+                                    <button type="button" class="btn btn-primary" id="step-2-next-btn">⚡ Call Completed: Go to Handoff ➡</button>
                                 </div>
                             </div>
-                            <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
-                                <label for="synth-transcript">Fathom / Jamie AI Call Transcript *</label>
-                                <textarea id="synth-transcript" class="form-input textarea-input textarea-transcript" placeholder="Paste verbatim call transcript here..." required style="flex: 1; min-height: 200px;"></textarea>
-                            </div>
-                            <div class="action-row" style="margin-top: 1rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem;">
-                                <button type="button" class="btn btn-secondary" id="step-3-back-btn">⬅ Back to Call</button>
-                                <button type="button" class="template-loader" id="synth-load-sample-btn">💡 Load Sample Transcript</button>
-                                <button type="submit" class="btn btn-primary" id="synth-submit-btn">⚡ Synthesize Call</button>
-                            </div>
-                        </form>
+                        </div>
+
+                        <!-- Step 3 Content: Call report Synthesizer -->
+                        <div class="step-content" id="step-3-content">
+                            <form id="synth-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
+                                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label for="synth-variant">Prescreen Script Variant</label>
+                                        <select id="synth-variant" class="form-input select-input" disabled style="opacity: 0.8; background: #fafafa;">
+                                            <option value="Variant A">Variant A: First-Time TM1 User</option>
+                                            <option value="Variant B">Variant B: Existing TM1 User</option>
+                                            <option value="Variant C">Variant C: First-Time AI User</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label for="synth-screencast">Vidyard 2-Minute Screencast Link</label>
+                                        <input type="url" id="synth-screencast" class="form-input" placeholder="e.g. https://share.vidyard.com/watch/...">
+                                    </div>
+                                </div>
+                                <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
+                                    <label for="synth-transcript">Fathom / Jamie AI Call Transcript *</label>
+                                    <textarea id="synth-transcript" class="form-input textarea-input textarea-transcript" placeholder="Paste verbatim call transcript here..." required style="flex: 1; min-height: 200px;"></textarea>
+                                </div>
+                                <div class="action-row" style="margin-top: 1rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem;">
+                                    <button type="button" class="btn btn-secondary" id="step-3-back-btn">⬅ Back to Call</button>
+                                    <button type="button" class="template-loader" id="synth-load-sample-btn">💡 Load Sample Transcript</button>
+                                    <button type="submit" class="btn btn-primary" id="synth-submit-btn">⚡ Synthesize Call</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 04 — Central Call Recording Directory View -->
+                    <div id="call-directory-view" style="display: none; flex-direction: column; gap: 1rem; flex: 1; height: 100%;">
+                        <div class="directory-filter-bar" style="display: flex; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap;">
+                            <input type="text" id="directory-search" class="form-input" placeholder="Search by name, company, or track..." style="flex: 1; min-width: 150px;">
+                            <select id="directory-filter-score" class="form-input select-input" style="width: 130px; font-weight: 500;">
+                                <option value="ALL">All Scores</option>
+                                <option value="HOT">Hot</option>
+                                <option value="WARM">Warm</option>
+                                <option value="COLD">Cold</option>
+                                <option value="NONE">Unrated</option>
+                            </select>
+                            <button type="button" class="btn btn-secondary" id="directory-refresh-btn" style="height: 34px; padding: 0 10px; min-width: auto; font-size: 0.8rem;">🔄 Refresh</button>
+                        </div>
+                        <div class="directory-list-container" id="directory-list-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
+                            <div style="font-size: 0.85rem; color: rgba(0,0,0,0.4); text-align: center; margin-top: 3rem;">Loading call directory...</div>
+                        </div>
                     </div>
                 </div>
             </div>

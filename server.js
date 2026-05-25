@@ -19,6 +19,32 @@ const MIME_TYPES = {
     '.svg': 'image/svg+xml'
 };
 
+// Initialize GCS History Directory
+const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+if (!fs.existsSync(historyDir)) {
+    fs.mkdirSync(historyDir, { recursive: true });
+}
+
+function saveHistoryItem(item) {
+    if (!fs.existsSync(historyDir)) {
+        fs.mkdirSync(historyDir, { recursive: true });
+    }
+    const filePath = path.join(historyDir, `${item.id}.json`);
+    fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', (err) => {
+        if (err) {
+            console.error(`❌ Failed to save history item ${item.id}:`, err);
+        } else {
+            console.log(`✅ Saved history item: ${item.id}`);
+        }
+    });
+}
+
+function extractScore(content) {
+    if (!content) return null;
+    const match = content.match(/QUALIFICATION\s*SCORE:\s*(HOT|WARM|COLD)/i);
+    return match ? match[1].toUpperCase() : null;
+}
+
 function loadKnowledgeBase() {
     return new Promise((resolve) => {
         const knowledgeDir = path.join(PUBLIC_DIR, 'knowledge');
@@ -376,6 +402,25 @@ Use a numbered list (<ol>) for the 10 points. Inside each point, use <strong> ta
             ]
         });
         
+        // Save Call Prep to history
+        const prepTimestamp = Date.now();
+        const prepRandom = crypto.randomBytes(4).toString('hex');
+        const prepId = `prep_${params.company.replace(/[^a-zA-Z0-9]/g, '_')}_${prepTimestamp}_${prepRandom}`;
+        saveHistoryItem({
+            id: prepId,
+            type: 'dossier',
+            date: new Date().toISOString(),
+            name: params.name,
+            title: params.title,
+            company: params.company,
+            email: params.email,
+            track: params.track,
+            url: params.url,
+            intakeAnswers: params.intakeAnswers,
+            linkedinInfo: params.linkedinInfo,
+            content: briefing
+        });
+
         console.log(`✅ Pre-Screen Call Prep written successfully for Contact ID: ${contactId}`);
         return briefing;
     } catch (err) {
@@ -424,20 +469,30 @@ async function handleCallSynthesis(callId) {
         
         let track = 'TM1 & AI';
         let variant = 'Variant A';
+        let contactName = 'Unknown Name';
+        let companyName = 'Unknown Company';
         
         if (contactId) {
-            const contact = await makeHubSpotRequest('GET', `/crm/v3/objects/contacts/${contactId}?properties=hubspot_booking_intake`);
-            if (contact && contact.properties && contact.properties.hubspot_booking_intake) {
-                const intake = contact.properties.hubspot_booking_intake.toLowerCase();
-                if (intake.includes('agentic') || intake.includes('watsonx') || intake.includes('artificial intelligence') || intake.includes('generative ai')) {
-                    track = 'Agentic AI Operations & Watsonx';
-                    variant = 'Variant C';
-                } else if (intake.includes('support') || intake.includes('planning analytics') || intake.includes('tm1')) {
-                    track = 'TM1 Support & Managed Support';
-                    variant = 'Variant B';
-                } else if (intake.includes('datafusion') || intake.includes('connector') || intake.includes('power bi')) {
-                    track = 'DataFusion & Analytics Stack';
-                    variant = 'Variant A';
+            const contact = await makeHubSpotRequest('GET', `/crm/v3/objects/contacts/${contactId}?properties=firstname,lastname,company,hubspot_booking_intake`);
+            if (contact && contact.properties) {
+                if (contact.properties.firstname || contact.properties.lastname) {
+                    contactName = `${contact.properties.firstname || ''} ${contact.properties.lastname || ''}`.trim();
+                }
+                if (contact.properties.company) {
+                    companyName = contact.properties.company;
+                }
+                if (contact.properties.hubspot_booking_intake) {
+                    const intake = contact.properties.hubspot_booking_intake.toLowerCase();
+                    if (intake.includes('agentic') || intake.includes('watsonx') || intake.includes('artificial intelligence') || intake.includes('generative ai')) {
+                        track = 'Agentic AI Operations & Watsonx';
+                        variant = 'Variant C';
+                    } else if (intake.includes('support') || intake.includes('planning analytics') || intake.includes('tm1')) {
+                        track = 'TM1 Support & Managed Support';
+                        variant = 'Variant B';
+                    } else if (intake.includes('datafusion') || intake.includes('connector') || intake.includes('power bi')) {
+                        track = 'DataFusion & Analytics Stack';
+                        variant = 'Variant A';
+                    }
                 }
             }
         }
@@ -645,6 +700,21 @@ Format exactly as:
             associations: associations
         });
         
+        // Save Call Synthesis to history
+        const synthTimestamp = Date.now();
+        const synthRandom = crypto.randomBytes(4).toString('hex');
+        const synthId = `synth_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${synthTimestamp}_${synthRandom}`;
+        saveHistoryItem({
+            id: synthId,
+            type: 'synthesis',
+            date: new Date().toISOString(),
+            company: companyName,
+            name: contactName,
+            variant: variant,
+            screencast: recordingUrl,
+            content: briefing // contains delimiters
+        });
+
         console.log(`✅ Call Report Briefing written successfully for Call ID: ${callId}`);
         return briefing;
     } catch (err) {
@@ -1233,6 +1303,159 @@ const server = http.createServer(async (req, res) => {
                     }
                 });
             });
+        });
+        return;
+    }
+
+    // API History Routes
+    if (pathname === '/api/history') {
+        if (req.method === 'GET') {
+            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+            if (!fs.existsSync(historyDir)) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify([]));
+                return;
+            }
+            fs.readdir(historyDir, (err, files) => {
+                if (err) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Failed to read history directory.' }));
+                    return;
+                }
+                const jsonFiles = files.filter(f => f.endsWith('.json'));
+                if (jsonFiles.length === 0) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify([]));
+                    return;
+                }
+
+                const items = [];
+                let readCount = 0;
+                jsonFiles.forEach(file => {
+                    fs.readFile(path.join(historyDir, file), 'utf8', (readErr, data) => {
+                        readCount++;
+                        if (!readErr) {
+                            try {
+                                const parsed = JSON.parse(data);
+                                items.push({
+                                    id: parsed.id,
+                                    type: parsed.type,
+                                    date: parsed.date,
+                                    name: parsed.name,
+                                    company: parsed.company,
+                                    title: parsed.title,
+                                    track: parsed.track,
+                                    variant: parsed.variant,
+                                    score: parsed.score || (parsed.type === 'synthesis' ? extractScore(parsed.content) : null),
+                                    filename: file
+                                });
+                            } catch (e) {
+                                console.error(`Error parsing history file ${file}:`, e);
+                            }
+                        }
+                        if (readCount === jsonFiles.length) {
+                            items.sort((a, b) => new Date(b.date) - new Date(a.date));
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify(items));
+                        }
+                    });
+                });
+            });
+            return;
+        }
+
+        if (req.method === 'POST') {
+            const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024;
+            let body = '';
+            let bodyLength = 0;
+            req.on('data', chunk => {
+                bodyLength += chunk.length;
+                if (bodyLength > MAX_PAYLOAD_SIZE) {
+                    res.writeHead(413, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Payload Too Large.' }));
+                    req.destroy();
+                    return;
+                }
+                body += chunk;
+            });
+            req.on('end', () => {
+                try {
+                    const payload = JSON.parse(body);
+                    if (!payload.type || !payload.company) {
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Missing type or company in payload.' }));
+                        return;
+                    }
+                    const timestamp = Date.now();
+                    const random = crypto.randomBytes(4).toString('hex');
+                    const id = `${payload.type}_${payload.company.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}_${random}`;
+                    payload.id = id;
+                    payload.date = new Date().toISOString();
+                    
+                    const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+                    if (!fs.existsSync(historyDir)) {
+                        fs.mkdirSync(historyDir, { recursive: true });
+                    }
+                    const filePath = path.join(historyDir, `${id}.json`);
+                    fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', (writeErr) => {
+                        if (writeErr) {
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'Failed to write history file.' }));
+                            return;
+                        }
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ status: 'success', id }));
+                    });
+                } catch (e) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
+                }
+            });
+            return;
+        }
+
+        if (req.method === 'DELETE') {
+            const id = parsedUrl.searchParams.get('id');
+            if (!id) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Missing id query parameter.' }));
+                return;
+            }
+            const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
+            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+            const filePath = path.join(historyDir, `${cleanId}.json`);
+            fs.unlink(filePath, (err) => {
+                if (err) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Failed to delete history item.' }));
+                    return;
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'success' }));
+            });
+            return;
+        }
+    }
+
+    if (pathname === '/api/history/detail' && req.method === 'GET') {
+        const id = parsedUrl.searchParams.get('id');
+        if (!id) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing id query parameter.' }));
+            return;
+        }
+        const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
+        const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+        const filePath = path.join(historyDir, `${cleanId}.json`);
+        
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'History item not found.' }));
+                return;
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(data);
         });
         return;
     }
