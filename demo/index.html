@@ -18,6 +18,17 @@
                 <span class="brand-logo">Tiny Sales Assistant</span>
                 <span class="brand-badge">Active</span>
             </div>
+            <nav class="app-nav" style="display: flex; gap: 0.5rem; margin: 0 auto 0 2rem;">
+                <button class="nav-btn active" id="nav-pipeline">Pipeline</button>
+                <button class="nav-btn" id="nav-directory">Call Directory</button>
+            </nav>
+            <div class="sdr-selector-wrapper" style="display: flex; align-items: center; gap: 8px; margin-right: 1.25rem;">
+                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Active SDR:</span>
+                <select id="active-sdr" class="sdr-selector" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">
+                    <option value="Albert">Albert</option>
+                    <option value="Isha">Isha</option>
+                </select>
+            </div>
             <button class="btn btn-secondary" id="settings-toggle-btn" style="height: 32px; padding: 0 12px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">⚙ Settings</button>
         </header>
 
@@ -77,11 +88,11 @@
                     <h4 class="section-title">Custom System Instructions</h4>
                     <div style="display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.5rem;">
                         <div class="form-group" style="flex: 1; min-width: 320px;">
-                            <label for="settings-prep-prompt">Prospect Call Prep Dossier Prompt (Component 02)</label>
+                            <label for="settings-prep-prompt">Prospect Call Prep Dossier Prompt</label>
                             <textarea id="settings-prep-prompt" class="form-input textarea-input" style="min-height: 100px; font-family: monospace; font-size: 0.8rem; background: #000; color: #fff; border-color: rgba(255,255,255,0.15);"></textarea>
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 320px;">
-                            <label for="settings-synth-prompt">Call Transcript Synthesizer Prompt (Component 05)</label>
+                            <label for="settings-synth-prompt">Call Transcript Synthesizer Prompt</label>
                             <textarea id="settings-synth-prompt" class="form-input textarea-input" style="min-height: 100px; font-family: monospace; font-size: 0.8rem; background: #000; color: #fff; border-color: rgba(255,255,255,0.15);"></textarea>
                         </div>
                     </div>
@@ -118,6 +129,14 @@
                         </div>
                     </div>
                 </div>
+                <!-- Demo Mode Toggle -->
+                <div class="settings-section" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
+                    <h4 class="section-title">Developer Options</h4>
+                    <div class="form-group" style="display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: auto;">
+                        <input type="checkbox" id="settings-demo-mode" style="width: 16px; height: 16px; cursor: pointer;">
+                        <label for="settings-demo-mode" style="margin: 0 !important; cursor: pointer; color: #fff; text-transform: none; font-size: 0.8rem; font-weight: normal; letter-spacing: normal;">Enable Demo / Testing Mode (Shows sample data pre-fill buttons)</label>
+                    </div>
+                </div>
             </div>
 
             <div class="settings-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.75rem;">
@@ -134,14 +153,8 @@
             
             <!-- Left Panel (Inputs) -->
             <div class="panel">
-                <div class="panel-header" style="flex-direction: column; align-items: stretch; gap: 0.5rem; padding-bottom: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <span class="panel-title" id="left-panel-title">Tiny Sales Assistant Pipeline</span>
-                    </div>
-                    <div class="left-panel-tabs">
-                        <button class="left-tab-btn active" id="tab-active-pipeline">Active Call Pipeline</button>
-                        <button class="left-tab-btn" id="tab-call-directory">04 — CENTRAL CALL RECORDING DIRECTORY</button>
-                    </div>
+                <div class="panel-header">
+                    <span class="panel-title" id="left-panel-title">Tiny Sales Assistant Pipeline</span>
                 </div>
                 
                 <div class="panel-body">
@@ -151,24 +164,32 @@
                         <div class="stepper-header">
                             <div class="step-indicator active" id="step-1-indicator" data-step="1">
                                 <span class="step-num">1</span>
-                                <span class="step-label">02 — PREPARATION FOR REQUIREMENT SESSION</span>
+                                <span class="step-label">PREPARATION</span>
                             </div>
                             <div class="step-connector"></div>
                             <div class="step-indicator" id="step-2-indicator" data-step="2">
                                 <span class="step-num">2</span>
-                                <span class="step-label">03 — REQUIREMENT SESSION</span>
+                                <span class="step-label">SESSION</span>
                             </div>
                             <div class="step-connector"></div>
                             <div class="step-indicator" id="step-3-indicator" data-step="3">
                                 <span class="step-num">3</span>
-                                <span class="step-label">05 — AUTOMATED REPORTS</span>
+                                <span class="step-label">REPORTS</span>
                             </div>
                         </div>
 
                         <!-- Step 1 Content: Prospect Prep -->
                         <div class="step-content active" id="step-1-content">
-                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">02 — PREPARATION FOR REQUIREMENT SESSION</h3>
+                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Preparation for Requirement Session</h3>
                             <form id="prep-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
+                                <div class="form-group" style="border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 0.85rem; margin-bottom: 0.5rem;">
+                                    <label for="prep-intake">HubSpot Booking Form Intake Answers</label>
+                                    <div style="display: flex; gap: 0.5rem; width: 100%;">
+                                        <textarea id="prep-intake" class="form-input textarea-input" placeholder="Paste HubSpot scheduler booking form response here..." style="flex: 1; min-height: 80px;"></textarea>
+                                        <button type="button" class="btn btn-secondary" id="prep-parse-btn" style="align-self: stretch; padding: 0 1rem; border-color: var(--primary); color: var(--primary);">📋 Parse Form</button>
+                                    </div>
+                                    <span style="font-size: 0.7rem; color: rgba(0,0,0,0.4); margin-top: 0.25rem;">Paste booking form questions & answers to parse and pre-populate fields.</span>
+                                </div>
                                 <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
                                     <div class="form-group" style="flex: 1; min-width: 200px;">
                                         <label for="prep-name">Prospect Full Name *</label>
@@ -209,9 +230,8 @@
                                 <div class="form-group">
                                     <label for="prep-track">Service Track Interest</label>
                                     <select id="prep-track" class="form-input select-input">
-                                        <option value="TM1 Support & Managed Support">IBM Planning Analytics (TM1) Support</option>
-                                        <option value="Agentic AI Operations & Watsonx">Agentic AI Operations & Integration</option>
-                                        <option value="DataFusion & Analytics Stack">DataFusion & Power BI Connectivity</option>
+                                        <option value="Planning & Analytics (TM1)">Planning & Analytics (TM1)</option>
+                                        <option value="AI">AI</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -249,10 +269,7 @@
                                         <button type="button" id="onedrive-attached-remove" style="background: transparent; border: none; color: #ff4d4d; cursor: pointer; font-size: 0.85rem; padding: 0; font-weight: bold;">❌</button>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="prep-intake">HubSpot Booking Form Intake Answers</label>
-                                    <textarea id="prep-intake" class="form-input textarea-input" placeholder="Paste booking form responses here..."></textarea>
-                                </div>
+                                <!-- Moved to top of Step 1 -->
                                 <div class="form-group">
                                     <label for="prep-linkedin">LinkedIn Profile Bio / Experience</label>
                                     <div class="file-drop-zone" id="linkedin-drop-zone">
@@ -273,25 +290,75 @@
 
                         <!-- Step 2 Content: Live Call Companion -->
                         <div class="step-content" id="step-2-content">
-                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">03 — REQUIREMENT SESSION</h3>
-                            <div class="battlecard-container mode-live" id="battlecard-container" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1; height: 100%;">
-                                <div class="form-group" style="margin-bottom: 0.25rem; flex: none;">
-                                    <label for="battlecard-selector">Prescreen Call Variant Reference</label>
-                                    <select id="battlecard-selector" class="form-input select-input" disabled style="opacity: 0.8; background: #fafafa;">
-                                        <option value="A">Variant A: First-Time TM1 User</option>
-                                        <option value="B">Variant B: Existing TM1 User</option>
-                                        <option value="C">Variant C: First-Time AI User</option>
-                                    </select>
-                                </div>
-                                <div class="form-group" style="margin-bottom: 0.5rem; flex: none;">
-                                    <label>Questionnaire Mode</label>
-                                    <div class="mode-toggle-container" style="display: flex; background: rgba(0,0,0,0.05); padding: 0.2rem; border-radius: 6px; border: 1px solid rgba(0,0,0,0.08);">
-                                        <button type="button" id="mode-live-btn" class="toggle-btn active" style="flex: 1; border: none; background: var(--primary); color: white; padding: 0.4rem; font-size: 0.75rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🎙️ Live Call Mode (Read-Only)</button>
-                                        <button type="button" id="mode-review-btn" class="toggle-btn" style="flex: 1; border: none; background: transparent; color: rgba(0,0,0,0.6); padding: 0.4rem; font-size: 0.75rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem;">📝 Review & Edit Mode</button>
+                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Requirement Session</h3>
+                            <div class="battlecard-container" id="battlecard-container" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1; height: 100%;">
+                                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap; flex: none;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                        <label for="battlecard-selector">Questionnaire Variant</label>
+                                        <select id="battlecard-selector" class="form-input select-input" disabled style="opacity: 0.8; background: #fafafa;">
+                                            <option value="A">Variant A: First-Time TM1 User</option>
+                                            <option value="B">Variant B: Existing TM1 User</option>
+                                            <option value="C">Variant C: First-Time AI User</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                        <label>Call Outcome</label>
+                                        <div class="call-outcome-bar" id="call-outcome-bar">
+                                            <button type="button" class="outcome-btn active" data-outcome="completed">✅ Completed</button>
+                                            <button type="button" class="outcome-btn" data-outcome="no-answer">📵 No Answer</button>
+                                            <button type="button" class="outcome-btn" data-outcome="rescheduled">🔄 Rescheduled</button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="battlecard-body" id="battlecard-body" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; padding-right: 0.25rem;">
-                                    <!-- Loaded via app.js -->
+                                <!-- Teleprompter: Questions displayed as large readable cards for live call -->
+                                <div class="teleprompter-view" id="teleprompter-view">
+                                    <div class="teleprompter-header">
+                                        <span class="teleprompter-counter" id="teleprompter-counter">Question 1 of 12</span>
+                                        <span class="teleprompter-hint">Click a question to highlight it during the call</span>
+                                    </div>
+                                    <div class="battlecard-body" id="battlecard-body" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; padding-right: 0.25rem;">
+                                        <!-- Loaded via app.js -->
+                                    </div>
+                                </div>
+                                <!-- No Answer fallback view -->
+                                <div class="no-answer-view" id="no-answer-view" style="display: none; flex-direction: column; gap: 1rem; flex: 1; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
+                                    <div style="font-size: 2.5rem;">📵</div>
+                                    <h4 style="margin: 0; color: rgba(0,0,0,0.7);">Prospect Did Not Answer</h4>
+                                    <p style="margin: 0; color: rgba(0,0,0,0.5); font-size: 0.85rem; max-width: 320px;">Generate a Requirement Email using the prep dossier to re-engage the prospect.</p>
+                                    <button type="button" class="btn btn-primary" id="generate-req-email-btn">✉️ Generate Requirement Email</button>
+                                </div>
+                                <!-- Rescheduled view -->
+                                <div class="rescheduled-view" id="rescheduled-view" style="display: none; flex-direction: column; gap: 1rem; flex: 1; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
+                                    <div style="font-size: 2.5rem;">🔄</div>
+                                    <h4 style="margin: 0; color: rgba(0,0,0,0.7);">Call Rescheduled</h4>
+                                    <p style="margin: 0; color: rgba(0,0,0,0.5); font-size: 0.85rem; max-width: 320px;">The call will appear in your pipeline when the new time arrives. Send a confirmation email to the prospect.</p>
+                                    <button type="button" class="btn btn-secondary" id="send-reschedule-email-btn">📧 Draft Reschedule Confirmation</button>
+                                </div>
+                                <!-- Positional Meeting Booking Panel -->
+                                <div class="positional-meeting-panel" id="positional-meeting-panel">
+                                    <div class="positional-meeting-header">
+                                        <span>📅 Book Positional Meeting with Amendra</span>
+                                        <span class="positional-meeting-travel" id="positional-travel-distance"></span>
+                                    </div>
+                                    <div class="positional-meeting-body">
+                                        <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
+                                            <label for="positional-date">Date</label>
+                                            <input type="date" id="positional-date" class="form-input" style="background: #fff; color: #000;">
+                                        </div>
+                                        <div class="form-group" style="flex: 1; min-width: 100px; margin-bottom: 0;">
+                                            <label for="positional-time">Time</label>
+                                            <input type="time" id="positional-time" class="form-input" style="background: #fff; color: #000;">
+                                        </div>
+                                        <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
+                                            <label for="positional-format">Format</label>
+                                            <select id="positional-format" class="form-input select-input">
+                                                <option value="in-person">In-Person</option>
+                                                <option value="online">Online (Teams/Zoom)</option>
+                                                <option value="phone">Phone</option>
+                                            </select>
+                                        </div>
+                                        <button type="button" class="btn btn-primary" id="positional-confirm-btn" style="align-self: flex-end; height: 34px; font-size: 0.8rem;">📅 Confirm Booking</button>
+                                    </div>
                                 </div>
                                 <div class="add-question-wrapper" style="margin-top: 0.25rem;">
                                     <button type="button" class="btn btn-secondary" id="battlecard-add-btn" style="width: 100%; border-style: dashed; border-color: var(--primary); color: var(--primary); font-size: 0.8rem; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem;">➕ Add Custom Question</button>
@@ -299,65 +366,55 @@
                                 <div class="action-row" style="margin-top: 1rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem; gap: 0.5rem; flex-wrap: wrap;">
                                     <button type="button" class="btn btn-secondary" id="step-2-back-btn">⬅ Back to Prep</button>
                                     <button type="button" class="btn btn-secondary" id="step-2-save-btn" style="border-color: var(--primary); color: var(--primary);">💾 Save Questions</button>
-                                    <button type="button" class="btn btn-primary" id="step-2-next-btn">⚡ Call Completed: Go to Handoff ➡</button>
+                                    <button type="button" class="btn btn-primary" id="step-2-next-btn">⚡ Call Completed: Go to Reports ➡</button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Step 3 Content: Call report Synthesizer -->
                         <div class="step-content" id="step-3-content">
-                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">05 — AUTOMATED REPORTS</h3>
+                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Automated Reports</h3>
                             <form id="synth-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
                                 <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
                                     <div class="form-group" style="flex: 1; min-width: 200px;">
-                                        <label for="synth-variant">Prescreen Script Variant</label>
+                                        <label for="synth-variant">Questionnaire Variant</label>
                                         <select id="synth-variant" class="form-input select-input" disabled style="opacity: 0.8; background: #fafafa;">
                                             <option value="Variant A">Variant A: First-Time TM1 User</option>
                                             <option value="Variant B">Variant B: Existing TM1 User</option>
                                             <option value="Variant C">Variant C: First-Time AI User</option>
                                         </select>
                                     </div>
-                                    <div class="form-group" style="flex: 1; min-width: 200px;">
-                                        <label for="synth-screencast">Vidyard 2-Minute Screencast Link</label>
-                                        <input type="url" id="synth-screencast" class="form-input" placeholder="e.g. https://share.vidyard.com/watch/...">
-                                    </div>
                                 </div>
                                 <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
-                                    <label for="synth-transcript">Fathom / Jamie AI Call Transcript *</label>
+                                    <label for="synth-transcript">Call Transcript *</label>
                                     <textarea id="synth-transcript" class="form-input textarea-input textarea-transcript" placeholder="Paste verbatim call transcript here..." required style="flex: 1; min-height: 200px;"></textarea>
                                 </div>
-                                <div class="action-row" style="margin-top: 1rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem;">
-                                    <button type="button" class="btn btn-secondary" id="step-3-back-btn">⬅ Back to Call</button>
-                                    <button type="button" class="template-loader" id="synth-load-sample-btn">💡 Load Sample Transcript</button>
-                                    <button type="submit" class="btn btn-primary" id="synth-submit-btn">⚡ Synthesize Call</button>
+                                <div class="action-row" style="margin-top: 1rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem; display: flex; flex-direction: column; gap: 0.75rem; align-items: stretch;">
+                                    <div class="report-generator-container" style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+                                        <label style="font-size: 0.75rem; font-weight: 600; color: rgba(0, 0, 0, 0.75); text-transform: uppercase; letter-spacing: 0.5px;">Generate Deliverables</label>
+                                        <div class="report-type-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem;">
+                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="questionnaireAnswers" style="font-size: 0.8rem; justify-content: flex-start;">📋 Questionnaire Answers</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="migrationReport" style="font-size: 0.8rem; justify-content: flex-start;">📊 Migration Report</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="recapEmail" style="font-size: 0.8rem; justify-content: flex-start;">✉️ Recap Email</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="summarySheet" style="font-size: 0.8rem; justify-content: flex-start;">📄 Summary Sheet</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="notes" style="font-size: 0.8rem; justify-content: flex-start;">📝 Notes</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="actionItems" style="font-size: 0.8rem; justify-content: flex-start;">✅ Action Items</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="proposal" style="font-size: 0.8rem; justify-content: flex-start;">📝 Consultative Proposal</button>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 0.5rem;">
+                                        <button type="button" class="btn btn-secondary" id="step-3-back-btn">⬅ Back to Call</button>
+                                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                            <button type="button" class="template-loader" id="synth-load-sample-btn" style="margin-right: 1rem;">💡 Load Sample Transcript</button>
+                                            <button type="submit" class="btn btn-primary" id="synth-submit-btn">⚡ Generate All Reports</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </form>
                         </div>
                     </div>
 
-                    <!-- 04 — Central Call Recording Directory View -->
-                    <div id="call-directory-view" style="display: none; flex-direction: column; gap: 1rem; flex: 1; height: 100%;">
-                        <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">04 — CENTRAL CALL RECORDING DIRECTORY</h3>
-                        <div class="directory-filter-bar" style="display: flex; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap;">
-                            <input type="text" id="directory-search" class="form-input" placeholder="Search by name, company, or track..." style="flex: 1; min-width: 150px;">
-                            <select id="directory-filter-rep" class="form-input select-input" style="width: 140px; font-weight: 500;">
-                                <option value="ALL">All Reps</option>
-                                <option value="Albert">Albert</option>
-                                <option value="Isha">Isha</option>
-                            </select>
-                            <select id="directory-filter-score" class="form-input select-input" style="width: 120px; font-weight: 500;">
-                                <option value="ALL">All Scores</option>
-                                <option value="HOT">Hot</option>
-                                <option value="WARM">Warm</option>
-                                <option value="COLD">Cold</option>
-                                <option value="NONE">Unrated</option>
-                            </select>
-                            <button type="button" class="btn btn-secondary" id="directory-refresh-btn" style="height: 34px; padding: 0 10px; min-width: auto; font-size: 0.8rem;">🔄 Refresh</button>
-                        </div>
-                        <div class="directory-list-container" id="directory-list-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
-                            <div style="font-size: 0.85rem; color: rgba(0,0,0,0.4); text-align: center; margin-top: 3rem;">Loading call directory...</div>
-                        </div>
-                    </div>
+                    <!-- Moved to #call-directory-workspace at top-level -->
                 </div>
             </div>
 
@@ -394,14 +451,14 @@
 
                             <!-- Delimiter Documents Tab Navigation -->
                             <div class="docs-nav" id="output-doc-nav" style="display: none;">
-                                <button class="doc-tab-btn active" data-doc="summary" onclick="setDocTab('summary')">Qualification Summary</button>
-                                <button class="doc-tab-btn" data-doc="questionnaire" onclick="setDocTab('questionnaire')">12Q Mapping</button>
+                                <button class="doc-tab-btn active" data-doc="questionnaireAnswers" onclick="setDocTab('questionnaireAnswers')">Questionnaire Answers</button>
+                                <button class="doc-tab-btn" data-doc="migrationReport" onclick="setDocTab('migrationReport')">Migration Report</button>
                                 <button class="doc-tab-btn" data-doc="recapEmail" onclick="setDocTab('recapEmail')">Recap Email</button>
                                 <button class="doc-tab-btn" data-doc="summarySheet" onclick="setDocTab('summarySheet')">Summary Sheet</button>
-                                <button class="doc-tab-btn" data-doc="detailedNotes" onclick="setDocTab('detailedNotes')">Detailed Notes</button>
-                                <button class="doc-tab-btn" data-doc="proposal" onclick="setDocTab('proposal')">Proposal Draft</button>
+                                <button class="doc-tab-btn" data-doc="notes" onclick="setDocTab('notes')">Notes</button>
+                                <button class="doc-tab-btn" data-doc="proposal" onclick="setDocTab('proposal')">Proposal</button>
                                 <button class="doc-tab-btn" data-doc="actionItems" onclick="setDocTab('actionItems')">Action Items</button>
-                                <button class="doc-tab-btn" data-doc="transcript" onclick="setDocTab('transcript')">Call Transcript</button>
+                                <button class="doc-tab-btn" data-doc="transcript" onclick="setDocTab('transcript')">Transcript</button>
                             </div>
 
                             <!-- Document Content Panel -->
@@ -414,6 +471,102 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- Central Call Recording Directory Workspace (Full Width Master-Detail) -->
+        <div id="call-directory-workspace" class="directory-workspace" style="display: none;">
+            <!-- Left Side: Master List -->
+            <div class="panel directory-master">
+                <div class="panel-header">
+                    <span class="panel-title">Central Call Recording Directory</span>
+                </div>
+                <div class="panel-body" style="display: flex; flex-direction: column; gap: 1rem; height: 100%;">
+                    <div class="directory-filter-bar" style="display: flex; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap;">
+                        <input type="text" id="directory-search" class="form-input" placeholder="Search by name, company, or track..." style="flex: 1; min-width: 150px;">
+                        <select id="directory-filter-rep" class="form-input select-input" style="width: 140px; font-weight: 500;">
+                            <option value="ALL">All Reps</option>
+                            <option value="Albert">Albert</option>
+                            <option value="Isha">Isha</option>
+                        </select>
+                        <select id="directory-filter-score" class="form-input select-input" style="width: 120px; font-weight: 500;">
+                            <option value="ALL">All Scores</option>
+                            <option value="HOT">Hot</option>
+                            <option value="WARM">Warm</option>
+                            <option value="COLD">Cold</option>
+                            <option value="NONE">Unrated</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" id="directory-refresh-btn" style="height: 34px; padding: 0 10px; min-width: auto; font-size: 0.8rem;">🔄 Refresh</button>
+                    </div>
+                    <div class="directory-list-container" id="directory-list-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
+                        <div style="font-size: 0.85rem; color: rgba(0,0,0,0.4); text-align: center; margin-top: 3rem;">Loading call directory...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Side: Detail Panel -->
+            <div class="panel directory-detail" id="directory-detail-panel">
+                <div class="panel-header">
+                    <span class="panel-title">Selected Recording Detail</span>
+                </div>
+                <div class="panel-body" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; height: 100%;">
+                    <div id="directory-detail-empty" class="empty-state">
+                        <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" style="width: 64px; height: 64px;">
+                        <h3>Select a Call</h3>
+                        <p>Select a call from the directory list on the left to view recording, transcripts, and generated reports.</p>
+                    </div>
+                    <div id="directory-detail-content" style="display: none; flex-direction: column; gap: 1rem; height: 100%;">
+                        <div class="detail-header-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <h3 id="detail-company-name" style="margin: 0; color: var(--primary);">Company Name</h3>
+                                <span id="detail-score-badge" class="badge-score">HOT</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
+                                <div><strong>Contact:</strong> <span id="detail-contact-name">Name</span></div>
+                                <div><strong>SDR:</strong> <span id="detail-sdr-name">Albert</span></div>
+                                <div><strong>Service Track:</strong> <span id="detail-track">Track</span></div>
+                                <div><strong>Date:</strong> <span id="detail-date">Date</span></div>
+                            </div>
+                            <!-- Stage Selector -->
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.5rem;">
+                                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Pipeline Stage:</span>
+                                <select id="detail-stage-select" class="form-input select-input" style="width: 200px; padding: 4px 8px; font-size: 0.8rem; height: 28px; background-color: #fff; color: #000;">
+                                    <!-- Populated in app.js -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Mock Audio Player Container -->
+                        <div class="detail-audio-section">
+                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--primary); text-transform: uppercase;">Call Recording</label>
+                            <div class="directory-audio-player" id="detail-audio-player">
+                                <button type="button" class="audio-play-btn" id="detail-audio-play-btn">▶</button>
+                                <div class="audio-track" id="detail-audio-track">
+                                    <div class="audio-progress" id="detail-audio-progress"></div>
+                                </div>
+                                <span class="audio-time" id="detail-audio-time">00:00 / 00:00</span>
+                            </div>
+                        </div>
+
+                        <!-- Tab Options inside directory detailed view -->
+                        <div class="detail-reports-section" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; min-height: 0;">
+                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--primary); text-transform: uppercase;">Generated Deliverables & Notes</label>
+                            <div class="docs-nav" id="detail-doc-nav" style="margin-bottom: 0.5rem;">
+                                <button class="doc-tab-btn active" data-detail-doc="questionnaireAnswers">Answers</button>
+                                <button class="doc-tab-btn" data-detail-doc="migrationReport">Migration</button>
+                                <button class="doc-tab-btn" data-detail-doc="recapEmail">Recap</button>
+                                <button class="doc-tab-btn" data-detail-doc="summarySheet">Summary</button>
+                                <button class="doc-tab-btn" data-detail-doc="notes">Notes</button>
+                                <button class="doc-tab-btn" data-detail-doc="proposal">Proposal</button>
+                                <button class="doc-tab-btn" data-detail-doc="actionItems">Actions</button>
+                                <button class="doc-tab-btn" data-detail-doc="transcript">Transcript</button>
+                            </div>
+                            <div id="detail-doc-content" style="flex: 1; overflow-y: auto; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 1rem; color: #fff; font-size: 0.85rem; line-height: 1.5;">
+                                <!-- Content rendered on tab click -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>

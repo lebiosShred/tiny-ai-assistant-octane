@@ -24,38 +24,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Global state for synthesized documents
     let currentDocs = null;
-    let activeDocTab = 'summary';
+    let activeDocTab = 'questionnaireAnswers';
     let currentQuestions = [];
+    let currentDossierText = "";
+    let selectedHistoryItem = null;
+    let activeDetailDocTab = 'questionnaireAnswers';
+    let currentView = 'pipeline'; // 'pipeline' or 'directory'
     
     // Directory variables and event handlers
     let directoryItems = [];
     
-    const tabActivePipeline = document.getElementById('tab-active-pipeline');
-    const tabCallDirectory = document.getElementById('tab-call-directory');
-    const activePipelineView = document.getElementById('active-pipeline-view');
-    const callDirectoryView = document.getElementById('call-directory-view');
-    const leftPanelTitle = document.getElementById('left-panel-title');
+    const PIPELINE_STAGES = [
+        { id: 'prep', label: 'Preparation', color: '#3498db' },
+        { id: 'session', label: 'Live Call', color: '#2ecc71' },
+        { id: 'reports', label: 'Reports', color: '#9b59b6' },
+        { id: 'handover', label: 'Hand-Over Debrief', color: '#e67e22' },
+        { id: 'founder', label: 'Founder Meeting', color: '#e74c3c' },
+        { id: 'debrief', label: 'Debrief Complete', color: '#1abc9c' },
+    ];
+    
+    const navPipeline = document.getElementById('nav-pipeline');
+    const navDirectory = document.getElementById('nav-directory');
+    const dashboardGrid = document.querySelector('.dashboard-grid');
+    const callDirectoryWorkspace = document.getElementById('call-directory-workspace');
 
-    function switchLeftTab(tab) {
-        if (tab === 'pipeline') {
-            if (tabActivePipeline) tabActivePipeline.classList.add('active');
-            if (tabCallDirectory) tabCallDirectory.classList.remove('active');
-            if (activePipelineView) activePipelineView.style.display = 'flex';
-            if (callDirectoryView) callDirectoryView.style.display = 'none';
-            if (leftPanelTitle) leftPanelTitle.innerText = "Tiny Sales Assistant Pipeline";
+    function switchView(view) {
+        currentView = view;
+        if (view === 'pipeline') {
+            if (navPipeline) navPipeline.classList.add('active');
+            if (navDirectory) navDirectory.classList.remove('active');
+            if (dashboardGrid) dashboardGrid.style.display = 'grid';
+            if (callDirectoryWorkspace) callDirectoryWorkspace.style.display = 'none';
         } else {
-            if (tabCallDirectory) tabCallDirectory.classList.add('active');
-            if (tabActivePipeline) tabActivePipeline.classList.remove('active');
-            if (activePipelineView) activePipelineView.style.display = 'none';
-            if (callDirectoryView) callDirectoryView.style.display = 'flex';
-            if (leftPanelTitle) leftPanelTitle.innerText = "04 — CENTRAL CALL RECORDING DIRECTORY";
+            if (navDirectory) navDirectory.classList.add('active');
+            if (navPipeline) navPipeline.classList.remove('active');
+            if (dashboardGrid) dashboardGrid.style.display = 'none';
+            if (callDirectoryWorkspace) callDirectoryWorkspace.style.display = 'grid';
             loadDirectoryList();
         }
     }
 
-    if (tabActivePipeline && tabCallDirectory) {
-        tabActivePipeline.addEventListener('click', () => switchLeftTab('pipeline'));
-        tabCallDirectory.addEventListener('click', () => switchLeftTab('directory'));
+    if (navPipeline && navDirectory) {
+        navPipeline.addEventListener('click', () => switchView('pipeline'));
+        navDirectory.addEventListener('click', () => switchView('directory'));
     }
 
     async function loadDirectoryList() {
@@ -126,6 +137,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const badgeTypeLabel = item.type === 'synthesis' ? 'Synthesis' : 'Dossier';
             
             const repBadge = item.rep ? `<span class="directory-badge-rep" style="background: rgba(0, 120, 215, 0.08); color: #0078d4; font-size: 0.65rem; font-weight: bold; padding: 1px 6px; border-radius: 4px; text-transform: uppercase;">SDR: ${escapeHTML(item.rep)}</span>` : '';
+            const stageId = item.stage || 'prep';
+            const stageConfig = PIPELINE_STAGES.find(s => s.id === stageId) || PIPELINE_STAGES[0];
+            const stageBadge = `<span class="directory-badge-stage" style="background: ${stageConfig.color}; color: #fff; font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 4px;">${stageConfig.label}</span>`;
 
             let scoreBadge = '';
             if (item.score) {
@@ -157,7 +171,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
                         <span class="directory-badge-type ${badgeTypeClass}">${badgeTypeLabel}</span>
-                        ${repBadge}
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            ${repBadge}
+                            ${stageBadge}
+                        </div>
                     </div>
                 </div>
                 ${fileAttachedSegment}
@@ -174,6 +191,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
 
+            card.addEventListener('click', async (e) => {
+                if (e.target.closest('button') || e.target.closest('.directory-audio-player')) {
+                    return;
+                }
+                await loadHistoryItemDetail(item.id, false);
+            });
+
             card.querySelector('.directory-btn-delete').addEventListener('click', async (e) => {
                 e.stopPropagation();
                 if (confirm(`Are you sure you want to delete this call record for ${item.company}?`)) {
@@ -183,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             card.querySelector('.directory-btn-load').addEventListener('click', async (e) => {
                 e.stopPropagation();
-                await loadHistoryItemDetail(item.id);
+                await loadHistoryItemDetail(item.id, true);
             });
 
             listContainer.appendChild(card);
@@ -272,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function loadHistoryItemDetail(id) {
+    async function loadHistoryItemDetail(id, forcePipelineRestore = false) {
         showLoading("Loading historical session...");
         try {
             const response = await fetch(`/api/history/detail?id=${encodeURIComponent(id)}`);
@@ -281,89 +305,280 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const item = await response.json();
             
-            if (item.type === 'dossier') {
-                prepNameInput.value = item.name || '';
-                prepTitleInput.value = item.title || '';
-                prepCompanyInput.value = item.company || '';
-                prepUrlInput.value = item.url || '';
-                prepEmailInput.value = item.email || '';
-                if (document.getElementById('prep-phone')) {
-                    document.getElementById('prep-phone').value = item.phone || '';
-                }
-                if (document.getElementById('prep-rep')) {
-                    document.getElementById('prep-rep').value = item.rep || 'Albert';
-                }
-                attachedOneDriveFile = item.oneDriveFile || null;
-                const badge = document.getElementById('onedrive-attached-badge');
-                const badgeName = document.getElementById('onedrive-attached-name');
-                if (badge && badgeName) {
-                    if (item.oneDriveFile) {
-                        badgeName.innerText = item.oneDriveFile;
-                        badge.style.display = 'flex';
-                    } else {
-                        badge.style.display = 'none';
-                    }
-                }
-                prepTrackSelect.value = item.track || 'TM1 Support & Managed Support';
-                prepIntakeText.value = item.intakeAnswers || '';
-                prepLinkedinText.value = item.linkedinInfo || '';
-                
-                const formattedHtml = formatMarkdown(item.content);
-                currentDocs = null;
-                showResults(formattedHtml, false);
-                
-                goToStep(1);
-                step1NextBtn.style.display = 'inline-flex';
-                switchLeftTab('pipeline');
-                showToast(`Restored Call Prep Briefing for ${item.company}`);
-            } else if (item.type === 'synthesis') {
-                synthVariantSelect.value = item.variant || 'Variant A';
-                synthScreencast.value = item.screencast || '';
-                synthTranscriptText.value = item.transcript || '';
-                if (document.getElementById('prep-rep')) {
-                    document.getElementById('prep-rep').value = item.rep || 'Albert';
-                }
-                
-                if (item.variant === 'Variant B') {
-                    prepTrackSelect.value = "TM1 Support & Managed Support";
-                } else if (item.variant === 'Variant C') {
-                    prepTrackSelect.value = "Agentic AI Operations & Watsonx";
-                } else {
-                    prepTrackSelect.value = "DataFusion & Analytics Stack";
-                }
-                
-                if (item.customQuestions) {
-                    currentQuestions = item.customQuestions;
-                } else {
-                    await loadCustomQuestions(item.variant || 'Variant A');
-                }
-                
-                let docs = item.content;
-                if (docs) {
-                    const docsCopy = { ...docs };
-                    for (const key in docsCopy) {
-                        docsCopy[key] = formatMarkdown(docsCopy[key]);
-                    }
-                    if (item.transcript) {
-                        docsCopy.transcript = `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #000000; font-size: 0.85rem; background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid rgba(0,0,0,0.06); border-radius: 6px;">${escapeHTML(item.transcript)}</pre>`;
-                    }
-                    currentDocs = docsCopy;
-                    activeDocTab = 'summary';
-                    showResults(null, true);
-                }
-                
-                // Automatically switch to Review Mode when loading historical synthesis
-                setQuestionnaireMode('review');
-                renderBattlecards();
-                
-                goToStep(3);
-                switchLeftTab('pipeline');
-                showToast(`Restored Call Report Synthesis for ${item.company}`);
+            // Dual interaction check
+            if (currentView === 'directory' && !forcePipelineRestore) {
+                // Just display in Directory Detail panel
+                showDirectoryDetail(item);
+                // Hide loading overlay on the main console
+                resetOutput();
+            } else {
+                // Restore to Pipeline stepper
+                restoreToPipeline(item);
             }
         } catch (error) {
             console.error('Error loading history item detail:', error);
             resetOutput();
             showToast(`Failed to restore session: ${error.message}`);
+        }
+    }
+
+    function restoreToPipeline(item) {
+        if (item.type === 'dossier') {
+            prepNameInput.value = item.name || '';
+            prepTitleInput.value = item.title || '';
+            prepCompanyInput.value = item.company || '';
+            prepUrlInput.value = item.url || '';
+            prepEmailInput.value = item.email || '';
+            if (document.getElementById('prep-phone')) {
+                document.getElementById('prep-phone').value = item.phone || '';
+            }
+            if (document.getElementById('prep-rep')) {
+                document.getElementById('prep-rep').value = item.rep || 'Albert';
+            }
+            attachedOneDriveFile = item.oneDriveFile || null;
+            const badge = document.getElementById('onedrive-attached-badge');
+            const badgeName = document.getElementById('onedrive-attached-name');
+            if (badge && badgeName) {
+                if (item.oneDriveFile) {
+                    badgeName.innerText = item.oneDriveFile;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+            prepTrackSelect.value = item.track || 'Planning & Analytics (TM1)';
+            prepIntakeText.value = item.intakeAnswers || '';
+            prepLinkedinText.value = item.linkedinInfo || '';
+            
+            // Save raw dossier text and render accordion
+            currentDossierText = item.content;
+            renderDossierHtml(item.content);
+            
+            goToStep(1);
+            step1NextBtn.style.display = 'inline-flex';
+            switchView('pipeline');
+            showToast(`Restored Call Prep Briefing for ${item.company}`);
+        } else if (item.type === 'synthesis') {
+            synthVariantSelect.value = item.variant || 'Variant A';
+            synthTranscriptText.value = item.transcript || '';
+            if (document.getElementById('prep-rep')) {
+                document.getElementById('prep-rep').value = item.rep || 'Albert';
+            }
+            
+            if (item.variant === 'Variant C') {
+                prepTrackSelect.value = "AI";
+            } else {
+                prepTrackSelect.value = "Planning & Analytics (TM1)";
+            }
+            
+            if (item.customQuestions) {
+                currentQuestions = item.customQuestions;
+            } else {
+                loadCustomQuestions(item.variant || 'Variant A');
+            }
+            
+            let docs = item.content;
+            if (docs) {
+                const docsCopy = { ...docs };
+                for (const key in docsCopy) {
+                    docsCopy[key] = formatMarkdown(docsCopy[key]);
+                }
+                if (item.transcript) {
+                    docsCopy.transcript = `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #000000; font-size: 0.85rem; background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid rgba(0,0,0,0.06); border-radius: 6px;">${escapeHTML(item.transcript)}</pre>`;
+                }
+                currentDocs = docsCopy;
+                activeDocTab = 'questionnaireAnswers';
+                showResults(null, true);
+            }
+            
+            renderBattlecards();
+            
+            // Mark all individual report buttons as generated
+            document.querySelectorAll('.report-type-btn').forEach(btn => {
+                btn.style.borderColor = '#00c853';
+                btn.style.color = '#00c853';
+                btn.style.background = 'rgba(0, 200, 83, 0.05)';
+            });
+            
+            goToStep(3);
+            switchView('pipeline');
+            showToast(`Restored Call Report Synthesis for ${item.company}`);
+        }
+    }
+
+    function showDirectoryDetail(item) {
+        selectedHistoryItem = item;
+        
+        const emptyEl = document.getElementById('directory-detail-empty');
+        const contentEl = document.getElementById('directory-detail-content');
+        if (emptyEl) emptyEl.style.display = 'none';
+        if (contentEl) contentEl.style.display = 'flex';
+        
+        const companyName = document.getElementById('detail-company-name');
+        const scoreBadge = document.getElementById('detail-score-badge');
+        const contactName = document.getElementById('detail-contact-name');
+        const sdrName = document.getElementById('detail-sdr-name');
+        const track = document.getElementById('detail-track');
+        const date = document.getElementById('detail-date');
+        const stageSelect = document.getElementById('detail-stage-select');
+        
+        if (companyName) companyName.textContent = item.company || 'Unknown Company';
+        
+        if (scoreBadge) {
+            if (item.score) {
+                scoreBadge.textContent = item.score;
+                scoreBadge.className = `badge-score ${item.score.toLowerCase()}`;
+                scoreBadge.style.display = 'inline-block';
+            } else {
+                scoreBadge.style.display = 'none';
+            }
+        }
+        
+        if (contactName) contactName.textContent = item.name || 'Unknown Contact';
+        if (sdrName) sdrName.textContent = item.rep || 'Albert';
+        if (track) track.textContent = item.track || (item.variant === 'Variant C' ? 'AI' : 'Planning & Analytics (TM1)');
+        if (date) {
+            const dateStr = new Date(item.date).toLocaleDateString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            date.textContent = dateStr;
+        }
+        
+        if (stageSelect) {
+            stageSelect.innerHTML = '';
+            PIPELINE_STAGES.forEach(stage => {
+                const option = document.createElement('option');
+                option.value = stage.id;
+                option.textContent = stage.label;
+                stageSelect.appendChild(option);
+            });
+            stageSelect.value = item.stage || 'prep';
+            
+            const newStageSelect = stageSelect.cloneNode(true);
+            stageSelect.parentNode.replaceChild(newStageSelect, stageSelect);
+            
+            newStageSelect.addEventListener('change', async () => {
+                await updateHistoryStage(item.id, newStageSelect.value);
+            });
+        }
+        
+        const audioSection = document.querySelector('.detail-audio-section');
+        if (audioSection) {
+            audioSection.style.display = item.type === 'synthesis' ? 'block' : 'none';
+        }
+        
+        // Setup detail play button
+        const detailPlayBtn = document.getElementById('detail-audio-play-btn');
+        const detailProgress = document.getElementById('detail-audio-progress');
+        const detailTimeLabel = document.getElementById('detail-audio-time');
+        
+        if (detailPlayBtn && detailProgress && detailTimeLabel) {
+            detailPlayBtn.innerText = '▶';
+            detailProgress.style.width = '0%';
+            detailTimeLabel.innerText = '0:00 / 2:30';
+            
+            let isPlaying = false;
+            let duration = 150;
+            let currentTime = 0;
+            let intervalId = null;
+            
+            const formatTime = (secs) => {
+                const m = Math.floor(secs / 60);
+                const s = Math.floor(secs % 60);
+                return `${m}:${s < 10 ? '0' : ''}${s}`;
+            };
+            
+            const newPlayBtn = detailPlayBtn.cloneNode(true);
+            detailPlayBtn.parentNode.replaceChild(newPlayBtn, detailPlayBtn);
+            
+            newPlayBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isPlaying) {
+                    clearInterval(intervalId);
+                    newPlayBtn.innerText = '▶';
+                    isPlaying = false;
+                } else {
+                    newPlayBtn.innerText = '⏸';
+                    isPlaying = true;
+                    intervalId = setInterval(() => {
+                        currentTime += 1;
+                        if (currentTime >= duration) {
+                            clearInterval(intervalId);
+                            newPlayBtn.innerText = '▶';
+                            currentTime = 0;
+                            detailProgress.style.width = '0%';
+                            detailTimeLabel.innerText = `0:00 / ${formatTime(duration)}`;
+                            isPlaying = false;
+                        } else {
+                            const percent = (currentTime / duration) * 100;
+                            detailProgress.style.width = `${percent}%`;
+                            detailTimeLabel.innerText = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+                        }
+                    }, 1000);
+                }
+            });
+        }
+        
+        activeDetailDocTab = 'questionnaireAnswers';
+        updateDetailDocDisplay();
+    }
+
+    function updateDetailDocDisplay() {
+        const detailDocContent = document.getElementById('detail-doc-content');
+        const detailDocNav = document.getElementById('detail-doc-nav');
+        if (!detailDocContent || !selectedHistoryItem) return;
+        
+        if (selectedHistoryItem.type === 'dossier') {
+            if (detailDocNav) detailDocNav.style.display = 'none';
+            const formatted = formatMarkdown(selectedHistoryItem.content);
+            detailDocContent.innerHTML = window.DOMPurify ? DOMPurify.sanitize(formatted) : fallbackSanitize(formatted);
+            return;
+        }
+        
+        if (detailDocNav) {
+            detailDocNav.style.display = 'flex';
+            const buttons = detailDocNav.querySelectorAll('.doc-tab-btn');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-detail-doc') === activeDetailDocTab) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+        
+        let content = "";
+        const docs = selectedHistoryItem.content || {};
+        if (activeDetailDocTab === 'transcript') {
+            const transcript = selectedHistoryItem.transcript || "";
+            content = `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #fff; font-size: 0.85rem; background: rgba(255,255,255,0.02); padding: 1rem; border: 1px solid rgba(255,255,255,0.06); border-radius: 6px;">${escapeHTML(transcript)}</pre>`;
+        } else {
+            content = docs[activeDetailDocTab] || "<p>This section was not generated or is empty.</p>";
+            if (content && !content.includes('<p>') && !content.includes('<ul>')) {
+                content = formatMarkdown(content);
+            }
+        }
+        
+        detailDocContent.innerHTML = window.DOMPurify ? DOMPurify.sanitize(content) : fallbackSanitize(content);
+    }
+
+    async function updateHistoryStage(id, stage) {
+        try {
+            const response = await fetch('/api/history/stage', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id, stage })
+            });
+            if (!response.ok) {
+                throw new Error('Failed to update stage on server');
+            }
+            showToast("Pipeline stage updated successfully.");
+            await loadDirectoryList();
+        } catch (error) {
+            console.error('Error updating stage:', error);
+            showToast(`Failed to update stage: ${error.message}`);
         }
     }
 
@@ -546,6 +761,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         settingsPrepPrompt.value = localStorage.getItem('tiny_prep_system_prompt') || TONE_PRESETS.professional.prep;
         settingsSynthPrompt.value = localStorage.getItem('tiny_synth_system_prompt') || TONE_PRESETS.professional.synth;
+        
+        const settingsDemoMode = document.getElementById('settings-demo-mode');
+        if (settingsDemoMode) {
+            const isDemo = localStorage.getItem('tiny_demo_mode') === 'true';
+            settingsDemoMode.checked = isDemo;
+            toggleDemoButtons(isDemo);
+        }
     }
 
     // Initialize UI settings values
@@ -606,6 +828,12 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('tiny_tone', settingsTonePreset.value);
         localStorage.setItem('tiny_prep_system_prompt', settingsPrepPrompt.value.trim());
         localStorage.setItem('tiny_synth_system_prompt', settingsSynthPrompt.value.trim());
+        
+        const settingsDemoMode = document.getElementById('settings-demo-mode');
+        if (settingsDemoMode) {
+            localStorage.setItem('tiny_demo_mode', settingsDemoMode.checked);
+            toggleDemoButtons(settingsDemoMode.checked);
+        }
         
         settingsStatusMsg.style.color = 'var(--primary)';
         settingsStatusMsg.innerText = '✓ Settings Saved Successfully!';
@@ -915,9 +1143,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const step3BackBtn = document.getElementById('step-3-back-btn');
     const step2SaveBtn = document.getElementById('step-2-save-btn');
     
-    // Questionnaire Mode toggle buttons
-    const modeLiveBtn = document.getElementById('mode-live-btn');
-    const modeReviewBtn = document.getElementById('mode-review-btn');
+    // Call Outcome and Positional Meeting elements
+    const callOutcomeBar = document.getElementById('call-outcome-bar');
+    const teleprompterView = document.getElementById('teleprompter-view');
+    const noAnswerView = document.getElementById('no-answer-view');
+    const rescheduledView = document.getElementById('rescheduled-view');
+    const positionalMeetingPanel = document.getElementById('positional-meeting-panel');
     const battlecardContainer = document.getElementById('battlecard-container');
 
     // Dossier Tab Form
@@ -940,7 +1171,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const synthLoadSampleBtn = document.getElementById('synth-load-sample-btn');
     const synthForm = document.getElementById('synth-form');
     const synthVariantSelect = document.getElementById('synth-variant');
-    const synthScreencast = document.getElementById('synth-screencast');
     const synthTranscriptText = document.getElementById('synth-transcript');
     const synthSubmitBtn = document.getElementById('synth-submit-btn');
 
@@ -980,6 +1210,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (stepNum < 1 || stepNum > 3) return;
         currentStep = stepNum;
 
+        // Toggle layout classes on dashboard grid
+        const dashboardGrid = document.querySelector('.dashboard-grid');
+        if (dashboardGrid) {
+            dashboardGrid.classList.remove('layout-split', 'layout-focus-left', 'layout-focus-right');
+            if (stepNum === 1) {
+                dashboardGrid.classList.add('layout-split');
+            } else if (stepNum === 2) {
+                dashboardGrid.classList.add('layout-focus-left');
+            } else if (stepNum === 3) {
+                dashboardGrid.classList.add('layout-focus-right');
+            }
+        }
+
         // Update step contents visibility
         stepContents.forEach((content, index) => {
             if (index + 1 === stepNum) {
@@ -1004,65 +1247,106 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Render battlecards if in step 2
-        if (stepNum === 2) {
+        // Step-specific right panel rendering
+        if (stepNum === 1) {
+            if (currentDossierText) {
+                renderDossierHtml(currentDossierText);
+            } else {
+                resetOutput();
+            }
+        } else if (stepNum === 2) {
             renderBattlecards();
+            renderQuickReference();
+        } else if (stepNum === 3) {
+            if (currentDocs) {
+                showResults(null, true);
+            } else {
+                resetOutput();
+            }
         }
+    }
+
+    function renderQuickReference() {
+        if (!currentDossierText) {
+            const docContent = document.getElementById('output-doc-content');
+            if (docContent) {
+                docContent.innerHTML = `<div style="padding: 1.25rem; color: rgba(255,255,255,0.4); text-align: center;">No active dossier loaded. Complete Step 1 first.</div>`;
+            }
+            return;
+        }
+        
+        const parsed = parseDossierResponse(currentDossierText);
+        const painPoints = parsed['PAIN POINTS'] || 'Not available';
+        const starters = parsed['CONVERSATION STARTERS'] || 'Not available';
+        
+        const html = `
+            <div class="dossier-quick-ref" style="padding: 1.25rem;">
+                <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary); font-size: 1rem;">🎯 Dossier Quick Reference</h3>
+                <div class="quick-ref-card" style="margin-bottom: 0.75rem;">
+                    <div class="quick-ref-title">🎯 Likely Pain Points</div>
+                    <div class="quick-ref-content">${formatMarkdown(painPoints)}</div>
+                </div>
+                <div class="quick-ref-card">
+                    <div class="quick-ref-title">💬 Conversation Starters</div>
+                    <div class="quick-ref-content">${formatMarkdown(starters)}</div>
+                </div>
+            </div>
+        `;
+        
+        showResults(html, false);
     }
 
     // Step Navigation Event Listeners
     step1NextBtn.addEventListener('click', () => {
         goToStep(2);
-        setQuestionnaireMode('live');
     });
     step2BackBtn.addEventListener('click', () => goToStep(1));
     step2NextBtn.addEventListener('click', () => goToStep(3));
     step3BackBtn.addEventListener('click', () => {
         goToStep(2);
-        setQuestionnaireMode('review');
     });
     
-    // Questionnaire Mode helper and toggle listeners
-    function setQuestionnaireMode(mode) {
-        if (!modeLiveBtn || !modeReviewBtn || !battlecardContainer) return;
-        
-        if (mode === 'live') {
-            modeLiveBtn.classList.add('active');
-            modeLiveBtn.style.background = 'var(--primary)';
-            modeLiveBtn.style.color = 'white';
-            modeLiveBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-            
-            modeReviewBtn.classList.remove('active');
-            modeReviewBtn.style.background = 'transparent';
-            modeReviewBtn.style.color = 'rgba(0,0,0,0.6)';
-            modeReviewBtn.style.boxShadow = 'none';
-            
-            battlecardContainer.classList.remove('mode-review');
-            battlecardContainer.classList.add('mode-live');
-        } else {
-            modeReviewBtn.classList.add('active');
-            modeReviewBtn.style.background = 'var(--primary)';
-            modeReviewBtn.style.color = 'white';
-            modeReviewBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-            
-            modeLiveBtn.classList.remove('active');
-            modeLiveBtn.style.background = 'transparent';
-            modeLiveBtn.style.color = 'rgba(0,0,0,0.6)';
-            modeLiveBtn.style.boxShadow = 'none';
-            
-            battlecardContainer.classList.remove('mode-live');
-            battlecardContainer.classList.add('mode-review');
-        }
+    // --- Call Outcome Bar ---
+    if (callOutcomeBar) {
+        callOutcomeBar.querySelectorAll('.outcome-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                callOutcomeBar.querySelectorAll('.outcome-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const outcome = btn.getAttribute('data-outcome');
+                
+                // Toggle views based on outcome
+                if (teleprompterView) teleprompterView.style.display = outcome === 'completed' ? 'flex' : 'none';
+                if (noAnswerView) noAnswerView.style.display = outcome === 'no-answer' ? 'flex' : 'none';
+                if (rescheduledView) rescheduledView.style.display = outcome === 'rescheduled' ? 'flex' : 'none';
+                if (positionalMeetingPanel) positionalMeetingPanel.style.display = outcome === 'completed' ? 'block' : 'none';
+                
+                // Hide add question and action row for non-completed outcomes
+                const addQWrapper = battlecardContainer?.querySelector('.add-question-wrapper');
+                const actionRow = battlecardContainer?.querySelector('.action-row');
+                if (addQWrapper) addQWrapper.style.display = outcome === 'completed' ? '' : 'none';
+                if (actionRow) actionRow.style.display = outcome === 'completed' ? '' : 'none';
+            });
+        });
     }
 
-    if (modeLiveBtn && modeReviewBtn) {
-        modeLiveBtn.addEventListener('click', () => {
-            setQuestionnaireMode('live');
-            showToast("🎙️ Live Call Mode active: notes textareas hidden.");
-        });
-        modeReviewBtn.addEventListener('click', () => {
-            setQuestionnaireMode('review');
-            showToast("📝 Review Mode active: edit answers directly.");
+    // --- Positional Meeting Booking ---
+    const positionalConfirmBtn = document.getElementById('positional-confirm-btn');
+    if (positionalConfirmBtn) {
+        positionalConfirmBtn.addEventListener('click', () => {
+            const date = document.getElementById('positional-date')?.value;
+            const time = document.getElementById('positional-time')?.value;
+            const format = document.getElementById('positional-format')?.value;
+            
+            if (!date || !time) {
+                showToast('Please select a date and time for the positional meeting.');
+                return;
+            }
+            
+            const dateStr = new Date(date + 'T' + time).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            positionalConfirmBtn.innerText = '✅ Booked';
+            positionalConfirmBtn.disabled = true;
+            positionalConfirmBtn.style.background = '#00c853';
+            showToast(`Positional meeting booked: ${dateStr} at ${time} (${format})`);
         });
     }
 
@@ -1153,15 +1437,12 @@ document.addEventListener('DOMContentLoaded', () => {
     async function syncServiceTrackToVariant() {
         const track = prepTrackSelect.value;
         let variant = "A";
-        if (track === "TM1 Support & Managed Support") {
-            battlecardSelector.value = "B";
-            synthVariantSelect.value = "Variant B";
-            variant = "B";
-        } else if (track === "Agentic AI Operations & Watsonx") {
+        if (track === "AI") {
             battlecardSelector.value = "C";
             synthVariantSelect.value = "Variant C";
             variant = "C";
         } else {
+            // "Planning & Analytics (TM1)" defaults to Variant A (first-time)
             battlecardSelector.value = "A";
             synthVariantSelect.value = "Variant A";
             variant = "A";
@@ -1183,6 +1464,9 @@ document.addEventListener('DOMContentLoaded', () => {
         outputLoading.style.display = 'none';
         outputResults.style.display = 'none';
         currentDocs = null;
+        if (typeof resetReportButtons === 'function') {
+            resetReportButtons();
+        }
     }
 
     function showLoading(text) {
@@ -1385,7 +1669,7 @@ document.addEventListener('DOMContentLoaded', () => {
             onedriveBadge.style.display = 'flex';
         }
 
-        prepTrackSelect.value = "TM1 Support & Managed Support";
+        prepTrackSelect.value = "Planning & Analytics (TM1)";
         prepIntakeText.value = "Service track interest: IBM Planning Analytics / TM1 support\nExcel spreadsheets consolidated: 35 sheets currently consolidated manually\nWorkflow description: Monthly actuals vs budget consolidation and reporting\nGL/ERP system: NetSuite ERP\nReporting tools: Power BI, Excel (PAX)\nDiscuss details: We have a major bottleneck during monthly forecasting. Consolidating the NetSuite actuals with our Excel model templates takes us 45 minutes per worksheet. We want to automate this data transfer and move to a unified database.";
         prepLinkedinText.value = "Experience:\n- Head of FP&A at Meridian Logistics (3 years - Present)\n  * Leading financial planning, forecasting, and consolidation processes\n  * Managing a team of 4 financial analysts\n- Senior Financial Analyst at Linfox Logistics (4 years)\nEducation:\n- Master of Applied Finance, University of Melbourne";
         if (linkedinDropText) {
@@ -1416,6 +1700,145 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
         showToast("Prefilled Call Transcript template!");
     });
 
+    // --- Dossier Parsing & Rendering Helper Functions ---
+    function parseDossierResponse(text) {
+        const sections = {
+            'LINKEDIN ANALYSIS': '',
+            'COMPANY OVERVIEW': '',
+            'OCTANE SERVICES': '',
+            'OCTANE COMPETITORS': '',
+            'COMPETING APPLICATIONS': '',
+            'COMPLEMENTARY APPLICATIONS': '',
+            'TM1 AND AI APPLICATIONS': '',
+            'RELEVANCE ASSESSMENT': '',
+            'PAIN POINTS': '',
+            'CONVERSATION STARTERS': '',
+            'TRAVEL DISTANCE': ''
+        };
+        
+        const pattern = /===\s*([A-Z0-9\s&]+?)\s*===/gi;
+        let match;
+        const matches = [];
+        
+        while ((match = pattern.exec(text)) !== null) {
+            matches.push({
+                title: match[1].trim().toUpperCase(),
+                index: match.index,
+                length: match[0].length
+            });
+        }
+        
+        if (matches.length === 0) {
+            sections['PAIN POINTS'] = text;
+            return sections;
+        }
+        
+        for (let i = 0; i < matches.length; i++) {
+            const current = matches[i];
+            const next = matches[i + 1];
+            const start = current.index + current.length;
+            const end = next ? next.index : text.length;
+            let content = text.substring(start, end).trim();
+            content = content.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+            sections[current.title] = content;
+        }
+        
+        return sections;
+    }
+
+    function renderDossierHtml(rawText) {
+        const parsed = parseDossierResponse(rawText);
+        
+        const coreSections = [
+            'LINKEDIN ANALYSIS',
+            'COMPANY OVERVIEW',
+            'OCTANE SERVICES',
+            'OCTANE COMPETITORS',
+            'COMPETING APPLICATIONS',
+            'COMPLEMENTARY APPLICATIONS',
+            'TM1 AND AI APPLICATIONS',
+            'RELEVANCE ASSESSMENT',
+            'PAIN POINTS',
+            'CONVERSATION STARTERS'
+        ];
+        
+        let completedCount = 0;
+        coreSections.forEach(sec => {
+            if (parsed[sec] && parsed[sec].trim().length > 10) {
+                completedCount++;
+            }
+        });
+        
+        const percent = Math.round((completedCount / coreSections.length) * 100);
+        
+        let html = `
+            <div class="dossier-completeness">
+                <div class="dossier-completeness-header">
+                    <span>Dossier Completeness</span>
+                    <span>${completedCount}/${coreSections.length} Sections (${percent}%)</span>
+                </div>
+                <div class="dossier-completeness-bar">
+                    <div class="dossier-completeness-fill" style="width: ${percent}%;"></div>
+                </div>
+            </div>
+            <div class="dossier-accordion-container">
+        `;
+        
+        const emojiMap = {
+            'LINKEDIN ANALYSIS': '🔗',
+            'COMPANY OVERVIEW': '🏢',
+            'OCTANE SERVICES': '🛠️',
+            'OCTANE COMPETITORS': '⚔️',
+            'COMPETING APPLICATIONS': '💻',
+            'COMPLEMENTARY APPLICATIONS': '🔌',
+            'TM1 AND AI APPLICATIONS': '🧠',
+            'RELEVANCE ASSESSMENT': '📊',
+            'PAIN POINTS': '🎯',
+            'CONVERSATION STARTERS': '💬',
+            'TRAVEL DISTANCE': '🚗'
+        };
+        
+        const travelDist = parsed['TRAVEL DISTANCE'] ? parsed['TRAVEL DISTANCE'].replace(/<[^>]*>/g, '').trim() : '';
+        if (travelDist) {
+            const travelDistEl = document.getElementById('positional-travel-distance');
+            if (travelDistEl) {
+                travelDistEl.textContent = `🚗 Travel distance: ${travelDist}`;
+            }
+        }
+        
+        Object.entries(parsed).forEach(([title, content]) => {
+            const emoji = emojiMap[title] || '📄';
+            const formattedContent = formatMarkdown(content);
+            const isActive = (title === 'PAIN POINTS' || title === 'CONVERSATION STARTERS' || title === 'LINKEDIN ANALYSIS') ? 'active' : '';
+            
+            html += `
+                <div class="dossier-accordion-item ${isActive}">
+                    <div class="dossier-accordion-header">
+                        <span>${emoji} ${title}</span>
+                        <span class="dossier-accordion-arrow"></span>
+                    </div>
+                    <div class="dossier-accordion-content">
+                        ${formattedContent}
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div>`;
+        
+        showResults(html, false);
+        
+        const container = outputDocContent.querySelector('.dossier-accordion-container');
+        if (container) {
+            container.querySelectorAll('.dossier-accordion-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const item = header.closest('.dossier-accordion-item');
+                    item.classList.toggle('active');
+                });
+            });
+        }
+    }
+
     // --- Form Submit handlers ---
     prepForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1445,8 +1868,8 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
         try {
             const apiConfig = getApiConfig();
             const resultHtml = await TinyAI.generateProspectDossier(params, apiConfig);
-            const formattedHtml = formatMarkdown(resultHtml);
-            showResults(formattedHtml, false);
+            currentDossierText = resultHtml;
+            renderDossierHtml(resultHtml);
             step1NextBtn.style.display = 'inline-flex';
             
             // Auto-save dossier to history
@@ -1538,7 +1961,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
 
         const variant = synthVariantSelect.value;
         const transcript = synthTranscriptText.value.trim();
-        const screencastUrl = synthScreencast.value.trim();
+        const screencastUrl = '';
 
         if (!transcript) {
             showToast("Please enter or load a call transcript.");
@@ -1546,7 +1969,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
         }
 
         synthSubmitBtn.disabled = true;
-        showLoading("Synthesizing call and compiling 6 deliverables...");
+        showLoading("Synthesizing call and compiling 8 deliverables...");
 
         try {
             const apiConfig = getApiConfig();
@@ -1559,16 +1982,14 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             }
             
             // Extract answers and update currentQuestions before history save so payload has them
-            if (docs && docs.questionnaire) {
-                const extractedAnswers = extractAnswersFromQuestionnaireHTML(docs.questionnaire);
+            if (docs && docs.questionnaireAnswers) {
+                const extractedAnswers = extractAnswersFromQuestionnaireHTML(docs.questionnaireAnswers);
                 currentQuestions.forEach((q, idx) => {
                     if (extractedAnswers[idx] !== undefined) {
                         q.a = extractedAnswers[idx];
                     }
                 });
                 renderBattlecards();
-                // Automatically switch to Review & Edit Mode since call is completed
-                setQuestionnaireMode('review');
             }
 
             const updatedCustomQuestions = currentQuestions.map(q => ({ q: q.q, a: q.a || "" }));
@@ -1583,7 +2004,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                 customQuestions: updatedCustomQuestions,
                 score: scoreVal,
                 rep: document.getElementById('prep-rep')?.value || 'Albert',
-                content: docs // object containing 7 documents
+                content: docs // object containing 8 documents
             };
             fetch('/api/history', {
                 method: 'POST',
@@ -1602,7 +2023,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             docs.transcript = `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #000000; font-size: 0.85rem; background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid rgba(0,0,0,0.06); border-radius: 6px;">${escapeHTML(transcript)}</pre>`;
 
             currentDocs = docs;
-            activeDocTab = 'summary'; // default tab to show
+            activeDocTab = 'questionnaireAnswers'; // default tab to show
             showResults(null, true);
             
             // Navigate back to Step 2 so SDR can review and refine mapped answers
@@ -1648,14 +2069,15 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
 
         let titleText = "";
         switch(activeDocTab) {
-            case 'questionnaire': titleText = "1. Mapped Questionnaire"; break;
+            case 'questionnaireAnswers': titleText = "1. Questionnaire Answers"; break;
             case 'summary': titleText = "2. Qualification & Next Steps"; break;
-            case 'recapEmail': titleText = "3. Client Recap Email"; break;
-            case 'summarySheet': titleText = "4. Summary Sheet"; break;
-            case 'detailedNotes': titleText = "5. Detailed Meeting Notes"; break;
-            case 'proposal': titleText = "6. Consultative Proposal"; break;
-            case 'actionItems': titleText = "7. Action Items"; break;
-            case 'transcript': titleText = "8. Raw Call Transcript"; break;
+            case 'migrationReport': titleText = "3. Migration Report"; break;
+            case 'recapEmail': titleText = "4. Client Recap Email"; break;
+            case 'summarySheet': titleText = "5. Summary Sheet"; break;
+            case 'notes': titleText = "6. Meeting Notes"; break;
+            case 'proposal': titleText = "7. Consultative Proposal"; break;
+            case 'actionItems': titleText = "8. Action Items"; break;
+            case 'transcript': titleText = "9. Raw Call Transcript"; break;
         }
 
         const sanitizedContent = window.DOMPurify ? DOMPurify.sanitize(content) : fallbackSanitize(content);
@@ -1730,19 +2152,21 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
 </head>
 <body>
     <h1>Tiny AI Sales Handover compilation</h1>
-    <h2>1. Mapped Questionnaire</h2>
-    <div>${currentDocs.questionnaire}</div>
+    <h2>1. Questionnaire Answers</h2>
+    <div>${currentDocs.questionnaireAnswers}</div>
     <h2>2. Qualification & Next Steps</h2>
     <div>${currentDocs.summary}</div>
-    <h2>3. Client Recap Email</h2>
+    <h2>3. Migration Report</h2>
+    <div>${currentDocs.migrationReport}</div>
+    <h2>4. Client Recap Email</h2>
     <div>${currentDocs.recapEmail}</div>
-    <h2>4. Summary Sheet</h2>
+    <h2>5. Summary Sheet</h2>
     <div>${currentDocs.summarySheet}</div>
-    <h2>5. Detailed Meeting Notes</h2>
-    <div>${currentDocs.detailedNotes}</div>
-    <h2>6. Consultative Proposal</h2>
+    <h2>6. Meeting Notes</h2>
+    <div>${currentDocs.notes}</div>
+    <h2>7. Consultative Proposal</h2>
     <div>${currentDocs.proposal}</div>
-    <h2>7. Action Items</h2>
+    <h2>8. Action Items</h2>
     <div>${currentDocs.actionItems}</div>
 </body>
 </html>`;
@@ -1942,161 +2366,55 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
         
         battlecardBody.innerHTML = "";
         
+        // Update teleprompter counter
+        const counterEl = document.getElementById('teleprompter-counter');
+        if (counterEl) {
+            counterEl.textContent = `${currentQuestions.length} Questions`;
+        }
+        
         currentQuestions.forEach((item, index) => {
             const num = index + 1;
-            const section = document.createElement('div');
-            section.className = "battlecard-section";
-            section.style.marginBottom = "0.85rem";
+            const card = document.createElement('div');
+            card.className = 'teleprompter-card';
+            card.setAttribute('data-index', index);
             
-            // Determine if reset button should be displayed
-            const defaultText = BATTLECARDS[variant][index] ? BATTLECARDS[variant][index].q : null;
-            const hasChanged = defaultText !== null && item.q !== defaultText;
-            const resetDisplay = hasChanged ? 'inline-flex' : 'none';
-
-            section.innerHTML = `
-                <div class="battlecard-section-title">Question ${num}</div>
-                <div class="battlecard-item">
-                    <div class="battlecard-q" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
-                        <div contenteditable="false" class="battlecard-q-text" data-index="${index}" style="color: #000000 !important; font-size: 0.85rem !important; line-height: 1.4 !important; font-weight: 500; outline: none; border-bottom: 1px dashed transparent; width: 100%; padding-bottom: 2px; flex: 1;">${escapeHTML(item.q)}</div>
-                        <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
-                            <button class="battlecard-edit-btn" data-index="${index}" style="font-size: 0.75rem; text-decoration: underline; color: var(--primary); background: transparent; border: none; cursor: pointer; padding: 0;">✏️ Edit</button>
-                            <button class="battlecard-copy-btn" style="font-size: 0.75rem; text-decoration: underline; color: var(--primary); background: transparent; border: none; cursor: pointer; padding: 0;">📋 Copy</button>
-                            <button class="battlecard-reset-btn" data-index="${index}" style="font-size: 0.75rem; text-decoration: underline; color: rgba(0,0,0,0.4); background: transparent; border: none; cursor: pointer; padding: 0; display: ${resetDisplay};">⟲ Reset</button>
-                            <button class="battlecard-remove-btn" data-index="${index}" style="font-size: 0.75rem; text-decoration: underline; color: #ff4d4d; background: transparent; border: none; cursor: pointer; padding: 0;">❌ Remove</button>
-                        </div>
-                    </div>
-                    <div class="battlecard-answer-wrapper" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                        <label style="font-size: 0.7rem; font-weight: 600; color: rgba(0,0,0,0.4); text-transform: uppercase;">Answer / Notes</label>
-                        <textarea class="form-input textarea-input battlecard-a-text" data-index="${index}" placeholder="Type prospect answer or notes here..." style="min-height: 60px; font-size: 0.8rem; padding: 0.35rem 0.5rem; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; background: #ffffff; color: #000000; width: 100%; resize: vertical; box-sizing: border-box;"></textarea>
-                    </div>
-                </div>
+            // If first question, make it active by default
+            if (index === 0) {
+                card.classList.add('teleprompter-active');
+            }
+            
+            const tipHtml = item.tip ? `<div class="teleprompter-tip">${escapeHTML(item.tip)}</div>` : '';
+            
+            card.innerHTML = `
+                <div class="teleprompter-q-num">Question ${num}</div>
+                <div class="teleprompter-q-text">${escapeHTML(item.q)}</div>
+                ${tipHtml}
             `;
             
-            battlecardBody.appendChild(section);
-        });
-
-        // Add copy button listeners
-        const copyBtns = battlecardBody.querySelectorAll('.battlecard-copy-btn');
-        copyBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const qTextEl = btn.closest('.battlecard-item').querySelector('.battlecard-q-text');
-                const text = qTextEl ? qTextEl.innerText.trim() : "";
+            // Click to highlight as current question
+            card.addEventListener('click', () => {
+                // Remove active from all cards
+                battlecardBody.querySelectorAll('.teleprompter-card').forEach(c => {
+                    if (c !== card && c.classList.contains('teleprompter-active')) {
+                        c.classList.remove('teleprompter-active');
+                        c.classList.add('teleprompter-done');
+                    }
+                });
                 
-                navigator.clipboard.writeText(text)
-                    .then(() => {
-                        const originalText = btn.innerText;
-                        btn.innerText = "✓ Copied";
-                        btn.style.color = "#4daeeb";
-                        showToast("Question copied to clipboard!");
-                        setTimeout(() => {
-                            btn.innerText = originalText;
-                            btn.style.color = "";
-                        }, 2000);
-                    })
-                    .catch(err => {
-                        console.error("Failed to copy battlecard question:", err);
-                        showToast("Failed to copy question.");
-                    });
-            });
-        });
-
-        // Helper to save question text
-        function saveQuestionText(qText, btn, idx) {
-            qText.setAttribute('contenteditable', 'false');
-            qText.style.borderBottomColor = 'transparent';
-            btn.innerText = "✏️ Edit";
-            
-            const newText = qText.innerText.trim();
-            currentQuestions[idx].q = newText;
-            
-            // Show/hide reset button
-            const resetBtn = qText.closest('.battlecard-item').querySelector('.battlecard-reset-btn');
-            const defaultText = BATTLECARDS[variant][idx] ? BATTLECARDS[variant][idx].q : null;
-            if (defaultText !== null && newText !== defaultText) {
-                resetBtn.style.display = 'inline-flex';
-            } else {
-                resetBtn.style.display = 'none';
-            }
-        }
-
-        // Add edit button listeners
-        const editBtns = battlecardBody.querySelectorAll('.battlecard-edit-btn');
-        editBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const idx = parseInt(btn.getAttribute('data-index'));
-                const qText = btn.closest('.battlecard-item').querySelector('.battlecard-q-text');
-                if (qText) {
-                    const isEditing = qText.getAttribute('contenteditable') === 'true';
-                    if (isEditing) {
-                        saveQuestionText(qText, btn, idx);
-                        showToast("Question saved.");
-                    } else {
-                        qText.setAttribute('contenteditable', 'true');
-                        qText.style.borderBottomColor = 'var(--primary)';
-                        qText.focus();
-                        btn.innerText = "💾 Save";
-                        showToast("Editing question...");
-                    }
+                // Toggle done/active on clicked card
+                if (card.classList.contains('teleprompter-done')) {
+                    card.classList.remove('teleprompter-done');
+                }
+                card.classList.toggle('teleprompter-active');
+                
+                // Update counter
+                const activeIdx = parseInt(card.getAttribute('data-index')) + 1;
+                if (counterEl) {
+                    counterEl.textContent = `Question ${activeIdx} of ${currentQuestions.length}`;
                 }
             });
-        });
-
-        // Add inline change event listeners to save editable text on blur
-        const qTextElements = battlecardBody.querySelectorAll('.battlecard-q-text');
-        qTextElements.forEach(qText => {
-            const idx = parseInt(qText.getAttribute('data-index'));
             
-            qText.addEventListener('blur', () => {
-                const btn = qText.closest('.battlecard-item').querySelector('.battlecard-edit-btn');
-                saveQuestionText(qText, btn, idx);
-            });
-            
-            qText.style.transition = "border-bottom-color 0.2s ease";
-            qText.addEventListener('focus', () => {
-                qText.style.borderBottomColor = 'var(--primary)';
-            });
-        });
-
-        // Add answer change listeners
-        const aTextElements = battlecardBody.querySelectorAll('.battlecard-a-text');
-        aTextElements.forEach(aText => {
-            const idx = parseInt(aText.getAttribute('data-index'));
-            aText.value = currentQuestions[idx].a || "";
-            
-            aText.addEventListener('input', () => {
-                currentQuestions[idx].a = aText.value;
-            });
-        });
-
-        // Add reset button listeners
-        const resetBtns = battlecardBody.querySelectorAll('.battlecard-reset-btn');
-        resetBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.getAttribute('data-index'));
-                const defaultText = BATTLECARDS[variant][idx] ? BATTLECARDS[variant][idx].q : null;
-                if (defaultText !== null) {
-                    currentQuestions[idx].q = defaultText;
-                    
-                    const qText = btn.closest('.battlecard-item').querySelector('.battlecard-q-text');
-                    if (qText) {
-                        qText.innerText = defaultText;
-                    }
-                    btn.style.display = 'none';
-                    showToast(`Question ${idx + 1} reset to default.`);
-                }
-            });
-        });
-
-        // Add remove button listeners
-        const removeBtns = battlecardBody.querySelectorAll('.battlecard-remove-btn');
-        removeBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.getAttribute('data-index'));
-                currentQuestions.splice(idx, 1);
-                renderBattlecards();
-                showToast("Question removed.");
-            });
+            battlecardBody.appendChild(card);
         });
     }
 
@@ -2238,6 +2556,377 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
     }
     if (directoryRefreshBtn) {
         directoryRefreshBtn.addEventListener('click', loadDirectoryList);
+    }
+
+    // --- Helper Functions for Per-Report and State Management ---
+    function resetReportButtons() {
+        document.querySelectorAll('.report-type-btn').forEach(btn => {
+            btn.style.borderColor = '';
+            btn.style.color = '';
+            btn.style.background = '';
+        });
+    }
+
+    async function autoSaveCurrentDocs() {
+        const variant = synthVariantSelect.value;
+        const transcript = synthTranscriptText.value.trim();
+        const scoreVal = currentDocs ? extractScoreFromHTML(currentDocs.summary) : null;
+        
+        const payload = {
+            type: 'synthesis',
+            name: prepNameInput.value.trim() || 'Unknown Name',
+            company: prepCompanyInput.value.trim() || 'Unknown Company',
+            variant: variant,
+            screencast: '',
+            transcript: transcript,
+            customQuestions: currentQuestions.map(q => ({ q: q.q, a: q.a || "" })),
+            score: scoreVal,
+            rep: document.getElementById('prep-rep')?.value || 'Albert',
+            content: currentDocs
+        };
+        
+        try {
+            const res = await fetch('/api/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            console.log("Saved synthesis to history:", data.id);
+        } catch (err) {
+            console.warn("Failed to auto-save history:", err);
+        }
+    }
+
+    function parseHubSpotBookingForm(text) {
+        if (!text) return;
+        
+        const extractField = (patterns) => {
+            for (const pattern of patterns) {
+                const match = text.match(pattern);
+                if (match && match[1]) {
+                    return match[1].trim();
+                }
+            }
+            return '';
+        };
+        
+        const firstName = extractField([
+            /^[ \t]*First Name:\s*([^\r\n]+)/im,
+            /^[ \t]*Given Name:\s*([^\r\n]+)/im
+        ]);
+        const lastName = extractField([
+            /^[ \t]*Last Name:\s*([^\r\n]+)/im,
+            /^[ \t]*Surname:\s*([^\r\n]+)/im
+        ]);
+        
+        let fullName = extractField([
+            /^[ \t]*(?:Full\s+)?Name:\s*([^\r\n]+)/im,
+            /^[ \t]*Contact Name:\s*([^\r\n]+)/im
+        ]);
+        
+        if (!fullName && (firstName || lastName)) {
+            fullName = `${firstName} ${lastName}`.trim();
+        }
+        
+        const title = extractField([
+            /^[ \t]*(?:Job\s+)?Title:\s*([^\r\n]+)/im,
+            /^[ \t]*Role:\s*([^\r\n]+)/im,
+            /^[ \t]*Position:\s*([^\r\n]+)/im
+        ]);
+        
+        const company = extractField([
+            /^[ \t]*Company(?:\s+Name)?:\s*([^\r\n]+)/im,
+            /^[ \t]*Organization:\s*([^\r\n]+)/im
+        ]);
+        
+        const url = extractField([
+            /^[ \t]*Website(?:\s+URL)?:\s*([^\r\n]+)/im,
+            /^[ \t]*Company Website:\s*([^\r\n]+)/im,
+            /^[ \t]*URL:\s*([^\r\n]+)/im
+        ]);
+        
+        const email = extractField([
+            /^[ \t]*Email(?:\s+Address)?:\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/im
+        ]);
+        
+        const phone = extractField([
+            /^[ \t]*Phone(?:\s+Number)?:\s*([^\r\n]+)/im,
+            /^[ \t]*Mobile:\s*([^\r\n]+)/im
+        ]);
+        
+        const serviceTrack = extractField([
+            /^[ \t]*Service\s+Track(?:\s+Interest)?:\s*([^\r\n]+)/im,
+            /^[ \t]*Interest:\s*([^\r\n]+)/im
+        ]);
+        
+        if (fullName) prepNameInput.value = fullName;
+        if (title) prepTitleInput.value = title;
+        if (company) prepCompanyInput.value = company;
+        if (url) prepUrlInput.value = url;
+        if (email) prepEmailInput.value = email;
+        
+        const phoneEl = document.getElementById('prep-phone');
+        if (phone && phoneEl) {
+            phoneEl.value = phone;
+        }
+        
+        if (serviceTrack) {
+            const trackLower = serviceTrack.toLowerCase();
+            if (trackLower.includes('ai') || trackLower.includes('artificial') || trackLower.includes('watsonx')) {
+                prepTrackSelect.value = 'AI';
+            } else {
+                prepTrackSelect.value = 'Planning & Analytics (TM1)';
+            }
+            syncServiceTrackToVariant();
+        }
+        
+        showToast("HubSpot Booking Form parsed successfully!");
+    }
+
+    function toggleDemoButtons(isDemo) {
+        const prepSampleBtn = document.getElementById('prep-load-sample-btn');
+        const synthSampleBtn = document.getElementById('synth-load-sample-btn');
+        if (prepSampleBtn) prepSampleBtn.style.display = isDemo ? 'inline-block' : 'none';
+        if (synthSampleBtn) synthSampleBtn.style.display = isDemo ? 'inline-block' : 'none';
+    }
+
+    // --- Wire Up New Listeners ---
+    const prepParseBtn = document.getElementById('prep-parse-btn');
+    if (prepParseBtn) {
+        prepParseBtn.addEventListener('click', () => {
+            const text = prepIntakeText.value.trim();
+            if (!text) {
+                showToast("Please paste the booking form content first.");
+                return;
+            }
+            parseHubSpotBookingForm(text);
+        });
+    }
+
+    // Per-report modular buttons
+    document.querySelectorAll('.report-type-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const reportType = btn.getAttribute('data-report');
+            const transcript = synthTranscriptText.value.trim();
+            const variant = synthVariantSelect.value;
+            
+            if (!transcript) {
+                showToast("Please enter or load a call transcript.");
+                return;
+            }
+            
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `⏳ Generating...`;
+            showLoading(`Generating ${btn.textContent.trim()}...`);
+            
+            try {
+                const config = getApiConfig();
+                let generatedContent = "";
+                
+                if (reportType === 'questionnaireAnswers') {
+                    const customQuestions = currentQuestions.map(q => ({ q: q.q, a: q.a || "" }));
+                    generatedContent = await TinyAI.generateQuestionnaireAnswers(variant, transcript, customQuestions, config);
+                    
+                    const extractedAnswers = extractAnswersFromQuestionnaireHTML(generatedContent);
+                    currentQuestions.forEach((q, idx) => {
+                        if (extractedAnswers[idx] !== undefined) {
+                            q.a = extractedAnswers[idx];
+                        }
+                    });
+                    renderBattlecards();
+                } else if (reportType === 'migrationReport') {
+                    generatedContent = await TinyAI.generateMigrationReport(variant, transcript, config);
+                } else if (reportType === 'recapEmail') {
+                    generatedContent = await TinyAI.generateRecapEmail(transcript, "", config);
+                } else if (reportType === 'summarySheet') {
+                    generatedContent = await TinyAI.generateSummarySheet(transcript, "", config);
+                } else if (reportType === 'notes') {
+                    generatedContent = await TinyAI.generateNotes(transcript, config);
+                } else if (reportType === 'actionItems') {
+                    generatedContent = await TinyAI.generateActionItems(transcript, config);
+                } else if (reportType === 'proposal') {
+                    const dossierContent = currentDossierText || "";
+                    const qAnswers = currentDocs ? currentDocs.questionnaireAnswers : "";
+                    generatedContent = await TinyAI.generateProposal(
+                        {
+                            name: prepNameInput.value.trim(),
+                            title: prepTitleInput.value.trim(),
+                            company: prepCompanyInput.value.trim(),
+                            url: prepUrlInput.value.trim(),
+                            oneDriveFile: attachedOneDriveFile
+                        },
+                        dossierContent,
+                        qAnswers,
+                        transcript,
+                        config
+                    );
+                }
+                
+                generatedContent = formatMarkdown(generatedContent);
+                
+                if (!currentDocs) {
+                    currentDocs = {
+                        questionnaireAnswers: "",
+                        summary: "",
+                        migrationReport: "",
+                        recapEmail: "",
+                        summarySheet: "",
+                        notes: "",
+                        proposal: "",
+                        actionItems: "",
+                        transcript: `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #000000; font-size: 0.85rem; background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid rgba(0,0,0,0.06); border-radius: 6px;">${escapeHTML(transcript)}</pre>`
+                    };
+                }
+                currentDocs[reportType] = generatedContent;
+                
+                btn.style.borderColor = '#00c853';
+                btn.style.color = '#00c853';
+                btn.style.background = 'rgba(0, 200, 83, 0.05)';
+                
+                await autoSaveCurrentDocs();
+                
+                activeDocTab = reportType;
+                showResults(null, true);
+                showToast(`${btn.textContent.trim()} generated!`);
+            } catch (err) {
+                showToast(`Generation failed: ${err.message}`);
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    });
+
+    // "No Answer" fallback trigger
+    const generateReqEmailBtn = document.getElementById('generate-req-email-btn');
+    if (generateReqEmailBtn) {
+        generateReqEmailBtn.addEventListener('click', async () => {
+            generateReqEmailBtn.disabled = true;
+            generateReqEmailBtn.innerText = '⏳ Generating...';
+            showLoading("Generating Requirement Email...");
+            try {
+                const prospectData = {
+                    name: prepNameInput.value.trim(),
+                    title: prepTitleInput.value.trim(),
+                    company: prepCompanyInput.value.trim(),
+                    track: prepTrackSelect.value,
+                    rep: document.getElementById('prep-rep')?.value || 'Albert'
+                };
+                const dossierData = currentDossierText || "";
+                const config = getApiConfig();
+                const emailHtml = await TinyAI.generateRequirementEmail(prospectData, dossierData, config);
+                
+                showResults(formatMarkdown(emailHtml), false);
+                
+                const payload = {
+                    type: 'synthesis',
+                    name: prospectData.name || 'Unknown Name',
+                    company: prospectData.company || 'Unknown Company',
+                    variant: 'No Answer Fallback',
+                    screencast: '',
+                    transcript: '[Prospect didn\'t pick up]',
+                    customQuestions: [],
+                    score: 'COLD',
+                    rep: prospectData.rep,
+                    stage: 'debrief',
+                    content: {
+                        recapEmail: emailHtml,
+                        questionnaireAnswers: '<p>Prospect did not pick up.</p>',
+                        notes: '<p>Call attempted but no answer. Sent Requirement Email.</p>'
+                    }
+                };
+                fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(res => res.json())
+                  .then(data => console.log("Saved no-answer log to history:", data.id))
+                  .catch(err => console.warn("Failed to save no-answer history:", err));
+                  
+                showToast("Requirement Email generated!");
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to generate Requirement Email.");
+            } finally {
+                generateReqEmailBtn.disabled = false;
+                generateReqEmailBtn.innerText = '✉️ Generate Requirement Email';
+            }
+        });
+    }
+
+    // "Rescheduled" fallback trigger
+    const sendRescheduleEmailBtn = document.getElementById('send-reschedule-email-btn');
+    if (sendRescheduleEmailBtn) {
+        sendRescheduleEmailBtn.addEventListener('click', () => {
+            const clientName = prepNameInput.value.trim() || 'Prospect';
+            const repName = document.getElementById('prep-rep')?.value || 'Albert';
+            const companyName = prepCompanyInput.value.trim() || 'your company';
+            
+            const emailHtml = `
+                <p>Subject: Rescheduling our sync — Octane Software Solutions</p>
+                <p>Hi ${clientName},</p>
+                <p>Thanks for letting us know about the change in schedule. I have updated our pipeline and sent an updated calendar invitation with a new link for our meeting.</p>
+                <p>Looking forward to speaking then and discussing how we can support ${companyName} with our ${prepTrackSelect.value} services.</p>
+                <p>Best regards,<br>${repName}<br>Octane Software Solutions</p>
+            `;
+            
+            showResults(emailHtml, false);
+            showToast("Reschedule confirmation drafted!");
+        });
+    }
+
+    // Detail Doc tabs inside Directory Detail View
+    const detailDocNav = document.getElementById('detail-doc-nav');
+    if (detailDocNav) {
+        detailDocNav.querySelectorAll('.doc-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-detail-doc');
+                activeDetailDocTab = tab;
+                updateDetailDocDisplay();
+            });
+        });
+    }
+
+    // SDR Identity persistence
+    const activeSdrSelect = document.getElementById('active-sdr');
+    const prepRepSelect = document.getElementById('prep-rep');
+    
+    const savedSdr = localStorage.getItem('tiny_active_sdr') || 'Albert';
+    
+    if (activeSdrSelect) {
+        activeSdrSelect.value = savedSdr;
+        activeSdrSelect.addEventListener('change', () => {
+            const newSdr = activeSdrSelect.value;
+            localStorage.setItem('tiny_active_sdr', newSdr);
+            
+            if (prepRepSelect) {
+                prepRepSelect.value = newSdr;
+            }
+            if (directoryFilterRep) {
+                directoryFilterRep.value = newSdr;
+                renderDirectoryList();
+            }
+            showToast(`Active SDR switched to ${newSdr}`);
+        });
+    }
+    
+    if (prepRepSelect) {
+        prepRepSelect.value = savedSdr;
+    }
+    if (directoryFilterRep) {
+        directoryFilterRep.value = savedSdr;
+    }
+
+    // Demo Mode state initialize
+    const settingsDemoMode = document.getElementById('settings-demo-mode');
+    if (settingsDemoMode) {
+        const isDemo = localStorage.getItem('tiny_demo_mode') === 'true';
+        settingsDemoMode.checked = isDemo;
+        toggleDemoButtons(isDemo);
     }
 
     // Run sync initially after all functions and datasets are defined

@@ -860,24 +860,166 @@ body {
     border-left: 2px solid rgba(0, 0, 0, 0.1);
 }
 
-/* Mode toggle styles */
-#battlecard-container.mode-live .battlecard-answer-wrapper {
-    display: none !important;
+/* Teleprompter View */
+.teleprompter-view {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    gap: 0.5rem;
 }
-#battlecard-container.mode-live .battlecard-edit-btn,
-#battlecard-container.mode-live .battlecard-reset-btn,
-#battlecard-container.mode-live .battlecard-remove-btn {
-    display: none !important;
+.teleprompter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: rgba(77, 174, 235, 0.06);
+    border-radius: 6px;
+    border: 1px solid rgba(77, 174, 235, 0.12);
 }
-#battlecard-container.mode-live .add-question-wrapper {
-    display: none !important;
+.teleprompter-counter {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
-#battlecard-container.mode-live #step-2-save-btn {
-    display: none !important;
+.teleprompter-hint {
+    font-size: 0.7rem;
+    color: rgba(0, 0, 0, 0.4);
+    font-style: italic;
 }
 
-#battlecard-container.mode-review .battlecard-answer-wrapper {
-    display: flex !important;
+/* Teleprompter Question Cards */
+.teleprompter-card {
+    padding: 1rem 1.25rem;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+.teleprompter-card:hover {
+    border-color: rgba(77, 174, 235, 0.25);
+    background: #f5f8fc;
+}
+.teleprompter-card.teleprompter-active {
+    border-color: var(--primary);
+    background: rgba(77, 174, 235, 0.05);
+    box-shadow: 0 0 0 3px rgba(77, 174, 235, 0.12);
+}
+.teleprompter-card.teleprompter-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--primary);
+    border-radius: 8px 0 0 8px;
+}
+.teleprompter-card.teleprompter-done {
+    opacity: 0.5;
+    border-color: rgba(0, 200, 83, 0.2);
+    background: rgba(0, 200, 83, 0.03);
+}
+.teleprompter-card.teleprompter-done::after {
+    content: '✓';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #00c853;
+    font-size: 1rem;
+    font-weight: 700;
+}
+.teleprompter-q-num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.35rem;
+}
+.teleprompter-q-text {
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.85);
+    line-height: 1.5;
+}
+.teleprompter-card.teleprompter-active .teleprompter-q-text {
+    font-weight: 600;
+    color: #000;
+}
+.teleprompter-tip {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.45);
+    font-style: italic;
+    margin-top: 0.4rem;
+    padding-left: 0.75rem;
+    border-left: 2px solid rgba(77, 174, 235, 0.2);
+}
+
+/* Call Outcome Bar */
+.call-outcome-bar {
+    display: flex;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 0.2rem;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    gap: 0.15rem;
+}
+.outcome-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: rgba(0, 0, 0, 0.5);
+    padding: 0.4rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.outcome-btn.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.outcome-btn:hover:not(.active) {
+    background: rgba(0, 0, 0, 0.06);
+    color: rgba(0, 0, 0, 0.7);
+}
+
+/* Positional Meeting Booking Panel */
+.positional-meeting-panel {
+    background: rgba(245, 166, 35, 0.06);
+    border: 1px solid rgba(245, 166, 35, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    flex: none;
+}
+.positional-meeting-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.75);
+}
+.positional-meeting-travel {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.45);
+}
+.positional-meeting-body {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
 }
 
 
@@ -1398,6 +1540,184 @@ body {
     font-size: 0.75rem;
     color: rgba(0, 0, 0, 0.4);
     cursor: pointer;
+}
+
+/* top-nav link styling */
+.app-nav .nav-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.app-nav .nav-btn:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+.app-nav .nav-btn.active {
+    color: #ffffff;
+    background: var(--primary);
+    box-shadow: 0 0 10px var(--primary-glow);
+    border-color: var(--primary);
+}
+
+/* Layout Modifiers for Dashboard Grid */
+.dashboard-grid.layout-split {
+    grid-template-columns: 1fr 1fr;
+}
+.dashboard-grid.layout-focus-left {
+    grid-template-columns: 1.4fr 0.6fr;
+}
+.dashboard-grid.layout-focus-right {
+    grid-template-columns: 0.6fr 1.4fr;
+}
+
+/* Dossier Accordion Styles */
+.dossier-accordion-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+.dossier-accordion-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.dossier-accordion-header {
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.01);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--primary);
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+.dossier-accordion-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+.dossier-accordion-content {
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.1);
+    display: none;
+    color: #000 !important;
+}
+.dossier-accordion-content * {
+    color: #000 !important;
+}
+.dossier-accordion-item.active .dossier-accordion-content {
+    display: block;
+}
+.dossier-accordion-arrow::after {
+    content: '▼';
+    font-size: 0.7rem;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+.dossier-accordion-item.active .dossier-accordion-arrow::after {
+    transform: rotate(180deg);
+}
+
+/* Dossier Completeness Bar */
+.dossier-completeness {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+.dossier-completeness-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.dossier-completeness-bar {
+    height: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.dossier-completeness-fill {
+    height: 100%;
+    background: var(--primary);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* Call Recording Directory Workspace Layout (Master-Detail) */
+.directory-workspace {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 1.25rem;
+    min-height: calc(100vh - 180px);
+    width: 100%;
+}
+@media (max-width: 1024px) {
+    .directory-workspace {
+        grid-template-columns: 1fr;
+    }
+}
+
+.directory-master {
+    height: 100%;
+}
+.directory-detail {
+    height: 100%;
+}
+
+.detail-header-card {
+    margin-top: 0.25rem;
+}
+
+/* Compact Dossier Quick Reference Cards (Step 2 Companion) */
+.dossier-quick-ref {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.quick-ref-card {
+    background: rgba(77, 174, 235, 0.03);
+    border: 1px solid rgba(77, 174, 235, 0.15);
+    border-radius: 8px;
+    padding: 0.85rem;
+}
+.quick-ref-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(77, 174, 235, 0.1);
+    padding-bottom: 0.25rem;
+}
+.quick-ref-content {
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+.quick-ref-content p {
+    margin-bottom: 0.5rem;
+}
+
+/* Style stage badges */
+.directory-badge-stage {
+    font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 

@@ -41,6 +41,16 @@ function saveHistoryItem(item) {
 
 function extractScore(content) {
     if (!content) return null;
+    if (typeof content === 'object') {
+        for (const key of ['summary', 'summarySheet', 'recapEmail', 'questionnaireAnswers']) {
+            if (content[key] && typeof content[key] === 'string') {
+                const score = extractScore(content[key]);
+                if (score) return score;
+            }
+        }
+        return null;
+    }
+    if (typeof content !== 'string') return null;
     const match = content.match(/QUALIFICATION\s*SCORE:\s*(HOT|WARM|COLD)/i);
     return match ? match[1].toUpperCase() : null;
 }
@@ -1347,6 +1357,10 @@ const server = http.createServer(async (req, res) => {
                                     track: parsed.track,
                                     variant: parsed.variant,
                                     score: parsed.score || (parsed.type === 'synthesis' ? extractScore(parsed.content) : null),
+                                    rep: parsed.rep,
+                                    oneDriveFile: parsed.oneDriveFile,
+                                    phone: parsed.phone,
+                                    stage: parsed.stage || (parsed.type === 'synthesis' ? 'reports' : 'prep'),
                                     filename: file
                                 });
                             } catch (e) {
@@ -1391,6 +1405,9 @@ const server = http.createServer(async (req, res) => {
                     const id = `${payload.type}_${payload.company.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}_${random}`;
                     payload.id = id;
                     payload.date = new Date().toISOString();
+                    if (!payload.stage) {
+                        payload.stage = payload.type === 'synthesis' ? 'reports' : 'prep';
+                    }
                     
                     const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                     if (!fs.existsSync(historyDir)) {
@@ -1435,6 +1452,64 @@ const server = http.createServer(async (req, res) => {
             });
             return;
         }
+    }
+
+    if (pathname === '/api/history/stage' && req.method === 'PATCH') {
+        const MAX_PAYLOAD_SIZE = 1024 * 10;
+        let body = '';
+        let bodyLength = 0;
+        req.on('data', chunk => {
+            bodyLength += chunk.length;
+            if (bodyLength > MAX_PAYLOAD_SIZE) {
+                res.writeHead(413, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Payload Too Large.' }));
+                req.destroy();
+                return;
+            }
+            body += chunk;
+        });
+        req.on('end', () => {
+            try {
+                const { id, stage } = JSON.parse(body);
+                if (!id || !stage) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Missing id or stage in request body.' }));
+                    return;
+                }
+                const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
+                const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+                const filePath = path.join(historyDir, `${cleanId}.json`);
+                
+                fs.readFile(filePath, 'utf8', (readErr, data) => {
+                    if (readErr) {
+                        res.writeHead(404, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'History item not found.' }));
+                        return;
+                    }
+                    try {
+                        const item = JSON.parse(data);
+                        item.stage = stage;
+                        
+                        fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', (writeErr) => {
+                            if (writeErr) {
+                                res.writeHead(500, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ error: 'Failed to save updated stage.' }));
+                                return;
+                            }
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ status: 'success', id, stage }));
+                        });
+                    } catch (parseErr) {
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Failed to parse history data.' }));
+                    }
+                });
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
+            }
+        });
+        return;
     }
 
     if (pathname === '/api/history/detail' && req.method === 'GET') {
