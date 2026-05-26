@@ -41,22 +41,22 @@
                     </div>
 
                     <!-- SDR Hosts Display -->
-                    <div class="hosts-display">
-                        <div class="hosts-avatars">
-                            <div class="host-avatar-circle">
+                    <div class="hosts-display" id="hosts-display-panel">
+                        <div class="hosts-avatars" id="hosts-avatars-container">
+                            <div class="host-avatar-circle" id="host-avatar-1">
                                 <img src="/demo/albert.png" alt="Albert" class="host-img">
                             </div>
-                            <div class="host-avatar-circle host-avatar-circle--overlap">
+                            <div class="host-avatar-circle host-avatar-circle--overlap" id="host-avatar-2">
                                 <img src="/demo/isha.png" alt="Isha" class="host-img host-img--tall">
                             </div>
                         </div>
                         <div class="hosts-text">
-                            <p class="hosts-title">Meeting Hosts</p>
-                            <p class="hosts-subtitle">You will be matched with Albert or Isha based on availability.</p>
+                            <p class="hosts-title" id="hosts-display-title">Meeting Hosts</p>
+                            <p class="hosts-subtitle" id="hosts-display-subtitle">You will be matched with Albert or Isha based on availability.</p>
                         </div>
                     </div>
                 </div>
-
+ 
                 <!-- Right Column: Interactive Booking Widget -->
                 <div class="hero__calendar" id="booking-widget-container">
                     
@@ -65,7 +65,7 @@
                         <div class="hero__calendar-header">Book a Meeting</div>
                         <div class="hero__calendar-body">
                             <label for="meeting-reason" class="booking-label">What is the reason for your meeting?</label>
-                            <div class="select-wrapper">
+                            <div class="select-wrapper" style="margin-bottom: 0.85rem;">
                                 <select id="meeting-reason" class="booking-select" required>
                                     <option value="" disabled selected>Select an option...</option>
                                     <option value="Pre-Screen Discovery Call | 30 mins">Pre-Screen Discovery Call | 30 mins</option>
@@ -76,13 +76,29 @@
                                     <option value="other">Other (please specify)</option>
                                 </select>
                             </div>
-
+ 
+                            <!-- Host / Calendar Selector -->
+                            <label for="meeting-host" class="booking-label">Select Calendar / Host *</label>
+                            <div class="select-wrapper" style="margin-bottom: 0.85rem;">
+                                <select id="meeting-host" class="booking-select" required>
+                                    <option value="Round Robin" selected>Round Robin SDRs (Albert / Isha)</option>
+                                    <option value="Amendra Pratap">Amendra Pratap (Director Link)</option>
+                                    <option value="Steny">Steny (Senior Architect Link)</option>
+                                    <option value="Kevin">Kevin (TM1 Demo - 1-week buffer)</option>
+                                </select>
+                            </div>
+ 
+                            <!-- Booking buffer notice -->
+                            <div id="booking-buffer-notice" style="display: none; font-size: 0.75rem; color: #e67e22; margin-bottom: 0.85rem; font-weight: 500;">
+                                ⚠️ Kevin's calendar requires a 1-week buffer. Same-day bookings are blocked.
+                            </div>
+ 
                             <!-- Custom Text Field (Shown only when 'Other' is selected) -->
-                            <div id="other-reason-wrapper" class="other-reason-wrapper" style="display: none;">
+                            <div id="other-reason-wrapper" class="other-reason-wrapper" style="display: none; margin-bottom: 0.85rem;">
                                 <label for="other-reason" class="booking-label">Please specify your reason:</label>
                                 <textarea id="other-reason" class="booking-textarea" rows="3" placeholder="Describe what you need help with..."></textarea>
                             </div>
-
+ 
                             <button type="button" id="btn-next-step" class="booking-btn booking-btn--primary" disabled>
                                 Next: View Availability <span>→</span>
                             </button>
@@ -353,6 +369,14 @@
         const btnBookAnother = document.getElementById('btn-book-another');
 
         const selectReason = document.getElementById('meeting-reason');
+        const selectHost = document.getElementById('meeting-host');
+        const bufferNotice = document.getElementById('booking-buffer-notice');
+        
+        const hostsDisplayPanel = document.getElementById('hosts-display-panel');
+        const hostsAvatarsContainer = document.getElementById('hosts-avatars-container');
+        const hostsDisplayTitle = document.getElementById('hosts-display-title');
+        const hostsDisplaySubtitle = document.getElementById('hosts-display-subtitle');
+
         const otherReasonWrapper = document.getElementById('other-reason-wrapper');
         const otherReasonText = document.getElementById('other-reason');
         const btnNext = document.getElementById('btn-next-step');
@@ -385,6 +409,68 @@
             }
         };
 
+        const hostsProfiles = {
+            'Round Robin': {
+                title: 'Meeting Hosts',
+                subtitle: 'You will be matched with Albert or Isha based on availability.',
+                html: `
+                    <div class="host-avatar-circle" id="host-avatar-1">
+                        <img src="/demo/albert.png" alt="Albert" class="host-img">
+                    </div>
+                    <div class="host-avatar-circle host-avatar-circle--overlap" id="host-avatar-2">
+                        <img src="/demo/isha.png" alt="Isha" class="host-img host-img--tall">
+                    </div>
+                `
+            },
+            'Amendra Pratap': {
+                title: 'Amendra Pratap',
+                subtitle: 'Director & Lead Architect, Octane Software Solutions.',
+                html: `
+                    <div class="host-avatar-circle">
+                        <div class="host-initials-avatar">AP</div>
+                    </div>
+                `
+            },
+            'Steny': {
+                title: 'Steny',
+                subtitle: 'Senior Systems Architect, Octane Software Solutions.',
+                html: `
+                    <div class="host-avatar-circle">
+                        <div class="host-initials-avatar">S</div>
+                    </div>
+                `
+            },
+            'Kevin': {
+                title: 'Kevin',
+                subtitle: 'Senior TM1 Specialist & Demo Lead, Octane Software Solutions.',
+                html: `
+                    <div class="host-avatar-circle">
+                        <div class="host-initials-avatar">K</div>
+                    </div>
+                `
+            }
+        };
+
+        selectHost.addEventListener('change', () => {
+            const host = selectHost.value;
+            const profile = hostsProfiles[host];
+            if (profile) {
+                hostsDisplayTitle.textContent = profile.title;
+                hostsDisplaySubtitle.textContent = profile.subtitle;
+                hostsAvatarsContainer.innerHTML = profile.html;
+            }
+
+            // Enforce buffer warning notice
+            if (host === 'Kevin') {
+                bufferNotice.style.display = 'block';
+            } else {
+                bufferNotice.style.display = 'none';
+            }
+            
+            // Re-render calendar slots and dates
+            updateCalendarDatesForHost(host);
+        });
+
         // Enable button based on selection validity
         function validateSelection() {
             const val = selectReason.value;
@@ -406,6 +492,20 @@
                 otherReasonWrapper.style.display = 'none';
                 otherReasonText.removeAttribute('required');
             }
+            
+            // Auto-adjust host dropdown to align with selection for convenience
+            const val = selectReason.value;
+            if (val === 'Positional Meeting | 45 mins') {
+                selectHost.value = 'Amendra Pratap';
+            } else if (val === 'TM1 Demo Session | 60 mins') {
+                selectHost.value = 'Kevin';
+            } else if (val === 'Pre-Screen Discovery Call | 30 mins' || val === 'Planning & Analytics Consultation | 45 mins') {
+                selectHost.value = 'Round Robin';
+            } else if (val === 'AI Solutions Discussion | 45 mins') {
+                selectHost.value = 'Amendra Pratap';
+            }
+            selectHost.dispatchEvent(new Event('change'));
+
             validateSelection();
         });
 
@@ -427,7 +527,7 @@
             }
 
             // Update details
-            selectedReasonDisplay.textContent = `Reason: ${displayReason}`;
+            selectedReasonDisplay.textContent = `Reason: ${displayReason} (Host: ${selectHost.value})`;
             selectedMeetingTitle.textContent = title;
             selectedMeetingDesc.textContent = desc;
 
@@ -458,11 +558,17 @@
             '26': ['9:00 AM', '10:30 AM', '1:00 PM', '3:30 PM'],
             '27': ['10:00 AM', '11:30 AM', '2:30 PM', '5:00 PM'],
             '28': ['9:00 AM', '11:00 AM', '1:30 PM', '4:00 PM'],
-            '29': ['8:30 AM', '10:00 AM', '12:30 PM', '3:00 PM']
+            '29': ['8:30 AM', '10:00 AM', '12:30 PM', '3:00 PM'],
+            '01': ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM'],
+            '02': ['10:00 AM', '12:00 PM', '2:00 PM', '4:00 PM'],
+            '03': ['9:30 AM', '11:30 AM', '1:30 PM', '3:30 PM'],
+            '04': ['10:30 AM', '1:30 PM', '2:30 PM', '4:30 PM'],
+            '05': ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM']
         };
 
-        function renderTimeSlots(day) {
-            timeSlotsHeader.textContent = `Times for May ${day}`;
+        function renderTimeSlots(day, isKevin = false) {
+            const monthText = isKevin ? 'June' : 'May';
+            timeSlotsHeader.textContent = `Times for ${monthText} ${day}`;
             timeSlotsGrid.innerHTML = '';
             selectedTime = '';
             confirmationDetails.style.display = 'none';
@@ -485,12 +591,48 @@
                     selectedTime = time;
                     
                     // Show confirmation
-                    summaryDateTime.textContent = `May ${day} @ ${time}`;
+                    summaryDateTime.textContent = `${monthText} ${day} @ ${time}`;
                     confirmationDetails.style.display = 'block';
                 });
                 
                 timeSlotsGrid.appendChild(btn);
             });
+        }
+
+        function updateCalendarDatesForHost(host) {
+            const isKevin = (host === 'Kevin');
+            calendarGrid.innerHTML = '';
+            
+            let days = [];
+            let monthName = 'May 2026';
+            if (isKevin) {
+                // Kevin gets next week (1-week buffer)
+                days = ['01', '02', '03', '04', '05'];
+                monthName = 'June 2026';
+            } else {
+                // Others get this week
+                days = ['25', '26', '27', '28', '29'];
+                monthName = 'May 2026';
+            }
+            
+            // Update calendar header month
+            const monthHeader = document.querySelector('.calendar-mock-header span');
+            if (monthHeader) {
+                monthHeader.textContent = monthName;
+            }
+            
+            // Create day buttons
+            days.forEach((day, index) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'calendar-day' + (index === 1 ? ' calendar-day--active' : '');
+                btn.setAttribute('data-day', day);
+                btn.textContent = day;
+                calendarGrid.appendChild(btn);
+            });
+            
+            selectedDay = days[1];
+            renderTimeSlots(selectedDay, isKevin);
         }
 
         calendarGrid.addEventListener('click', (e) => {
@@ -506,16 +648,16 @@
             selectedDay = dayBtn.getAttribute('data-day');
             
             // Render slots
-            renderTimeSlots(selectedDay);
+            renderTimeSlots(selectedDay, selectHost.value === 'Kevin');
         });
 
         // Initialize default time slots for May 26
-        renderTimeSlots('26');
+        renderTimeSlots('26', false);
 
         btnConfirm.addEventListener('click', () => {
             const val = selectReason.value;
             let displayReason = val === 'other' ? otherReasonText.value.trim() : val;
-            detailsReasonDisplay.textContent = `Reason: ${displayReason}`;
+            detailsReasonDisplay.textContent = `Reason: ${displayReason} (Host: ${selectHost.value})`;
             
             // Pre-fill track selection based on booking reason keyword
             const reasonLower = displayReason.toLowerCase();
@@ -548,6 +690,8 @@
             const url = bookingUrlInput.value.trim();
             const phone = bookingPhone.value.trim();
             const discuss = bookingDiscuss.value.trim();
+            const host = selectHost.value;
+            const monthText = host === 'Kevin' ? 'June' : 'May';
             
             // Format intake summary text exactly as required by SDR parse
             const summaryText = `Service track interest: ${track === 'AI' ? 'AI' : 'Planning Analytics (TM1)'}
@@ -560,11 +704,12 @@ Position: ${position}
 Company: ${company}
 Email: ${email}
 Phone: ${phone}
-Name: ${name}`;
+Name: ${name}
+Booking Host: ${host}`;
 
             // Update Success page details
             successNameDisplay.textContent = name;
-            successTimeDisplay.textContent = `Your meeting is scheduled for May ${selectedDay} at ${selectedTime}.`;
+            successTimeDisplay.textContent = `Your meeting with ${host} is scheduled for ${monthText} ${selectedDay} at ${selectedTime}.`;
             successIntakeCopy.value = summaryText;
             
             stepDetails.style.display = 'none';
@@ -585,6 +730,8 @@ Name: ${name}`;
         btnBookAnother.addEventListener('click', () => {
             // Reset fields
             selectReason.value = '';
+            selectHost.value = 'Round Robin';
+            selectHost.dispatchEvent(new Event('change'));
             otherReasonText.value = '';
             otherReasonWrapper.style.display = 'none';
             btnNext.disabled = true;

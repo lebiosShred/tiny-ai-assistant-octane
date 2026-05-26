@@ -1803,6 +1803,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             'RELEVANCE ASSESSMENT': '',
             'PAIN POINTS': '',
             'CONVERSATION STARTERS': '',
+            'CUSTOMER PROFILES': '',
             'TRAVEL DISTANCE': ''
         };
         
@@ -1849,7 +1850,9 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             'TM1 AND AI APPLICATIONS',
             'RELEVANCE ASSESSMENT',
             'PAIN POINTS',
-            'CONVERSATION STARTERS'
+            'CONVERSATION STARTERS',
+            'CUSTOMER PROFILES',
+            'TRAVEL DISTANCE'
         ];
         
         let completedCount = 0;
@@ -1885,6 +1888,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             'RELEVANCE ASSESSMENT': '📊',
             'PAIN POINTS': '🎯',
             'CONVERSATION STARTERS': '💬',
+            'CUSTOMER PROFILES': '👥',
             'TRAVEL DISTANCE': '🚗'
         };
         

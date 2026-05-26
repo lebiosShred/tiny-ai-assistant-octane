@@ -74,7 +74,7 @@ const DEFAULT_CONFIG = {
     async function generateProspectDossier(params, customConfig = {}) {
         const config = { ...DEFAULT_CONFIG, ...customConfig };
         const prompt = `You are a sales preparation assistant for Octane Software Solutions.
-I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services (IBM TM1/Planning Analytics managed support, Watsonx Orchestrate agentic AI integrations, and DataFusion connectors), produce a 10-POINT BRIEFING.
+I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services (IBM TM1/Planning Analytics managed support, Watsonx Orchestrate agentic AI integrations, and DataFusion connectors), produce a 12-POINT BRIEFING.
 
 --- INPUTS ---
 1. Client: ${params.name || "Unknown Name"}, ${params.title || "Unknown Title"} at ${params.company || "Unknown Company"}
@@ -85,6 +85,18 @@ I am about to have a 30-minute pre-screen call with a prospect. Using the inputs
 ${params.intakeAnswers || "None provided"}
 6. LinkedIn Profile / Experience:
 ${params.linkedinInfo || "None provided"}
+
+--- OCTANE TARGET CUSTOMER PROFILES PLAYBOOK ---
+Refer to these standard target customer profiles for Octane to classify the prospect:
+- Large TM1 Shops: System Owner or IT. Pain: Cost of resource, Accessing quality resource, Stuck with inflexible vendors, Internal resources are not that skilled, Support and Development maturity, growing pains. Product: Octane Black (Full support, onshore/offshore, for 200+ user scales).
+- Mid Size TM1 Shops: CFO or Head of FP&A. Pain: High cost of support, backlog of projects, Support is ad hoc, In-house resource drives the agenda, not modern setup. Product: Octane Blue (DevOps Support) with roadmap to expand to licenses.
+- Small TM1 Shops: CFO or Head of FP&A. Pain: High cost of support, backlog of projects, Support is ad hoc, In-house resource drives the agenda. Product: Octane Blue (DevOps Support).
+- TM1 Shops still On-Premise: CFO or Head of FP&A. Pain: Legacy Perspectives/Excel dependencies, migration risk, outdated infrastructure. Product: TM1 Modernisation Play (Cloud/PA migration).
+- New TM1 Supply Chain Prospects: CFO or Head of Supply Chain. Pain: Manual Excel demand planning, inventory planning, disconnected supply & demand, unable to scale, reconciliation issues. Product: Custom Supply Chain Model (Accelerated development using Octane's template).
+- New TM1 FP&A Prospects: CFO or Head of FP&A. Pain: Manual budgeting/forecasting, slow insights, looking to move to FP&A platform, turnover >$50M. Product: IBM Planning Analytics (TM1).
+- Enterprise AI in Finance (Large): CFO. Pain: Slow month-end close (5+ days), manual reporting, drowning in repetitive queries, no ROI visibility, turnover >$500M. Product: Octane Finance Agent + FastClose.
+- MidMarket AI in Finance: CFO. Pain: Month-end reporting is manual/slow, CFO chasing data, no self-serve reporting, board packs take too long, struggling to hire, turnover $100M-$500M. Product: FastClose entry point, then upsell to Finance Agent.
+- IBM PA + AI Upgrade (Existing TM1 Shops): CFO, System Owner, Head of FP&A. Pain: TM1 not delivering AI-powered insights, investment underutilized, competitor pressure, manual reporting. Product: Finance Agent on top of existing Planning Analytics.
 
 --- OUTPUT INSTRUCTIONS ---
 You MUST separate each section with its corresponding delimiter string EXACTLY as shown below. Do not include any other markdown fences or conversations outside of these blocks. Format the content inside sections in clean HTML using standard tags like <p>, <ul>, <li>, <strong>, and <br>.
@@ -121,8 +133,11 @@ Likely pain points based on role, company size, and service interest.
 === CONVERSATION STARTERS ===
 3 specific openers that demonstrate relevance from the first sentence (do NOT use generic discovery questions).
 
+=== CUSTOMER PROFILES ===
+Classify the prospect into one of Octane's 9 target customer profiles based on the playbook. Detail the rationale and recommended product/service.
+
 === TRAVEL DISTANCE ===
-Estimate the travel distance/time for an in-person meeting with Amendra (assume Amendra's location is in Melbourne). Based on the prospect's company details/address/domain (e.g. if Australian/Melbourne, compute time, if international, indicate 'Online/Phone only'). Output only a brief string, e.g., '~45 min from Amendra's location' or 'Online/Phone call'.`;
+Estimate the travel distance/time for an in-person meeting. The travel origin is Amendra's home address (Richmond, Melbourne, VIC 3121). Based on the prospect's company address or office location (e.g., if Australian/Melbourne, compute drive/transit time, if interstate or international, indicate 'Online/Phone only'). Output only a brief string, e.g., '~45 min from Amendra's location' or 'Online/Phone call'.`;
 
         const messages = [
             {
@@ -174,8 +189,11 @@ Estimate the travel distance/time for an in-person meeting with Amendra (assume 
 === CONVERSATION STARTERS ===
 <p><strong>Conversation Starters:</strong> Introduce Octane's NetSuite DataFusion connector that automates actuals loading, ask how the 35 Excel spreadsheets affect their forecasting cycles, or suggest a 60-day trial to eliminate their 45-minute manual sheet reconciliation bottleneck.</p>
 
+=== CUSTOMER PROFILES ===
+<p><strong>Octane Customer Profile:</strong> Matches <strong>Mid Size TM1 Shops</strong> / <strong>MidMarket AI in Finance</strong>. The prospect has $100M+ revenue, 20 finance users, and significant spreadsheet dependency (35 spreadsheets), but wants to modernise their FP&A processes with automation, aligning with Octane's core mid-market support and AI options.</p>
+
 === TRAVEL DISTANCE ===
-~45 min from Amendra's location`;
+~45 min from Amendra's location (Richmond, Melbourne, VIC 3121)`;
         }
     }
 
