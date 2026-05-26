@@ -1404,25 +1404,25 @@ body {
     word-break: break-word;
 }
 
-/* OneDrive Browser and Connection styles */
-.onedrive-status-bar {
+/* Google Drive Browser and Connection styles */
+.gdrive-status-bar {
     transition: all 0.2s ease;
 }
 
-.onedrive-browser {
-    border: 1px solid rgba(0, 120, 215, 0.15);
+.gdrive-browser {
+    border: 1px solid rgba(26, 115, 232, 0.15);
     background: #ffffff !important;
     color: #333333 !important;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.onedrive-items-list {
+.gdrive-items-list {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
 }
 
-.onedrive-item {
+.gdrive-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1435,12 +1435,12 @@ body {
     transition: all 0.15s ease;
 }
 
-.onedrive-item:hover {
-    background: rgba(0, 120, 215, 0.05);
-    border-color: rgba(0, 120, 215, 0.2);
+.gdrive-item:hover {
+    background: rgba(26, 115, 232, 0.05);
+    border-color: rgba(26, 115, 232, 0.2);
 }
 
-.onedrive-item-info {
+.gdrive-item-info {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -1449,20 +1449,20 @@ body {
     white-space: nowrap;
 }
 
-.onedrive-item-name {
+.gdrive-item-name {
     font-weight: 500;
 }
 
-.onedrive-item-size {
+.gdrive-item-size {
     color: rgba(0, 0, 0, 0.4);
     font-size: 0.65rem;
 }
 
-.onedrive-btn-attach {
+.gdrive-btn-attach {
     font-size: 0.65rem;
     padding: 2px 6px;
     border-radius: 3px;
-    background: #0078d4;
+    background: #1a73e8;
     color: #ffffff;
     border: none;
     cursor: pointer;
@@ -1470,11 +1470,11 @@ body {
     transition: background 0.15s ease;
 }
 
-.onedrive-btn-attach:hover {
-    background: #005a9e;
+.gdrive-btn-attach:hover {
+    background: #1557b0;
 }
 
-.onedrive-attached-badge {
+.gdrive-attached-badge {
     animation: fadeIn 0.2s ease-out;
 }
 

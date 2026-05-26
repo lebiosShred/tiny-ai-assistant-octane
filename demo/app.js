@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 scoreBadge = `<span class="badge-score ${scoreLower}">${item.score}</span>`;
             }
 
-            const fileAttachedSegment = item.oneDriveFile ? `<div style="font-size: 0.7rem; color: rgba(0, 120, 215, 0.85); display: flex; align-items: center; gap: 4px; margin-top: 0.25rem; margin-bottom: 0.25rem;">📁 OneDrive SOW: <strong>${escapeHTML(item.oneDriveFile)}</strong></div>` : '';
+            const fileAttachedSegment = item.gDriveFile ? `<div style="font-size: 0.7rem; color: rgba(26, 115, 232, 0.85); display: flex; align-items: center; gap: 4px; margin-top: 0.25rem; margin-bottom: 0.25rem;">📁 GDrive SOW: <strong>${escapeHTML(item.gDriveFile)}</strong></div>` : '';
 
             let audioPlayerHtml = '';
             if (item.type === 'synthesis') {
@@ -386,12 +386,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (document.getElementById('prep-rep')) {
                 document.getElementById('prep-rep').value = item.rep || 'Albert';
             }
-            attachedOneDriveFile = item.oneDriveFile || null;
-            const badge = document.getElementById('onedrive-attached-badge');
-            const badgeName = document.getElementById('onedrive-attached-name');
+            attachedGDriveFile = item.gDriveFile || null;
+            const badge = document.getElementById('gdrive-attached-badge');
+            const badgeName = document.getElementById('gdrive-attached-name');
             if (badge && badgeName) {
-                if (item.oneDriveFile) {
-                    badgeName.innerText = item.oneDriveFile;
+                if (item.gDriveFile) {
+                    badgeName.innerText = item.gDriveFile;
                     badge.style.display = 'flex';
                 } else {
                     badge.style.display = 'none';
@@ -1591,8 +1591,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2500);
     }
 
-    // --- Microsoft OneDrive Integration Simulation ---
-    const ONEDRIVE_DATA = {
+    // --- Google Drive Integration Simulation ---
+    const GDRIVE_DATA = {
         'Active Clients': [
             { name: 'Meridian Logistics', isFolder: true },
             { name: 'Atlas Financials', isFolder: true },
@@ -1614,39 +1614,39 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: 'Apex_Retail_AI_Integration_Brief_2025.pdf', isFolder: false, size: 1153433 }
         ]
     };
-    let onedriveCurrentFolder = 'Active Clients';
-    let attachedOneDriveFile = null;
+    let gdriveCurrentFolder = 'Active Clients';
+    let attachedGDriveFile = null;
 
-    const onedriveBrowseBtn = document.getElementById('prep-onedrive-browse-btn');
-    const onedriveBrowserPanel = document.getElementById('onedrive-browser');
-    const onedriveBackBtn = document.getElementById('onedrive-back-btn');
-    const onedriveSearchInput = document.getElementById('prep-onedrive-search');
-    const onedriveRemoveBtn = document.getElementById('onedrive-attached-remove');
-    const onedriveBadge = document.getElementById('onedrive-attached-badge');
+    const gdriveBrowseBtn = document.getElementById('prep-gdrive-browse-btn');
+    const gdriveBrowserPanel = document.getElementById('gdrive-browser');
+    const gdriveBackBtn = document.getElementById('gdrive-back-btn');
+    const gdriveSearchInput = document.getElementById('prep-gdrive-search');
+    const gdriveRemoveBtn = document.getElementById('gdrive-attached-remove');
+    const gdriveBadge = document.getElementById('gdrive-attached-badge');
 
-    function renderOneDriveList() {
-        const listEl = document.getElementById('onedrive-items-list');
-        const folderTitle = document.getElementById('onedrive-current-folder');
+    function renderGDriveList() {
+        const listEl = document.getElementById('gdrive-items-list');
+        const folderTitle = document.getElementById('gdrive-current-folder');
         
         if (!listEl) return;
         
-        if (folderTitle) folderTitle.innerText = onedriveCurrentFolder;
+        if (folderTitle) folderTitle.innerText = gdriveCurrentFolder;
         
-        if (onedriveBackBtn) {
-            if (onedriveCurrentFolder !== 'Active Clients') {
-                onedriveBackBtn.style.display = 'inline-block';
+        if (gdriveBackBtn) {
+            if (gdriveCurrentFolder !== 'Active Clients') {
+                gdriveBackBtn.style.display = 'inline-block';
             } else {
-                onedriveBackBtn.style.display = 'none';
+                gdriveBackBtn.style.display = 'none';
             }
         }
         
-        let items = ONEDRIVE_DATA[onedriveCurrentFolder] || [];
-        const query = (onedriveSearchInput?.value || '').toLowerCase().trim();
+        let items = GDRIVE_DATA[gdriveCurrentFolder] || [];
+        const query = (gdriveSearchInput?.value || '').toLowerCase().trim();
         
         if (query) {
             items = [];
-            for (const folder in ONEDRIVE_DATA) {
-                ONEDRIVE_DATA[folder].forEach(item => {
+            for (const folder in GDRIVE_DATA) {
+                GDRIVE_DATA[folder].forEach(item => {
                     if (!item.isFolder && item.name.toLowerCase().includes(query)) {
                         if (!items.find(existing => existing.name === item.name)) {
                             items.push(item);
@@ -1664,34 +1664,34 @@ document.addEventListener('DOMContentLoaded', () => {
         listEl.innerHTML = '';
         items.forEach(item => {
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'onedrive-item';
+            itemDiv.className = 'gdrive-item';
             
             const icon = item.isFolder ? '📁' : '📄';
             const sizeText = item.isFolder ? '' : ` (${formatBytes(item.size)})`;
             
             itemDiv.innerHTML = `
-                <div class="onedrive-item-info">
+                <div class="gdrive-item-info">
                     <span>${icon}</span>
-                    <span class="onedrive-item-name" style="cursor: ${item.isFolder ? 'pointer' : 'default'}; font-weight: ${item.isFolder ? 'bold' : 'normal'}; color: ${item.isFolder ? '#0078d4' : 'inherit'};">${escapeHTML(item.name)}</span>
-                    <span class="onedrive-item-size">${sizeText}</span>
+                    <span class="gdrive-item-name" style="cursor: ${item.isFolder ? 'pointer' : 'default'}; font-weight: ${item.isFolder ? 'bold' : 'normal'}; color: ${item.isFolder ? '#1a73e8' : 'inherit'};">${escapeHTML(item.name)}</span>
+                    <span class="gdrive-item-size">${sizeText}</span>
                 </div>
-                ${item.isFolder ? '' : `<button type="button" class="onedrive-btn-attach">Attach</button>`}
+                ${item.isFolder ? '' : `<button type="button" class="gdrive-btn-attach">Attach</button>`}
             `;
             
             if (item.isFolder) {
-                itemDiv.querySelector('.onedrive-item-name').addEventListener('click', () => {
-                    onedriveCurrentFolder = item.name;
-                    renderOneDriveList();
+                itemDiv.querySelector('.gdrive-item-name').addEventListener('click', () => {
+                    gdriveCurrentFolder = item.name;
+                    renderGDriveList();
                 });
             } else {
-                itemDiv.querySelector('.onedrive-btn-attach').addEventListener('click', () => {
-                    attachedOneDriveFile = item.name;
-                    const badgeName = document.getElementById('onedrive-attached-name');
-                    if (onedriveBadge && badgeName) {
+                itemDiv.querySelector('.gdrive-btn-attach').addEventListener('click', () => {
+                    attachedGDriveFile = item.name;
+                    const badgeName = document.getElementById('gdrive-attached-name');
+                    if (gdriveBadge && badgeName) {
                         badgeName.innerText = item.name;
-                        onedriveBadge.style.display = 'flex';
+                        gdriveBadge.style.display = 'flex';
                     }
-                    showToast(`Attached ${item.name} from OneDrive!`);
+                    showToast(`Attached ${item.name} from Google Drive!`);
                 });
             }
             
@@ -1699,41 +1699,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (onedriveBrowseBtn) {
-        onedriveBrowseBtn.addEventListener('click', () => {
-            if (onedriveBrowserPanel) {
-                const isHidden = onedriveBrowserPanel.style.display === 'none';
-                onedriveBrowserPanel.style.display = isHidden ? 'block' : 'none';
+    if (gdriveBrowseBtn) {
+        gdriveBrowseBtn.addEventListener('click', () => {
+            if (gdriveBrowserPanel) {
+                const isHidden = gdriveBrowserPanel.style.display === 'none';
+                gdriveBrowserPanel.style.display = isHidden ? 'block' : 'none';
                 if (isHidden) {
-                    renderOneDriveList();
+                    renderGDriveList();
                 }
             }
         });
     }
 
-    if (onedriveBackBtn) {
-        onedriveBackBtn.addEventListener('click', () => {
-            onedriveCurrentFolder = 'Active Clients';
-            renderOneDriveList();
+    if (gdriveBackBtn) {
+        gdriveBackBtn.addEventListener('click', () => {
+            gdriveCurrentFolder = 'Active Clients';
+            renderGDriveList();
         });
     }
 
-    if (onedriveSearchInput) {
-        onedriveSearchInput.addEventListener('input', () => {
-            if (onedriveBrowserPanel) {
-                onedriveBrowserPanel.style.display = 'block';
+    if (gdriveSearchInput) {
+        gdriveSearchInput.addEventListener('input', () => {
+            if (gdriveBrowserPanel) {
+                gdriveBrowserPanel.style.display = 'block';
             }
-            renderOneDriveList();
+            renderGDriveList();
         });
     }
 
-    if (onedriveRemoveBtn) {
-        onedriveRemoveBtn.addEventListener('click', () => {
-            attachedOneDriveFile = null;
-            if (onedriveBadge) {
-                onedriveBadge.style.display = 'none';
+    if (gdriveRemoveBtn) {
+        gdriveRemoveBtn.addEventListener('click', () => {
+            attachedGDriveFile = null;
+            if (gdriveBadge) {
+                gdriveBadge.style.display = 'none';
             }
-            showToast("OneDrive SOW attachment removed.");
+            showToast("Google Drive SOW attachment removed.");
         });
     }
 
@@ -1751,12 +1751,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('prep-rep').value = "Albert";
         }
         
-        // Auto-attach sample OneDrive SOW
-        attachedOneDriveFile = "Meridian_Logistics_SOW_2025.pdf";
-        const badgeName = document.getElementById('onedrive-attached-name');
-        if (onedriveBadge && badgeName) {
-            badgeName.innerText = attachedOneDriveFile;
-            onedriveBadge.style.display = 'flex';
+        // Auto-attach sample Google Drive SOW
+        attachedGDriveFile = "Meridian_Logistics_SOW_2025.pdf";
+        const badgeName = document.getElementById('gdrive-attached-name');
+        if (gdriveBadge && badgeName) {
+            badgeName.innerText = attachedGDriveFile;
+            gdriveBadge.style.display = 'flex';
         }
 
         prepTrackSelect.value = "Planning & Analytics (TM1)";
@@ -1941,7 +1941,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             email: prepEmailInput.value.trim(),
             phone: document.getElementById('prep-phone')?.value.trim() || '',
             rep: document.getElementById('prep-rep')?.value || 'Albert',
-            oneDriveFile: attachedOneDriveFile,
+            gDriveFile: attachedGDriveFile,
             track: prepTrackSelect.value,
             intakeAnswers: prepIntakeText.value.trim(),
             linkedinInfo: prepLinkedinText.value.trim()
@@ -2869,7 +2869,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                             title: prepTitleInput.value.trim(),
                             company: prepCompanyInput.value.trim(),
                             url: prepUrlInput.value.trim(),
-                            oneDriveFile: attachedOneDriveFile
+                            gDriveFile: attachedGDriveFile
                         },
                         dossierContent,
                         qAnswers,

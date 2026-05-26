@@ -629,7 +629,7 @@ Draft a preliminary corporate proposal based on the accumulated context of our p
 1. Client: ${params.name || "Unknown Name"}, ${params.title || "Unknown Title"} at ${params.company || "Unknown Company"}
 2. Company URL: ${params.url || "Unknown URL"}
 3. Service Track Interest: ${params.track || "TM1 & AI"}
-4. Attached OneDrive SOW: ${params.oneDriveFile || "None"}
+4. Attached GDrive SOW: ${params.gDriveFile || "None"}
 5. Pre-Screen Preparation Dossier:
 ${dossierContent || "Not available"}
 6. Completed Discovery Questionnaire Answers:

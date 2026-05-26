@@ -233,41 +233,41 @@
                                         <option value="Planning & Analytics (TM1)">Planning & Analytics (TM1)</option>
                                         <option value="AI">AI</option>
                                     </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>OneDrive Client folders connection</label>
-                                    <div class="onedrive-status-bar" style="display: flex; align-items: center; justify-content: space-between; background: rgba(243, 156, 18, 0.06); border: 1px solid rgba(243, 156, 18, 0.2); padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.5rem;">
+                                                        <div class="form-group">
+                                    <label>Google Drive Client folders connection</label>
+                                    <div class="gdrive-status-bar" style="display: flex; align-items: center; justify-content: space-between; background: rgba(26, 115, 232, 0.05); border: 1px solid rgba(26, 115, 232, 0.15); padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.5rem;">
                                         <div style="display: flex; align-items: center; gap: 6px;">
-                                            <span class="status-dot orange" style="width: 8px; height: 8px; border-radius: 50%; background: #f39c12; box-shadow: 0 0 6px #f39c12; display: inline-block;"></span>
-                                            <span style="font-size: 0.8rem; font-weight: 500; color: #d35400; display: inline-flex; align-items: center; gap: 4px;">📂 This function is currently pending</span>
+                                            <span class="status-dot green" style="width: 8px; height: 8px; border-radius: 50%; background: #34a853; box-shadow: 0 0 6px #34a853; display: inline-block;"></span>
+                                            <span style="font-size: 0.8rem; font-weight: 500; color: #1a73e8; display: inline-flex; align-items: center; gap: 4px;">📂 Connected to Google Drive</span>
                                         </div>
+                                        <span style="font-size: 0.75rem; color: rgba(0, 0, 0, 0.5); font-weight: 500;">Drive: <span style="font-family: monospace; color: #5f6368;">My Drive/Clients</span></span>
                                     </div>
-                                    <div class="onedrive-search-wrapper" style="display: flex; gap: 0.5rem;">
+                                    <div class="gdrive-search-wrapper" style="display: flex; gap: 0.5rem;">
                                         <div style="position: relative; flex: 1;">
-                                            <input type="text" id="prep-onedrive-search" class="form-input" placeholder="🔍 Search past job specifications & SOWs in OneDrive..." style="padding-left: 1.75rem; background: #ffffff; color: #000000; border-color: rgba(0, 120, 215, 0.2);">
-                                            <span style="position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: #0078d4;">📁</span>
+                                            <input type="text" id="prep-gdrive-search" class="form-input" placeholder="🔍 Search past job specifications & SOWs in GDrive..." style="padding-left: 1.75rem; background: #ffffff; color: #000000; border-color: rgba(26, 115, 232, 0.2);">
+                                            <span style="position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: #1a73e8;">📁</span>
                                         </div>
-                                        <button type="button" class="btn btn-secondary" id="prep-onedrive-browse-btn" style="border-color: rgba(0, 120, 215, 0.2); color: #0078d4; background: rgba(0, 120, 215, 0.02); height: 34px; font-size: 0.8rem;">Browse Folders</button>
+                                        <button type="button" class="btn btn-secondary" id="prep-gdrive-browse-btn" style="border-color: rgba(26, 115, 232, 0.2); color: #1a73e8; background: rgba(26, 115, 232, 0.02); height: 34px; font-size: 0.8rem;">Browse Folders</button>
                                     </div>
                                     
                                     <!-- Embedded mock file browser (collapsible) -->
-                                    <div class="onedrive-browser" id="onedrive-browser" style="display: none; border: 1px solid rgba(0, 120, 215, 0.15); border-radius: 6px; margin-top: 0.5rem; background: #fafafa; padding: 0.5rem; max-height: 150px; overflow-y: auto;">
-                                        <div class="onedrive-folder-path" style="font-size: 0.75rem; font-weight: 600; color: #0078d4; padding-bottom: 0.35rem; border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 0.35rem; display: flex; align-items: center; justify-content: space-between;">
-                                            <span>📂 root / Clients / <span id="onedrive-current-folder">Active Clients</span></span>
-                                            <button type="button" id="onedrive-back-btn" style="font-size: 0.65rem; padding: 1px 4px; background: transparent; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 4px; cursor: pointer; display: none;">↰ Up</button>
+                                    <div class="gdrive-browser" id="gdrive-browser" style="display: none; border: 1px solid rgba(26, 115, 232, 0.15); border-radius: 6px; margin-top: 0.5rem; background: #fafafa; padding: 0.5rem; max-height: 150px; overflow-y: auto;">
+                                        <div class="gdrive-folder-path" style="font-size: 0.75rem; font-weight: 600; color: #1a73e8; padding-bottom: 0.35rem; border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 0.35rem; display: flex; align-items: center; justify-content: space-between;">
+                                            <span>📂 root / Clients / <span id="gdrive-current-folder">Active Clients</span></span>
+                                            <button type="button" id="gdrive-back-btn" style="font-size: 0.65rem; padding: 1px 4px; background: transparent; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 4px; cursor: pointer; display: none;">↰ Up</button>
                                         </div>
-                                        <div class="onedrive-items-list" id="onedrive-items-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                        <div class="gdrive-items-list" id="gdrive-items-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
                                             <!-- Loaded dynamically in app.js -->
                                         </div>
                                     </div>
-
-                                    <!-- Attached OneDrive SOW badge -->
-                                    <div id="onedrive-attached-badge" style="display: none; align-items: center; gap: 6px; background: rgba(0, 120, 215, 0.05); border: 1px solid rgba(0, 120, 215, 0.12); padding: 0.35rem 0.50rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem;">
+ 
+                                    <!-- Attached Google Drive SOW badge -->
+                                    <div id="gdrive-attached-badge" class="gdrive-attached-badge" style="display: none; align-items: center; gap: 6px; background: rgba(26, 115, 232, 0.05); border: 1px solid rgba(26, 115, 232, 0.12); padding: 0.35rem 0.50rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem;">
                                         <span style="font-size: 0.85rem;">📄</span>
-                                        <span style="flex: 1; font-weight: 500; color: #0078d4;" id="onedrive-attached-name">Meridian_Logistics_SOW_2025.pdf</span>
-                                        <button type="button" id="onedrive-attached-remove" style="background: transparent; border: none; color: #ff4d4d; cursor: pointer; font-size: 0.85rem; padding: 0; font-weight: bold;">❌</button>
+                                        <span style="flex: 1; font-weight: 500; color: #1a73e8;" id="gdrive-attached-name">Meridian_Logistics_SOW_2025.pdf</span>
+                                        <button type="button" id="gdrive-attached-remove" style="background: transparent; border: none; color: #ff4d4d; cursor: pointer; font-size: 0.85rem; padding: 0; font-weight: bold;">❌</button>
                                     </div>
-                                </div>
+                                </div>                             </div>
                                 <!-- Moved to top of Step 1 -->
                                 <div class="form-group">
                                     <label for="prep-linkedin">LinkedIn Profile Bio / Experience</label>
