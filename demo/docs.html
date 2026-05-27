@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny AI Assistant - Professional Documentation & User Guide</title>
+    <meta name="description" content="Technical documentation and usage guide for the Tiny AI Assistant sales process coprocessor.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="tiny.png">
+    
+    <style>
+        :root {
+            --primary: #4daeeb;
+            --primary-light: rgba(77, 174, 235, 0.08);
+            --primary-border: rgba(77, 174, 235, 0.2);
+            --black: #000000;
+            --dark-gray: #1f2937;
+            --light-gray: #f9fafb;
+            --border-color: #e5e7eb;
+            --text: #374151;
+            --text-heading: #111827;
+            --white: #ffffff;
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--white);
+            color: var(--text);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Top Header Navigation */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 64px;
+            background-color: var(--white);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+        }
+        .header-container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: var(--black);
+        }
+        .logo-image {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 6px rgba(77, 174, 235, 0.2);
+        }
+        .logo-text {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .logo-badge {
+            font-size: 0.65rem;
+            background-color: var(--black);
+            color: var(--white);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .header-link {
+            font-size: 0.85rem;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .header-link:hover {
+            color: var(--primary);
+        }
+        .btn-launch {
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 0.45rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-launch:hover {
+            background-color: #3ba3df;
+        }
+
+        /* Documentation Layout Container */
+        .doc-layout {
+            display: flex;
+            flex: 1;
+            margin-top: 64px;
+            max-width: 1400px;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Left Sidebar */
+        .sidebar {
+            width: 280px;
+            position: fixed;
+            top: 64px;
+            bottom: 0;
+            left: max(0px, calc((100vw - 1400px) / 2));
+            border-right: 1px solid var(--border-color);
+            background-color: var(--light-gray);
+            overflow-y: auto;
+            padding: 2rem 1.5rem;
+            z-index: 10;
+        }
+        .search-box {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem 0.5rem 2rem;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+            font-family: var(--font-body);
+        }
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        .nav-group-title {
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--black);
+            margin-bottom: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        .nav-group-title:first-child {
+            margin-top: 0;
+        }
+        .sidebar-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .sidebar-link-item a {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text);
+            text-decoration: none;
+            padding: 0.35rem 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .sidebar-link-item a:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+            color: var(--black);
+        }
+        .sidebar-link-item.active a {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+            border-left: 2px solid var(--primary);
+            border-radius: 0 4px 4px 0;
+            padding-left: calc(0.5rem - 2px);
+        }
+
+        /* Main Content Panel */
+        .content-panel {
+            flex: 1;
+            margin-left: 280px;
+            padding: 3rem 4rem;
+            overflow-y: auto;
+            max-width: 900px;
+        }
+
+        /* Content Typography Styling */
+        .doc-section {
+            margin-bottom: 4rem;
+            scroll-margin-top: 90px;
+        }
+        .doc-section:not(:last-child) {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 3rem;
+        }
+        .doc-section h1 {
+            font-family: var(--font-display);
+            font-size: 2.25rem;
+            color: var(--black);
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+        .doc-section h2 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--text-heading);
+            font-weight: 700;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            letter-spacing: -0.01em;
+        }
+        .doc-section h3 {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+            color: var(--text-heading);
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .doc-section p {
+            font-size: 0.95rem;
+            color: var(--text);
+            margin-bottom: 1.25rem;
+            line-height: 1.7;
+        }
+        .doc-section ul, .doc-section ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .doc-section li strong {
+            color: var(--black);
+        }
+
+        /* Code snippets */
+        pre {
+            background-color: var(--light-gray);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        code {
+            font-family: monospace;
+            font-size: 0.85rem;
+            background-color: var(--light-gray);
+            padding: 0.15rem 0.3rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        pre code {
+            border: none;
+            background: transparent;
+            padding: 0;
+        }
+
+        /* Tables styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        th, td {
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+        th {
+            font-weight: 600;
+            color: var(--black);
+            background-color: var(--light-gray);
+        }
+        tr:hover td {
+            background-color: rgba(0, 0, 0, 0.01);
+        }
+
+        /* Alerts standard style */
+        .alert-box {
+            border-left: 4px solid var(--primary);
+            background-color: var(--primary-light);
+            padding: 1rem 1.25rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .alert-box strong {
+            color: var(--black);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        .alert-box-warning {
+            border-left-color: #f59e0b;
+            background-color: rgba(245, 158, 11, 0.05);
+        }
+        .alert-box-danger {
+            border-left-color: #ef4444;
+            background-color: rgba(239, 68, 68, 0.05);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 2rem;
+            background-color: var(--light-gray);
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: auto;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+            .content-panel {
+                margin-left: 0;
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header bar navigation -->
+    <header>
+        <div class="header-container">
+            <a href="index.html" class="logo-container">
+                <img src="tiny.png" alt="Tiny AI Assistant" class="logo-image">
+                <span class="logo-text">Tiny AI Assistant</span>
+                <span class="logo-badge">Docs</span>
+            </a>
+            <div class="header-nav">
+                <a href="docs.html" class="header-link active">Documentation</a>
+                <a href="book.html" class="header-link">Booking Page</a>
+                <a href="index.html" class="btn-launch">Launch Console</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout Container -->
+    <div class="doc-layout">
+        
+        <!-- Navigation Sidebar -->
+        <aside class="sidebar">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="doc-search" class="search-input" placeholder="Search documentation...">
+            </div>
+            
+            <nav id="doc-navigation">
+                <div class="nav-group-title">Getting Started</div>
+                <ul class="sidebar-links">
+                    <li class="sidebar-link-item active" data-section="intro"><a href="#intro">Introduction & Overview</a></li>
+                </ul>
+
+                <div class="nav-group-title">SDR Workflow Components</div>
+                <ul class="sidebar-links">
+                    <li class="sidebar-link-item" data-section="comp-01"><a href="#comp-01">Component 01: Booking Page</a></li>
+                    <li class="sidebar-link-item" data-section="comp-02"><a href="#comp-02">Component 02: Ingestion & Prep</a></li>
+                    <li class="sidebar-link-item" data-section="comp-03"><a href="#comp-03">Component 03: Live Discovery Call</a></li>
+                    <li class="sidebar-link-item" data-section="comp-04"><a href="#comp-04">Component 04: Call Directory</a></li>
+                    <li class="sidebar-link-item" data-section="comp-05"><a href="#comp-05">Component 05: Automated Reports</a></li>
+                    <li class="sidebar-link-item" data-section="comp-06"><a href="#comp-06">Component 06: Meeting Booking</a></li>
+                    <li class="sidebar-link-item" data-section="comp-07"><a href="#comp-07">Component 07: Settings Panel</a></li>
+                </ul>
+
+                <div class="nav-group-title">Playbook References</div>
+                <ul class="sidebar-links">
+                    <li class="sidebar-link-item" data-section="ref-profiles"><a href="#ref-profiles">Customer Profiles Playbook</a></li>
+                    <li class="sidebar-link-item" data-section="ref-catalog"><a href="#ref-catalog">Standard Services Catalog</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="content-panel">
+            
+            <!-- SECTION 1: Intro -->
+            <section class="doc-section" id="intro">
+                <h1>Introduction & Product Architecture</h1>
+                <p>The <strong>Tiny AI Assistant</strong> is an enterprise-grade sales pipeline coprocessor designed specifically for <strong>Octane Software Solutions</strong> to optimize prospect intake, pre-screening discovery preparations, and call synthesis deliverables. It aligns with standard playbook rules to support designated Sales Development Representatives (SDRs) — specifically <strong>Albert</strong> and <strong>Isha</strong> — in executing discovery operations while enforcing strict pricing sovereignty guidelines.</p>
+                
+                <h2>Business Objectives & Team Roles</h2>
+                <p>The coprocessor implements a disciplined, simple sales process to generate and qualify high-value leads for Octane Software Solutions, resolving the lack of structure in early pipeline stages that historically caused deals to stall. The system design and workflow coordination are distributed across key stakeholder roles:</p>
+                <ul>
+                    <li><strong>Amiel / Amendra Pratap (Director & Lead Engineer)</strong>: Technical architect responsible for compiling the core codebase, Express backend integration, and Google Cloud Run deployment.</li>
+                    <li><strong>Amie Lebios (SEO & Marketing Team)</strong>: Sole operator of digital assets, downloads page codebase, tracking, and HubSpot integration pipelines.</li>
+                    <li><strong>Sheila Ocana (Operations)</strong>: Author of the Standard Operating Procedures (SOPs), training resources, and user workflows.</li>
+                    <li><strong>Anthony Coundouris (Sales Trainer & Coach)</strong>: Reviewer of the sales components, developer of prompt guidelines, and lead coach for sales staff enablement.</li>
+                </ul>
+
+                <h2>Standard $0 Extra-Spend Tooling Stack</h2>
+                <p>The architecture is designed to leverage existing enterprise applications without requiring extra license spend, focusing on manual copy-paste workflows to establish process maturity before automation:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pipeline Stage / Purpose</th>
+                            <th>Designated Software Tool</th>
+                            <th>Conventions & SDR Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CRM (Customer Relationship Management)</strong></td>
+                            <td>HubSpot</td>
+                            <td>Synchronizes leads, details, and call summaries to deal tickets.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Calendar Booking Widget</strong></td>
+                            <td>HubSpot Scheduling Engine</td>
+                            <td>Represented by the integrated calendar interface (Component 01).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thinking & Synthesis Engine</strong></td>
+                            <td>Claude (Claude Projects)</td>
+                            <td>Replicated by the AI Coprocessor dashboard loaded with playbooks.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Call Recording & Transcripts</strong></td>
+                            <td>Fathom, Jamie AI, or Fireflies</td>
+                            <td>Captures the requirement call transcript without manual typing.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Screencast Video Delivery</strong></td>
+                            <td>Vidyard or Microsoft Teams</td>
+                            <td>Used by SDRs to record and send 2-minute recap videos to prospects.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>In-person Meetings</strong></td>
+                            <td>Fireflies</td>
+                            <td>Recorded using the Fireflies mobile app or laptop microphone to capture transcripts.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Pipeline Sequence Model</h2>
+                <p>The application coordinates a 6-component process mapped to SDR daily operations:</p>
+                <div class="alert-box">
+                    <strong>Architecture Workflow</strong>
+                    1. Prospect Schedules call on Booking Page (Component 01) &rarr; <br>
+                    2. SDR ingests Booking details into Prep Panel (Component 02) &rarr; <br>
+                    3. System compiles 12-point Dossier and Rapport Guides (Component 03) &rarr; <br>
+                    4. SDR runs call with Battlecard Questionnaire (Component 03/04) &rarr; <br>
+                    5. Call Directory & History logs the session metadata and restores workflows (Component 04) &rarr; <br>
+                    6. Synthesis Console parses transcript and outputs 9 deliverables (Component 05) &rarr; <br>
+                    7. SDR downloads ICS positional meeting invite for Founder Hand-over (Component 06).
+                </div>
+            </section>
+
+            <!-- SECTION 2: Component 01 -->
+            <section class="doc-section" id="comp-01">
+                <h1>Component 01: Client Booking Page</h1>
+                <p>The booking site <code>book.html</code> provides an interactive calendar interface for prospects while dynamically applying calendar availability and buffer constraints based on the chosen host. A single scheduling link is used for all prospects across Australia (AU), New Zealand (NZ), and the Middle East (ME).</p>
+                
+                <h2>Designated SDR Hosts & Shift Coverage</h2>
+                <p>Calls are routed dynamically to Octane's designated Sales Development Representatives (SDRs) based on timezone-deterministic shift windows:</p>
+                <ul>
+                    <li><strong>Albert (SDR)</strong>: Operates the early shift from <strong>7:00 AM -- 2:00 PM AEST (Sydney time)</strong>.</li>
+                    <li><strong>Isha (SDR)</strong>: Operates the late shift from <strong>2:00 PM -- 9:00 PM AEST (Sydney time)</strong>.</li>
+                    <li>Together, Albert and Isha cover a combined 14-hour window providing exactly <strong>28 x 30-minute booking slots</strong> per day.</li>
+                </ul>
+
+                <h2>Dynamic Host Rules</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Meeting Host</th>
+                            <th>Buffer Notice Constraint</th>
+                            <th>Availability Window</th>
+                            <th>Meeting Formats Allowed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Round Robin SDRs (Albert & Isha)</strong></td>
+                            <td>12-Hour Buffer Required</td>
+                            <td>Current Month Dates (May 2026)</td>
+                            <td>Richmond Office or Online (Teams/Zoom)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="alert-box">
+                    <strong>Host Selection Removed</strong>
+                    The booking page no longer presents a host selector dropdown. Since all pre-screen calls are exclusively handled by the Round Robin SDR pool (Albert and Isha), the host assignment is automatic. The system assigns Albert for morning slots (7 AM -- 2 PM AEST) and Isha for afternoon/evening slots (2 PM -- 9 PM AEST).
+                </div>
+
+                <h2>Calendar Widget Integration & Context Page</h2>
+                <p>The booking widget is embedded within a contextual page that gives the attendee information about what to expect — not presented as a standalone, bare calendar widget. The structure of this page is inspired by the professional context page model at <code>salesstar.com/steve-hughson-meeting</code>.</p>
+                
+                <h2>Offline QR Code Access</h2>
+                <p>A QR code is generated dynamically on the booking page linking directly to its URL. This code is required for offline materials such as business cards, brochures, or event flyers, allowing prospective clients to scan and book sessions instantly. SDRs can download the high-resolution QR code directly in PNG format from the interface.</p>
+
+                <h2>Information Collected at Booking</h2>
+                <p>To pre-qualify prospects, the booking widget collects the following structured parameters:</p>
+                <ol>
+                    <li><strong>Prospect Name, Company Name, & Job Title</strong> (e.g. CFO, Head of FP&A).</li>
+                    <li><strong>Company Email Address</strong>.</li>
+                    <li><strong>Company Website URL</strong> (grounding context).</li>
+                    <li><strong>Service Track Interest</strong>: Planning & Analytics (TM1) or Generative AI.</li>
+                    <li><strong>Free-text Discussion Request</strong> ("What would you like to discuss").</li>
+                </ol>
+
+                <div class="alert-box">
+                    <strong>Simplified Booking Flow</strong>
+                    Since the host selector has been removed, the calendar always displays current-month dates with a 12-hour buffer. The booking page automatically assigns the SDR based on the selected time slot (Albert for morning, Isha for afternoon/evening).
+                </div>
+            </section>
+
+            <!-- SECTION 3: Component 02 -->
+            <section class="doc-section" id="comp-02">
+                <h1>Component 02: Ingestion & Call Prep</h1>
+                <p>Before a requirements session call, the assigned SDR prepares using the AI Assistant. This module accesses GDrive client folders, SOWs, and history files to give the representative context about the account.</p>
+
+                <h2>Manual SDR Inputs (6 Core Inputs)</h2>
+                <p>The SDR gathers and pastes the following 6 core inputs into Step 1 of the dashboard to prepare the briefing dossier:</p>
+                <ol>
+                    <li><strong>Client Name, Company Name, & Job Title</strong> (e.g. CFO, Head of FP&A).</li>
+                    <li><strong>Completed Booking Form Intake Summary</strong> (copied from the book.html success card clipboard output).</li>
+                    <li><strong>LinkedIn Profile Text</strong> (copied from LinkedIn PDF export).</li>
+                    <li><strong>Company Website URL</strong>.</li>
+                    <li><strong>Service Track Interest</strong> (AI or TM1).</li>
+                    <li><strong>Company Email Address</strong>.</li>
+                </ol>
+                <p><em>Note: The CRM check (verifying if contact/company exists in HubSpot and pulling history) is currently a manual step listed in the brief and is deferred from direct system integration.</em></p>
+                
+                <h2>Google Drive File Attachment Explorer</h2>
+                <p>The assistant links to Google Drive directories to compile deep contextual briefings. The connection accesses files shared with the service account: <code>28323029503-compute@developer.gserviceaccount.com</code>.</p>
+                <ul>
+                    <li><strong>Directory Browsing</strong>: Live dynamic loading of folder indices via the <code>/api/gdrive/list</code> endpoint.</li>
+                    <li><strong>Full-text Search</strong>: Leverages debounced text search (300ms) calling <code>/api/gdrive/search</code> to locate files matching keywords in name or contents.</li>
+                    <li><strong>Content Extraction</strong>:
+                        <ul>
+                            <li>Google Docs: Exported as <code>text/plain</code>.</li>
+                            <li>Google Sheets: Exported as <code>text/csv</code>.</li>
+                            <li>PDFs: Array buffer text parsed via <code>pdf-parse</code>.</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h2>12-Section Briefing Dossier</h2>
+                <p>Generating the prep brief runs the inputs against the Mistral model to construct a 12-section dossier. Dossier progress is tracked via a completeness progress meter (0--100%). The dossier outputs the following 12 components:</p>
+                <ol>
+                    <li><strong>Section 1: LinkedIn Analysis</strong> (Detailed profile breakdown & recent social activities).</li>
+                    <li><strong>Section 2: Company Products & Services</strong> (Core business offerings and revenue lines).</li>
+                    <li><strong>Section 3: Octane Services Alignment</strong> (Specific product matches from the services catalog).</li>
+                    <li><strong>Section 4: Octane Competitors</strong> (Firms competing with Octane for the deal).</li>
+                    <li><strong>Section 5: Competing Applications</strong> (Software products competing with TM1/watsonx, e.g. Anaplan, Workday).</li>
+                    <li><strong>Section 6: Complementary Applications</strong> (Software that integrates, e.g. SAP, NetSuite, Power BI).</li>
+                    <li><strong>Section 7: TM1 and AI Applications</strong> (Relevance mapping for multidimensional calculations or AI agents).</li>
+                    <li><strong>Section 8: Relevance Assessment</strong> (Custom thesis showing why the track matters to this specific prospect).</li>
+                    <li><strong>Section 9: Likely Pain Points</strong> (Consolidation lag, memory constraints, version control risks).</li>
+                    <li><strong>Section 10: Conversation Starters</strong> (3 targeted icebreaker questions to demonstrate relevance immediately).</li>
+                    <li><strong>Section 11: Customer Profile Classification</strong> (Playbook segment mapping, e.g. On-Premise TM1 Shop).</li>
+                    <li><strong>Section 12: Travel Distance Estimate</strong> (Calculated driving time and distance from Amendra's Richmond, Melbourne home/office location to the prospect's appointed meeting location).</li>
+                </ol>
+            </section>
+
+            <!-- SECTION 4: Component 03 -->
+            <section class="doc-section" id="comp-03">
+                <h1>Component 03: Live Discovery Call</h1>
+                <p>Step 2 contains call facilitation tools, including teleprompters, discovery scripts, and pre-compiled icebreaker dossiers. The requirements session lasts exactly <strong>30 minutes</strong> and is conducted by Albert or Isha.</p>
+                
+                <h2>Meeting Objectives & SDR Rules</h2>
+                <p>SDRs must adhere to the 5 primary objectives during the pre-screen call:</p>
+                <ol>
+                    <li><strong>Build Rapport</strong>: Open the call using the 3 conversation starters compiled in the Rapport Guide (Component 02).</li>
+                    <li><strong>Execute Discovery Questionnaire</strong>: Walk the prospect through the 12 structured questions from the battlecard script.</li>
+                    <li><strong>No Typing Allowed</strong>: The SDR must focus fully on conversation. Answers are captured via automatic transcription (Fathom, Jamie AI, or Fireflies).</li>
+                    <li><strong>Post-Call Synthesis</strong>: SDR copies the transcript from the recording tool and pastes it into Step 3 to map answers and auto-generate reports.</li>
+                    <li><strong>Schedule Hand-over</strong>: Before ending the call, the SDR must book a Positional Meeting with Amendra Pratap.</li>
+                </ol>
+
+                <h2>Pre-Screen Call Rapport Guides</h2>
+                <p>Asynchronously generated upon Dossier compilation, the Rapport Guide accordion auto-expands on step transition. It summarizes findings into actionable call prompts: </p>
+                <ul>
+                    <li><strong>Opening Statements</strong>: Curated hooks to build immediate rapport.</li>
+                    <li><strong>Key Facts</strong>: Vital prospect metrics (budget parameters, consolidated sheet counts).</li>
+                    <li><strong>Core Pain Points</strong>: Primary business obstacles identified during booking.</li>
+                    <li><strong>Forbidden Phrases</strong>: Guardrail warnings blocking SDRs from mentioning unapproved discounts or service items.</li>
+                </ul>
+
+                <h2>Battlecard Questionnaire Variants</h2>
+                <p>Selectable discovery scripts available on the teleprompter panel:</p>
+                
+                <h3>Variant A: First-Time TM1 / Planning Analytics Users</h3>
+                <p><em>Targeting: Prospects consolidating data manually in Excel who do not run a dedicated multi-dimensional database.</em></p>
+                <ol>
+                    <li><strong>ERP Integration:</strong> What general ledger/ERP system (e.g., SAP, MS Business Central, NetSuite) are you using, and does it currently integrate with your planning tool?</li>
+                    <li><strong>Spreadsheets Count:</strong> How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting, and are there issues with version control?</li>
+                    <li><strong>Planning Workflows:</strong> What specific planning workflows (e.g., actuals, payroll allocations, cost analysis, budgeting, forecasting) are you executing, and are allocations inconsistent or time-consuming?</li>
+                    <li><strong>Reporting Stack:</strong> What reporting tools (e.g., Power BI, Qlik, Tableau, Excel PAX/PAW) do you use for management reporting, and do you manually export CSV files to reconcile data?</li>
+                    <li><strong>Drill Down Capability:</strong> Do users need to drill down from high-level reports to transaction-level GL data, and do you perform multi-currency transactions?</li>
+                    <li><strong>Admin Staffing:</strong> Do you have internal developers/admins to manage these systems, or is there a key-person risk if someone leaves?</li>
+                    <li><strong>User Counts:</strong> How many planning contributors, read-only users, and administrators are involved, and would they need formal training?</li>
+                    <li><strong>Repetitive Operations:</strong> What repetitive financial tasks feel most manual, and would conversational AI access to financial queries benefit your executives?</li>
+                    <li><strong>Timeline:</strong> What is your target timeline for going live, and do you need a parallel run?</li>
+                    <li><strong>Budget Framework:</strong> Is there a budget allocated for licensing and delivery, and what is your internal approval/purchase order process?</li>
+                    <li><strong>Tool Evaluation:</strong> Have you evaluated other tools (e.g. Workday, Anaplan), and who else is involved in the final decision?</li>
+                    <li><strong>Success Criteria:</strong> What does success look like, and would a 60-day trial of connectors (like DataFusion) or a free Proof of Concept (POC) help validate?</li>
+                </ol>
+
+                <h3>Variant B: Existing TM1 / Planning Analytics Users</h3>
+                <p><em>Targeting: Prospects who already run IBM Planning Analytics / TM1 but face support bottlenecks, performance limits, or require upgrades.</em></p>
+                <ol>
+                    <li><strong>Version & Deployment:</strong> What version of TM1/Planning Analytics are you running, and is it deployed on-premise or in the IBM Cloud?</li>
+                    <li><strong>Instance Count:</strong> How many TM1 instances do you run (e.g., production-only, or separate dev and test environments)?</li>
+                    <li><strong>Model Scale:</strong> How many models, cubes, dimensions, and user groups are you currently running?</li>
+                    <li><strong>Performance Metrics:</strong> Have you checked your system's performance, RAM usage, hard disk space, or feeder memory usage?</li>
+                    <li><strong>Log File Size:</strong> Are log files being automatically cleared, and what is the typical size of your TM1 log files (e.g., is it under or over the 50MB standard)?</li>
+                    <li><strong>Report Load Times:</strong> What are the typical report load times for your end-users, and are they above the 5-second threshold?</li>
+                    <li><strong>Team Staffing:</strong> Do you have dedicated in-house TM1 administrators/developers, or are you dependent on key individuals?</li>
+                    <li><strong>Vendor Lock-in:</strong> Are you currently working with another TM1 vendor? Are you locked into a rigid contract with separate rates for support and development?</li>
+                    <li><strong>Backlog Scale:</strong> What is your current backlog of enhancements, bugs, or data reconciliation tasks, and how is it prioritized?</li>
+                    <li><strong>Training Portals:</strong> Have your TM1 developers and power users had formal training, and would they benefit from free access to professional training courses?</li>
+                    <li><strong>Reporting Integration:</strong> Are you using Power BI, Tableau, or Qlik, and do you have a direct database connection?</li>
+                    <li><strong>Approval Timeline:</strong> Who has final authority to approve support changes, and what is the timeline to transition support?</li>
+                </ol>
+
+                <h3>Variant C: First-Time Generative AI Users</h3>
+                <p><em>Targeting: Enterprise prospects wanting to automate processes or integrate AI agent networks.</em></p>
+                <ol>
+                    <li><strong>Reporting Bottlenecks:</strong> How many slides are in your monthly executive financial reports, and how much time does the finance team spend manually extracting, cleansing, and formatting data for them?</li>
+                    <li><strong>Data Source Matrix:</strong> What enterprise systems and data sources (e.g., TM1, Adobe Analytics, Google Ad Manager, Adobe AdSlot, BigQuery, SQL) need to connect for automated reporting?</li>
+                    <li><strong>Natural Language Queries:</strong> Would executives and managers benefit from asking natural language questions (e.g. "AskFinance") to query financial data in real time?</li>
+                    <li><strong>Operational Repetition:</strong> What other areas in the business (e.g. Sales, Editorial, HR, IT, Procurement, Legal) have repetitive workflows ripe for automation?</li>
+                    <li><strong>AI Exposure:</strong> Have you experimented with or deployed any generative AI or automation tools internally?</li>
+                    <li><strong>Cloud Stack:</strong> What is your primary cloud environment (e.g. GCP, AWS, Azure, on-premise) and how do you manage data security?</li>
+                    <li><strong>Access Control:</strong> Do you require specific role-based access controls and security protocols for financial data queried by AI?</li>
+                    <li><strong>Co-Creation POC:</strong> Would you be open to a 2-to-6 week co-creation Proof of Concept (POC) to demonstrate value before full production rollout?</li>
+                    <li><strong>Resource Commitment:</strong> Can you commit a primary business contact and technical resource to collaborate during a 2-to-6 week POC?</li>
+                    <li><strong>Decision Timelines:</strong> Are you willing to commit to a Decision Workshop within 10 days of POC completion to confirm next steps?</li>
+                    <li><strong>Budget Awareness:</strong> Are you aware of the indicative costs for enterprise generative AI licensing ($160k+/yr) and implementation services ($125k+)?</li>
+                    <li><strong>Stakeholders:</strong> What is your timeline for starting an AI pilot, and who are the key executive stakeholders involved?</li>
+                </ol>
+            </section>
+
+            <!-- SECTION 5: Component 04 -->
+            <section class="doc-section" id="comp-04">
+                <h1>Component 04: Central Call Recording Directory</h1>
+                <p>The technical brief outlines a central, chronological directory for recorded calls (attaching to HubSpot tickets, filterable by SDR, with inline audio player and transcript extractors).</p>
+                <div class="alert-box alert-box-warning">
+                    <strong>Integration Status: Deferred</strong>
+                    In alignment with the $0 extra-spend tooling constraint and the preference for manual copy-paste workflows to establish operational maturity first, Component 04 integrations (HubSpot CRM ticket sync and Fireflies API hooks) are currently deferred. The system currently caches lead history locally for immediate workspace restoration.
+                </div>
+                <ul>
+                    <li><strong>Local Lead Storage Card</strong>: Saves and archives all past preparation sessions and synthesis runs locally in the browser's persistent session store.</li>
+                    <li><strong>Workspace Restoration</strong>: Clicking <strong>Load Console</strong> on any historical lead retrieves the session parameters, attached document contents, transcript texts, and restores all 9 rendered report tabs instantly.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 6: Component 05 -->
+            <section class="doc-section" id="comp-05">
+                <h1>Component 05: Automated Reports & Synthesis</h1>
+                <p>Pasting a transcript in Step 3 compiles a suite of 9 reports (incorporating the 7 playbooks and standard summaries). The assistant ensures output layout compliance and structural integrity.</p>
+                
+                <h2>The 9 Generated Deliverables</h2>
+                <p>The coprocessor synthesizes 9 distinct deliverables, mapping the 7 required reports from the brief plus 2 internal/archival documents:</p>
+                <ol>
+                    <li><strong>Questionnaire Answers</strong>: Formatted responses mapping the transcript answers to the 12 discovery script questions based on the selected variant.</li>
+                    <li><strong>Qualification & Next Steps</strong>: The SDR lead scorecard containing the Qualification Score (HOT, WARM, or COLD), scoring rationale, recommended next steps, and red flags.</li>
+                    <li><strong>Migration Report</strong>: A branded technical migration checklist and readiness assessment, crucial for legacy TM1 upgrade prospects.</li>
+                    <li><strong>Client Recap Email</strong>: A standard follow-up email layout compiling the top 3 takeaways and automatically embedding the Vidyard/Teams screencast link.</li>
+                    <li><strong>Summary Sheet</strong>: An internal table summarizing attendees, service track interest, key discussion points, and prospect sentiment.</li>
+                    <li><strong>Meeting Notes</strong>: Chronological meeting minutes capturing the contextual details, technical notes, and direct quotes from the call.</li>
+                    <li><strong>Consultative Proposal</strong>: A preliminary B2B scope document outlining requirements, proposed services (grounded in standard catalog pricing), approach/timeline, and team structure.</li>
+                    <li><strong>Action Items</strong>: A tasks matrix outlining clear follow-up deliverables and explicit deadlines assigned to the SDR or the client.</li>
+                    <li><strong>Raw Call Transcript</strong>: An archived record of the copy-pasted transcript.</li>
+                </ol>
+
+                <h2>Screencast Video Integration</h2>
+                <p>SDRs can input a screencast URL in the synthesis console:
+                    <ul>
+                        <li>Direct video URLs (<code>.mp4</code>, <code>.webm</code>) render inside an inline HTML5 video player.</li>
+                        <li>External video URLs (e.g. Vidyard, Microsoft Teams, or Google Drive views) render a styled link card with an "Open Link ↗" shortcut.</li>
+                    </ul>
+                </p>
+
+                <h2>Pricing Sovereignty Enforcement</h2>
+                <p>The coprocessor strictly overrides transcript references to custom discounts or verbal promises. Pricing details are grounded in standard catalog rates:</p>
+                <pre><code>watsonx AI Pilot SaaS:          A$160,000+ / year
+watsonx AI Implementation:      A$125,000 (one-time)
+TM1 Flight Check:               A$5,800 (fixed)
+TM1 DevOps Blue Support:        A$4,560 / month</code></pre>
+                <p>If anomalous or custom pricing values are discovered, the model replaces them with standard list rates and appends a Grounded Pricing Failsafe warning label.</p>
+            </section>
+
+            <!-- SECTION 7: Component 06 -->
+            <section class="doc-section" id="comp-06">
+                <h1>Component 06: Positional Meeting Booking</h1>
+                <p>Once reports resolve, the SDR schedules a hand-over meeting. The booking console generates direct vCalendar files to accelerate calendar invitations.</p>
+                
+                <h2>Invite File Generation</h2>
+                <p>Clicking the booking action generates an RFC 5545 <code>.ics</code> invite file in the browser:</p>
+                <ul>
+                    <li><strong>Organizer</strong>: Set to <code>amie.lebios@octanesolutions.com.au</code>.</li>
+                    <li><strong>Attendees</strong>: Maps Amendra Pratap and the Client Email.</li>
+                    <li><strong>Location</strong>: In-Person Richmond address or Online Microsoft Teams/Zoom link.</li>
+                    <li><strong>Timezones</strong>: Calculated in standard UTC.</li>
+                </ul>
+                <p>The calendar file auto-downloads on trigger. The booking input form is replaced with a <strong>Confirmation Card</strong> showing schedule metadata, organizer details, and hand-over checklist status.</p>
+            </section>
+
+            <!-- SECTION 7b: Component 07 - Settings Panel -->
+            <section class="doc-section" id="comp-07">
+                <h1>Component 07: Settings Panel</h1>
+                <p>The <strong>⚙ Assistant Configurations &amp; Custom System Instructions</strong> panel is a collapsible settings drawer accessed via the <code>⚙ Settings</code> button in the dashboard header. It controls the AI engine, persona behavior, prompt templates, knowledge base documents, and developer options. All settings persist to <code>localStorage</code> and are restored on page reload.</p>
+
+                <h2>Section 1: API Authentication</h2>
+                <p>Configures the connection to the large language model (LLM) backend that powers the AI Coprocessor.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Control</th>
+                            <th>ID</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>LLM Provider</strong></td>
+                            <td><code>#settings-api-provider</code></td>
+                            <td>Selects the AI provider (Mistral AI, Anthropic Claude). This determines the API authentication format and model catalog available in the engine dropdown.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>API Base URL</strong></td>
+                            <td><code>#settings-api-url</code></td>
+                            <td>The endpoint URL for the AI backend. Default is <code>/api/chat</code> (proxied through the Express server). Can be overridden to point to a custom self-hosted endpoint or direct API URL.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>LLM Model / Engine</strong></td>
+                            <td><code>#settings-api-model</code></td>
+                            <td>Selects the specific model to use. Options include <em>Mistral Large</em>, <em>Mistral Small</em>, <em>Claude 3.5 Sonnet</em>, and <em>Claude 3.5 Haiku</em>. The model determines response quality, latency, and token cost.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="alert-box">
+                    <strong>How it works</strong>
+                    When the SDR clicks "Save Configuration", these values are written to <code>localStorage</code> and sent as headers/body parameters on every subsequent AI request. The Express backend reads the provider and model to route the request to the correct upstream API.
+                </div>
+
+                <h2>Section 2: Persona Tone &amp; Behavior Presets</h2>
+                <p>Controls the writing style and analytical posture of all AI-generated outputs (dossiers, reports, emails, proposals). The selected preset modifies the system prompt wrapper injected before every LLM call.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Preset Name</th>
+                            <th>Behavior Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Clinical / Professional B2B</strong> (Default)</td>
+                            <td>Formal enterprise tone. Direct, structured outputs. No filler language. Suitable for CFO-facing deliverables.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Empathetic / Warm B2B</strong></td>
+                            <td>Softer tone with empathetic framing. Acknowledges pain points before presenting solutions. Suitable for first-contact rapport.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Skeptical / Critical Analyst</strong></td>
+                            <td>Challenges assumptions in the transcript. Flags inconsistencies and red flags. Outputs include counter-arguments.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>High-Detail Consultant</strong></td>
+                            <td>Verbose, deeply technical outputs. Includes implementation specifics, architecture notes, and expanded rationale blocks.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Concisely Direct</strong></td>
+                            <td>Minimal prose. Bullet-point outputs. Maximum signal density. Suitable for internal team handoffs.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Custom (Manual Prompts Modification)</strong></td>
+                            <td>Unlocks direct editing of the system prompt textareas in Section 3. Use this when none of the presets match the desired output style.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Section 3: Custom System Instructions</h2>
+                <p>Two editable prompt textareas that define the core behavior of the AI engine for the two primary workflows. These are pre-populated with production-grade system prompts and can be customized when the "Custom" tone preset is selected.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Prompt Field</th>
+                            <th>ID</th>
+                            <th>Controls</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Prospect Call Prep Dossier Prompt</strong></td>
+                            <td><code>#settings-prep-prompt</code></td>
+                            <td>The system instruction sent to the LLM when generating the 12-section pre-call dossier (Step 1). Defines how LinkedIn data, company website, booking intake, and GDrive SOWs are synthesized into actionable briefing sections.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Call Transcript Synthesizer Prompt</strong></td>
+                            <td><code>#settings-synth-prompt</code></td>
+                            <td>The system instruction sent to the LLM when generating reports from call transcripts (Step 3). Controls how questionnaire answers are extracted, pricing sovereignty is enforced, and deliverable formatting rules are applied.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="alert-box alert-box-warning">
+                    <strong>Caution</strong>
+                    Modifying these prompts without understanding their structure can break report formatting, remove pricing guardrails, or cause hallucinated outputs. Only modify when using the "Custom" tone preset and test with a sample transcript first.
+                </div>
+
+                <h2>Section 4: Knowledge Base Documents</h2>
+                <p>Manages the playbook files and training documents that are injected into every AI request as grounding context. The assistant uses these files to ensure outputs align with Octane's actual service offerings, pricing, and sales methodology.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Upload Drop Zone</strong></td>
+                            <td>Drag-and-drop or click-to-upload interface supporting PDF, DOCX, TXT, and MD files (max 2MB per file). Uploaded files are stored in the Express backend's <code>uploads/</code> directory and registered in the knowledge file index.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Stored Playbooks &amp; Files</strong></td>
+                            <td>Lists all active knowledge base documents. Core system files (e.g., customer profiles playbook, services catalog) are marked with a lock icon and cannot be deleted. User-uploaded files show a red delete button.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>🔄 Restore Defaults</strong></td>
+                            <td>Resets the knowledge base to the original factory playbook files, removing all user-uploaded custom documents. Does not affect API credentials or prompt settings.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Section 5: Developer Options</h2>
+                <p>Developer-facing toggles that control UI behavior for testing and demonstration purposes.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Toggle</th>
+                            <th>ID</th>
+                            <th>Effect When Enabled</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Enable Demo / Testing Mode</strong></td>
+                            <td><code>#settings-demo-mode</code></td>
+                            <td>Shows sample data pre-fill buttons ("💡 Load Sample Sarah Chen", "💡 Load Sample Transcript") in the pipeline steps. Also reveals the <strong>Call Directory</strong> nav button and the <strong>Active SDR</strong> selector in the header, and enables the intake copy-to-clipboard section on the booking success page. This mode is stored in <code>localStorage</code> under the key <code>tiny_demo_mode</code>.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="alert-box">
+                    <strong>Production vs. Demo Mode</strong>
+                    In production (Demo Mode disabled), the dashboard presents a clean SDR workspace without developer shortcuts. The Call Directory, Active SDR dropdown, and sample data buttons are hidden. Enable Demo Mode only for internal testing, screencast recording, or stakeholder walk-throughs.
+                </div>
+            </section>
+
+            <!-- SECTION 8: Playbook Profiles -->
+            <section class="doc-section" id="ref-profiles">
+                <h1>Playbook Reference: Customer Profiles</h1>
+                <p>The official buyer segments and client references used by the assistant to classify leads and map pain points during dossier compilation.</p>
+                
+                <h2>Core Buyer Segments</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Segment Name</th>
+                            <th>Typical Title</th>
+                            <th>Key Pain Points</th>
+                            <th>Recommended Octane Product/Service</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Large TM1 Shops</strong></td>
+                            <td>System Owner or IT</td>
+                            <td>High resource cost, accessing skilled resources, inflexible vendors, support maturity.</td>
+                            <td><strong>Octane Black</strong> (Full onshore/offshore support for 200+ users)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mid-Size TM1 Shops</strong></td>
+                            <td>CFO or Head of FP&A</td>
+                            <td>High support costs, project backlog, ad-hoc support structures.</td>
+                            <td><strong>Octane Blue Support</strong> with licenses expansion roadmap</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Small TM1 Shops</strong></td>
+                            <td>CFO or Head of FP&A</td>
+                            <td>Spreadsheet dependency, backlog of bugs/enhancements, manual forecasting.</td>
+                            <td><strong>Octane Blue Support</strong> (DevOps base package)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>On-Premise TM1 Shops</strong></td>
+                            <td>CFO or Head of FP&A</td>
+                            <td>Legacy version limitations, migration risks, outdated hardware infrastructure.</td>
+                            <td><strong>TM1 Modernisation Play</strong> (Cloud / PA migration roadmap)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Supply Chain Prospects</strong></td>
+                            <td>CFO / Head of Supply Chain</td>
+                            <td>Manual Excel demand planning, disconnected operations, reconciliation lags.</td>
+                            <td><strong>Custom Supply Chain Model</strong> using accelerated templates</td>
+                        </tr>
+                        <tr>
+                            <td><strong>New FP&A Prospects</strong></td>
+                            <td>CFO or Head of FP&A</td>
+                            <td>Manual budgeting, slow management reporting cycles, turnover >$50M.</td>
+                            <td><strong>IBM Planning Analytics (TM1)</strong> base deployment</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Enterprise AI (Large)</strong></td>
+                            <td>CFO</td>
+                            <td>Slow month-end close (5+ days), repetitive accounting queries, turnover >$500M.</td>
+                            <td><strong>Octane Finance Agent + FastClose</strong> integration</td>
+                        </tr>
+                        <tr>
+                            <td><strong>MidMarket AI in Finance</strong></td>
+                            <td>CFO</td>
+                            <td>Manual report extraction, board packs take too long, struggling to hire, turnover $100M-$500M.</td>
+                            <td><strong>FastClose</strong> entry product, upselling to <strong>Finance Agent</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>IBM PA + AI Upgrade</strong></td>
+                            <td>CFO / System Owner</td>
+                            <td>Underutilized Planning Analytics investment, competitor pressure, manual analysis.</td>
+                            <td><strong>Finance Agent</strong> integration on top of existing TM1 models</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Historical & Active Clients Reference</h2>
+                <ul>
+                    <li><strong>Steric</strong> (Healthcare / Sterilisation):
+                        <ul>
+                            <li><em>Pain Points:</em> Limited in-house developer bandwidth, support responsiveness.</li>
+                            <li><em>Product:</em> <strong>Octane Blue</strong></li>
+                        </ul>
+                    </li>
+                    <li><strong>GreyOrange</strong> (Tech / Robotics):
+                        <ul>
+                            <li><em>Pain Points:</em> Need for stable analytics support, faster SLA ticket resolution.</li>
+                            <li><em>Product:</em> <strong>Octane Blue Support</strong></li>
+                        </ul>
+                    </li>
+                    <li><strong>Iqony / STEAG</strong> (Energy / Utilities):
+                        <ul>
+                            <li><em>Pain Points:</em> Data integration complexity between ERPs and TM1.</li>
+                            <li><em>Product:</em> <strong>DataFusion Connector Setup</strong></li>
+                        </ul>
+                    </li>
+                    <li><strong>Shift</strong> (Financial Services / FinTech):
+                        <ul>
+                            <li><em>Pain Points:</em> Spreadsheet dependency, slow forecasting cycles.</li>
+                            <li><em>Product:</em> <strong>Octane Blue</strong> & <strong>IBM Planning Analytics</strong></li>
+                        </ul>
+                    </li>
+                    <li><strong>mycar</strong> (Automotive / Retail):
+                        <ul>
+                            <li><em>Pain Points:</em> Memory limitations in legacy instances, RAM bottlenecks.</li>
+                            <li><em>Product:</em> <strong>Infrastructure Upgrade (RAM)</strong> & <strong>Planning Analytics Upgrade</strong></li>
+                        </ul>
+                    </li>
+                    <li><strong>McPherson's</strong> (Consumer Goods):
+                        <ul>
+                            <li><em>Pain Points:</em> Legacy reporting limits, disconnected planning sheets.</li>
+                            <li><em>Product:</em> <strong>IBM Planning Analytics</strong></li>
+                        </ul>
+                    </li>
+                    <li><strong>News Corp Australia</strong> (Media):
+                        <ul>
+                            <li><em>Pain Points:</em> User collaboration inefficiencies, dashboard renewal bottlenecks.</li>
+                            <li><em>Product:</em> <strong>TeamOne Platform Renewal</strong></li>
+                        </ul>
+                    </li>
+                    <li><strong>Fintechs</strong> (Financial Services / Payments / AU & NZ):
+                        <ul>
+                            <li><em>Segment Criteria:</em> Operating 3+ years, CFO present, $10M+ annual revenue, raised Series C, currently using Excel or TM1.</li>
+                            <li><em>Scenario A (Accounts Payable Volume):</em>
+                                <ul>
+                                    <li><strong>Pain Points:</strong> Dealing with excessively high transaction volumes in accounts payable.</li>
+                                    <li><strong>Recommended Product:</strong> <strong>IBM Planning Analytics (TM1)</strong></li>
+                                </ul>
+                            </li>
+                            <li><em>Scenario B (Hiring AP Staff):</em>
+                                <ul>
+                                    <li><strong>Pain Points:</strong> Attempted to hire accounts payable staff in the last 3 months and faced recruiting bottlenecks.</li>
+                                    <li><strong>Recommended Product:</strong> <strong>AI Assistants (finance agent integration)</strong></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- SECTION 9: Playbook Catalog -->
+            <section class="doc-section" id="ref-catalog">
+                <h1>Playbook Reference: Standard Services Catalog</h1>
+                <p>Standard product definitions, pricing guidelines, and SLA requirements used to enforce pricing sovereignty.</p>
+                
+                <h2>1. DevOps Support Packages</h2>
+                <h3>DevOps Blue Support</h3>
+                <ul>
+                    <li><strong>Pricing</strong>: A$4,560 / month (Flat-rate base support).</li>
+                    <li><strong>Key Features</strong>:
+                        <ul>
+                            <li>No rate difference between development hours and support hours.</li>
+                            <li>Rollover hours (unused package hours roll forward to the next month).</li>
+                            <li>Monthly system checks and model optimization logs.</li>
+                            <li>Free unlimited power-user training library access.</li>
+                        </ul>
+                    </li>
+                    <li><strong>SLAs (Response Times)</strong>:
+                        <ul>
+                            <li><em>Urgent:</em> &lt; 1 hour (24/7 coverage)</li>
+                            <li><em>High:</em> &lt; 4 hours</li>
+                            <li><em>Medium:</em> &lt; 8 hours</li>
+                            <li><em>Low:</em> &lt; 24 hours</li>
+                        </ul>
+                    </li>
+                </ul>
+                <h3>DevOps Red Support</h3>
+                <ul>
+                    <li><strong>Pricing</strong>: Advanced customized pricing tier.</li>
+                    <li><strong>Target</strong>: Larger database instances, complex integrations, or organizations with high deployment cadences requiring dedicated developer resources.</li>
+                </ul>
+
+                <h2>2. Advisory & Flight Check Services</h2>
+                <h3>TM1 Flight Check</h3>
+                <ul>
+                    <li><strong>Pricing</strong>: Fixed price of A$5,800.</li>
+                    <li><strong>Duration</strong>: 6 days.</li>
+                    <li><strong>Inclusions</strong>: Feeder memory optimization analysis, RAM/disk bottleneck reviews, and developer interviews compiling a readiness roadmap.</li>
+                </ul>
+
+                <h2>3. Integration Connectors</h2>
+                <h3>DataFusion Connector</h3>
+                <ul>
+                    <li><strong>Pricing</strong>: Fixed setup rate of A$6,950.</li>
+                    <li><strong>Inclusions</strong>: ERP integration (e.g. NetSuite to TM1) for up to 5 standard report conversions in Dev, Test, and Prod instances.</li>
+                    <li><strong>Exclusions</strong>: Client must provide G/L database service accounts.</li>
+                </ul>
+
+                <h2>4. Training Services</h2>
+                <ul>
+                    <li><strong>Pricing</strong>: Standard custom developer or power user training rate is A$1,850/day.</li>
+                    <li><strong>Scope</strong>: Customized training plans focusing on model architecture, rule writing, TI process development, or end-user dashboard design.</li>
+                </ul>
+
+                <h2>5. Generative AI Packages</h2>
+                <h3>watsonx AI Pilot & Orchestrate</h3>
+                <ul>
+                    <li><strong>Indicative SaaS License</strong>: Starting at $160,000 / year.</li>
+                    <li><strong>Implementation Services</strong>: Starting at $125,000.</li>
+                    <li><strong>Co-Creation Proof of Concept (POC)</strong>: 2-to-6 week co-creation roadmap delivering active TM1/Adobe/Google database integrations.</li>
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <!-- Page Footer -->
+    <footer>
+        &copy; 2026 Octane Software Solutions. All rights reserved.
+    </footer>
+
+    <!-- Search Filtering and Anchor Link Highlight Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('doc-search');
+            const navItems = document.querySelectorAll('.sidebar-link-item');
+            const sections = document.querySelectorAll('.doc-section');
+            
+            // Sidebar Scroll Spy Highlight
+            window.addEventListener('scroll', () => {
+                let currentSection = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= (sectionTop - 120)) {
+                        currentSection = section.getAttribute('id');
+                    }
+                });
+
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-section') === currentSection) {
+                        item.classList.add('active');
+                    }
+                });
+            });
+
+            // Live Search Filter
+            searchInput.addEventListener('input', () => {
+                const query = searchInput.value.toLowerCase().trim();
+                
+                navItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(query)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                // Toggle headers based on children visibility
+                document.querySelectorAll('.sidebar ul').forEach(ul => {
+                    const hasVisibleChildren = Array.from(ul.children).some(li => li.style.display !== 'none');
+                    const header = ul.previousElementSibling;
+                    if (header && header.classList.contains('nav-group-title')) {
+                        header.style.display = hasVisibleChildren ? 'block' : 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

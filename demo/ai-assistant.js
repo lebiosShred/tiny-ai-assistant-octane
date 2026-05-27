@@ -85,6 +85,9 @@ I am about to have a 30-minute pre-screen call with a prospect. Using the inputs
 ${params.intakeAnswers || "None provided"}
 6. LinkedIn Profile / Experience:
 ${params.linkedinInfo || "None provided"}
+7. Attached Google Drive Document Name: ${params.gDriveFile || "None"}
+8. Attached Google Drive Document Content:
+${params.gDriveFileContent || "No document content attached."}
 
 --- OCTANE TARGET CUSTOMER PROFILES PLAYBOOK ---
 Refer to these standard target customer profiles for Octane to classify the prospect:
@@ -194,6 +197,69 @@ Estimate the travel distance/time for an in-person meeting. The travel origin is
 
 === TRAVEL DISTANCE ===
 ~45 min from Amendra's location (Richmond, Melbourne, VIC 3121)`;
+        }
+    }
+
+    /**
+     * Extracts and compiles a quick-reference Rapport Guide for pre-screen calls.
+     * @param {string} dossierContent The generated dossier content
+     * @param {Object} customConfig API configurations
+     */
+    async function generateRapportGuide(dossierContent, customConfig = {}) {
+        const config = { ...DEFAULT_CONFIG, ...customConfig };
+        const prompt = `You are a senior sales coach at Octane Software Solutions.
+Based on the following prospect preparation dossier, extract and structure a high-impact, quick-reference RAPPORT GUIDE for the sales representative (SDR) to use during their 30-minute pre-screen call.
+
+Dossier Content:
+${dossierContent}
+
+Generate the Rapport Guide in clean HTML. You must structure it with these sections:
+1. **Conversation Openers** (3 customized openers, emphasizing relevance and value rather than generic questions).
+2. **Key Context & Facts** (FP&A team size, tech stack details, company size, recent milestones, or trigger events).
+3. **Pain Points to Target** (2-3 main bottlenecks or challenges they are likely facing, specifically mapped to Octane solutions).
+4. **Phrases to Avoid / Competitor Flags** (competitors to watch out for, sensitive topics to avoid).
+
+Use standard HTML formatting like <strong>, <ul>, <li>, and <p>. Do not write conversational prefixes.`;
+
+        const messages = [
+            {
+                role: "system",
+                content: "You are a professional sales consultant. Respond only in clean HTML containing the requested sections."
+            },
+            {
+                role: "user",
+                content: prompt
+            }
+        ];
+
+        try {
+            return await callMistralAPI(messages, config);
+        } catch (err) {
+            console.error("Error generating rapport guide:", err);
+            // Fallback parsing if LLM call fails
+            return `
+                <p><strong>1. Conversation Openers:</strong></p>
+                <ul>
+                    <li>"Hi, thank you for booking some time with us. I saw you mentioned a bottleneck regarding NetSuite data consolidation in Excel. Can you tell me a bit more about how that consolidation is currently handled?"</li>
+                    <li>"I noticed your role is leading the FP&A team. Normally, we see finance leaders spending 80% of their time on manual copy-pasting rather than analysis. Is that what you are experiencing?"</li>
+                    <li>"I saw your company URL. How does your team currently manage planning data flows across NetSuite and other systems?"</li>
+                </ul>
+                <p><strong>2. Key Context & Facts:</strong></p>
+                <ul>
+                    <li>Interest track: Planning & Analytics or AI.</li>
+                    <li>Role: Head of FP&A or Finance.</li>
+                </ul>
+                <p><strong>3. Pain Points to Target:</strong></p>
+                <ul>
+                    <li>Manual budget and forecasting updates.</li>
+                    <li>Consolidation formula errors in Excel sheets.</li>
+                </ul>
+                <p><strong>4. Phrases to Avoid / Competitor Flags:</strong></p>
+                <ul>
+                    <li>Do not mention other client specifics without authorization.</li>
+                    <li>Be cautious if they mention evaluating Anaplan or Adaptive Insights.</li>
+                </ul>
+            `;
         }
     }
 
@@ -876,6 +942,7 @@ ${screencastSegment}
 // Expose functions as ES Module
 export const TinyAI = {
     generateProspectDossier,
+    generateRapportGuide,
     synthesizeCallTranscript,
     generateQuestionnaireAnswers,
     generateMigrationReport,

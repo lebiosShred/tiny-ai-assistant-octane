@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeDocTab = 'questionnaireAnswers';
     let currentQuestions = [];
     let currentDossierText = "";
+    let currentScreencastUrl = "";
     let selectedHistoryItem = null;
     let activeDetailDocTab = 'questionnaireAnswers';
     let currentView = 'pipeline'; // 'pipeline' or 'directory'
@@ -386,12 +387,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (document.getElementById('prep-rep')) {
                 document.getElementById('prep-rep').value = item.rep || 'Albert';
             }
-            attachedGDriveFile = item.gDriveFile || null;
+            attachedGDriveFile = item.gDriveFile || item.oneDriveFile || null;
+            attachedGDriveFileId = item.gDriveFileId || null;
+            attachedGDriveFileContent = item.gDriveFileContent || null;
             const badge = document.getElementById('gdrive-attached-badge');
             const badgeName = document.getElementById('gdrive-attached-name');
             if (badge && badgeName) {
-                if (item.gDriveFile) {
-                    badgeName.innerText = item.gDriveFile;
+                if (attachedGDriveFile) {
+                    badgeName.innerText = attachedGDriveFile;
                     badge.style.display = 'flex';
                 } else {
                     badge.style.display = 'none';
@@ -404,6 +407,25 @@ document.addEventListener('DOMContentLoaded', () => {
             // Save raw dossier text and render accordion
             currentDossierText = item.content;
             renderDossierHtml(item.content);
+
+            // Restore Rapport Guide
+            if (rapportGuidePanel && rapportGuideBody && item.content) {
+                rapportGuidePanel.style.display = 'block';
+                rapportGuideBody.innerHTML = '<div style="font-style: italic; color: rgba(0,0,0,0.4); text-align: center; padding: 0.5rem 0;">💡 Loading Rapport Guide talking points...</div>';
+                TinyAI.generateRapportGuide(item.content, getApiConfig())
+                    .then(guideHtml => {
+                        rapportGuideBody.innerHTML = guideHtml;
+                        // Auto-expand Rapport Guide
+                        rapportGuideBody.style.display = 'block';
+                        if (rapportGuideToggleIcon) rapportGuideToggleIcon.innerText = '▲ Collapse';
+                    })
+                    .catch(err => {
+                        console.warn("Failed to generate rapport guide:", err);
+                        rapportGuideBody.innerHTML = '<div style="color: #ff4d4d; padding: 0.5rem 0; text-align: center;">Failed to generate talking points.</div>';
+                    });
+            } else if (rapportGuidePanel) {
+                rapportGuidePanel.style.display = 'none';
+            }
             
             goToStep(1);
             step1NextBtn.style.display = 'inline-flex';
@@ -463,6 +485,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.style.background = 'rgba(0, 200, 83, 0.05)';
             });
             
+            currentScreencastUrl = item.screencast || '';
+            const screencastInput = document.getElementById('synth-screencast');
+            if (screencastInput) screencastInput.value = currentScreencastUrl;
+
             goToStep(3);
             switchView('pipeline');
             showToast(`Restored Call Report Synthesis for ${item.company}`);
@@ -523,6 +549,49 @@ document.addEventListener('DOMContentLoaded', () => {
             newStageSelect.addEventListener('change', async () => {
                 await updateHistoryStage(item.id, newStageSelect.value);
             });
+        }
+        
+        // Populating video player logic
+        const videoSection = document.getElementById('detail-video-section');
+        const videoPlayer = document.getElementById('detail-video-player');
+        const videoPlaceholder = document.getElementById('detail-video-placeholder');
+        const videoUrlLabel = document.getElementById('detail-video-url-label');
+        const videoOpenBtn = document.getElementById('detail-video-open-btn');
+        
+        if (videoSection) {
+            const recordingUrl = item.screencast || '';
+            if (recordingUrl) {
+                videoSection.style.display = 'flex';
+                if (videoUrlLabel) videoUrlLabel.textContent = recordingUrl;
+                
+                const isDirectVideo = recordingUrl.toLowerCase().endsWith('.mp4') || 
+                                      recordingUrl.toLowerCase().endsWith('.webm') || 
+                                      recordingUrl.toLowerCase().endsWith('.ogv');
+                                      
+                if (isDirectVideo && videoPlayer && videoPlaceholder) {
+                    videoPlayer.style.display = 'block';
+                    videoPlayer.src = recordingUrl;
+                    videoPlaceholder.style.display = 'none';
+                } else if (videoPlayer && videoPlaceholder) {
+                    videoPlayer.style.display = 'none';
+                    videoPlayer.src = '';
+                    videoPlaceholder.style.display = 'flex';
+                    if (videoOpenBtn) {
+                        const newOpenBtn = videoOpenBtn.cloneNode(true);
+                        videoOpenBtn.parentNode.replaceChild(newOpenBtn, videoOpenBtn);
+                        newOpenBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            window.open(recordingUrl, '_blank');
+                        });
+                    }
+                }
+            } else {
+                videoSection.style.display = 'none';
+                if (videoPlayer) {
+                    videoPlayer.style.display = 'none';
+                    videoPlayer.src = '';
+                }
+            }
         }
         
         const audioSection = document.querySelector('.detail-audio-section');
@@ -1268,6 +1337,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const battlecardSelector = document.getElementById('battlecard-selector');
     const battlecardBody = document.getElementById('battlecard-body');
 
+    // Rapport Guide Reference
+    const rapportGuidePanel = document.getElementById('rapport-guide-panel');
+    const rapportGuideHeader = document.getElementById('rapport-guide-header');
+    const rapportGuideBody = document.getElementById('rapport-guide-body');
+    const rapportGuideToggleIcon = document.getElementById('rapport-guide-toggle-icon');
+
     // Output Side
     const outputConsole = document.getElementById('output-console');
     const outputEmptyState = document.getElementById('output-empty-state');
@@ -1347,6 +1422,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (stepNum === 2) {
             renderBattlecards();
             renderQuickReference();
+            // Auto-expand Rapport Guide when entering Step 2
+            if (rapportGuideBody && rapportGuideToggleIcon) {
+                rapportGuideBody.style.display = 'block';
+                rapportGuideToggleIcon.innerText = '▲ Collapse';
+            }
         } else if (stepNum === 3) {
             if (currentDocs) {
                 showResults(null, true);
@@ -1432,11 +1512,93 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            const dateStr = new Date(date + 'T' + time).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            positionalConfirmBtn.innerText = '✅ Booked';
-            positionalConfirmBtn.disabled = true;
-            positionalConfirmBtn.style.background = '#00c853';
-            showToast(`Positional meeting booked: ${dateStr} at ${time} (${format})`);
+            const clientName = prepNameInput.value.trim() || 'Client';
+            const companyName = prepCompanyInput.value.trim() || 'Prospect';
+            const clientEmail = prepEmailInput.value.trim() || 'client@company.com';
+            
+            const start = new Date(date + 'T' + time);
+            const end = new Date(start.getTime() + 30 * 60 * 1000); // 30-min duration
+            
+            const formatICSDate = (dateObj) => {
+                const pad = num => String(num).padStart(2, '0');
+                return dateObj.getUTCFullYear() +
+                    pad(dateObj.getUTCMonth() + 1) +
+                    pad(dateObj.getUTCDate()) + 'T' +
+                    pad(dateObj.getUTCHours()) +
+                    pad(dateObj.getUTCMinutes()) +
+                    pad(dateObj.getUTCSeconds()) + 'Z';
+            };
+
+            const dtstamp = formatICSDate(new Date());
+            const dtstart = formatICSDate(start);
+            const dtend = formatICSDate(end);
+            
+            const location = format === 'in-person' ? "Richmond, Melbourne, VIC 3121" : "Online Microsoft Teams/Zoom Meeting";
+            
+            // Construct ICS format content
+            const icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Octane Software Solutions//AI Assistant//EN',
+                'CALSCALE:GREGORIAN',
+                'METHOD:REQUEST',
+                'BEGIN:VEVENT',
+                `UID:meeting_${Date.now()}@octanesolutions.com.au`,
+                `DTSTAMP:${dtstamp}`,
+                `DTSTART:${dtstart}`,
+                `DTEND:${dtend}`,
+                `SUMMARY:Positional Meeting: Octane Software Solutions & ${companyName}`,
+                `DESCRIPTION:Positional Meeting to discuss FP\\&A or AI requirements.\\n\\nClient: ${clientName}\\nCompany: ${companyName}\\nFormat: ${format}`,
+                `LOCATION:${location}`,
+                'STATUS:CONFIRMED',
+                'ORGANIZER;CN="Amie Lebios":MAILTO:amie.lebios@octanesolutions.com.au',
+                `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN="${clientName}":MAILTO:${clientEmail}`,
+                'ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Amendra Pratap":MAILTO:amendra.pratap@octanesolutions.com.au',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\r\n');
+            
+            try {
+                // Download the ICS file in the browser
+                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute('download', `positional-meeting-${companyName.replace(/[^a-zA-Z0-9]/g, '_')}.ics`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                const dateStr = start.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                positionalConfirmBtn.innerText = '📅 Invite Downloaded';
+                positionalConfirmBtn.disabled = true;
+                positionalConfirmBtn.style.background = '#00c853';
+                
+                // Update UI state to show visual confirmation card
+                const bodyEl = document.querySelector('#positional-meeting-panel .positional-meeting-body');
+                if (bodyEl) {
+                    bodyEl.innerHTML = `
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%; padding: 0.25rem 0;">
+                            <div style="display: flex; align-items: center; gap: 6px; color: #00c853; font-weight: 700; font-size: 0.8rem;">
+                                <span>✔️ Positional Meeting invite generated.</span>
+                            </div>
+                            <p style="font-size: 0.75rem; color: rgba(0,0,0,0.6); margin: 0; line-height: 1.3;">
+                                Double-click the downloaded <strong>.ics</strong> file to add this event to Outlook or Google Calendar.
+                            </p>
+                            <div style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05); border-radius: 6px; padding: 0.5rem; font-size: 0.75rem; color: #333; display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem;">
+                                <div><strong>Date/Time:</strong> ${dateStr} at ${time} (UTC)</div>
+                                <div><strong>Location:</strong> ${location}</div>
+                                <div><strong>Organizer:</strong> Amie Lebios</div>
+                                <div><strong>Attendees:</strong> Amendra Pratap, ${clientName} (${clientEmail})</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                showToast(`Calendar invite downloaded: ${dateStr} at ${time} (${format})`);
+            } catch (err) {
+                console.error("Failed to generate calendar invite:", err);
+                showToast(`Error creating calendar invite: ${err.message}`);
+            }
         });
     }
 
@@ -1554,6 +1716,9 @@ document.addEventListener('DOMContentLoaded', () => {
         outputLoading.style.display = 'none';
         outputResults.style.display = 'none';
         currentDocs = null;
+        currentScreencastUrl = "";
+        const screencastInput = document.getElementById('synth-screencast');
+        if (screencastInput) screencastInput.value = "";
         if (typeof resetReportButtons === 'function') {
             resetReportButtons();
         }
@@ -1591,31 +1756,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2500);
     }
 
-    // --- Google Drive Integration Simulation ---
-    const GDRIVE_DATA = {
-        'Active Clients': [
-            { name: 'Meridian Logistics', isFolder: true },
-            { name: 'Atlas Financials', isFolder: true },
-            { name: 'Apex Retail', isFolder: true },
-            { name: 'Meridian_Logistics_SOW_2025.pdf', isFolder: false, size: 1258291 },
-            { name: 'Atlas_Financials_TM1_Migration_Scope_2025.pdf', isFolder: false, size: 2202009 }
-        ],
-        'Meridian Logistics': [
-            { name: 'Meridian_Logistics_SOW_2025.pdf', isFolder: false, size: 1258291 },
-            { name: 'Meridian_PA_Support_Requirement_Brief_2024.docx', isFolder: false, size: 460800 },
-            { name: 'Meridian_DataFusion_Schema_Specs.txt', isFolder: false, size: 24576 }
-        ],
-        'Atlas Financials': [
-            { name: 'Atlas_Financials_TM1_Migration_Scope_2025.pdf', isFolder: false, size: 2202009 },
-            { name: 'Atlas_Support_SLA_2024.docx', isFolder: false, size: 184320 }
-        ],
-        'Apex Retail': [
-            { name: 'Apex_Retail_Inventory_Planning_Model.xlsx', isFolder: false, size: 1887436 },
-            { name: 'Apex_Retail_AI_Integration_Brief_2025.pdf', isFolder: false, size: 1153433 }
-        ]
-    };
-    let gdriveCurrentFolder = 'Active Clients';
+    // --- Google Drive API Integration ---
+    let gdriveFolderStack = [];
+    let gdriveCurrentFolderId = ''; // Empty string defaults to configured root folder
+    let gdriveCurrentFolderName = 'root';
     let attachedGDriveFile = null;
+    let attachedGDriveFileId = null;
+    let attachedGDriveFileContent = null;
 
     const gdriveBrowseBtn = document.getElementById('prep-gdrive-browse-btn');
     const gdriveBrowserPanel = document.getElementById('gdrive-browser');
@@ -1624,38 +1771,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const gdriveRemoveBtn = document.getElementById('gdrive-attached-remove');
     const gdriveBadge = document.getElementById('gdrive-attached-badge');
 
-    function renderGDriveList() {
+    async function renderGDriveList() {
         const listEl = document.getElementById('gdrive-items-list');
         const folderTitle = document.getElementById('gdrive-current-folder');
         
         if (!listEl) return;
         
-        if (folderTitle) folderTitle.innerText = gdriveCurrentFolder;
+        if (folderTitle) folderTitle.innerText = gdriveCurrentFolderName;
         
         if (gdriveBackBtn) {
-            if (gdriveCurrentFolder !== 'Active Clients') {
+            if (gdriveFolderStack.length > 0) {
                 gdriveBackBtn.style.display = 'inline-block';
             } else {
                 gdriveBackBtn.style.display = 'none';
             }
         }
         
-        let items = GDRIVE_DATA[gdriveCurrentFolder] || [];
-        const query = (gdriveSearchInput?.value || '').toLowerCase().trim();
+        const query = (gdriveSearchInput?.value || '').trim();
         
         if (query) {
-            items = [];
-            for (const folder in GDRIVE_DATA) {
-                GDRIVE_DATA[folder].forEach(item => {
-                    if (!item.isFolder && item.name.toLowerCase().includes(query)) {
-                        if (!items.find(existing => existing.name === item.name)) {
-                            items.push(item);
-                        }
-                    }
-                });
+            listEl.innerHTML = '<div style="font-size: 0.75rem; text-align: center; padding: 0.5rem 0; color: #1a73e8;">🔍 Searching Drive...</div>';
+            try {
+                const res = await fetch(`/api/gdrive/search?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                renderItems(data.items || [], listEl);
+            } catch (err) {
+                listEl.innerHTML = `<div style="font-size: 0.7rem; color: #ff4d4d; text-align: center; padding: 0.5rem 0;">Search failed: ${escapeHTML(err.message)}</div>`;
             }
+            return;
         }
-        
+
+        listEl.innerHTML = '<div style="font-size: 0.75rem; text-align: center; padding: 0.5rem 0; color: #1a73e8;">📂 Loading items...</div>';
+        try {
+            const url = gdriveCurrentFolderId ? `/api/gdrive/list?folderId=${encodeURIComponent(gdriveCurrentFolderId)}` : '/api/gdrive/list';
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            renderItems(data.items || [], listEl);
+        } catch (err) {
+            listEl.innerHTML = `<div style="font-size: 0.7rem; color: #ff4d4d; text-align: center; padding: 0.5rem 0;">Load failed: ${escapeHTML(err.message)}</div>`;
+        }
+    }
+
+    function renderItems(items, listEl) {
         if (items.length === 0) {
             listEl.innerHTML = '<div style="font-size: 0.7rem; color: rgba(0,0,0,0.4); text-align: center; padding: 1rem 0;">No items found</div>';
             return;
@@ -1675,23 +1834,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="gdrive-item-name" style="cursor: ${item.isFolder ? 'pointer' : 'default'}; font-weight: ${item.isFolder ? 'bold' : 'normal'}; color: ${item.isFolder ? '#1a73e8' : 'inherit'};">${escapeHTML(item.name)}</span>
                     <span class="gdrive-item-size">${sizeText}</span>
                 </div>
-                ${item.isFolder ? '' : `<button type="button" class="gdrive-btn-attach">Attach</button>`}
+                ${item.isFolder ? '' : `<button type="button" class="gdrive-btn-attach" data-id="${item.id}" data-name="${escapeHTML(item.name)}">Attach</button>`}
             `;
             
             if (item.isFolder) {
                 itemDiv.querySelector('.gdrive-item-name').addEventListener('click', () => {
-                    gdriveCurrentFolder = item.name;
+                    gdriveFolderStack.push({ id: gdriveCurrentFolderId, name: gdriveCurrentFolderName });
+                    gdriveCurrentFolderId = item.id;
+                    gdriveCurrentFolderName = item.name;
+                    if (gdriveSearchInput) gdriveSearchInput.value = '';
                     renderGDriveList();
                 });
             } else {
-                itemDiv.querySelector('.gdrive-btn-attach').addEventListener('click', () => {
-                    attachedGDriveFile = item.name;
-                    const badgeName = document.getElementById('gdrive-attached-name');
-                    if (gdriveBadge && badgeName) {
-                        badgeName.innerText = item.name;
-                        gdriveBadge.style.display = 'flex';
+                itemDiv.querySelector('.gdrive-btn-attach').addEventListener('click', async (e) => {
+                    const fileId = e.target.getAttribute('data-id');
+                    const fileName = e.target.getAttribute('data-name');
+                    
+                    e.target.disabled = true;
+                    e.target.innerText = 'Attaching...';
+                    
+                    try {
+                        const res = await fetch(`/api/gdrive/read?fileId=${encodeURIComponent(fileId)}`);
+                        const data = await res.json();
+                        if (data.error) throw new Error(data.error);
+                        
+                        attachedGDriveFile = fileName;
+                        attachedGDriveFileId = fileId;
+                        attachedGDriveFileContent = data.content;
+                        
+                        const badgeName = document.getElementById('gdrive-attached-name');
+                        if (gdriveBadge && badgeName) {
+                            badgeName.innerText = fileName;
+                            gdriveBadge.style.display = 'flex';
+                        }
+                        showToast(`Attached ${fileName} from Google Drive!`);
+                    } catch (err) {
+                        showToast(`Failed to attach file: ${err.message}`);
+                        console.error('File attachment error:', err);
+                    } finally {
+                        e.target.disabled = false;
+                        e.target.innerText = 'Attach';
                     }
-                    showToast(`Attached ${item.name} from Google Drive!`);
                 });
             }
             
@@ -1713,27 +1896,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (gdriveBackBtn) {
         gdriveBackBtn.addEventListener('click', () => {
-            gdriveCurrentFolder = 'Active Clients';
-            renderGDriveList();
+            if (gdriveFolderStack.length > 0) {
+                const parent = gdriveFolderStack.pop();
+                gdriveCurrentFolderId = parent.id;
+                gdriveCurrentFolderName = parent.name;
+                if (gdriveSearchInput) gdriveSearchInput.value = '';
+                renderGDriveList();
+            }
         });
     }
 
+    let searchTimeout = null;
     if (gdriveSearchInput) {
         gdriveSearchInput.addEventListener('input', () => {
             if (gdriveBrowserPanel) {
                 gdriveBrowserPanel.style.display = 'block';
             }
-            renderGDriveList();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                renderGDriveList();
+            }, 300);
         });
     }
 
     if (gdriveRemoveBtn) {
         gdriveRemoveBtn.addEventListener('click', () => {
             attachedGDriveFile = null;
+            attachedGDriveFileId = null;
+            attachedGDriveFileContent = null;
             if (gdriveBadge) {
                 gdriveBadge.style.display = 'none';
             }
             showToast("Google Drive SOW attachment removed.");
+        });
+    }
+
+    // --- Rapport Guide Toggle Event Listener ---
+    if (rapportGuideHeader && rapportGuideBody && rapportGuideToggleIcon) {
+        rapportGuideHeader.addEventListener('click', () => {
+            const isCollapsed = rapportGuideBody.style.display === 'none';
+            rapportGuideBody.style.display = isCollapsed ? 'block' : 'none';
+            rapportGuideToggleIcon.innerText = isCollapsed ? '▲ Collapse' : '▶ Expand';
+        });
+    }
+
+    // Pricing Catalog Reference Toggle
+    const pricingCatalogHeader = document.getElementById('pricing-catalog-header');
+    const pricingCatalogBody = document.getElementById('pricing-catalog-body');
+    const pricingCatalogToggleIcon = document.getElementById('pricing-catalog-toggle-icon');
+    if (pricingCatalogHeader && pricingCatalogBody && pricingCatalogToggleIcon) {
+        pricingCatalogHeader.addEventListener('click', () => {
+            const isCollapsed = pricingCatalogBody.style.display === 'none';
+            pricingCatalogBody.style.display = isCollapsed ? 'block' : 'none';
+            pricingCatalogToggleIcon.innerText = isCollapsed ? '▲ Collapse' : '▶ Expand';
         });
     }
 
@@ -1753,6 +1968,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Auto-attach sample Google Drive SOW
         attachedGDriveFile = "Meridian_Logistics_SOW_2025.pdf";
+        attachedGDriveFileId = "sample-meridian-sow";
+        attachedGDriveFileContent = `MERIDIAN LOGISTICS -- STATEMENT OF WORK (SOW) 2025
+Services: Managed services for Planning Analytics / TM1
+Users: 150 Planning Analytics users
+Current bottlenecks: Department heads submit 35 Excel sheets. Consolidation requires manual verification and entry to central PAX model. Takes 45 minutes per sheet.
+System details: NetSuite ERP data exported manually to CSV, then loaded into Planning Analytics.
+Target SOW: Migrate current managed support to Octane Black to include full proactive DevOps, offshore development resource, and DataFusion setup to automate NetSuite database ingestion.`;
         const badgeName = document.getElementById('gdrive-attached-name');
         if (gdriveBadge && badgeName) {
             badgeName.innerText = attachedGDriveFile;
@@ -1946,6 +2168,8 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             phone: document.getElementById('prep-phone')?.value.trim() || '',
             rep: document.getElementById('prep-rep')?.value || 'Albert',
             gDriveFile: attachedGDriveFile,
+            gDriveFileId: attachedGDriveFileId,
+            gDriveFileContent: attachedGDriveFileContent,
             track: prepTrackSelect.value,
             intakeAnswers: prepIntakeText.value.trim(),
             linkedinInfo: prepLinkedinText.value.trim()
@@ -1965,6 +2189,23 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             currentDossierText = resultHtml;
             renderDossierHtml(resultHtml);
             step1NextBtn.style.display = 'inline-flex';
+
+            // Trigger Rapport Guide generation asynchronously
+            if (rapportGuidePanel && rapportGuideBody) {
+                rapportGuidePanel.style.display = 'block';
+                rapportGuideBody.innerHTML = '<div style="font-style: italic; color: rgba(0,0,0,0.4); text-align: center; padding: 0.5rem 0;">💡 Loading Rapport Guide talking points...</div>';
+                TinyAI.generateRapportGuide(resultHtml, apiConfig)
+                    .then(guideHtml => {
+                        rapportGuideBody.innerHTML = guideHtml;
+                        // Auto-expand Rapport Guide
+                        rapportGuideBody.style.display = 'block';
+                        if (rapportGuideToggleIcon) rapportGuideToggleIcon.innerText = '▲ Collapse';
+                    })
+                    .catch(err => {
+                        console.warn("Failed to generate rapport guide:", err);
+                        rapportGuideBody.innerHTML = '<div style="color: #ff4d4d; padding: 0.5rem 0; text-align: center;">Failed to generate talking points.</div>';
+                    });
+            }
             
             // Auto-save dossier to history
             const payload = {
@@ -1975,7 +2216,10 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                 email: params.email,
                 phone: params.phone,
                 rep: params.rep,
-                oneDriveFile: params.oneDriveFile,
+                oneDriveFile: params.gDriveFile, // For backwards compatibility
+                gDriveFile: params.gDriveFile,
+                gDriveFileId: params.gDriveFileId,
+                gDriveFileContent: params.gDriveFileContent,
                 track: params.track,
                 url: params.url,
                 intakeAnswers: params.intakeAnswers,
@@ -2055,7 +2299,8 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
 
         const variant = synthVariantSelect.value;
         const transcript = synthTranscriptText.value.trim();
-        const screencastUrl = '';
+        const screencastUrl = document.getElementById('synth-screencast')?.value.trim() || '';
+        currentScreencastUrl = screencastUrl;
 
         if (!transcript) {
             showToast("Please enter or load a call transcript.");
@@ -2174,11 +2419,33 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             case 'transcript': titleText = "9. Raw Call Transcript"; break;
         }
 
+        let videoPreviewHtml = "";
+        if (currentScreencastUrl) {
+            const isDirectVideo = currentScreencastUrl.toLowerCase().endsWith('.mp4') || 
+                                  currentScreencastUrl.toLowerCase().endsWith('.webm') || 
+                                  currentScreencastUrl.toLowerCase().endsWith('.ogv');
+            if (isDirectVideo) {
+                videoPreviewHtml = `
+                    <div style="margin-bottom: 1rem; background: #000; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); aspect-ratio: 16/9; max-width: 480px; margin-left: auto; margin-right: auto;">
+                        <video src="${currentScreencastUrl}" controls style="width: 100%; height: 100%; object-fit: contain;"></video>
+                    </div>
+                `;
+            } else {
+                videoPreviewHtml = `
+                    <div style="margin-bottom: 1rem; background: rgba(77, 174, 235, 0.05); border: 1px solid rgba(77, 174, 235, 0.15); border-radius: 6px; padding: 0.6rem 0.85rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem;">
+                        <span style="color: var(--primary); font-weight: 500;">📺 Attached Screencast Video: <span style="font-family: monospace; opacity: 0.8;">${currentScreencastUrl.substring(0, 40) + (currentScreencastUrl.length > 40 ? '...' : '')}</span></span>
+                        <a href="${currentScreencastUrl}" target="_blank" class="btn btn-secondary" style="height: 22px; padding: 0 6px; font-size: 0.65rem; display: inline-flex; align-items: center; text-decoration: none; border-color: rgba(77, 174, 235, 0.2); color: var(--primary); background: transparent;">Open Link ↗</a>
+                    </div>
+                `;
+            }
+        }
+
         const sanitizedContent = window.DOMPurify ? DOMPurify.sanitize(content) : fallbackSanitize(content);
 
         outputDocContent.innerHTML = `
             <div class="output-document">
                 <h3>${titleText}</h3>
+                ${videoPreviewHtml}
                 <div class="doc-body-pane">${sanitizedContent}</div>
             </div>
         `;
@@ -2224,7 +2491,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tiny Sales Handover Report - ${prepCompanyInput.value || "Prospect"}</title>
+    <title>Tiny AI Assistant Handover Report - ${prepCompanyInput.value || "Prospect"}</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap">
     <style>
         body { font-family: 'Roboto', sans-serif; padding: 40px; background: #000000; color: #ffffff; max-width: 800px; margin: 0 auto; line-height: 1.75; font-size: 0.95rem; }
@@ -2806,6 +3073,15 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
         const synthSampleBtn = document.getElementById('synth-load-sample-btn');
         if (prepSampleBtn) prepSampleBtn.style.display = isDemo ? 'inline-block' : 'none';
         if (synthSampleBtn) synthSampleBtn.style.display = isDemo ? 'inline-block' : 'none';
+        
+        // Dynamic visibility toggle for header navigation options based on Demo Mode status
+        const navDir = document.getElementById('nav-directory');
+        const activeSdr = document.querySelector('.sdr-selector-wrapper');
+        const divider = document.getElementById('nav-directory-divider');
+        
+        if (navDir) navDir.style.display = isDemo ? 'block' : 'none';
+        if (divider) divider.style.display = isDemo ? 'inline' : 'none';
+        if (activeSdr) activeSdr.style.display = isDemo ? 'flex' : 'none';
     }
 
     // --- Wire Up New Listeners ---

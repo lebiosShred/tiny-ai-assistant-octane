@@ -20,3 +20,7 @@ Thumbs.db
 # Local custom questions database
 custom-questions.json
 
+# Dependencies and Credentials
+node_modules/
+credentials/
+

@@ -12,8 +12,28 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="book.css">
+    <link rel="icon" type="image/png" href="tiny.png">
+    <style>
+        body {
+            padding-top: 64px;
+        }
+    </style>
 </head>
 <body>
+
+    <!-- ====== Top Navigation Header ====== -->
+    <header class="booking-header" style="position: fixed; top: 0; left: 0; width: 100%; height: 64px; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 1000; display: flex; align-items: center;">
+        <div class="container" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <a href="/demo/index.html" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #FFFFFF; font-weight: 700; font-size: 1.1rem; font-family: 'Roboto', sans-serif;">
+                <img src="tiny.png" alt="Tiny AI Assistant Logo" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid #4daeeb;">
+                <span>Octane Booking</span>
+            </a>
+            <div style="display: flex; align-items: center; gap: 1.5rem; font-family: 'Roboto', sans-serif;">
+                <a href="/demo/book.html" id="nav-booking-page" style="color: #4daeeb; font-weight: 600; font-size: 0.85rem; text-decoration: none;">Booking Page</a>
+                <a href="/demo/docs.html" id="nav-docs-page" target="_blank" style="color: rgba(255,255,255,0.7); font-weight: 500; font-size: 0.85rem; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#4daeeb'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">Documentation</a>
+            </div>
+        </div>
+    </header>
 
     <!-- ====== Hero: Two-Column Layout (Context + Calendar) ====== -->
     <section class="hero" id="hero">
@@ -76,22 +96,9 @@
                                     <option value="other">Other (please specify)</option>
                                 </select>
                             </div>
- 
-                            <!-- Host / Calendar Selector -->
-                            <label for="meeting-host" class="booking-label">Select Calendar / Host *</label>
-                            <div class="select-wrapper" style="margin-bottom: 0.85rem;">
-                                <select id="meeting-host" class="booking-select" required>
-                                    <option value="Round Robin" selected>Round Robin SDRs (Albert / Isha)</option>
-                                    <option value="Amendra Pratap">Amendra Pratap (Director Link)</option>
-                                    <option value="Steny">Steny (Senior Architect Link)</option>
-                                    <option value="Kevin">Kevin (TM1 Demo - 1-week buffer)</option>
-                                </select>
-                            </div>
- 
-                            <!-- Booking buffer notice -->
-                            <div id="booking-buffer-notice" style="display: none; font-size: 0.75rem; color: #e67e22; margin-bottom: 0.85rem; font-weight: 500;">
-                                ⚠️ Kevin's calendar requires a 1-week buffer. Same-day bookings are blocked.
-                            </div>
+
+                            <!-- Host is auto-assigned to Round Robin SDRs (Albert / Isha) based on availability -->
+                            <input type="hidden" id="meeting-host" value="Round Robin">
  
                             <!-- Custom Text Field (Shown only when 'Other' is selected) -->
                             <div id="other-reason-wrapper" class="other-reason-wrapper" style="display: none; margin-bottom: 0.85rem;">
@@ -253,10 +260,16 @@
                             <h4 style="text-align: center; margin: 0; color: var(--text-dark); font-size: 0.95rem;">Thank you, <span id="success-name-display">Client</span>!</h4>
                             <p style="font-size: 0.75rem; text-align: center; color: var(--text-dark-muted); margin-bottom: 0.25rem;" id="success-time-display">Your meeting is scheduled for May 26 @ 10:30 AM.</p>
                             
-                            <div style="border-top: 1px solid var(--border-light); padding-top: 0.5rem; margin-top: 0.25rem;">
-                                <label class="booking-label" style="font-weight: bold; font-size: 0.75rem; color: var(--accent); margin-bottom: 0.25rem;">Intake Questionnaire Summary (Copy for Tiny AI Prep)</label>
+                            <div class="success-prospect-message" style="text-align: center; padding: 0.5rem; font-family: 'Roboto', sans-serif;">
+                                <p style="font-size: 0.8rem; color: var(--text-dark-muted); line-height: 1.5; margin: 0.5rem 0;">
+                                    A calendar invitation with the video call link has been sent to your email. We look forward to exploring how Octane can help optimize your operations.
+                                </p>
+                            </div>
+
+                            <div id="prospect-prep-copy-container" style="display: none; border-top: 1px solid var(--border-light); padding-top: 0.5rem; margin-top: 0.25rem;">
+                                <label class="booking-label" style="font-weight: bold; font-size: 0.75rem; color: var(--accent); margin-bottom: 0.25rem;">Intake Summary (Copy for SDR Console Step 1)</label>
                                 <textarea id="success-intake-copy" class="booking-textarea" readonly rows="7" style="font-family: monospace; font-size: 0.7rem; background: #f9f9f9; color: #333;" onclick="this.select()"></textarea>
-                                <button type="button" class="booking-btn" id="btn-copy-intake" style="background: rgba(77, 174, 235, 0.08); color: var(--accent); font-size: 0.75rem; padding: 0.5rem; margin-top: 0.35rem; border: 1px solid rgba(77, 174, 235, 0.15); height: 32px;">📋 Copy Summary Text</button>
+                                <button type="button" class="booking-btn" id="btn-copy-intake" style="background: rgba(77, 174, 235, 0.08); color: var(--accent); font-size: 0.75rem; padding: 0.5rem; margin-top: 0.35rem; border: 1px solid rgba(77, 174, 235, 0.15); height: 32px;">📋 Copy Intake for SDR Console</button>
                             </div>
                             
                             <button type="button" id="btn-book-another" class="booking-btn booking-btn--primary" style="margin-top: 0.35rem; padding: 0.65rem;">Book Another Meeting</button>
@@ -370,7 +383,6 @@
 
         const selectReason = document.getElementById('meeting-reason');
         const selectHost = document.getElementById('meeting-host');
-        const bufferNotice = document.getElementById('booking-buffer-notice');
         
         const hostsDisplayPanel = document.getElementById('hosts-display-panel');
         const hostsAvatarsContainer = document.getElementById('hosts-avatars-container');
@@ -421,55 +433,19 @@
                         <img src="/demo/isha.png" alt="Isha" class="host-img host-img--tall">
                     </div>
                 `
-            },
-            'Amendra Pratap': {
-                title: 'Amendra Pratap',
-                subtitle: 'Director & Lead Architect, Octane Software Solutions.',
-                html: `
-                    <div class="host-avatar-circle">
-                        <div class="host-initials-avatar">AP</div>
-                    </div>
-                `
-            },
-            'Steny': {
-                title: 'Steny',
-                subtitle: 'Senior Systems Architect, Octane Software Solutions.',
-                html: `
-                    <div class="host-avatar-circle">
-                        <div class="host-initials-avatar">S</div>
-                    </div>
-                `
-            },
-            'Kevin': {
-                title: 'Kevin',
-                subtitle: 'Senior TM1 Specialist & Demo Lead, Octane Software Solutions.',
-                html: `
-                    <div class="host-avatar-circle">
-                        <div class="host-initials-avatar">K</div>
-                    </div>
-                `
             }
         };
 
-        selectHost.addEventListener('change', () => {
-            const host = selectHost.value;
-            const profile = hostsProfiles[host];
+        // Host is fixed to Round Robin -- initialize display immediately
+        (function initHostDisplay() {
+            const profile = hostsProfiles['Round Robin'];
             if (profile) {
                 hostsDisplayTitle.textContent = profile.title;
                 hostsDisplaySubtitle.textContent = profile.subtitle;
                 hostsAvatarsContainer.innerHTML = profile.html;
             }
-
-            // Enforce buffer warning notice
-            if (host === 'Kevin') {
-                bufferNotice.style.display = 'block';
-            } else {
-                bufferNotice.style.display = 'none';
-            }
-            
-            // Re-render calendar slots and dates
-            updateCalendarDatesForHost(host);
-        });
+            updateCalendarDatesForHost('Round Robin');
+        })();
 
         // Enable button based on selection validity
         function validateSelection() {
@@ -493,18 +469,7 @@
                 otherReasonText.removeAttribute('required');
             }
             
-            // Auto-adjust host dropdown to align with selection for convenience
-            const val = selectReason.value;
-            if (val === 'Positional Meeting | 45 mins') {
-                selectHost.value = 'Amendra Pratap';
-            } else if (val === 'TM1 Demo Session | 60 mins') {
-                selectHost.value = 'Kevin';
-            } else if (val === 'Pre-Screen Discovery Call | 30 mins' || val === 'Planning & Analytics Consultation | 45 mins') {
-                selectHost.value = 'Round Robin';
-            } else if (val === 'AI Solutions Discussion | 45 mins') {
-                selectHost.value = 'Amendra Pratap';
-            }
-            selectHost.dispatchEvent(new Event('change'));
+            // Host is always Round Robin (auto-assigned)
 
             validateSelection();
         });
@@ -527,7 +492,7 @@
             }
 
             // Update details
-            selectedReasonDisplay.textContent = `Reason: ${displayReason} (Host: ${selectHost.value})`;
+            selectedReasonDisplay.textContent = `Reason: ${displayReason} (Host: Round Robin SDRs)`;
             selectedMeetingTitle.textContent = title;
             selectedMeetingDesc.textContent = desc;
 
@@ -648,16 +613,16 @@
             selectedDay = dayBtn.getAttribute('data-day');
             
             // Render slots
-            renderTimeSlots(selectedDay, selectHost.value === 'Kevin');
+            renderTimeSlots(selectedDay, false);
         });
 
-        // Initialize default time slots for May 26
-        renderTimeSlots('26', false);
+        // Initialize default calendar state
+        selectHost.dispatchEvent(new Event('change'));
 
         btnConfirm.addEventListener('click', () => {
             const val = selectReason.value;
             let displayReason = val === 'other' ? otherReasonText.value.trim() : val;
-            detailsReasonDisplay.textContent = `Reason: ${displayReason} (Host: ${selectHost.value})`;
+            detailsReasonDisplay.textContent = `Reason: ${displayReason} (Host: Round Robin SDRs)`;
             
             // Pre-fill track selection based on booking reason keyword
             const reasonLower = displayReason.toLowerCase();
@@ -690,9 +655,25 @@
             const url = bookingUrlInput.value.trim();
             const phone = bookingPhone.value.trim();
             const discuss = bookingDiscuss.value.trim();
-            const host = selectHost.value;
-            const monthText = host === 'Kevin' ? 'June' : 'May';
+            const host = 'Round Robin';
+            const monthText = 'May';
             
+            // Calculate assigned SDR (Albert: 7 AM - 2 PM, Isha: 2 PM - 9 PM)
+            let assignedRep = "Albert";
+            if (selectedTime) {
+                const timeMatch = selectedTime.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+                if (timeMatch) {
+                    let hour = parseInt(timeMatch[1], 10);
+                    const isPm = timeMatch[3].toUpperCase() === 'PM';
+                    if (isPm && hour !== 12) hour += 12;
+                    if (!isPm && hour === 12) hour = 0;
+                    
+                    if (hour >= 14 && hour < 21) {
+                        assignedRep = "Isha";
+                    }
+                }
+            }
+
             // Format intake summary text exactly as required by SDR parse
             const summaryText = `Service track interest: ${track === 'AI' ? 'AI' : 'Planning Analytics (TM1)'}
 Excel spreadsheets consolidated: 35 sheets currently consolidated manually (verify on call)
@@ -705,12 +686,46 @@ Company: ${company}
 Email: ${email}
 Phone: ${phone}
 Name: ${name}
-Booking Host: ${host}`;
+Booking Host: ${assignedRep}`;
+
+            // Save booking dossier automatically to the backend
+            fetch('/api/history', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: 'dossier',
+                    stage: 'prep',
+                    name: name,
+                    title: position,
+                    company: company,
+                    email: email,
+                    phone: phone,
+                    url: url,
+                    track: track === 'AI' ? 'AI' : 'Planning & Analytics (TM1)',
+                    rep: assignedRep,
+                    intakeAnswers: summaryText
+                })
+            })
+            .then(res => {
+                if (!res.ok) console.error("Failed to automatically save booking dossier.");
+            })
+            .catch(err => {
+                console.error("Network error saving booking dossier:", err);
+            });
 
             // Update Success page details
             successNameDisplay.textContent = name;
-            successTimeDisplay.textContent = `Your meeting with ${host} is scheduled for ${monthText} ${selectedDay} at ${selectedTime}.`;
+            successTimeDisplay.textContent = `Your meeting with ${assignedRep} is scheduled for ${monthText} ${selectedDay} at ${selectedTime}.`;
             successIntakeCopy.value = summaryText;
+            
+            // Show intake summary copy container ONLY in Demo Mode to support automated screencast recording
+            const prospectContainer = document.getElementById('prospect-prep-copy-container');
+            if (prospectContainer) {
+                const isDemo = localStorage.getItem('tiny_demo_mode') === 'true';
+                prospectContainer.style.display = isDemo ? 'block' : 'none';
+            }
             
             stepDetails.style.display = 'none';
             stepSuccess.style.display = 'block';
@@ -720,7 +735,7 @@ Booking Host: ${host}`;
             successIntakeCopy.select();
             navigator.clipboard.writeText(successIntakeCopy.value)
                 .then(() => {
-                    alert("Intake summary copied to clipboard! You can paste this in Step 1 of your Tiny Sales Assistant.");
+                    alert("Intake summary copied to clipboard! You can paste this in Step 1 of your Tiny AI Assistant.");
                 })
                 .catch(err => {
                     console.error("Copy failed:", err);
@@ -730,8 +745,7 @@ Booking Host: ${host}`;
         btnBookAnother.addEventListener('click', () => {
             // Reset fields
             selectReason.value = '';
-            selectHost.value = 'Round Robin';
-            selectHost.dispatchEvent(new Event('change'));
+            // Host stays as Round Robin (auto-assigned)
             otherReasonText.value = '';
             otherReasonWrapper.style.display = 'none';
             btnNext.disabled = true;

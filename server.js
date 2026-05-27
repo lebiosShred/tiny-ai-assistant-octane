@@ -3,6 +3,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const gdriveService = require('./gdrive-service');
 
 const PORT = process.env.PORT || 8080;
 const PUBLIC_DIR = __dirname;
@@ -1184,6 +1185,64 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    // API Google Drive List Route
+    if (pathname === '/api/gdrive/list' && req.method === 'GET') {
+        const folderId = parsedUrl.searchParams.get('folderId');
+        try {
+            console.log(`📂 Listing GDrive folder: ${folderId || 'Default Root'}`);
+            const items = await gdriveService.listFolder(folderId);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ items }));
+        } catch (err) {
+            console.error(`❌ GDrive folder list failed:`, err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Google Drive list failed: ${err.message}` }));
+        }
+        return;
+    }
+
+    // API Google Drive Read File Route
+    if (pathname === '/api/gdrive/read' && req.method === 'GET') {
+        const fileId = parsedUrl.searchParams.get('fileId');
+        if (!fileId) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing fileId parameter.' }));
+            return;
+        }
+        try {
+            console.log(`📄 Reading GDrive file content: ${fileId}`);
+            const content = await gdriveService.getFileContent(fileId);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ content }));
+        } catch (err) {
+            console.error(`❌ GDrive file read failed:`, err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Google Drive read failed: ${err.message}` }));
+        }
+        return;
+    }
+
+    // API Google Drive Search Route
+    if (pathname === '/api/gdrive/search' && req.method === 'GET') {
+        const query = parsedUrl.searchParams.get('q');
+        if (!query) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing query parameter q.' }));
+            return;
+        }
+        try {
+            console.log(`🔍 Searching GDrive files for: "${query}"`);
+            const results = await gdriveService.searchFiles(query);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ items: results }));
+        } catch (err) {
+            console.error(`❌ GDrive file search failed:`, err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Google Drive search failed: ${err.message}` }));
+        }
+        return;
+    }
+
     // API Web Search Route (for watsonx agent custom tools)
     if (pathname === '/api/search' && req.method === 'GET') {
         const query = parsedUrl.searchParams.get('q');
@@ -1374,10 +1433,13 @@ const server = http.createServer(async (req, res) => {
                                     company: parsed.company,
                                     title: parsed.title,
                                     track: parsed.track,
-                                    variant: parsed.variant,
+                                                                        variant: parsed.variant,
                                     score: parsed.score || (parsed.type === 'synthesis' ? extractScore(parsed.content) : null),
                                     rep: parsed.rep,
-                                    oneDriveFile: parsed.oneDriveFile,
+                                    oneDriveFile: parsed.oneDriveFile || parsed.gDriveFile,
+                                    gDriveFile: parsed.gDriveFile || parsed.oneDriveFile,
+                                    gDriveFileId: parsed.gDriveFileId || null,
+                                    gDriveFileContent: parsed.gDriveFileContent || null,
                                     phone: parsed.phone,
                                     stage: parsed.stage || (parsed.type === 'synthesis' ? 'reports' : 'prep'),
                                     filename: file
@@ -1736,7 +1798,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // Static Files Resolution
-    let relativePath = pathname === '/' ? '/demo/index.html' : pathname;
+    let relativePath = pathname === '/' ? '/demo/book.html' : pathname;
     
     // Check if file is in /demo folder or root folder
     let targetPath = path.join(PUBLIC_DIR, relativePath);
