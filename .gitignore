@@ -37,3 +37,8 @@ promptfooconfig.yaml
 script.py
 knowledge/history/
 
+# Playwright test artifacts
+test-results/
+playwright-report/
+blob-report/
+

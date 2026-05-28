@@ -1,0 +1,61 @@
+name: Aegis CI -- E2E & LLM Quality Gate
+
+on:
+  push:
+    branches: [build-local-ai-assistant]
+  pull_request:
+    branches: [build-local-ai-assistant]
+
+jobs:
+  aegis-e2e:
+    name: Aegis E2E & Semantic Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Aegis test suite
+        run: npx playwright test
+        env:
+          CI: true
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegis-html-report
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegis-test-results
+          path: test-results/
+          retention-days: 14
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegis-audit-report
+          path: scratch/aegis-results.json
+          retention-days: 14

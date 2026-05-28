@@ -1,6 +1,6 @@
 {
   "name": "tiny-ai-assistant",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Early Game Sales Pipeline backend for Octane Software Solutions",
   "main": "server.js",
   "scripts": {
@@ -8,15 +8,22 @@
     "dev": "node server.js",
     "test:prompts": "promptfoo eval",
     "test:prompts:view": "promptfoo view",
-    "test:aegis": "node tests/run_aegis.js"
+    "test:aegis": "npx playwright test",
+    "test:aegis:ui": "npx playwright test --ui",
+    "test:aegis:report": "npx playwright show-report",
+    "test:aegis:update-snapshots": "npx playwright test --update-snapshots",
+    "test:aegis:legacy": "node tests/run_aegis.js",
+    "test:redteam": "npx promptfoo@latest redteam run"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
     "googleapis": "^137.0.0",
-    "pdf-parse": "^1.1.1",
-    "playwright": "^1.60.0"
+    "pdf-parse": "^1.1.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
+    "@playwright/test": "^1.60.0",
+    "playwright": "^1.60.0",
     "promptfoo": "^0.60.0"
   }
 }

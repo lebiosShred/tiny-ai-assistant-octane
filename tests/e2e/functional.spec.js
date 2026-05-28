@@ -1,0 +1,106 @@
+const { test, expect } = require('../fixtures/base');
+const { IndexPage } = require('../pages/IndexPage');
+const { BookPage } = require('../pages/BookPage');
+const { DocsPage } = require('../pages/DocsPage');
+
+/**
+ * Aegis v2 -- Core Functional E2E Test Suite
+ */
+test.describe('Aegis Functional E2E Suite', () => {
+
+    test('SDR Prep Briefing form submission generates valid dossier', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.loadSample();
+
+        const values = await indexPage.getFormValues();
+        expect(values.name).toBe('Sarah Chen');
+        expect(values.company).toBe('Meridian Logistics');
+
+        await indexPage.submitForm();
+        await indexPage.waitForDossier(20000);
+
+        const dossierText = await indexPage.getDossierText();
+        expect(dossierText.length).toBeGreaterThan(50);
+
+        // Attach extracted dossier for downstream judge consumption
+        test.info().annotations.push({
+            type: 'dossier',
+            description: dossierText.substring(0, 2000),
+        });
+    });
+
+    test('Variant B enforces exactly 10 questions', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.loadSample();
+        await indexPage.submitForm();
+        await indexPage.waitForDossier(20000);
+        await indexPage.goToPlaybook();
+        await indexPage.switchVariant('B');
+
+        // Wait for variant to load by checking counter text contains a number
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#teleprompter-counter');
+                return el && /\d+/.test(el.innerText);
+            },
+            { timeout: 5000 }
+        );
+
+        const count = await indexPage.getQuestionCount();
+        expect(count).toBe(10);
+    });
+
+    test('Variant B contains no italicized tips', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.loadSample();
+        await indexPage.submitForm();
+        await indexPage.waitForDossier(20000);
+        await indexPage.goToPlaybook();
+        await indexPage.switchVariant('B');
+
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#teleprompter-counter');
+                return el && /\d+/.test(el.innerText);
+            },
+            { timeout: 5000 }
+        );
+
+        const hasItalics = await indexPage.hasItalicizedTips();
+        expect(hasItalics).toBe(false);
+    });
+
+    test('AI Solutions booking routes directly to Steny', async ({ page }) => {
+        const bookPage = new BookPage(page);
+        await bookPage.goto();
+        await bookPage.selectMeetingType('AI Solutions Discussion | 45 mins');
+
+        // Wait for dynamic host update
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#hosts-display-subtitle');
+                return el && el.innerText.includes('Steny');
+            },
+            { timeout: 5000 }
+        );
+
+        const host = await bookPage.getHostDetails();
+        expect(host.subtitle).toContain('Steny');
+        expect(host.title).toContain('Host');
+    });
+
+    test('Documentation page contains Tiny AI Assistant branding', async ({ page }) => {
+        const docsPage = new DocsPage(page);
+        await docsPage.goto();
+
+        // Check logo text span and page content for branding
+        const logoText = await page.locator('.logo-text').first().innerText();
+        expect(logoText).toContain('Tiny AI Assistant');
+    });
+});
