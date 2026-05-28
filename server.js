@@ -802,7 +802,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith('/api/') && !pathname.startsWith('/api/hubspot/webhook') && !pathname.startsWith('/api/config/pricing')) {
         const apiKey = req.headers['x-api-key'];
         const validKey = process.env.API_KEY;
-        if (!validKey || apiKey !== validKey) {
+        if (validKey && apiKey !== validKey) {
             res.writeHead(401, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Unauthorized API Access. Missing or invalid x-api-key header.' }));
             return;
@@ -1152,12 +1152,16 @@ const server = http.createServer(async (req, res) => {
         const questionsFile = path.join(PUBLIC_DIR, 'knowledge', 'custom-questions.json');
         
         if (req.method === 'GET') {
-            const variant = parsedUrl.searchParams.get('variant');
+            let variant = parsedUrl.searchParams.get('variant');
             if (!variant) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Missing variant query parameter.' }));
                 return;
             }
+            if (variant === 'A') variant = 'Variant A';
+            if (variant === 'B') variant = 'Variant B';
+            if (variant === 'C') variant = 'Variant C';
+            
             fs.readFile(questionsFile, 'utf8', (err, data) => {
                 if (err) {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1192,12 +1196,15 @@ const server = http.createServer(async (req, res) => {
             });
             req.on('end', () => {
                 try {
-                    const { variant, questions } = JSON.parse(body);
+                    let { variant, questions } = JSON.parse(body);
                     if (!variant || !Array.isArray(questions)) {
                         res.writeHead(400, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: 'Invalid payload. Expecting variant and questions array.' }));
                         return;
                     }
+                    if (variant === 'A') variant = 'Variant A';
+                    if (variant === 'B') variant = 'Variant B';
+                    if (variant === 'C') variant = 'Variant C';
 
                     fs.readFile(questionsFile, 'utf8', (err, data) => {
                         let existing = {};
@@ -1876,7 +1883,7 @@ const server = http.createServer(async (req, res) => {
     // Static Files Resolution
     let relativePath = pathname;
     if (pathname === '/') {
-        relativePath = '/demo/book.html';
+        relativePath = '/demo/index.html';
     } else if (pathname === '/docs') {
         relativePath = '/demo/docs.html';
     } else if (pathname === '/book') {
