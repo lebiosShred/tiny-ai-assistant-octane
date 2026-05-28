@@ -832,20 +832,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return htmlContent;
     }
 
-    // DOM Elements - Settings Configurations & Prompts
-    const settingsToggleBtn = document.getElementById('settings-toggle-btn');
-    const settingsPanel = document.getElementById('settings-panel');
-    const settingsApiProvider = document.getElementById('settings-api-provider');
-    const settingsApiUrl = document.getElementById('settings-api-url');
-    const settingsApiModel = document.getElementById('settings-api-model');
-    const settingsTonePreset = document.getElementById('settings-tone-preset');
-    const settingsPrepPrompt = document.getElementById('settings-prep-prompt');
-    const settingsSynthPrompt = document.getElementById('settings-synth-prompt');
-    const settingsSaveBtn = document.getElementById('settings-save-btn');
-    const settingsCancelBtn = document.getElementById('settings-cancel-btn');
-    const settingsStatusMsg = document.getElementById('settings-status-msg');
+    // DOM Elements - Settings Panel REMOVED (migrated to Admin Console)
+    // All settings are now managed in admin_setup.html
+    // getApiConfig() reads directly from localStorage, no UI elements needed here.
 
-    // Knowledge Base Elements
+    // Knowledge Base Elements (null-guarded; will no-op since settings panel HTML is removed)
     const knowledgeDropZone = document.getElementById('knowledge-drop-zone');
     const knowledgeDropText = document.getElementById('knowledge-drop-text');
     const knowledgeUploadStatus = document.getElementById('knowledge-upload-status');
@@ -908,102 +899,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    function loadSettingsToUI() {
-        if (settingsApiProvider) {
-            settingsApiProvider.value = localStorage.getItem('tiny_api_provider') || TinyAI.DEFAULT_CONFIG.provider || 'mistral';
-        }
-        settingsApiUrl.value = localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl;
-        settingsApiModel.value = localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model;
-        
-        const savedTone = localStorage.getItem('tiny_tone') || 'professional';
-        settingsTonePreset.value = savedTone;
-        
-        settingsPrepPrompt.value = localStorage.getItem('tiny_prep_system_prompt') || TONE_PRESETS.professional.prep;
-        settingsSynthPrompt.value = localStorage.getItem('tiny_synth_system_prompt') || TONE_PRESETS.professional.synth;
-        
-        const settingsDemoMode = document.getElementById('settings-demo-mode');
-        if (settingsDemoMode) {
-            const isDemo = localStorage.getItem('tiny_demo_mode') === 'true';
-            settingsDemoMode.checked = isDemo;
-            toggleDemoButtons(isDemo);
-        }
+    // Initialize Demo Mode state
+    const settingsDemoModeInit = document.getElementById('settings-demo-mode');
+    if (settingsDemoModeInit) {
+        const isDemo = localStorage.getItem('tiny_demo_mode') === 'true';
+        settingsDemoModeInit.checked = isDemo;
+        toggleDemoButtons(isDemo);
     }
 
-    // Initialize UI settings values
-    loadSettingsToUI();
+    // Initialize knowledge file list (will no-op if element is null)
     loadKnowledgeFilesList();
 
-    // Toggle Settings panel
-    settingsToggleBtn.addEventListener('click', () => {
-        const isActive = settingsPanel.classList.toggle('active');
-        if (isActive) {
-            loadSettingsToUI();
-            settingsStatusMsg.innerText = '';
-            loadKnowledgeFilesList();
-        }
-    });
-
-    settingsCancelBtn.addEventListener('click', () => {
-        settingsPanel.classList.remove('active');
-    });
-
-    // Preset selection change handler
-    settingsTonePreset.addEventListener('change', () => {
-        const val = settingsTonePreset.value;
-        if (val !== 'custom' && TONE_PRESETS[val]) {
-            settingsPrepPrompt.value = TONE_PRESETS[val].prep;
-            settingsSynthPrompt.value = TONE_PRESETS[val].synth;
-        }
-    });
-
-    // If manual edits are done on prompts, change preset dropdown to 'custom'
-    function checkCustomPromptOverride() {
-        const currentPrep = settingsPrepPrompt.value.trim();
-        const currentSynth = settingsSynthPrompt.value.trim();
-        
-        let foundMatch = false;
-        for (const [key, preset] of Object.entries(TONE_PRESETS)) {
-            if (preset.prep.trim() === currentPrep && preset.synth.trim() === currentSynth) {
-                settingsTonePreset.value = key;
-                foundMatch = true;
-                break;
-            }
-        }
-        if (!foundMatch) {
-            settingsTonePreset.value = 'custom';
-        }
-    }
-
-    settingsPrepPrompt.addEventListener('input', checkCustomPromptOverride);
-    settingsSynthPrompt.addEventListener('input', checkCustomPromptOverride);
-
-    // Save configurations
-    settingsSaveBtn.addEventListener('click', () => {
-        if (settingsApiProvider) {
-            localStorage.setItem('tiny_api_provider', settingsApiProvider.value);
-        }
-        localStorage.setItem('tiny_api_url', settingsApiUrl.value.trim());
-        localStorage.setItem('tiny_api_model', settingsApiModel.value.trim());
-        localStorage.setItem('tiny_tone', settingsTonePreset.value);
-        localStorage.setItem('tiny_prep_system_prompt', settingsPrepPrompt.value.trim());
-        localStorage.setItem('tiny_synth_system_prompt', settingsSynthPrompt.value.trim());
-        
-        const settingsDemoMode = document.getElementById('settings-demo-mode');
-        if (settingsDemoMode) {
-            localStorage.setItem('tiny_demo_mode', settingsDemoMode.checked);
-            toggleDemoButtons(settingsDemoMode.checked);
-        }
-        
-        settingsStatusMsg.style.color = 'var(--primary)';
-        settingsStatusMsg.innerText = '✓ Settings Saved Successfully!';
-        
-        showToast("Configurations saved locally.");
-        
-        setTimeout(() => {
-            settingsPanel.classList.remove('active');
-            settingsStatusMsg.innerText = '';
-        }, 1500);
-    });
 
     // --- Knowledge Base Handlers & Document Parsers ---
     function formatBytes(bytes) {
