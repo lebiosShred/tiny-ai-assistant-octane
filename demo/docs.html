@@ -691,10 +691,7 @@
                 <h2>Business Objectives & Team Roles</h2>
                 <p>The coprocessor implements a disciplined, simple sales process to generate and qualify high-value leads for Octane Software Solutions, resolving the lack of structure in early pipeline stages that historically caused deals to stall. The system design and workflow coordination are distributed across key stakeholder roles:</p>
                 <ul>
-                    <li><strong>Isha</strong>: Designated Sales Representative responsible for conducting initial client engagement and discovery sessions.</li>
-                    <li><strong>Albert</strong>: Designated Sales Representative responsible for discovery execution and pipeline advancement.</li>
-                    <li><strong>Sheila Ocana</strong>: Author of the Standard Operating Procedures (SOPs), training resources, and user workflows.</li>
-                    <li><strong>Anthony Coundouris</strong>: Reviewer of the sales components, developer of prompt guidelines, and lead coach for sales staff enablement.</li>
+                    <li><strong>Albert & Isha</strong>: Designated Sales Representatives responsible for conducting pre-screen discovery calls and pipeline advancement.</li>
                 </ul>
 
                 <h2>Standard $0 Extra-Spend Tooling Stack</h2>
@@ -833,17 +830,17 @@
                         <span class="badge-duration">⏱️ 0:47</span>
                     </div>
                     <video controls preload="metadata">
-                        <source src="screencast/recording/module_1_capture.mp4" type="video/mp4">
+                        <source src="screencast/recording/module_1_campaign_identity.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                 </div>
 
-                <h2>Designated Sales Team Hosts & Shift Coverage</h2>
-                <p>Calls are routed dynamically to Octane's designated Sales Representatives based on timezone-deterministic shift windows:</p>
+                <h2>Designated Sales Team Hosts & Availability</h2>
+                <p>Calls are hosted by Octane's designated Sales Representatives, Albert and Isha. They share standard shift coverage, allowing prospective clients to choose from any available booking slots throughout the day.</p>
                 <ul>
-                    <li><strong>Albert (Sales Team)</strong>: Operates the early shift from <strong>7:00 AM -- 2:00 PM AEST (Sydney time)</strong>.</li>
-                    <li><strong>Isha (Sales Team)</strong>: Operates the late shift from <strong>2:00 PM -- 9:00 PM AEST (Sydney time)</strong>.</li>
-                    <li>Together, Albert and Isha cover a combined 14-hour window providing exactly <strong>28 x 30-minute booking slots</strong> per day.</li>
+                    <li><strong>Albert (Sales Team)</strong>: Available to host pre-screen discovery calls during standard business hours.</li>
+                    <li><strong>Isha (Sales Team)</strong>: Available to host pre-screen discovery calls during standard business hours.</li>
+                    <li>Together, Albert and Isha share coverage, providing exactly <strong>28 x 30-minute booking slots</strong> per day.</li>
                 </ul>
 
                 <h2>Dynamic Host Rules</h2>
@@ -866,8 +863,8 @@
                     </tbody>
                 </table>
                 <div class="alert-box">
-                    <strong>Host Selection Removed</strong>
-                    Since all pre-screen calls are exclusively handled by the Round Robin sales representative pool (Albert and Isha), the host assignment is automatic. The system assigns Albert for morning slots (7 AM -- 2 PM AEST) and Isha for afternoon/evening slots (2 PM -- 9 PM AEST).
+                    <strong>Round Robin Assignment</strong>
+                    Since all pre-screen calls are handled by the sales representative pool (Albert and Isha), host assignment is fully automated via Round Robin rotation based on live calendar availability.
                 </div>
 
                 <h2>Calendar Widget Integration & Context Page</h2>
@@ -888,7 +885,7 @@
 
                 <div class="alert-box">
                     <strong>Simplified Booking Flow</strong>
-                    Since the host selector has been removed, the calendar always displays current-month dates with a 12-hour buffer. The booking page automatically assigns the sales representative based on the selected time slot (Albert for morning, Isha for afternoon/evening).
+                    Since the host selector has been removed, the calendar always displays current-month dates with a 12-hour buffer. The booking page dynamically distributes meetings between Albert and Isha to balance representative workload.
                 </div>
             </section>
 
@@ -913,7 +910,7 @@
                         <span class="badge-duration">⏱️ 1:01</span>
                     </div>
                     <video controls preload="metadata">
-                        <source src="screencast/recording/module_2_routing.mp4" type="video/mp4">
+                        <source src="screencast/recording/module_2_persona_calibration.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                 </div>
@@ -942,7 +939,7 @@
                         <span class="badge-duration">⏱️ 0:48</span>
                     </div>
                     <video controls preload="metadata">
-                        <source src="screencast/recording/module_3_preparation.mp4" type="video/mp4">
+                        <source src="screencast/recording/module_3_prospect_data_ingestion.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                 </div>
@@ -1005,6 +1002,7 @@
                 <h3>Variant A: First-Time TM1 / Planning Analytics Users</h3>
                 <p><em>Targeting: Prospects consolidating data manually in Excel who do not run a dedicated multi-dimensional database.</em></p>
                 
+                <!-- DOC-SYNC-START: Variant A -->
                 <h4>Context</h4>
                 <ul>
                     <li>Why did you contact us? What do you hope to achieve?</li>
@@ -1026,7 +1024,7 @@
                     <li>Does your firm have a policy on cloud or on-premise?</li>
                     <li>What is the minimum you need TM1 to do?</li>
                     <li>What are the nice-to-have functions that can be added later?</li>
-                    <li>Who will support TM1 after handover — IT or finance?</li>
+                    <li>Who will support TM1 after handover -- IT or finance?</li>
                     <li>Who are the project stakeholders? First names and titles will do.</li>
                 </ul>
 
@@ -1055,7 +1053,7 @@
                     <li>Do you need static reports or dynamic dashboards? If you have a dashboard, please paste a screenshot below.</li>
                 </ul>
 
-                <h4>Excel users</h4>
+                <h4>Excel</h4>
                 <ul>
                     <li>What are the manual data reconciliation processes?</li>
                     <li>Are data load and mapping processes manual or automated?</li>
@@ -1064,35 +1062,38 @@
                     <li>Do users contribute data directly? If yes, please paste screenshots of the input templates below.</li>
                 </ul>
 
-                <h4>Anaplan users</h4>
+                <h4>Anaplan</h4>
                 <ul>
                     <li>Which business processes are covered eg budgeting, forecasting, workforce planning, sales planning?</li>
                     <li>How many models do you have and how many users interact with them?</li>
-                    <li>How is data loaded into Anaplan — manually, via CloudWorks, Anaplan Connect, or API?</li>
+                    <li>How is data loaded into Anaplan -- manually, via CloudWorks, Anaplan Connect, or API?</li>
                     <li>What source systems feed data into Anaplan eg ERP, CRM, HR?</li>
-                    <li>How do users interact with the model — via dashboards, NUX pages, or Excel?</li>
+                    <li>How do users interact with the model -- via dashboards, NUX pages, or Excel?</li>
                     <li>Do users contribute data directly, or is the model read-only for most?</li>
                 </ul>
 
-                <h4>Jedox users</h4>
+                <h4>Jedox</h4>
                 <ul>
                     <li>Which business processes are covered eg budgeting, forecasting, consolidation, reporting?</li>
                     <li>Is Jedox deployed on-premise or cloud?</li>
-                    <li>How is data loaded into Jedox — via ETL integrator, scripts, or manually?</li>
+                    <li>How is data loaded into Jedox -- via ETL integrator, scripts, or manually?</li>
                     <li>What source systems feed data into Jedox eg SAP, ERP, databases?</li>
                     <li>Do users interact via Excel reports, Jedox Web, or both?</li>
                     <li>Do users contribute data directly via input templates?</li>
                 </ul>
 
+<!-- DOC-SYNC-END: Variant A -->
+
                 <h3>Variant B: Existing TM1 / Planning Analytics Users</h3>
                 <p><em>Targeting: Prospects who already run IBM Planning Analytics / TM1 but face support bottlenecks, performance limits, or require upgrades.</em></p>
                 
+                <!-- DOC-SYNC-START: Variant B -->
                 <h4>Context</h4>
                 <ul>
                     <li>Why did you contact us? What do you hope to achieve?</li>
                     <li>How long have you been using TM1?</li>
                     <li>What do you primarily use TM1 for?</li>
-                    <li>Where does it fall short — including performance, speed, or usability issues?</li>
+                    <li>Where does it fall short -- including performance, speed, or usability issues?</li>
                     <li>Is TM1 used across the business or only within finance?</li>
                     <li>Have users adopted TM1 or do they resort to Excel?</li>
                     <li>Is it difficult to make enhancements? Who makes them?</li>
@@ -1150,7 +1151,7 @@
                     <li>How much memory do the feeders use?</li>
                 </ul>
 
-                <h4>On-premise users only</h4>
+                <h4>On-premise</h4>
                 <ul>
                     <li>Do you need a like-for-like migration or are you building from scratch?</li>
                     <li>What is the server RAM size?</li>
@@ -1161,6 +1162,74 @@
                     <li>Do any Excel reports use Action Buttons?</li>
                     <li>Do you use TM1 Web? If yes, how many Excel reports are published to it?</li>
                 </ul>
+
+<!-- DOC-SYNC-END: Variant B -->
+
+                <h3>Variant C: First-Time AI Users</h3>
+                <p><em>Targeting: Prospects interested in automating monthly financial reports, utilizing natural language questioning against financial databases, and exploring Proof of Concept co-creation.</em></p>
+                
+                <!-- DOC-SYNC-START: Variant C -->
+                <h4>Metric</h4>
+                <ul>
+                    <li>How many slides are in your monthly executive financial reports, and how much time does the finance team spend manually extracting, cleansing, and formatting data for them?</li>
+                </ul>
+
+                <h4>Systems</h4>
+                <ul>
+                    <li>What enterprise systems and data sources (e.g. TM1, Adobe Analytics, Google Ad Manager, Adobe AdSlot, BigQuery, SQL) need to connect for automated reporting?</li>
+                </ul>
+
+                <h4>Usability</h4>
+                <ul>
+                    <li>Would executives and managers benefit from asking natural language questions (e.g. "AskFinance") to query financial data in real time?</li>
+                </ul>
+
+                <h4>Expansion</h4>
+                <ul>
+                    <li>What other areas in the business (e.g. Sales, Editorial, HR, Customer Support, IT, Procurement, Legal) have repetitive workflows ripe for automation?</li>
+                </ul>
+
+                <h4>Baseline</h4>
+                <ul>
+                    <li>Have you experimented with or deployed any generative AI or automation tools internally?</li>
+                </ul>
+
+                <h4>Hosting</h4>
+                <ul>
+                    <li>What is your primary cloud environment (e.g. GCP, AWS, Azure, on-premise) and how do you manage data security?</li>
+                </ul>
+
+                <h4>Security</h4>
+                <ul>
+                    <li>Do you require specific role-based access controls and security protocols for financial data queried by AI?</li>
+                </ul>
+
+                <h4>Trial</h4>
+                <ul>
+                    <li>Would you be open to a 2-to-6 week co-creation Proof of Concept (POC) to demonstrate value before full production rollout?</li>
+                </ul>
+
+                <h4>Resource</h4>
+                <ul>
+                    <li>Can you commit a primary business contact and technical resource to collaborate during a 2-to-6 week POC?</li>
+                </ul>
+
+                <h4>Authority</h4>
+                <ul>
+                    <li>Are you willing to commit to a Decision Workshop within 10 days of POC completion to confirm next steps?</li>
+                </ul>
+
+                <h4>Budget</h4>
+                <ul>
+                    <li>Are you aware of the indicative costs for enterprise generative AI licensing ($160k+/yr) and implementation services ($125k+)?</li>
+                </ul>
+
+                <h4>Timeline</h4>
+                <ul>
+                    <li>What is your timeline for starting an AI pilot, and who are the key executive stakeholders involved?</li>
+                </ul>
+
+<!-- DOC-SYNC-END: Variant C -->
             </section>
 
             <!-- SECTION 8: Component 08 - Kanban -->
