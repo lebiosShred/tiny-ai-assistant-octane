@@ -11,6 +11,7 @@ RUN npm install --only=production
 # Copy application code, backend service, and directories
 COPY server.js ./
 COPY gdrive-service.js ./
+COPY email-service.js ./
 COPY openapi.json ./
 COPY credentials/ ./credentials/
 COPY demo/ ./demo/
