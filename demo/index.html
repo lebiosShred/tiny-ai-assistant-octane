@@ -134,14 +134,20 @@
                                         <button type="button" class="btn btn-secondary gdrive-browse-btn" id="prep-gdrive-browse-btn">Browse Folders</button>
                                     </div>
                                     
-                                    <!-- Embedded mock file browser (collapsible) -->
-                                    <div class="gdrive-browser" id="gdrive-browser">
-                                        <div class="gdrive-folder-path">
-                                            <span>📂 root / Clients / <span id="gdrive-current-folder">Active Clients</span></span>
-                                            <button type="button" id="gdrive-back-btn">↰ Up</button>
-                                        </div>
-                                        <div class="gdrive-items-list" id="gdrive-items-list">
-                                            <!-- Loaded dynamically in app.js -->
+                                    <!-- Google Drive Modal Popup -->
+                                    <div class="gdrive-browser" id="gdrive-browser" style="display: none;">
+                                        <div class="gdrive-modal-content">
+                                            <div class="gdrive-modal-header">
+                                                <h4>Browse Google Drive</h4>
+                                                <button type="button" id="gdrive-close-modal">✖</button>
+                                            </div>
+                                            <div class="gdrive-folder-path">
+                                                <span>📂 root / Clients / <span id="gdrive-current-folder">Active Clients</span></span>
+                                                <button type="button" id="gdrive-back-btn">↰ Up</button>
+                                            </div>
+                                            <div class="gdrive-items-list" id="gdrive-items-list">
+                                                <!-- Loaded dynamically in app.js -->
+                                            </div>
                                         </div>
                                     </div>
  

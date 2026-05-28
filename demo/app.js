@@ -1831,11 +1831,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (gdriveBrowseBtn) {
         gdriveBrowseBtn.addEventListener('click', () => {
             if (gdriveBrowserPanel) {
-                const isHidden = gdriveBrowserPanel.style.display === 'none';
-                gdriveBrowserPanel.style.display = isHidden ? 'block' : 'none';
+                const isHidden = gdriveBrowserPanel.style.display === 'none' || gdriveBrowserPanel.style.display === '';
+                gdriveBrowserPanel.style.display = isHidden ? 'flex' : 'none';
                 if (isHidden) {
                     renderGDriveList();
                 }
+            }
+        });
+    }
+
+    const gdriveCloseModalBtn = document.getElementById('gdrive-close-modal');
+    if (gdriveCloseModalBtn) {
+        gdriveCloseModalBtn.addEventListener('click', () => {
+            if (gdriveBrowserPanel) {
+                gdriveBrowserPanel.style.display = 'none';
             }
         });
     }
@@ -1856,7 +1865,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (gdriveSearchInput) {
         gdriveSearchInput.addEventListener('input', () => {
             if (gdriveBrowserPanel) {
-                gdriveBrowserPanel.style.display = 'block';
+                gdriveBrowserPanel.style.display = 'flex';
             }
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
