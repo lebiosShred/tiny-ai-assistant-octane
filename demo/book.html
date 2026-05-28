@@ -483,6 +483,15 @@
                         <img src="/demo/isha.png" alt="Isha" class="host-img host-img--tall">
                     </div>
                 `
+            },
+            'Steny': {
+                title: 'Meeting Host',
+                subtitle: 'Your call will be hosted by Steny, Director of AI Solutions.',
+                html: `
+                    <div class="host-avatar-circle" id="host-avatar-1" style="border: 2px solid var(--primary);">
+                        <div class="host-avatar-placeholder" style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), #0284c7); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; border-radius: 50%;">S</div>
+                    </div>
+                `
             }
         };
 
@@ -519,7 +528,17 @@
                 otherReasonText.removeAttribute('required');
             }
             
-            // Host is always Round Robin (auto-assigned)
+            const val = selectReason.value;
+            const isAI = val && (val.toLowerCase().includes('ai') || val.toLowerCase().includes('artificial') || val.toLowerCase().includes('watsonx'));
+            const activeHost = isAI ? 'Steny' : 'Round Robin';
+            
+            const profile = hostsProfiles[activeHost];
+            if (profile) {
+                hostsDisplayTitle.textContent = profile.title;
+                hostsDisplaySubtitle.textContent = profile.subtitle;
+                hostsAvatarsContainer.innerHTML = profile.html;
+            }
+            updateCalendarDatesForHost(activeHost);
 
             validateSelection();
         });
@@ -658,6 +677,20 @@
         // Initialize default calendar state and host display panel
         initHostDisplay();
 
+        bookingTrack.addEventListener('change', () => {
+            const val = bookingTrack.value;
+            const isAI = (val === 'AI');
+            const activeHost = isAI ? 'Steny' : 'Round Robin';
+            
+            const profile = hostsProfiles[activeHost];
+            if (profile) {
+                hostsDisplayTitle.textContent = profile.title;
+                hostsDisplaySubtitle.textContent = profile.subtitle;
+                hostsAvatarsContainer.innerHTML = profile.html;
+            }
+            updateCalendarDatesForHost(activeHost);
+        });
+
         btnConfirm.addEventListener('click', () => {
             const val = selectReason.value;
             let displayReason = val === 'other' ? otherReasonText.value.trim() : val;
@@ -670,6 +703,9 @@
             } else {
                 bookingTrack.value = 'Planning & Analytics (TM1)';
             }
+            
+            // Trigger track change logic
+            bookingTrack.dispatchEvent(new Event('change'));
             
             // Pre-fill discuss field
             bookingDiscuss.value = `Discuss details: ${displayReason}`;
@@ -697,8 +733,8 @@
             const host = 'Round Robin';
             const monthText = 'May';
             
-            // Calculate assigned Sales Representative (Round Robin load balancing across their shared shift)
-            let assignedRep = Math.random() > 0.5 ? "Albert" : "Isha";
+            // Calculate assigned Sales Representative (Round Robin load balancing across their shared shift, or direct to Steny for AI)
+            let assignedRep = (track === 'AI') ? "Steny" : (Math.random() > 0.5 ? "Albert" : "Isha");
 
             // Format intake summary text exactly as required by Sales Team parse
             const summaryText = `Service track interest: ${track === 'AI' ? 'AI' : 'Planning Analytics (TM1)'}

@@ -1,9 +1,14 @@
 {
   "version": 2,
+  "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://tiny-ai-assistant-351972137415.us-central1.run.app/api/$1"
+    },
+    {
       "source": "/(.*)",
-      "destination": "https://tiny-ai-assistant-351972137415.us-central1.run.app/$1"
+      "destination": "/demo/$1"
     }
   ]
 }

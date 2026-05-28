@@ -112,41 +112,38 @@ gut feel on the deal. The call recording from Fathom or 3CX is saved to the shar
 
 29
 00:02:44,160 --> 00:02:50,160
-This central repository allows the sales team to review active deals and helps our trainer,
+This central repository allows the sales team to review active deals and helps Anthony compile playlists for rep coaching. The representative then proceeds to the Reports tab.
 
 30
-00:02:50,160 --> 00:02:56,000
-Anthony, compile playlist for rep coaching. The representative then proceeds to the Reports tab.
-
-31
 00:02:57,440 --> 00:03:02,880
 To close out the requirements session, Albert or Isha paced the call transcript into the
 
-32
+31
 00:03:02,880 --> 00:03:09,440
 Reports tab. They click synthesize call reports. The AI processes the transcript and generates
 
-33
+32
 00:03:09,440 --> 00:03:15,280
 seven distinct deliverables for Sarah. We can click documentation in the header to review the
 
-34
+33
 00:03:15,280 --> 00:03:20,960
 official services catalog, verifying that all generated pricing figures in the proposal
 
-35
+34
 00:03:20,960 --> 00:03:27,440
 conforms strictly to standard list rates. Returning to the console, the reports are fully populated.
 
-36
+35
 00:03:28,000 --> 00:03:35,440
 Finally, Albert or Isha reviews the deliverables. With a single click, they copy the recap,
 
-37
+36
 00:03:35,440 --> 00:03:41,360
 email, and proposal and paste them directly into the HubSpot deal record. This completes the
 
-38
+37
 00:03:41,360 --> 00:03:43,920
 pre-screen workflow, leaving a fully d-
+
 

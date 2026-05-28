@@ -9,13 +9,14 @@ scratch/
 .env.*
 *.log
 chrome-debug-profile/
-demo/screencast/recording/
 demo/screencast/output/
 demo/screencast/audio/
 demo/screencast/images/
 __pycache__/
-*.mp4
 *.mkv
 *.png
 *.zip
 *.tgz
+video_pipeline/
+tests/
+

@@ -432,13 +432,23 @@ document.addEventListener('DOMContentLoaded', () => {
             switchView('pipeline');
             showToast(`Restored Call Prep Briefing for ${item.company}`);
         } else if (item.type === 'synthesis') {
-            synthVariantSelect.value = item.variant || 'Variant A';
+            const cleanVar = getCleanVariantKey(item.variant);
+            battlecardSelector.value = cleanVar;
+            
+            if (cleanVar === "A") {
+                synthVariantSelect.value = "Variant A";
+            } else if (cleanVar === "B") {
+                synthVariantSelect.value = "Variant B";
+            } else if (cleanVar === "C") {
+                synthVariantSelect.value = "Variant C";
+            }
+            
             synthTranscriptText.value = item.transcript || '';
             if (document.getElementById('prep-rep')) {
                 document.getElementById('prep-rep').value = item.rep || 'Albert';
             }
             
-            if (item.variant === 'Variant C') {
+            if (cleanVar === 'C') {
                 prepTrackSelect.value = "AI";
             } else {
                 prepTrackSelect.value = "Planning & Analytics (TM1)";
@@ -446,20 +456,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (item.customQuestions) {
                 currentQuestions = item.customQuestions;
+                renderBattlecards();
             } else {
-                loadCustomQuestions(item.variant || 'Variant A');
-                if (item.content && item.content.questionnaireAnswers) {
-                    try {
-                        const extractedAnswers = extractAnswersFromQuestionnaireHTML(item.content.questionnaireAnswers);
-                        currentQuestions.forEach((q, idx) => {
-                            if (extractedAnswers[idx] !== undefined) {
-                                q.a = extractedAnswers[idx];
-                            }
-                        });
-                    } catch (e) {
-                        console.error('Failed to extract custom questions answers:', e);
+                loadCustomQuestions(cleanVar).then(() => {
+                    if (item.content && item.content.questionnaireAnswers) {
+                        try {
+                            const extractedAnswers = extractAnswersFromQuestionnaireHTML(item.content.questionnaireAnswers);
+                            currentQuestions.forEach((q, idx) => {
+                                if (extractedAnswers[idx] !== undefined) {
+                                    q.a = extractedAnswers[idx];
+                                }
+                            });
+                        } catch (e) {
+                            console.error('Failed to extract custom questions answers:', e);
+                        }
                     }
-                }
+                    renderBattlecards();
+                });
             }
             
             let docs = item.content;
@@ -475,8 +488,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeDocTab = 'questionnaireAnswers';
                 showResults(null, true);
             }
-            
-            renderBattlecards();
             
             // Mark all individual report buttons as generated
             document.querySelectorAll('.report-type-btn').forEach(btn => {
@@ -1587,13 +1598,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Clean Variant Key Helper ---
+    function getCleanVariantKey(val) {
+        if (!val) return "A";
+        const str = String(val).toUpperCase();
+        if (str.includes("VARIANT A") || str.trim() === "A" || str.startsWith("A:") || str.includes("TM1 USER") || str.includes("FIRST-TIME TM1")) return "A";
+        if (str.includes("VARIANT B") || str.trim() === "B" || str.startsWith("B:") || str.includes("EXISTING TM1")) return "B";
+        if (str.includes("VARIANT C") || str.trim() === "C" || str.startsWith("C:") || str.includes("GENERATIVE AI") || str.includes("AI USER")) return "C";
+        return "A"; // Fallback
+    }
+
     // --- Load Custom Questions from Server / LocalStorage ---
     async function loadCustomQuestions(variant) {
+        // Normalize variant using robust helper
+        variant = getCleanVariantKey(variant);
+        const expectedLength = BATTLECARDS[variant] ? BATTLECARDS[variant].length : 0;
+
         try {
             const res = await fetch(`/api/questions?variant=${variant}`);
             if (res.ok) {
                 const data = await res.json();
-                if (Array.isArray(data) && data.length > 0) {
+                // Validate server response has matching length (indicates server is running updated code)
+                if (Array.isArray(data) && data.length === expectedLength) {
                     currentQuestions = data.map((item, index) => {
                         const q = typeof item === 'object' && item !== null ? item.q : item;
                         const a = typeof item === 'object' && item !== null ? (item.a || '') : '';
@@ -1602,6 +1628,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     console.log(`Loaded custom questions for Variant ${variant} from server.`);
                     return;
+                } else {
+                    console.warn(`Server questions count mismatch for Variant ${variant}: expected ${expectedLength}, got ${data ? data.length : 0}. Rejecting server payload.`);
                 }
             }
         } catch (e) {
@@ -1612,7 +1640,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const localData = localStorage.getItem('custom_questions_' + variant);
             if (localData) {
                 const parsed = JSON.parse(localData);
-                if (Array.isArray(parsed) && parsed.length > 0) {
+                // Validate local storage has matching length
+                if (Array.isArray(parsed) && parsed.length === expectedLength) {
                     currentQuestions = parsed.map((item, index) => {
                         const q = typeof item === 'object' && item !== null ? item.q : item;
                         const a = typeof item === 'object' && item !== null ? (item.a || '') : '';
@@ -1621,6 +1650,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     console.log(`Loaded custom questions for Variant ${variant} from LocalStorage.`);
                     return;
+                } else {
+                    console.warn(`LocalStorage questions count mismatch for Variant ${variant}: expected ${expectedLength}, got ${parsed ? parsed.length : 0}. Rejecting LocalStorage payload.`);
                 }
             }
         } catch (e) {
@@ -1635,16 +1666,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function syncServiceTrackToVariant() {
         const track = prepTrackSelect.value;
         let variant = "A";
-        if (track === "AI") {
-            battlecardSelector.value = "C";
-            synthVariantSelect.value = "Variant C";
-            variant = "C";
-        } else {
-            // "Planning & Analytics (TM1)" defaults to Variant A (first-time)
-            battlecardSelector.value = "A";
-            synthVariantSelect.value = "Variant A";
-            variant = "A";
-        }
+        // AI track is booked directly to Steny and bypasses discovery pre-screen; default dashboard to Variant A
+        battlecardSelector.value = "A";
+        synthVariantSelect.value = "Variant A";
+        variant = "A";
         await loadCustomQuestions(variant);
     }
 
@@ -2528,102 +2553,30 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
     // --- SDR Battlecards Reference Datasets ---
     const BATTLECARDS = {
         A: [
-            {q: "Why did you contact us? What do you hope to achieve?", tip: "Initial context."},
-            {q: "Why do you think you need TM1?", tip: "Drivers."},
-            {q: "Is this for a single department or across the company?", tip: "Org reach."},
-            {q: "What will you primarily use TM1 for?", tip: "Use cases."},
-            {q: "What application would you like TM1 to replace?", tip: "Target replacement."},
-            {q: "How are you currently managing budgeting and forecasting?", tip: "Process baseline."},
-            {q: "How many people are involved in the planning process?", tip: "Contributor size."},
-            {q: "How long does your budgeting or forecasting cycle typically take?", tip: "Cycle duration."},
-            {q: "What is the most frustrating part of your current process?", tip: "Frustrations."},
-            {q: "How confident are you in the numbers you are producing?", tip: "Trust metrics."},
-            {q: "What does success look like for this project?", tip: "Success criteria."},
-            {q: "Do you have a target completion date?", tip: "Timeline."},
-            {q: "Does your firm have a policy on cloud or on-premise?", tip: "Deployment policy."},
-            {q: "What is the minimum you need TM1 to do?", tip: "MVP scope."},
-            {q: "What are the nice-to-have functions that can be added later?", tip: "Phase 2 scope."},
-            {q: "Who will support TM1 after handover -- IT or finance?", tip: "Support ownership."},
-            {q: "Who are the project stakeholders? First names and titles will do.", tip: "Decision mapping."},
-            {q: "What are the busiest times of year we should plan around?", tip: "Scheduling conflicts."},
-            {q: "Can you share a requirements document?", tip: "Fast-track scoping."},
-            {q: "What budget range do you have in mind?", tip: "Budget qualification."},
-            {q: "How many data sources need to integrate with TM1 eg ERP, ledgers, databases? Are they cloud or on-premise, and will any new ones need to be added?", tip: "ETL complexity."},
-            {q: "Are data reconciliation and load processes manual or automated?", tip: "Automation baseline."},
-            {q: "How many TM1 licenses will you need?", tip: "Licenses."},
-            {q: "How many will be admin licenses?", tip: "Admin licenses."},
-            {q: "Do you expect to need more licenses over time?", tip: "License growth."},
-            {q: "Do you have casual users who only log in once a year?", tip: "Casual license usage."},
-            {q: "Do you use any reporting tools against TM1 data eg Power BI?", tip: "Reporting BI tools."},
-            {q: "How many reports need to be built?", tip: "Reports count."},
-            {q: "Will you report using cube views, PAX or PAW?", tip: "Reporting UI preferences."},
-            {q: "Do you need static reports or dynamic dashboards? If you have a dashboard, please paste a screenshot below.", tip: "Visual reporting demands."},
-            {q: "What are the manual data reconciliation processes?", tip: "Excel reconciliation."},
-            {q: "Are data load and mapping processes manual or automated?", tip: "ETL mappings."},
-            {q: "What are the most complicated Excel computations? Please describe the logic and paste screenshots below.", tip: "Excel logic complexity."},
-            {q: "How much of what you need from TM1 is already being done in Excel today?", tip: "Excel capability match."},
-            {q: "Do users contribute data directly? If yes, please paste screenshots of the input templates below.", tip: "Excel input structures."},
-            {q: "Which business processes are covered eg budgeting, forecasting, workforce planning, sales planning?", tip: "Anaplan process scope."},
-            {q: "How many models do you have and how many users interact with them?", tip: "Anaplan model scale."},
-            {q: "How is data loaded into Anaplan -- manually, via CloudWorks, Anaplan Connect, or API?", tip: "Anaplan integration."},
-            {q: "What source systems feed data into Anaplan eg ERP, CRM, HR?", tip: "Anaplan inputs."},
-            {q: "How do users interact with the model -- via dashboards, NUX pages, or Excel?", tip: "Anaplan UI usage."},
-            {q: "Do users contribute data directly, or is the model read-only for most?", tip: "Anaplan data entry."},
-            {q: "Which business processes are covered eg budgeting, forecasting, consolidation, reporting?", tip: "Jedox process scope."},
-            {q: "Is Jedox deployed on-premise or cloud?", tip: "Jedox environment."},
-            {q: "How is data loaded into Jedox -- via ETL integrator, scripts, or manually?", tip: "Jedox data load."},
-            {q: "What source systems feed data into Jedox eg SAP, ERP, databases?", tip: "Jedox inputs."},
-            {q: "Do users interact via Excel reports, Jedox Web, or both?", tip: "Jedox interface."},
-            {q: "Do users contribute data directly via input templates?", tip: "Jedox data entry."}
+            {q: "What general ledger/ERP system (e.g., SAP, MS Business Central, NetSuite) are you using, and does it currently integrate with your planning tool?", tip: "Identify GL/ERP baseline."},
+            {q: "How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting, and are there issues with version control?", tip: "Gauge manual consolidation scale & errors."},
+            {q: "What specific planning workflows (e.g., actuals, payroll allocations, cost analysis, budgeting, forecasting) are you executing, and are allocations inconsistent or time-consuming?", tip: "Pinpoint active processes & bottlenecks."},
+            {q: "What reporting tools (e.g., Power BI, Qlik, Tableau, Excel PAX/PAW) do you use for management reporting, and do you manually export CSV files to reconcile data?", tip: "Map reporting stack & export overhead."},
+            {q: "Do users need to drill down from high-level reports to transaction-level GL data, and do you perform multi-currency transactions?", tip: "Determine detail granularity & FX needs."},
+            {q: "Do you have internal developers/admins to manage these systems, or is there a key-person risk if someone leaves?", tip: "Assess support staffing & key-person risk."},
+            {q: "How many planning contributors, read-only users, and administrators are involved, and would they need formal training?", tip: "Identify user seats & training demand."},
+            {q: "What repetitive financial tasks feel most manual, and would conversational AI access to financial queries benefit your executives?", tip: "Identify automation candidates & AI interest."},
+            {q: "What is your target timeline for going live, and do you need a parallel run (e.g., completing by a specific month like June)?", tip: "Qualify live targets & parallel run needs."},
+            {q: "Is there a budget allocated for licensing and delivery, and what is your internal approval/purchase order process?", tip: "Validate budget range & approval path."},
+            {q: "Have you evaluated other tools (e.g. Workday, Anaplan, TM1), and who else is involved in the final decision?", tip: "Identify competitors & key decision makers."},
+            {q: "What does success look like, and would a 60-day trial of connectors (like DataFusion) or a free Proof of Concept (POC) help validate the solution?", tip: "Lock in success metrics & position POC/trial."}
         ],
         B: [
-            {q: "Why did you contact us? What do you hope to achieve?", tip: "Initial context."},
-            {q: "How long have you been using TM1?", tip: "Instance age."},
-            {q: "What do you primarily use TM1 for?", tip: "Active use cases."},
-            {q: "Where does it fall short -- including performance, speed, or usability issues?", tip: "Known pain points."},
-            {q: "Is TM1 used across the business or only within finance?", tip: "Corporate reach."},
-            {q: "Have users adopted TM1 or do they resort to Excel?", tip: "Adoption check."},
-            {q: "Is it difficult to make enhancements? Who makes them?", tip: "Enhancement velocity."},
-            {q: "Is the instance cloud or on-premise?", tip: "Hosting environment."},
-            {q: "What does success look like for this project?", tip: "Success criteria."},
-            {q: "Do you have a target completion date?", tip: "Timeline."},
-            {q: "Does your firm have a policy on cloud or on-premise?", tip: "Deployment restrictions."},
-            {q: "What is the minimum you need TM1 to do?", tip: "MVP Scope."},
-            {q: "What are the nice-to-have functions that can be added later?", tip: "Phase 2."},
-            {q: "How long ago did users receive training?", tip: "Pitch training courses."},
-            {q: "Who are the project stakeholders? First names and titles will do.", tip: "Stakeholder mapping."},
-            {q: "What are the busiest times of year we should plan around?", tip: "Scheduling conflicts."},
-            {q: "Can you share a requirements document?", tip: "Fast-track scoping."},
-            {q: "What budget range do you have in mind?", tip: "Budget qualification."},
-            {q: "How many data sources does TM1 integrate with eg ERP, ledgers, databases? Are they cloud or on-premise?", tip: "ETL complexity."},
-            {q: "Will any new data sources need to be added?", tip: "Future integration needs."},
-            {q: "Are data reconciliation and load processes manual or automated?", tip: "Pitch automation."},
-            {q: "Are you using PAW, Perspectives, Excel, or a combination?", tip: "UI preferences."},
-            {q: "How many TM1 licenses do you have?", tip: "Current scale."},
-            {q: "How many are admin licenses?", tip: "Ratio check."},
-            {q: "Do you expect to need more licenses?", tip: "Growth check."},
-            {q: "Do you have casual users who only log in once a year?", tip: "Usage frequency."},
-            {q: "What is the license renewal date? We may be able to get you a better rate.", tip: "Renewal timeline."},
-            {q: "Were the licenses purchased directly from IBM or via a third party?", tip: "Licensing channel."},
-            {q: "Do you use any reporting tools against TM1 data eg Power BI?", tip: "BI Tools."},
-            {q: "How many reports need to be built?", tip: "Scope estimation."},
-            {q: "Will you report using cube views, PAX or PAW?", tip: "UI strategy."},
-            {q: "Do you need static reports or dynamic dashboards? If you have a dashboard, please paste a screenshot below.", tip: "Dashboard design."},
-            {q: "How many developers have worked on TM1 since it was set up?", tip: "Codebase history."},
-            {q: "How many cubes are in TM1?", tip: "Model complexity."},
-            {q: "How many reports are in TM1?", tip: "Reporting scope."},
-            {q: "How many security groups do you have?", tip: "Security overhead."},
-            {q: "What are the log file sizes?", tip: "Rule performance checks."},
-            {q: "How much memory does TM1 use in total?", tip: "RAM usage."},
-            {q: "How much memory do the feeders use?", tip: "Feeder optimization."},
-            {q: "Do you need a like-for-like migration or are you building from scratch? (On-premise)", tip: "Migration scope."},
-            {q: "What is the server RAM size? (On-premise)", tip: "Hardware capability."},
-            {q: "What is the server hard disk size? (On-premise)", tip: "Hardware limits."},
-            {q: "What version of TM1 are you using? (On-premise)", tip: "Upgrade requirement."},
-            {q: "Is there a prod and dev server? (On-premise)", tip: "Environment isolation."},
-            {q: "How many instances of TM1 do you have? (On-premise)", tip: "Instance sprawl."},
-            {q: "Do any Excel reports use Action Buttons? (On-premise)", tip: "Macro dependencies."},
-            {q: "Do you use TM1 Web? If yes, how many Excel reports are published to it? (On-premise)", tip: "Web reporting."}
+            {q: "Why did you contact us? What do you hope to achieve?", tip: "Understand primary goals & outcomes."},
+            {q: "How long have you been users of TM1?", tip: "Gauge system age and historical context."},
+            {q: "What do you primarily use TM1 to do?", tip: "Identify key business use cases."},
+            {q: "Where does it fall short or create friction?", tip: "Uncover structural & operational pain."},
+            {q: "Which parts of finance are actively using it today?", tip: "Map finance user groups & footprint."},
+            {q: "Is usage across the business or limited to finance?", tip: "Identify cross-department deployment scale."},
+            {q: "Have users mostly adopted TM1 or do they resort to using Excel?", tip: "Evaluate user adoption and Excel fallback risk."},
+            {q: "Do users find it difficult to make enhancements? Who makes the enhancements?", tip: "Understand internal skill levels & bottleneck roots."},
+            {q: "Are you aware of performance, speed, or usability challenges?", tip: "Quantify load times, RAM limits or UI lag."},
+            {q: "Is the instance cloud or on-premise?", tip: "Confirm hosting architecture & environment count."}
         ],
         C: [
             {q: "How many slides are in your monthly executive financial reports, and how much time does the finance team spend manually extracting, cleansing, and formatting data for them?", tip: "Measure time spent on formatting and manual slide generation."},
@@ -2664,12 +2617,9 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
                 card.classList.add('teleprompter-active');
             }
             
-            const tipHtml = item.tip ? `<div class="teleprompter-tip">${escapeHTML(item.tip)}</div>` : '';
-            
             card.innerHTML = `
                 <div class="teleprompter-q-num">Question ${num}</div>
                 <div class="teleprompter-q-text">${escapeHTML(item.q)}</div>
-                ${tipHtml}
             `;
             
             // Click to highlight as current question
@@ -2710,7 +2660,6 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
             synthVariantSelect.value = "Variant A";
         } else if (variant === "B") {
             synthVariantSelect.value = "Variant B";
-        
         }
     });
 
@@ -2727,7 +2676,9 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
     });
 
     // Initialize battlecards by default
-    renderBattlecards();
+    loadCustomQuestions("A").then(() => {
+        renderBattlecards();
+    });
 
     // Bind add question button
     const battlecardAddBtn = document.getElementById('battlecard-add-btn');

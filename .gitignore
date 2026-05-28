@@ -24,3 +24,15 @@ custom-questions.json
 node_modules/
 credentials/
 
+# Python Virtual Environments & Packages
+venv/
+video_pipeline/venv/
+__pycache__/
+*.pyc
+
+# Temp scripts, pipeline output, and logs
+scratch/
+video_pipeline/
+promptfooconfig.yaml
+script.py
+

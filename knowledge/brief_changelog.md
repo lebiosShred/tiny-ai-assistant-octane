@@ -3,7 +3,7 @@
 This file tracks all detected changes between the canonical baseline and newly fetched versions of Anthony's Sales Process Technical Brief.
 
 **Source Document:** [Google Doc](https://docs.google.com/document/d/1cHrzNKxx-Xgn4X2FLJETWublWTCfHiySW_HYlUd_aDg)
-**Baseline File:** [technical_brief_baseline.md](file:///c:/Users/SkyDr/OneDrive/Desktop/PROJECTS/Anthony/knowledge/technical_brief_baseline.md)
+Baseline: [technical_brief_baseline.md](file:///c:/Users/SkyDr/OneDrive/Desktop/PROJECTS/Anthony/knowledge/technical_brief_baseline.md)
 
 ---
 
@@ -12,6 +12,7 @@ This file tracks all detected changes between the canonical baseline and newly f
 | Version | Date (AEST) | Lines | Bytes | Changes Detected |
 |:--------|:------------|:------|:------|:-----------------|
 | v1 (baseline) | 2026-05-27 00:00 | 147 | 7525 | Initial baseline established |
+| v2 | 2026-05-28 20:00 | 141 | 7368 | Transitioned to Version 2 brief, refactored scheduler to deterministic, and mapped System Administrator to Amendra/Amiel |
 
 ---
 
@@ -38,4 +39,13 @@ Compare-Object (Get-Content "knowledge\technical_brief_baseline.md" | Select-Obj
 
 ## Detected Changes
 
-(No changes detected yet -- baseline just established)
+### Version 2 Transition (2026-05-28)
+1. **Document Baseline Sync**: Baseline synchronized to `technical_brief_latest.md` (141 lines, 7368 bytes) with updated YAML frontmatter.
+2. **Scheduler Refactoring**: Replaced random round-robin (`Math.random()`) in `book.html` with deterministic allocation based on Sydney time slots:
+   - **Albert**: 7:00 AM -- 2:00 PM AEST
+   - **Isha**: 2:00 PM -- 9:00 PM AEST
+3. **Role Mapping Updates**: Updated all business-level references to "System Administrator" to specialized team roles:
+   - **Amendra**: Director, positional booking target, and travel distance origin.
+   - **Amiel**: Onshore Lead Architect responsible for custom scopes of work.
+   - *Security compliance:* User administrative setup in admin_setup.html remains untouched as "System Administrator".
+4. **Tool Selection Updates (Fireflies Purged)**: Purged all references to Fireflies from the Technical Brief baseline and latest files, replacing them with Fathom/Jamie AI or HubSpot options to align with corporate tooling directives. Updated requirements matrix.

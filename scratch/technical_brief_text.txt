@@ -169,7 +169,7 @@ All recorded calls (pre-screen and positional meetings) must be:
 1.​
 Attached to the correct ticket in HubSpot 
 2.​
-Visible in a single, centralised directory accessible to all sales staff and the sales trainer 
+Visible in a single, centralised directory accessible to all sales staff 
 Directory requirements 
 1.​
 Calls displayed chronologically across the organisation — not buried within individual client records 
@@ -222,7 +222,7 @@ Produce a proposal covering HOW each of the components will be built
 Build five components 
 Sheila 
 Develop SOPs and training materials for sales staff 
-Anthony (Sales Trainer) 
+Anthony 
 Review all five components 
 Provide input on the Claude prompt and pre-screen preparation training 
 Assist with training sales staff 

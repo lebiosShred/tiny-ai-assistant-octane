@@ -32,7 +32,7 @@
 A single booking system with timezone-aware shift-based routing, embedded on a branded context page with QR code support.
 
 > [!NOTE]
-> **Operational vs. Technical Routing:** Calendar bookings route deterministically based on the selected time slot, as Albert and Isha cover shift-deterministic hours (Albert: 7 AM – 2 PM AEST; Isha: 2 PM – 9 PM AEST). To combine both representatives' availability under a single scheduling link, HubSpot's shared calendar configuration is utilized.
+> **Operational vs. Technical Routing:** Calendar bookings route dynamically based on availability, as Albert and Isha cover standard shift hours. To combine both representatives' availability under a single scheduling link, HubSpot's shared calendar configuration is utilized.
 
 ### HOW -- Step by Step
 
@@ -42,7 +42,7 @@ A single booking system with timezone-aware shift-based routing, embedded on a b
 |---|---|
 | Meeting type | Round-Robin (Required by HubSpot to combine calendars) |
 | Duration | 30 minutes |
-| Reps in rotation | Albert (7am–2pm AEST), Isha (2pm–9pm AEST) |
+| Reps in rotation | Albert & Isha |
 | Capacity | 28 x 30-minute slots per day across 14-hour window |
 | Geographic coverage | Single link for Australia, New Zealand, Middle East |
 | Scheduling buffer | 12 hours minimum lead time |
@@ -52,7 +52,7 @@ A single booking system with timezone-aware shift-based routing, embedded on a b
 - Navigate to HubSpot > Sales > Meetings > Create Meeting Link
 - Select "Round Robin" as the scheduling type (to combine multiple rep calendars under one link)
 - Add Albert and Isha as team members
-- Set each rep's availability window in their HubSpot profile calendar settings (Albert: 7am–2pm AEST, Isha: 2pm–9pm AEST)
+- Set each rep's availability window in their HubSpot profile calendar settings (Albert and Isha: standard shift hours)
 - Under "Scheduling" tab: set "Minimum notice time" to 12 hours
 - Under "Scheduling" tab: disable same-day availability
 
@@ -74,7 +74,7 @@ A single booking system with timezone-aware shift-based routing, embedded on a b
 **1.3 Direct Calendar Links (Amendra + Steny)**
 
 - Create two separate HubSpot meeting links (not round-robin, individual)
-- These are used for outbound/email campaigns only — not published on the website
+- These are used for outbound/email campaigns only -- not published on the website
 - Each link is embedded in the rep's email signature and outbound templates
 
 **1.4 Context Page (Not Standalone Calendar)**
@@ -127,8 +127,10 @@ The "Early Game" sales pipeline Ticket progresses through 7 mandatory stages on 
 
 For bulk leads gathered at events (e.g., Forefront), manual pre-screening is inefficient.
 - **Upload:** Export event leads to CSV and import into HubSpot.
-- **Batch Score:** Run a bulk HubSpot workflow that triggers a Claude API script to score leads (1-10) based on firmographics (Title, Company Size, Industry).
-- **Skip Path:** Leads scoring 8+ bypass the Sales Team Pre-Screen and are routed directly to the "Warm Outreach" cadence. Leads < 8 are routed to generic nurture sequences. Isha and Albert only manually process the 8+ leads.
+- **Batch Score:** Run a bulk HubSpot workflow that triggers a Claude API script to score leads (1-10) based on
+    firmographics (Title, Company Size, Industry).
+- **Skip Path:** Leads scoring 8+ bypass the Sales Team Pre-Screen and are routed directly to the "Warm Outreach"
+    cadence. Leads < 8 are routed to generic nurture sequences. Isha and Albert only manually process the 8+ leads.
 
 ---
 
@@ -139,7 +141,7 @@ An AI Sales Assistant named **Tiny** (code-named after Sheila's dog because "she
 
 In Phase 1, Tiny is configured as a Claude Project. The sales representatives (Albert and Isha) manually feed prospect information into Tiny before every pre-screening call to gain a critical intelligence advantage.
 
-### HOW — Step by Step
+### HOW -- Step by Step
 
 **2.1 Claude Project Setup**
 
@@ -154,10 +156,16 @@ In Phase 1, Tiny is configured as a Claude Project. The sales representatives (A
 **2.1b Platform Selection & Trade-offs (Claude vs. watsonx Orchestrate)**
 
 During the design phase, the team deliberated on the underlying platform for the Tiny AI Assistant:
-- **watsonx Orchestrate:** As Octane's primary AI offering, watsonx Orchestrate has zero incremental licensing costs for the business. However, it requires significant build time and technical integration before the sales team can use it.
-- **Claude Projects (Selected for Phase 1):** Claude Projects provide an immediate, out-of-the-box UI for the Sales Team to run manual-first prep prompts. It provides the fastest go-to-market speed with no initial development overhead.
-- **Token Costs & Limits:** Amendra noted that high prep volume means Claude will frequently require manual token/credit top-ups, which introduces minor operational friction.
-- **Future State (Phase 2):** If Claude's API token costs become a burden, the team will evaluate switching the backend to watsonx Orchestrate or leveraging Open Router API endpoints to manage token budgets.
+- **watsonx Orchestrate:** As Octane's primary AI offering, watsonx Orchestrate has zero incremental licensing
+    costs for the business. However, it requires significant build time and technical integration before the sales
+    team can use it.
+- **Claude Projects (Selected for Phase 1):** Claude Projects provide an immediate, out-of-the-box UI for the
+    Sales Team to run manual-first prep prompts. It provides the fastest go-to-market speed with no initial
+    development overhead.
+- **Token Costs & Limits:** Amendra noted that high prep volume means Claude will frequently require manual
+    token/credit top-ups, which introduces minor operational friction.
+- **Future State (Phase 2):** If Claude's API token costs become a burden, the team will evaluate switching the
+    backend to watsonx Orchestrate or leveraging Open Router API endpoints to manage token budgets.
 
 **2.2 OneDrive Connection**
 
@@ -167,10 +175,11 @@ Current Claude limitations: Claude Projects cannot natively connect to OneDrive.
 
 | Approach | Effort | Reliability |
 |---|---|---|
-| **Manual upload (Phase 1):** Rep downloads relevant files from OneDrive and uploads to the Claude conversation | Low | High — works today |
-| **MCP Integration (Phase 2):** Configure Claude's MCP (Model Context Protocol) with a OneDrive connector so Claude can browse folders directly | Medium | Medium — depends on Claude's MCP rollout |
+| **Manual upload (Phase 1):** Rep downloads relevant files from OneDrive and uploads to the Claude conversation | Low | High -- works today |
+| **MCP Integration (Phase 2):** Configure Claude's MCP (Model Context Protocol) with a OneDrive connector so Claude can browse folders directly | Medium | Medium -- depends on Claude's MCP rollout |
 
-**Recommendation:** Start with manual upload. The rep already has access to OneDrive. Adding 30 seconds of file download doesn't break the workflow. Automate later when MCP stabilizes.
+* Recommendation:** Start with manual upload. The rep already has access to OneDrive. Adding 30 seconds of file
+    download doesn't break the workflow. Automate later when MCP stabilizes.
 
 **2.3 Prep Prompt Template**
 
@@ -192,16 +201,16 @@ information below and your knowledge of Octane's services, produce a
 6. Company Email: [paste company email]
 
 --- PRODUCE THESE 10 POINTS ---
-1. LinkedIn profile analysis — role history, tenure, seniority, network signals
-2. Recent social media activity — posts, articles, comments (if visible)
-3. Company overview — products, services, revenue signals, industry
+1. LinkedIn profile analysis -- role history, tenure, seniority, network signals
+2. Recent social media activity -- posts, articles, comments (if visible)
+3. Company overview -- products, services, revenue signals, industry
 4. Octane services relevant to this prospect
 5. Key competitors this prospect may be evaluating
 6. Competing applications they may already use
 7. Complementary applications in their stack
 8. TM1 or AI applications relevant to their industry/role
-9. Likely pain points — based on role, company size, and service interest
-10. Conversation starters — 3 specific openers that demonstrate relevance
+9. Likely pain points -- based on role, company size, and service interest
+10. Conversation starters -- 3 specific openers that demonstrate relevance
     from the first sentence (do NOT use generic discovery questions)
 
 Format: Numbered list. Each point should be 2-4 sentences. Be specific.
@@ -213,7 +222,7 @@ Use the prospect's actual company and role context, not generic advice.
 The rep receives a structured document they can review in 3-5 minutes before the call. Example output structure:
 
 ```
-PRE-SCREEN BRIEFING: Sarah Chen — Meridian Logistics
+PRE-SCREEN BRIEFING: Sarah Chen -- Meridian Logistics
 ═══════════════════════════════════════════════════
 
 1. LINKEDIN ANALYSIS
@@ -244,7 +253,7 @@ Total rep time: 5-8 minutes.
 ### What We're Building
 A structured 30-minute discovery call framework with automatic transcription and post-call AI synthesis.
 
-### HOW — Step by Step
+### HOW -- Step by Step
 
 **3.1 Recording Setup (Three Channels)**
 
@@ -282,6 +291,7 @@ Three variants based on prospect type. The rep reads these conversationally -- t
 
 **Variant A: First-Time TM1 User (Finalized & Aligned)**
 
+<!-- DOC-SYNC-START: Variant A -->
 | # | Question |
 |---|---|
 | 1 | **Context:** Why did you contact us? What do you hope to achieve? |
@@ -299,7 +309,7 @@ Three variants based on prospect type. The rep reads these conversationally -- t
 | 13 | **Project:** Does your firm have a policy on cloud or on-premise? |
 | 14 | **Project:** What is the minimum you need TM1 to do? |
 | 15 | **Project:** What are the nice-to-have functions that can be added later? |
-| 16 | **Project:** Who will support TM1 after handover — IT or finance? |
+| 16 | **Project:** Who will support TM1 after handover -- IT or finance? |
 | 17 | **Project:** Who are the project stakeholders? First names and titles will do. |
 | 18 | **Planning:** What are the busiest times of year we should plan around? |
 | 19 | **Planning:** Can you share a requirements document? |
@@ -321,68 +331,39 @@ Three variants based on prospect type. The rep reads these conversationally -- t
 | 35 | **Excel:** Do users contribute data directly? If yes, please paste screenshots of the input templates below. |
 | 36 | **Anaplan:** Which business processes are covered eg budgeting, forecasting, workforce planning, sales planning? |
 | 37 | **Anaplan:** How many models do you have and how many users interact with them? |
-| 38 | **Anaplan:** How is data loaded into Anaplan — manually, via CloudWorks, Anaplan Connect, or API? |
+| 38 | **Anaplan:** How is data loaded into Anaplan -- manually, via CloudWorks, Anaplan Connect, or API? |
 | 39 | **Anaplan:** What source systems feed data into Anaplan eg ERP, CRM, HR? |
-| 40 | **Anaplan:** How do users interact with the model — via dashboards, NUX pages, or Excel? |
+| 40 | **Anaplan:** How do users interact with the model -- via dashboards, NUX pages, or Excel? |
 | 41 | **Anaplan:** Do users contribute data directly, or is the model read-only for most? |
 | 42 | **Jedox:** Which business processes are covered eg budgeting, forecasting, consolidation, reporting? |
 | 43 | **Jedox:** Is Jedox deployed on-premise or cloud? |
-| 44 | **Jedox:** How is data loaded into Jedox — via ETL integrator, scripts, or manually? |
+| 44 | **Jedox:** How is data loaded into Jedox -- via ETL integrator, scripts, or manually? |
 | 45 | **Jedox:** What source systems feed data into Jedox eg SAP, ERP, databases? |
 | 46 | **Jedox:** Do users interact via Excel reports, Jedox Web, or both? |
 | 47 | **Jedox:** Do users contribute data directly via input templates? |
+<!-- DOC-SYNC-END: Variant A -->
 
 **Variant B: Existing TM1 User (Finalized & Aligned)**
 
+<!-- DOC-SYNC-START: Variant B -->
 | # | Question |
 |---|---|
 | 1 | **Context:** Why did you contact us? What do you hope to achieve? |
-| 2 | **Context:** How long have you been using TM1? |
-| 3 | **Context:** What do you primarily use TM1 for? |
-| 4 | **Context:** Where does it fall short — including performance, speed, or usability issues? |
-| 5 | **Context:** Is TM1 used across the business or only within finance? |
-| 6 | **Context:** Have users adopted TM1 or do they resort to Excel? |
-| 7 | **Context:** Is it difficult to make enhancements? Who makes them? |
-| 8 | **Context:** Is the instance cloud or on-premise? |
-| 9 | **Project:** What does success look like for this project? |
-| 10 | **Project:** Do you have a target completion date? |
-| 11 | **Project:** Does your firm have a policy on cloud or on-premise? |
-| 12 | **Project:** What is the minimum you need TM1 to do? |
-| 13 | **Project:** What are the nice-to-have functions that can be added later? |
-| 14 | **Project:** How long ago did users receive training? |
-| 15 | **Project:** Who are the project stakeholders? First names and titles will do. |
-| 16 | **Planning:** What are the busiest times of year we should plan around? |
-| 17 | **Planning:** Can you share a requirements document? |
-| 18 | **Planning:** What budget range do you have in mind? |
-| 19 | **Planning:** How many data sources does TM1 integrate with eg ERP, ledgers, databases? Are they cloud or on-premise? |
-| 20 | **Planning:** Will any new data sources need to be added? |
-| 21 | **Planning:** Are data reconciliation and load processes manual or automated? |
-| 22 | **Planning:** Are you using PAW, Perspectives, Excel, or a combination? |
-| 23 | **Licenses:** How many TM1 licenses do you have? |
-| 24 | **Licenses:** How many are admin licenses? |
-| 25 | **Licenses:** Do you expect to need more licenses? |
-| 26 | **Licenses:** Do you have casual users who only log in once a year? |
-| 27 | **Licenses:** What is the license renewal date? We may be able to get you a better rate. |
-| 28 | **Licenses:** Were the licenses purchased directly from IBM or via a third party? |
-| 29 | **Reports:** Do you use any reporting tools against TM1 data eg Power BI? |
-| 30 | **Reports:** How many reports need to be built? |
-| 31 | **Reports:** Will you report using cube views, PAX or PAW? |
-| 32 | **Reports:** Do you need static reports or dynamic dashboards? If you have a dashboard, please paste a screenshot below. |
-| 33 | **Technical:** How many developers have worked on TM1 since it was set up? |
-| 34 | **Technical:** How many cubes are in TM1? |
-| 35 | **Technical:** How many reports are in TM1? |
-| 36 | **Technical:** How many security groups do you have? |
-| 37 | **Technical:** What are the log file sizes? |
-| 38 | **Technical:** How much memory does TM1 use in total? |
-| 39 | **Technical:** How much memory do the feeders use? |
-| 40 | **On-premise:** Do you need a like-for-like migration or are you building from scratch? |
-| 41 | **On-premise:** What is the server RAM size? |
-| 42 | **On-premise:** What is the server hard disk size? |
-| 43 | **On-premise:** What version of TM1 are you using? |
-| 44 | **On-premise:** Is there a prod and dev server? |
-| 45 | **On-premise:** How many instances of TM1 do you have? |
-| 46 | **On-premise:** Do any Excel reports use Action Buttons? |
-| 47 | **On-premise:** Do you use TM1 Web? If yes, how many Excel reports are published to it? |
+| 2 | **Context:** How long have you been users of TM1? |
+| 3 | **Context:** What do you primarily use TM1 to do? |
+| 4 | **Context:** Where does it fall short or create friction? |
+| 5 | **Context:** Which parts of finance are actively using it today? |
+| 6 | **Context:** Is usage across the business or limited to finance? |
+| 7 | **Context:** Have users mostly adopted TM1 or do they resort to using Excel? |
+| 8 | **Context:** Do users find it difficult to make enhancements? Who makes the enhancements? |
+| 9 | **Context:** Are you aware of performance, speed, or usability challenges? |
+| 10 | **Context:** Is the instance cloud or on-premise? |
+<!-- DOC-SYNC-END: Variant B -->
+
+**Variant C: First-Time AI User (Decommissioned)**
+
+AI Solutions interest leads bypass the pre-screen discovery call track completely and are automatically routed directly to Steny's calendar. No Variant C battlecard script is utilized on the pre-screen dashboard.
+
 
 
 
@@ -449,7 +430,7 @@ Before the ticket is moved to "Ready for Positional Meeting", the representative
 ### What We're Building
 A single place where Anthony and the team can access every recorded call chronologically, with coaching tools built in.
 
-### HOW — Step by Step
+### HOW -- Step by Step
 
 **4.1 HubSpot as the Central Directory (Already Owned)**
 
@@ -511,7 +492,7 @@ The transcript is then pasted into Claude for structured report generation.
 ### What We're Building
 6 structured report types generated from call transcripts using **Tiny (the AI Sales Assistant)** via dedicated prompt templates.
 
-### HOW — Step by Step
+### HOW -- Step by Step
 
 **5.1 The "Manual-First" Workflow (Phase 1)**
 
@@ -571,7 +552,7 @@ Anthony.
 ```
 Generate a brief, structured internal summary of this call. Format:
 
-SUMMARY: [Company] — [Date]
+SUMMARY: [Company] -- [Date]
 ATTENDEES: [Names]
 SERVICE TRACK: [TM1 / AI]
 KEY DISCUSSION POINTS: (3-5 bullet points)
@@ -605,11 +586,17 @@ Using the call transcript and the collected answers to the 12 questions, draft a
 2. PROPOSED SOLUTION
 - Pitch the corresponding Octane service package(s) based on the collected variables:
   - First-Time TM1: Pitch TM1 Projects (Phase 1, 2, or 3) and/or DataFusion (if using Power BI/Qlik/Tableau).
-  - Existing TM1: Pitch Octane Blue / Red DevOps Support (starting with 40-hour DevOps Blue, transitioning to Red, highlighting no distinction between support and dev, rollover hours, rotation of consultants), TM1 Upgrade Services (if legacy/unlicensed version), or a TM1 Flight Check (if experiencing RAM/HDD/log file/performance red flags).
-  - First-Time AI: Pitch watsonx Orchestrate & watsonx.ai (integrating TM1, Adobe, Google, GCP) starting with a 2-6 week co-creation Proof of Concept (POC) based on the standard POC template.
+  - Existing TM1: Pitch Octane Blue / Red DevOps Support (starting with 40-hour DevOps Blue, transitioning to Red,
+      highlighting no distinction between support and dev, rollover hours, rotation of consultants), TM1 Upgrade
+      Services (if legacy/unlicensed version), or a TM1 Flight Check (if experiencing RAM/HDD/log file/performance
+      red flags).
+  - First-Time AI: Pitch watsonx Orchestrate & watsonx.ai (integrating TM1, Adobe, Google, GCP) starting with a
+      2-6 week co-creation Proof of Concept (POC) based on the standard POC template.
 - Highlight standard inclusions and exclusions for the proposed packages:
-  - TM1 Projects: Include 5 standard report conversions, 1 instance per environment (Dev/Test/Prod), training platforms. Exclude DB service account creation, local PA cloud exports.
-  - Octane Blue: Include 24/7 SLA-based ticketing (Urgent <1hr, High 4hr, Medium 8hr, Low 24hr), rollover hours, monthly health checks, free training library.
+  - TM1 Projects: Include 5 standard report conversions, 1 instance per environment (Dev/Test/Prod), training
+      platforms. Exclude DB service account creation, local PA cloud exports.
+  - Octane Blue: Include 24/7 SLA-based ticketing (Urgent <1hr, High 4hr, Medium 8hr, Low 24hr), rollover hours,
+      monthly health checks, free training library.
   - TM1 Flight Check: Include 6-day analysis, user interviews, RAM/HDD assessment.
   - DataFusion: Include 60-day free trial, setup + email support, low-code interface.
   - watsonx Orchestrate POC: Include co-creation, working demo, client resources.
@@ -619,10 +606,12 @@ Using the call transcript and the collected answers to the 12 questions, draft a
 - Outline the critical path milestones (e.g., resource plan approval, handover checklist, kickoff).
 
 4. TEAM & RESOURCES
-- Explain Octane's staffing model (onshore/offshore hybrid, dedicated lead and shared support resources, team lead oversight, certified developer requirements).
+- Explain Octane's staffing model (onshore/offshore hybrid, dedicated lead and shared support resources, team lead
+    oversight, certified developer requirements).
 
 5. NEXT STEPS & DISCOVERY OPEN ITEMS
-- Identify any missing technical variables from the 12 questions (e.g., RAM usage not confirmed, GL system not specified) as "Discovery Open Items" for the upcoming Positional Meeting.
+- Identify any missing technical variables from the 12 questions (e.g., RAM usage not confirmed, GL system not
+    specified) as "Discovery Open Items" for the upcoming Positional Meeting.
 - Outline the kickoff steps (e.g., booking the decision workshop or setup call).
 
 Do NOT include custom pricing amounts. Only state standard list-price frameworks (e.g., Octane Blue support is A$4,560/month, DataFusion is A$6,950 setup, Training is A$1,850/day).
@@ -663,7 +652,8 @@ Format as a clean bulleted list grouped by Owner.
 
 These items are outside the 5-component scope but are architected in the Early Game Sales Pipeline HTML:
 
-- **Component 06:** Middle Game Triage (Once the positional meeting closes out, leads are triaged: **Kevin** handles TM1 / Planning Analytics demos, **Steny** handles Artificial Intelligence tracks).
+- **Component 06:** Middle Game Triage (Once the positional meeting closes out, leads are triaged: **Kevin**
+    handles TM1 / Planning Analytics demos, **Steny** handles Artificial Intelligence tracks).
 - **Component 07:** Commercial SOW generation via Claude
 - **Component 08:** Deal pipeline tracking and close process
 - **Phase 2:** Agentic automation via Make.com + Claude API + Fathom webhooks + enrichment APIs

@@ -559,18 +559,16 @@ async function handleCallSynthesis(callId) {
 12. What does success look like, and would a 60-day trial of connectors (like DataFusion) or a free Proof of Concept (POC) help validate the solution?`;
         } else if (variant === "Variant B") {
             questionFramework = `
-1. What version of TM1/Planning Analytics are you running, and is it deployed on-premise or in the IBM Cloud?
-2. How many TM1 instances do you run (e.g., production-only, or separate dev and test environments)?
-3. How many models, cubes, dimensions, and user groups are you currently running?
-4. Have you checked your system's performance, RAM usage, hard disk space, or feeder memory usage? Are they approaching high limits?
-5. Are log files being automatically cleared, and what is the typical size of your TM1 log files (e.g., is it under or over the 50MB standard)?
-6. What are the typical report load times for your end-users, and are they above the 5-second threshold (e.g. 15-25 seconds)?
-7. Do you have dedicated in-house TM1 administrators/developers, or are you dependent on key individuals?
-8. Are you currently working with another TM1 vendor? Are you locked into a rigid contract with separate rates for support and development?
-9. What is your current backlog of enhancements, bugs, or data reconciliation tasks, and how is it prioritized?
-10. Have your TM1 developers and power users had formal training, and would they benefit from free access to professional training courses?
-11. Are you using Power BI, Tableau, or Qlik, and do you have a direct database connection or are you manually handling CSVs?
-12. Who has final authority to approve support changes, and what is the timeline to transition support (e.g. target date like October 31)?`;
+1. Why did you contact us? What do you hope to achieve?
+2. How long have you been users of TM1?
+3. What do you primarily use TM1 to do?
+4. Where does it fall short or create friction?
+5. Which parts of finance are actively using it today?
+6. Is usage across the business or limited to finance?
+7. Have users mostly adopted TM1 or do they resort to using Excel?
+8. Do users find it difficult to make enhancements? Who makes the enhancements?
+9. Are you aware of performance, speed, or usability challenges?
+10. Is the instance cloud or on-premise?`;
         } else {
             questionFramework = `
 1. How many slides are in your monthly executive financial reports, and how much time does the finance team spend manually extracting, cleansing, and formatting data for them?

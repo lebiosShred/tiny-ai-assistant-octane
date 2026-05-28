@@ -28,34 +28,19 @@ Targeting prospects who consolidate financial data manually in Excel spreadsheet
 Targeting prospects who already run an instance of IBM Planning Analytics / TM1 but face support bottlenecks, performance issues, or require upgrades.
 
 ### Questions & Guidance:
-1.  **Version & Deployment:** What version of TM1/Planning Analytics are you running, and is it deployed on-premise or in the IBM Cloud?
-2.  **Instance Count:** How many TM1 instances do you run (e.g., production-only, or separate dev and test environments)?
-3.  **Model Scale:** How many models, cubes, dimensions, and user groups are you currently running?
-4.  **Performance Metrics:** Have you checked your system's performance, RAM usage, hard disk space, or feeder memory usage? Are they approaching high limits?
-5.  **Log File Size:** Are log files being automatically cleared, and what is the typical size of your TM1 log files (e.g., is it under or over the 50MB standard)?
-6.  **Report Load Times:** What are the typical report load times for your end-users, and are they above the 5-second threshold?
-7.  **Team Staffing:** Do you have dedicated in-house TM1 administrators/developers, or are you dependent on key individuals?
-8.  **Vendor Lock-in:** Are you currently working with another TM1 vendor? Are you locked into a rigid contract with separate rates for support and development?
-9.  **Backlog Scale:** What is your current backlog of enhancements, bugs, or data reconciliation tasks, and how is it prioritized?
-10. **Training Portals:** Have your TM1 developers and power users had formal training, and would they benefit from free access to professional training courses?
-11. **Reporting Integration:** Are you using Power BI, Tableau, or Qlik, and do you have a direct database connection or are you manually handling CSVs?
-12. **Approval Timeline:** Who has final authority to approve support changes, and what is the timeline to transition support (e.g. target date like October 31)?
+1.  **Context:** Why did you contact us? What do you hope to achieve?
+2.  **Context:** How long have you been users of TM1?
+3.  **Context:** What do you primarily use TM1 to do?
+4.  **Context:** Where does it fall short or create friction? 
+5.  **Context:** Which parts of finance are actively using it today?
+6.  **Context:** Is usage across the business or limited to finance?
+7.  **Context:** Have users mostly adopted TM1 or do they resort to using Excel?
+8.  **Context:** Do users find it difficult to make enhancements? Who makes the enhancements?
+9.  **Context:** Are you aware of performance, speed, or usability challenges?
+10. **Context:** Is the instance cloud or on-premise?
+
 
 ---
 
-## 4. Variant C: First-Time Generative AI Users
-Targeting enterprise prospects who want to automate workflows or integrate AI agent networks across their business units.
-
-### Questions & Guidance:
-1.  **Reporting Bottlenecks:** How many slides are in your monthly executive financial reports, and how much time does the finance team spend manually extracting, cleansing, and formatting data for them?
-2.  **Data Source Matrix:** What enterprise systems and data sources (e.g., TM1, Adobe Analytics, Google Ad Manager, Adobe AdSlot, BigQuery, SQL) need to connect for automated reporting?
-3.  **Natural Language Queries:** Would executives and managers benefit from asking natural language questions (e.g. "AskFinance") to query financial data in real time?
-4.  **Operational Repetition:** What other areas in the business (e.g. Sales, Editorial, HR, Customer Support, IT, Procurement, Legal) have repetitive workflows ripe for automation?
-5.  **AI Exposure:** Have you experimented with or deployed any generative AI or automation tools internally?
-6.  **Cloud Stack:** What is your primary cloud environment (e.g. GCP, AWS, Azure, on-premise) and how do you manage data security?
-7.  **Access Control:** Do you require specific role-based access controls and security protocols for financial data queried by AI?
-8.  **Co-Creation POC:** Would you be open to a 2-to-6 week co-creation Proof of Concept (POC) to demonstrate value before full production rollout?
-9.  **Resource Commitment:** Can you commit a primary business contact and technical resource to collaborate during a 2-to-6 week POC?
-10. **Decision Timelines:** Are you willing to commit to a Decision Workshop within 10 days of POC completion to confirm next steps?
-11. **Budget Awareness:** Are you aware of the indicative costs for enterprise generative AI licensing ($160k+/yr) and implementation services ($125k+)?
-12. **Stakeholders:** What is your timeline for starting an AI pilot, and who are the key executive stakeholders involved?
+## 4. Variant C: First-Time Generative AI Users (Decommissioned)
+AI Solutions interest leads bypass the pre-screen discovery call track completely and are automatically routed directly to Steny's calendar. No Variant C battlecard script is utilized on the pre-screen dashboard.

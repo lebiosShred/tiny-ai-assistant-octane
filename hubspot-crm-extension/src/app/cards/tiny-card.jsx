@@ -29,18 +29,16 @@ const DEFAULT_QUESTIONS = {
     "Would a 60-day trial of connectors help validate the solution?"
   ],
   "Variant B": [
-    "What version of TM1/Planning Analytics are you running?",
-    "How many TM1 instances do you run?",
-    "How many models, cubes, dimensions, and user groups?",
-    "Have you checked performance, RAM usage, or feeder memory usage?",
-    "Are log files automatically cleared (under or over 50MB)?",
-    "What are typical report load times (above 5s threshold)?",
-    "Do you have dedicated in-house TM1 administrators?",
-    "Are you locked into a rigid contract with another TM1 vendor?",
-    "What is your current backlog of enhancements?",
-    "Would power users benefit from free professional training?",
-    "Are you using Power BI/Tableau for direct TM1 reporting?",
-    "What is the timeline to transition support (target Oct 31)?"
+    "Why did you contact us? What do you hope to achieve?",
+    "How long have you been users of TM1?",
+    "What do you primarily use TM1 to do?",
+    "Where does it fall short or create friction?",
+    "Which parts of finance are actively using it today?",
+    "Is usage across the business or limited to finance?",
+    "Have users mostly adopted TM1 or do they resort to using Excel?",
+    "Do users find it difficult to make enhancements? Who makes the enhancements?",
+    "Are you aware of performance, speed, or usability challenges?",
+    "Is the instance cloud or on-premise?"
   ],
   "Variant C": [
     "How much time does the finance team spend on monthly reporting?",

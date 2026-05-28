@@ -13,7 +13,7 @@ _Last updated: 2026-05-27 01:18 AEST_
 | Field | Value |
 |:---|:---|
 | **Project** | Early Game Sales Pipeline |
-| **Client** | Anthony Coundouris (Sales Trainer), Octane Software Solutions |
+| **Client** | Anthony Coundouris, Octane Software Solutions |
 | **Workspace** | `c:\Users\SkyDr\OneDrive\Desktop\PROJECTS\Anthony` |
 | **Project Board Entry** | #10 in [project_board.md](file:///c:/Users/SkyDr/.gemini/antigravity/knowledge/octane_active_projects/artifacts/project_board.md) |
 | **Operator Profile** | [operator_context.md](file:///c:/Users/SkyDr/.gemini/antigravity/knowledge/octane_operator_profile/artifacts/operator_context.md) |

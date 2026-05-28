@@ -320,18 +320,16 @@ Use standard HTML formatting like <strong>, <ul>, <li>, and <p>. Do not write co
 11. Have you evaluated other tools (e.g. Workday, Anaplan, TM1)?
 12. What does success look like, and would a 60-day trial of connectors help validate the solution?`;
         } else if (variant === "Variant B" || variant === "Variant B: Existing TM1 User") {
-            return `1. What version of TM1/Planning Analytics are you running, and is it deployed on-premise or in the IBM Cloud?
-2. How many TM1 instances do you run (e.g., production-only, or separate dev and test environments)?
-3. How many models, cubes, dimensions, and user groups are you currently running?
-4. Have you checked your system's performance, RAM usage, hard disk space, or feeder memory usage?
-5. Are log files being automatically cleared, and what is the typical size of your TM1 log files?
-6. What are the typical report load times for your end-users?
-7. Do you have dedicated in-house TM1 administrators/developers?
-8. Are you currently working with another TM1 vendor?
-9. What is your current backlog of enhancements, bugs, or data reconciliation tasks?
-10. Have your TM1 developers and power users had formal training?
-11. Are you using Power BI, Tableau, or Qlik, and do you have a direct database connection?
-12. Who has final authority to approve support changes, and what is the timeline to transition support?`;
+            return `1. Why did you contact us? What do you hope to achieve?
+2. How long have you been users of TM1?
+3. What do you primarily use TM1 to do?
+4. Where does it fall short or create friction?
+5. Which parts of finance are actively using it today?
+6. Is usage across the business or limited to finance?
+7. Have users mostly adopted TM1 or do they resort to using Excel?
+8. Do users find it difficult to make enhancements? Who makes the enhancements?
+9. Are you aware of performance, speed, or usability challenges?
+10. Is the instance cloud or on-premise?`;
         } else {
             return `1. How many slides are in your monthly executive financial reports, and how much time does the finance team spend manually extracting, cleansing, and formatting data for them?
 2. What enterprise systems and data sources need to connect for automated reporting?

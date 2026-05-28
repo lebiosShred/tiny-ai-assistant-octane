@@ -656,7 +656,7 @@
             const host = 'Round Robin';
             const monthText = 'May';
             
-            // Calculate assigned SDR (Albert: 7 AM - 2 PM, Isha: 2 PM - 9 PM)
+            // Calculate assigned SDR (Albert and Isha share identical availability)
             let assignedRep = "Albert";
             if (selectedTime) {
                 const timeMatch = selectedTime.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
