@@ -7,7 +7,8 @@
     "start": "node server.js",
     "dev": "node server.js",
     "test:prompts": "promptfoo eval",
-    "test:prompts:view": "promptfoo view"
+    "test:prompts:view": "promptfoo view",
+    "test:aegis": "node tests/run_aegis.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

@@ -35,4 +35,5 @@ scratch/
 video_pipeline/
 promptfooconfig.yaml
 script.py
+knowledge/history/
 
