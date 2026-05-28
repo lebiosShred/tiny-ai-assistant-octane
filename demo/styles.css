@@ -1,25 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
-
 :root {
-    --bg-base: #000000;
-    --bg-surface: rgba(0, 0, 0, 0.9);
-    --bg-card: rgba(255, 255, 255, 0.05);
-    --bg-card-hover: rgba(255, 255, 255, 0.1);
+    --bg-base: #f9fafb; /* Light background */
+    --bg-surface: #ffffff; /* White panels */
+    --bg-card: #ffffff;
+    --bg-card-hover: #f3f4f6;
     --border-glow: rgba(77, 174, 235, 0.25);
-    --border-glass: rgba(255, 255, 255, 0.1);
+    --border-glass: #e5e7eb;
     --primary: #4daeeb; /* Octane Blue */
     --primary-glow: rgba(77, 174, 235, 0.4);
     --primary-hover: #359cdb;
     --accent-teal: #4daeeb;
     --accent-cyan: #4daeeb;
-    --text-main: #ffffff;
-    --text-muted: rgba(255, 255, 255, 0.65);
-    --text-dark: rgba(255, 255, 255, 0.35);
-    --glass-bg: rgba(255, 255, 255, 0.02);
+    --text-main: #1f2937; /* Dark text for readability */
+    --text-muted: #6b7280;
+    --text-dark: #9ca3af;
+    --glass-bg: #ffffff;
     --hubspot-orange: #4daeeb;
-    --green: #ffffff;
-    --yellow: rgba(255, 255, 255, 0.8);
-    --red: #4daeeb;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
 }
 
 * {
@@ -29,7 +27,7 @@
 }
 
 body {
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     background-color: var(--bg-base);
     color: var(--text-main);
     line-height: 1.6;
@@ -141,7 +139,7 @@ body {
 
 .btn-primary {
     background: var(--primary);
-    color: #000000;
+    color: var(--text-main);
     font-weight: 600;
     box-shadow: 0 0 10px var(--primary-glow);
 }
@@ -240,15 +238,15 @@ body {
 .form-group label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.75);
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .form-input {
     background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    color: #000000;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: #1a1a1a;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
     font-size: 0.85rem;
@@ -283,18 +281,19 @@ body {
 /* Panels */
 .panel {
     background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-glass);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     height: 100%;
-    color: #000000;
+    color: var(--text-main);
 }
 
 .panel-header {
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -307,7 +306,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #000000;
+    color: var(--text-main);
 }
 
 .panel-body {
@@ -325,10 +324,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #f5f5f5;
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 8px;
     padding: 0.5rem 1.25rem;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 0.5rem;
 }
 
@@ -336,7 +335,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: rgba(0, 0, 0, 0.4);
+    color: var(--text-dark);
     font-weight: 500;
     font-size: 0.8rem;
     cursor: default;
@@ -346,7 +345,7 @@ body {
 }
 
 .step-indicator.active {
-    color: #000000;
+    color: var(--text-main);
     font-weight: 700;
 }
 
@@ -361,21 +360,21 @@ body {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.08);
-    color: rgba(0, 0, 0, 0.6);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
     font-size: 0.75rem;
     font-weight: 700;
 }
 
 .step-indicator.active .step-num {
     background: var(--primary);
-    color: #000000;
+    color: var(--text-main);
     box-shadow: 0 0 8px var(--primary-glow);
 }
 
 .step-indicator.completed .step-num {
     background: var(--primary);
-    color: #000000;
+    color: var(--text-main);
 }
 
 .step-label {
@@ -415,8 +414,9 @@ body {
 /* Select Control */
 .select-input {
     background-color: #ffffff;
-    color: #000000;
+    color: #1a1a1a;
     cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 /* Action Group */
@@ -442,8 +442,8 @@ body {
 
 /* Output Console */
 .output-console {
-    background: #ffffff;
-    border: 1px dashed rgba(0, 0, 0, 0.25);
+    background: #f0f4f8;
+    border: 1px dashed rgba(0, 0, 0, 0.15);
     border-radius: 8px;
     padding: 1.25rem;
     flex: 1;
@@ -453,7 +453,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    color: rgba(0, 0, 0, 0.65);
+    color: var(--text-muted);
     position: relative;
     overflow-y: auto;
 }
@@ -494,14 +494,14 @@ body {
 
 .empty-state h3 {
     font-family: 'Roboto', sans-serif;
-    color: #000000;
+    color: #111827;
     font-size: 1.1rem;
 }
 
 .empty-state p {
     font-size: 0.8rem;
     line-height: 1.4;
-    color: rgba(0, 0, 0, 0.55);
+    color: #4b5563;
 }
 
 /* Document Result Selector */
@@ -510,10 +510,10 @@ body {
     flex-wrap: wrap;
     gap: 0.4rem;
     margin-bottom: 1rem;
-    background: #f5f5f5;
+    background: rgba(255, 255, 255, 0.03);
     padding: 0.35rem;
     border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .doc-tab-btn {
@@ -521,18 +521,18 @@ body {
     border: 1px solid transparent;
     padding: 0.35rem 0.75rem;
     border-radius: 6px;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--text-muted);
     font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 .doc-tab-btn:hover {
-    color: #000000;
-    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.08);
 }
 .doc-tab-btn.active {
-    color: #000000;
+    color: var(--text-main);
     background: var(--primary);
     box-shadow: 0 0 10px var(--primary-glow);
 }
@@ -542,13 +542,13 @@ body {
     animation: fadeIn 0.3s ease-out forwards;
     font-size: 0.9rem;
     line-height: 1.6;
-    color: #000000;
+    color: var(--text-main);
 }
 
 .output-document h3 {
     font-family: 'Roboto', sans-serif;
     margin-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 0.25rem;
     color: var(--primary);
     display: flex;
@@ -557,7 +557,7 @@ body {
 }
 
 .output-document strong {
-    color: #000000;
+    color: var(--text-main);
 }
 
 .output-document ul {
@@ -574,8 +574,8 @@ body {
 }
 
 .output-document pre {
-    background: rgba(0, 0, 0, 0.03);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 0.75rem 1rem;
     border-radius: 6px;
     font-family: 'Roboto', sans-serif;
@@ -583,7 +583,7 @@ body {
     overflow-x: auto;
     white-space: pre-wrap;
     margin: 0.75rem 0;
-    color: #000000;
+    color: var(--text-main);
 }
 
 /* Score Badges */
@@ -594,7 +594,7 @@ body {
     font-size: 0.7rem;
     text-transform: uppercase;
 }
-.badge-score.hot { background: var(--primary); border: 1px solid var(--primary); color: #000000; }
+.badge-score.hot { background: var(--primary); border: 1px solid var(--primary); color: var(--text-main); }
 .badge-score.warm { background: transparent; border: 1px solid var(--text-main); color: var(--text-main); }
 .badge-score.cold { background: transparent; border: 1px solid var(--text-dark); color: var(--text-dark); }
 
@@ -634,9 +634,9 @@ body {
 }
 
 .output-btn {
-    background: #000000;
-    border: 1px solid var(--border-glass);
-    color: var(--text-muted);
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: #4b5563;
     font-size: 0.75rem;
     padding: 0.35rem 0.6rem;
     border-radius: 4px;
@@ -702,7 +702,7 @@ body {
 
 /* Console Output Typography and Spacing Overrides */
 #output-doc-content {
-    color: #000000 !important;
+    color: var(--text-main) !important;
 }
 
 #output-doc-content p,
@@ -714,7 +714,7 @@ body {
 #output-doc-content blockquote,
 #output-doc-content ol,
 #output-doc-content ul {
-    color: #000000 !important;
+    color: var(--text-main) !important;
     line-height: 1.75 !important;
     font-size: 0.95rem !important;
 }
@@ -755,7 +755,7 @@ body {
 }
 
 #output-doc-content strong {
-    color: #000000 !important;
+    color: var(--text-main) !important;
     font-weight: 700 !important;
 }
 
@@ -778,7 +778,7 @@ body {
     overflow-x: auto !important;
     white-space: pre-wrap !important;
     margin: 1rem 0 !important;
-    color: #000000 !important;
+    color: var(--text-main) !important;
     line-height: 1.6 !important;
 }
 
@@ -788,29 +788,29 @@ body {
     border-radius: 6px;
     padding: 0.85rem;
     text-align: center;
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(255, 255, 255, 0.02);
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    color: rgba(0, 0, 0, 0.55);
+    color: var(--text-dark);
     font-size: 0.8rem;
 }
 .file-drop-zone:hover,
 .file-drop-zone.dragover {
     border-color: var(--primary);
     background: rgba(77, 174, 235, 0.05);
-    color: #000000;
+    color: var(--text-main);
 }
 
 /* Battlecard Reference Styling */
 .battlecard-section {
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     padding: 0.85rem;
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(255, 255, 255, 0.02);
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -834,7 +834,7 @@ body {
 }
 .battlecard-q {
     font-weight: 600;
-    color: #000000;
+    color: var(--text-main);
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -851,10 +851,10 @@ body {
     padding: 0;
 }
 .battlecard-copy-btn:hover {
-    color: #000000;
+    color: var(--text-main);
 }
 .battlecard-tips {
-    color: rgba(0, 0, 0, 0.55);
+    color: var(--text-dark);
     font-style: italic;
     padding-left: 0.5rem;
     border-left: 2px solid rgba(0, 0, 0, 0.1);
@@ -886,7 +886,7 @@ body {
 }
 .teleprompter-hint {
     font-size: 0.7rem;
-    color: rgba(0, 0, 0, 0.4);
+    color: var(--text-dark);
     font-style: italic;
 }
 
@@ -967,7 +967,7 @@ body {
     background: rgba(0, 0, 0, 0.04);
     padding: 0.2rem;
     border-radius: 6px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     gap: 0.15rem;
 }
 .outcome-btn {
@@ -1008,7 +1008,7 @@ body {
     margin-bottom: 0.6rem;
     font-size: 0.85rem;
     font-weight: 700;
-    color: rgba(0, 0, 0, 0.75);
+    color: var(--text-muted);
 }
 .positional-meeting-travel {
     font-size: 0.7rem;
@@ -1174,7 +1174,7 @@ body {
     background-image: url('tiny.png') !important;
     background-size: cover !important;
     background-position: center !important;
-    background-color: #1e1e1e !important;
+    background-color: #ffffff !important;
     border: 2px solid var(--primary) !important;
     box-shadow: 0 0 15px var(--primary-glow) !important;
     transition: transform 0.2s ease, box-shadow 0.2s ease !important;
@@ -1194,14 +1194,14 @@ body {
     position: fixed;
     right: 105px;
     bottom: 40px;
-    background: #0f172a;
+    background: #ffffff;
     border: 1px solid var(--primary);
-    box-shadow: 0 4px 20px rgba(15, 98, 254, 0.4);
+    box-shadow: 0 4px 20px var(--primary-glow);
     padding: 0.6rem 1.1rem;
     border-radius: 12px;
     z-index: 999999;
-    font-family: 'Inter', 'Roboto', sans-serif;
-    color: #ffffff;
+    font-family: 'Roboto', 'Roboto', sans-serif;
+    color: #111827;
     font-size: 0.85rem;
     font-weight: 700;
     pointer-events: none;
@@ -1225,7 +1225,7 @@ body {
     transform: translateY(-50%) rotate(45deg);
     width: 10px;
     height: 10px;
-    background: #0f172a;
+    background: #ffffff;
     border-right: 1px solid var(--primary);
     border-top: 1px solid var(--primary);
 }
@@ -1248,13 +1248,13 @@ body {
     border-radius: 6px;
     border: 1px solid rgba(0, 0, 0, 0.12);
     background: #f7f7f7;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--text-muted);
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .left-tab-btn:hover {
-    color: #000000;
+    color: var(--text-main);
     background: #eef2f5;
     border-color: rgba(0, 0, 0, 0.18);
 }
@@ -1273,13 +1273,13 @@ body {
 
 .directory-filter-bar select {
     background-color: #ffffff !important;
-    color: #000000 !important;
+    color: var(--text-main) !important;
 }
 
 /* Directory Cards */
 .directory-card {
     background: #fafafa;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     padding: 0.85rem 1rem;
     display: flex;
@@ -1305,12 +1305,12 @@ body {
 .directory-card-title {
     font-size: 0.9rem;
     font-weight: 700;
-    color: #000000;
+    color: var(--text-main);
 }
 
 .directory-card-subtitle {
-    font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.55);
+    font-size: 0.65rem;
+    color: var(--text-dark);
 }
 
 .directory-card-meta {
@@ -1346,7 +1346,7 @@ body {
 
 .directory-btn-load {
     background: var(--primary);
-    color: #000000;
+    color: var(--text-main);
     box-shadow: 0 2px 4px var(--primary-glow);
 }
 
@@ -1428,7 +1428,7 @@ body {
     justify-content: space-between;
     padding: 0.35rem 0.5rem;
     border-radius: 4px;
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(0, 0, 0, 0.04);
     font-size: 0.75rem;
     color: #333333;
@@ -1454,7 +1454,7 @@ body {
 }
 
 .gdrive-item-size {
-    color: rgba(0, 0, 0, 0.4);
+    color: var(--text-dark);
     font-size: 0.65rem;
 }
 
@@ -1483,7 +1483,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 6px;
     padding: 0.4rem 0.75rem;
@@ -1495,7 +1495,7 @@ body {
     height: 26px;
     border-radius: 50%;
     background: var(--primary);
-    color: #000000;
+    color: var(--text-main);
     border: none;
     cursor: pointer;
     display: inline-flex;
@@ -1538,7 +1538,7 @@ body {
 
 .audio-volume-icon {
     font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.4);
+    color: var(--text-dark);
     cursor: pointer;
 }
 
