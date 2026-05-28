@@ -16,6 +16,32 @@ const DEFAULT_CONFIG = {
     synthSystemPrompt: "You are a professional B2B sales operations assistant. You analyze call transcripts and produce clean, formatted HTML documents separated by delimiters."
 };
 
+// Dynamic Centralized Pricing Catalog Loader
+let pricingCatalogString = "";
+async function loadPricingCatalog() {
+    if (pricingCatalogString) return pricingCatalogString;
+    try {
+        const res = await fetch('/api/config/pricing');
+        if (res.ok) {
+            const data = await res.json();
+            pricingCatalogString = data.packages.map(p => `- ${p.name}: ${p.price}. ${p.description}`).join('\n');
+            return pricingCatalogString;
+        }
+    } catch (e) {
+        console.error("⚠️ Failed to fetch pricing catalog dynamically:", e.message);
+    }
+    // Static fallback in case backend is down or disconnected
+    pricingCatalogString = [
+        "- DevOps Blue Support: A$4,560/month base support. Rollover hours, monthly health checks, free professional training library. 24/7 SLA-based ticketing. No distinction between support and development.",
+        "- DevOps Red Support: Advanced tier for larger instances or high deployment cadence.",
+        "- TM1 Flight Check: Fixed A$5,800. A 6-day complete analysis of system health (RAM, disk, feeders).",
+        "- DataFusion Connector: Setup price A$6,950. Automates data transfer from source ERPs (like NetSuite, SAP) to a central database. Inclusions: 5 standard report conversions.",
+        "- Custom training: Standard custom training rate is A$1,850/day.",
+        "- AI Pilots / watsonx POCs: Indicative SaaS pricing starting at $160,000/yr for licensing and $125,000 for implementation. Includes 2-to-6 week co-creation phase."
+    ].join('\n');
+    return pricingCatalogString;
+}
+
     /**
      * Helper to make a chat completions request to Mistral AI
      * @param {Array} messages - Chat messages array
@@ -26,7 +52,6 @@ const DEFAULT_CONFIG = {
         const config = { ...DEFAULT_CONFIG, ...customConfig };
         
         const isProxy = config.apiUrl.startsWith('/') || config.apiUrl.includes(window.location.host + '/api');
-        console.log("fetch config url:", config.apiUrl);
         if (!config.apiKey && !isProxy) {
             throw new Error("Mistral API Key is missing. Please check settings.");
         }
@@ -41,7 +66,6 @@ const DEFAULT_CONFIG = {
             headers["Authorization"] = `Bearer ${config.apiKey}`;
         }
 
-        console.log("sending fetch request to", config.apiUrl);
         const response = await fetch(config.apiUrl, {
             method: "POST",
             headers: headers,
@@ -53,16 +77,12 @@ const DEFAULT_CONFIG = {
             })
         });
         
-        console.log("fetch response status:", response.status);
-
         if (!response.ok) {
             const errBody = await response.text().catch(() => "");
             throw new Error(`Mistral API error: ${response.status} ${response.statusText}. ${errBody}`);
         }
 
-        console.log("parsing json...");
         const data = await response.json();
-        console.log("json parsed!");
 
         if (!data.choices || !data.choices[0] || !data.choices[0].message) {
             throw new Error("Invalid API response format (missing choice or message)");
@@ -339,6 +359,7 @@ Use standard HTML formatting like <strong>, <ul>, <li>, and <p>. Do not write co
     async function synthesizeCallTranscript(variant, transcript, screencastUrl = "", customConfig = {}, customQuestions = null) {
         const config = { ...DEFAULT_CONFIG, ...customConfig };
         let questionFramework = getQuestionFramework(variant, customQuestions);
+        const catalogStr = await loadPricingCatalog();
 
         const prompt = `You are a sales preparation assistant for Octane Software Solutions.
 Analyze the following pre-screen call transcript and generate 7 sales handover deliverables.
@@ -364,12 +385,7 @@ When mapping the questionnaire in [DOCUMENT: QUESTIONNAIRE_ANSWERS]:
 
 --- OCTANE REFERENCE CATALOG ---
 When proposing solutions, align with these official specifications:
-- DevOps Blue Support: A$4,560/month base support. Rollover hours, monthly health checks, free professional training library. 24/7 SLA-based ticketing. No distinction between support and development.
-- DevOps Red Support: Advanced tier for larger instances or high deployment cadence.
-- TM1 Flight Check: Fixed A$5,800. A 6-day complete analysis of system health (RAM, disk, feeders).
-- DataFusion Connector: Setup price A$6,950. Automates data transfer from source ERPs (like NetSuite, SAP) to a central database. Inclusions: 5 standard report conversions.
-- Custom training: Standard custom training rate is A$1,850/day.
-- AI Pilots / watsonx POCs: Indicative SaaS pricing starting at $160,000/yr for licensing and $125,000 for implementation. Includes 2-to-6 week co-creation phase.
+${catalogStr}
 
 --- INPUTS ---
 Screencast Link: ${screencastUrl || "Not provided"}
@@ -716,6 +732,7 @@ Format: HTML email from the Sales Representative to the prospect. Include key po
 
     async function generateProposal(params, dossierContent, questionnaireAnswers, transcript, customConfig = {}) {
         const config = { ...DEFAULT_CONFIG, ...customConfig };
+        const catalogStr = await loadPricingCatalog();
         const prompt = `You are a consultative sales director at Octane Software Solutions.
 Draft a preliminary corporate proposal based on the accumulated context of our prep work and discovery call.
 
@@ -735,10 +752,7 @@ Draft a preliminary, consultative proposal document. Do NOT include custom prici
 - Summarize the client's current background, systems, pain points, and goals.
 2. PROPOSED SOLUTION
 - Recommend the corresponding Octane service package(s) based on the actual prospect needs:
-  * DevOps Blue/Red Support: A$4,560/month base support. Rollover hours, monthly health checks. Urgent <1hr, High 4hr, Medium 8hr, Low 24hr. No support/development distinction.
-  * TM1 Flight Check: Fixed A$5,800. A 6-day complete analysis of system health (RAM, disk, feeders).
-  * DataFusion Connector: Setup price A$6,950. Automates data transfer from source ERPs (like NetSuite, SAP) to a central database. Inclusions: 5 standard report conversions.
-  * watsonx AI Pilots: Indicative SaaS pricing starting at $160,000/yr for licensing and $125,000 for implementation. Includes 2-to-6 week co-creation.
+${catalogStr}
 3. APPROACH & METHODOLOGY
 - Detail standard project phases and timelines (e.g. 6-week TM1 Upgrade, 2-6 week POC).
 4. TEAM & RESOURCES

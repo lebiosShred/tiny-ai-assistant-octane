@@ -2496,7 +2496,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
     <title>Tiny AI Assistant Handover Report - ${prepCompanyInput.value || "Prospect"}</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap">
     <style>
-        body { font-family: 'Roboto', sans-serif; padding: 40px; background: #000000; color: #ffffff; max-width: 800px; margin: 0 auto; line-height: 1.75; font-size: 0.95rem; }
+        body { font-family: 'Roboto', sans-serif; padding: 40px; background: #ffffff; color: #1a1a1a; max-width: 800px; margin: 0 auto; line-height: 1.75; font-size: 0.95rem; }
         h1 { border-bottom: 2px solid #4daeeb; padding-bottom: 10px; font-size: 28px; color: #4daeeb; margin-bottom: 30px; }
         h2 { border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 5px; color: #4daeeb; margin-top: 40px; margin-bottom: 20px; }
         h3 { color: #4daeeb; font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.5rem; }
@@ -2508,7 +2508,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
         p { margin-bottom: 15px; }
         strong { color: #ffffff; font-weight: 700; }
         .badge-score { padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; text-transform: uppercase; }
-        .badge-score.hot { background: #4daeeb; border: 1px solid #4daeeb; color: #000000; }
+        .badge-score.hot { background: #4daeeb; border: 1px solid #4daeeb; color: #ffffff; }
         .badge-score.warm { background: transparent; border: 1px solid #ffffff; color: #ffffff; }
         .badge-score.cold { background: transparent; border: 1px solid rgba(255, 255, 255, 0.35); color: rgba(255, 255, 255, 0.35); }
     </style>
@@ -2543,7 +2543,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
     <title>Tiny Prospect Briefing Dossier</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap">
     <style>
-        body { font-family: 'Roboto', sans-serif; padding: 40px; background: #000000; color: #ffffff; max-width: 800px; margin: 0 auto; line-height: 1.75; font-size: 0.95rem; }
+        body { font-family: 'Roboto', sans-serif; padding: 40px; background: #ffffff; color: #1a1a1a; max-width: 800px; margin: 0 auto; line-height: 1.75; font-size: 0.95rem; }
         h3 { border-bottom: 2px solid #4daeeb; padding-bottom: 10px; font-size: 24px; color: #4daeeb; margin-bottom: 25px; }
         h4 { color: #4daeeb; font-size: 1.05rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
         ol, ul { margin-left: 25px; margin-bottom: 20px; }
