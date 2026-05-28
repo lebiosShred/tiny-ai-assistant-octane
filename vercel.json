@@ -9,6 +9,10 @@
     { "source": "/", "destination": "/demo/index.html" },
     { "source": "/styles.css", "destination": "/demo/styles.css" },
     { "source": "/app.js", "destination": "/demo/app.js" },
-    { "source": "/ai-assistant.js", "destination": "/demo/ai-assistant.js" }
+    { "source": "/ai-assistant.js", "destination": "/demo/ai-assistant.js" },
+    { "source": "/tiny.png", "destination": "/demo/tiny.png" },
+    { "source": "/albert.png", "destination": "/demo/albert.png" },
+    { "source": "/isha.png", "destination": "/demo/isha.png" },
+    { "source": "/screencast/:path*", "destination": "/demo/screencast/:path*" }
   ]
 }
