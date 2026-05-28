@@ -1283,7 +1283,7 @@ Format as a clean bulleted list grouped by Owner.
                             <li>Rep opens Claude and navigates to the <strong>"Tiny - Sales Reports"</strong> Project.</li>
                             <li>Rep pastes the transcript, runs the report prompts, and reviews <strong>Tiny's</strong> output to internalize qualifying criteria.</li>
                             <li>Rep copies the formatted output from Tiny and pastes it directly into the HubSpot Ticket Note.</li>
-                            <li><strong>Rep records 2-Minute Screencast via Vidyard</strong> (0:00-0:30 Lead Temp, 0:30-1:00 Pain Points, 1:00-1:30 Gut Feel, 1:30-2:00 Prep Notes). Vidyard auto-logs to HubSpot Contact Timeline.</li>
+
                         </ul>
                         <h4>Phase 2 Automation Upgrade</h4>
                         <ul>
@@ -1423,7 +1423,7 @@ Format as a clean bulleted list grouped by Owner.
                 <p><strong>Wed 9:35 AM:</strong> Fathom finishes processing. The transcript and recording appear in the HubSpot Calls Index for Anthony to review later. Simultaneously, the HubSpot integration auto-attaches the transcript and call data to Sarah's ticket.</p>
 
                 <h3>Component 05: Automated Reports</h3>
-                <p><strong>Wed 10:15 AM:</strong> Zapier/Make.com detects the new transcript in HubSpot, triggers the <strong>Tiny (Claude API)</strong> Mega-Prompt, and automatically generates the recap email, summary sheet, detailed notes, proposal draft, questionnaire mapping, and action items. Tiny writes this directly back to the HubSpot ticket as a Note. Albert opens <strong>Vidyard</strong>, records his mandatory 2-Minute Screencast (screen + camera), and Vidyard auto-logs it to Sarah's HubSpot timeline. Kevin is fully briefed before Thursday's meeting.</p>
+                <p><strong>Wed 10:15 AM:</strong> Zapier/Make.com detects the new transcript in HubSpot, triggers the <strong>Tiny (Claude API)</strong> Mega-Prompt, and automatically generates the recap email, summary sheet, detailed notes, proposal draft, questionnaire mapping, and action items. Tiny writes this directly back to the HubSpot ticket as a Note. Kevin is fully briefed before Thursday's meeting.</p>
 
                 <h3>Why This Architecture Works</h3>
                 <table class="scenario-table">
@@ -1489,7 +1489,7 @@ Format as a clean bulleted list grouped by Owner.
                     <br>2. Zapier/Make.com pulls the raw transcript and sends it to the <strong>Tiny API</strong> with the Mega-Prompt.
                     <br>3. Tiny outputs a structured JSON response (mapping answers and assigning a qualification score).
                     <br>4. Zapier/Make.com parses the JSON, updates <strong>HubSpot Custom Properties</strong> automatically, and generates a Proposal Draft document attached to the ticket.
-                    <br><span style="color:var(--white);"><em>Result: The handoff to Kevin/Steny happens automatically the second the call ends. The rep does absolutely zero admin work beyond a 2-min screencast.</em></span>
+                    <br><span style="color:var(--white);"><em>Result: The handoff to Kevin/Steny happens automatically the second the call ends. The rep does absolutely zero admin work.</em></span>
                 </p>
 
                 <h3>System Scaling: P1-P9 Tooling Upgrade Path</h3>
@@ -1499,11 +1499,7 @@ Format as a clean bulleted list grouped by Owner.
                         <th>Tool / Action</th>
                         <th>Operational Impact</th>
                     </tr>
-                    <tr>
-                        <td><strong>P1</strong></td>
-                        <td>Vidyard Free</td>
-                        <td>Standardized screencast for deal handoffs. Auto-logs to HubSpot timeline.</td>
-                    </tr>
+
                     <tr>
                         <td><strong>P2</strong></td>
                         <td>Fathom Free</td>

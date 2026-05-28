@@ -26,6 +26,7 @@ const DEFAULT_CONFIG = {
         const config = { ...DEFAULT_CONFIG, ...customConfig };
         
         const isProxy = config.apiUrl.startsWith('/') || config.apiUrl.includes(window.location.host + '/api');
+        console.log("fetch config url:", config.apiUrl);
         if (!config.apiKey && !isProxy) {
             throw new Error("Mistral API Key is missing. Please check settings.");
         }
@@ -40,6 +41,7 @@ const DEFAULT_CONFIG = {
             headers["Authorization"] = `Bearer ${config.apiKey}`;
         }
 
+        console.log("sending fetch request to", config.apiUrl);
         const response = await fetch(config.apiUrl, {
             method: "POST",
             headers: headers,
@@ -50,13 +52,18 @@ const DEFAULT_CONFIG = {
                 provider: config.provider
             })
         });
+        
+        console.log("fetch response status:", response.status);
 
         if (!response.ok) {
             const errBody = await response.text().catch(() => "");
             throw new Error(`Mistral API error: ${response.status} ${response.statusText}. ${errBody}`);
         }
 
+        console.log("parsing json...");
         const data = await response.json();
+        console.log("json parsed!");
+
         if (!data.choices || !data.choices[0] || !data.choices[0].message) {
             throw new Error("Invalid API response format (missing choice or message)");
         }
@@ -154,9 +161,12 @@ Estimate the travel distance/time for an in-person meeting. The travel origin is
         ];
 
         try {
+            console.log("Calling Mistral API for dossier...");
             const responseText = await callMistralAPI(messages, customConfig);
+            console.log("Mistral API returned successfully!");
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
+            console.log("Mistral API failed:", err.message);
             console.warn("⚠️ live API call failed, activating offline demo mock fallback. Reason:", err.message);
             const targetName = params.name || "Sarah Chen";
             const targetCompany = params.company || "Meridian Logistics";

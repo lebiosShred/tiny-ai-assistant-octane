@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const gdriveService = require('./gdrive-service');
+const emailService = require('./email-service');
+
 
 const PORT = process.env.PORT || 8080;
 const PUBLIC_DIR = __dirname;
@@ -17,7 +19,9 @@ const MIME_TYPES = {
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.ico': 'image/x-icon',
-    '.svg': 'image/svg+xml'
+    '.svg': 'image/svg+xml',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm'
 };
 
 // Initialize GCS History Directory
@@ -625,7 +629,6 @@ Format exactly as:
 
 [DOCUMENT: RECAP_EMAIL]
 Generate a concise, client-facing recap email based on the observations from the call. Replace '. xx .' placeholders in the template below with the 3 most important takeaways from the session. 
-Also, you MUST explicitly insert a paragraph at the bottom referencing the Vidyard Screencast Link (${recordingUrl || "Not provided"}) if one is provided (do not write it if not provided). Ensure the link is wrapped in a proper HTML hyperlink tag, for example: <a href="LINK">LINK</a>.
 Hey [client's name],
 I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
 . xx .
@@ -642,7 +645,6 @@ Format exactly as:
     <li>[Takeaway 2]</li>
     <li>[Takeaway 3]</li>
 </ul>
-<p>I have also recorded a 2-minute video briefing summarizing our discussion, which you can review here: <a href="LINK">LINK</a></p>
 <p>You should have received an invitation confirming our appointment together.</p>
 <p>Kind regards,<br>Anthony.</p>
 
@@ -788,6 +790,17 @@ const server = http.createServer(async (req, res) => {
 
     const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
     const pathname = parsedUrl.pathname;
+
+    // Lightweight API Security Guard
+    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/hubspot/webhook')) {
+        const apiKey = req.headers['x-api-key'];
+        const validKey = process.env.API_KEY || 'octane-secret-key-2026';
+        if (apiKey !== validKey) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Unauthorized API Access. Missing or invalid x-api-key header.' }));
+            return;
+        }
+    }
 
     // API Proxy Route
     if (pathname === '/api/chat' && req.method === 'POST') {
@@ -1185,6 +1198,7 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+
     // API Google Drive List Route
     if (pathname === '/api/gdrive/list' && req.method === 'GET') {
         const folderId = parsedUrl.searchParams.get('folderId');
@@ -1495,12 +1509,46 @@ const server = http.createServer(async (req, res) => {
                         fs.mkdirSync(historyDir, { recursive: true });
                     }
                     const filePath = path.join(historyDir, `${id}.json`);
-                    fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', (writeErr) => {
+                    fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', async (writeErr) => {
                         if (writeErr) {
                             res.writeHead(500, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ error: 'Failed to write history file.' }));
                             return;
                         }
+
+                        // Auto-upload the lead intake file to Google Drive if it is a dossier submission
+                        if (payload.type === 'dossier' && payload.intakeAnswers) {
+                            // Run asynchronously so we don't delay the HTTP response
+                            (async () => {
+                                let driveFile = null;
+                                try {
+                                    const cleanCompany = payload.company.replace(/[^a-zA-Z0-9]/g, '_');
+                                    const cleanName = payload.name.replace(/[^a-zA-Z0-9]/g, '_');
+                                    const gdriveName = `Lead_Intake_${cleanCompany}_${cleanName}.txt`;
+                                    
+                                    driveFile = await gdriveService.createIntakeFile(gdriveName, payload.intakeAnswers);
+                                    
+                                    // Update local dossier json with GDrive metadata for unified SDR extraction!
+                                    payload.gDriveFile = driveFile.name;
+                                    payload.gDriveFileId = driveFile.id;
+                                    payload.gDriveFileContent = payload.intakeAnswers;
+                                    
+                                    fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', () => {
+                                        // Non-blocking write back
+                                    });
+                                } catch (err) {
+                                    console.error('⚠️ Failed to automatically upload booking file to Google Drive:', err.message);
+                                }
+
+
+                                // Trigger real-time email notification to Amie Lebios
+                                await emailService.sendLeadNotificationEmail(payload);
+
+                                // Trigger automated ICS calendar invite to Prospect
+                                await emailService.sendProspectConfirmationEmail(payload);
+                            })();
+                        }
+
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ status: 'success', id }));
                     });

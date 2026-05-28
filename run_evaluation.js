@@ -238,7 +238,6 @@ Format exactly as:
 
 [DOCUMENT: RECAP_EMAIL]
 Generate a concise, client-facing recap email based on the observations from the call. Replace '. xx .' placeholders in the template below with the 3 most important takeaways from the session. 
-Also, you MUST explicitly insert a paragraph at the bottom referencing the Vidyard Screencast Link (${screencastUrl || "Not provided"}) if one is provided (do not write it if not provided). Ensure the link is wrapped in a proper HTML hyperlink tag, for example: <a href="LINK">LINK</a>.
 Hey [client's name],
 I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
 . xx .
@@ -255,7 +254,6 @@ Format exactly as:
     <li>[Takeaway 2]</li>
     <li>[Takeaway 3]</li>
 </ul>
-<p>I have also recorded a 2-minute video briefing summarizing our discussion, which you can review here: <a href="LINK">LINK</a></p>
 <p>You should have received an invitation confirming our appointment together.</p>
 <p>Kind regards,<br>Anthony.</p>
 
@@ -556,7 +554,7 @@ Sarah Chen: That would save us 3 days per month! We need to go live in 2 months.
 Albert (SDR): Let's book next Tuesday at 10:00 AM AEST to meet with Practice Lead Amendra Pratap.
 Sarah Chen: Sounds perfect.
     `;
-    const userPrompt7 = compileUserPrompt("Variant A", standardTranscript, "https://share.vidyard.com/watch/L1m3G345");
+    const userPrompt7 = compileUserPrompt("Variant A", standardTranscript, "https://teams.microsoft.com/l/meetup-join/mock");
     
     try {
         const responseText = await callMistral([
@@ -606,13 +604,12 @@ Sarah Chen: Sounds perfect.
         const docs = parseSynthesisResponse(responseText);
         
         const hasPlaceholder = docs.recapEmail && docs.recapEmail.includes(". xx .");
-        const hasScreencastInEmail = docs.recapEmail && docs.recapEmail.includes("https://share.vidyard.com/watch/L1m3G345") && docs.recapEmail.includes("<a href=");
-        const hasScreencastInSheet = docs.summarySheet && docs.summarySheet.includes("https://share.vidyard.com/watch/L1m3G345");
+        const hasScreencastInSheet = docs.summarySheet && docs.summarySheet.includes("https://teams.microsoft.com/l/meetup-join/mock");
 
-        if (!hasPlaceholder && hasScreencastInEmail && hasScreencastInSheet) {
-            logTest("Placeholder & Link Integration", "PASS", "Placeholders substituted, and Vidyard screencast links embedded successfully.");
+        if (!hasPlaceholder && hasScreencastInSheet) {
+            logTest("Placeholder & Link Integration", "PASS", "Placeholders substituted, and Teams screencast links embedded successfully in the summary sheet.");
         } else {
-            logTest("Placeholder & Link Integration", "FAIL", `Placeholder found: ${hasPlaceholder}, Email link embedded: ${hasScreencastInEmail}, Sheet link: ${hasScreencastInSheet}`);
+            logTest("Placeholder & Link Integration", "FAIL", `Placeholder found: ${hasPlaceholder}, Sheet link: ${hasScreencastInSheet}`);
         }
     } catch (e) {
         logTest("Placeholder & Link Integration", "FAIL", e.message);
@@ -754,7 +751,7 @@ SDR: Let's schedule a deep dive.`;
     // TEST 13: Empty Transcript Handling
     // -------------------------------------------------------------
     console.log("\n--- TEST 13: Empty Transcript Handling ---");
-    const userPrompt13 = compileUserPrompt("Variant A", "", "https://share.vidyard.com/watch/L1m3G345");
+    const userPrompt13 = compileUserPrompt("Variant A", "", "https://teams.microsoft.com/l/meetup-join/mock");
     try {
         const responseText = await callMistral([
             { role: "system", content: systemPrompt },
@@ -809,7 +806,7 @@ ${silentCatalogTranscript}
 Albert (SDR): Hi Sarah <script>alert("XSS")</script> Chen, let's start.
 Sarah Chen: Yes, we have 35 spreadsheets.
     `;
-    const userPrompt15 = compileUserPrompt("Variant A", xssTranscript, "https://share.vidyard.com/watch/L1m3G345");
+    const userPrompt15 = compileUserPrompt("Variant A", xssTranscript, "https://teams.microsoft.com/l/meetup-join/mock");
     try {
         const responseText = await callMistral([
             { role: "system", content: systemPrompt },

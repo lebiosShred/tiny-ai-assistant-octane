@@ -18,7 +18,6 @@
 | **Microsoft OneDrive** | Client file storage | ✅ Owned |
 | **Claude** | AI research, report generation, SOW drafting | ✅ Covered |
 | **Fathom (Free)** | Auto-join Teams meetings, transcription, HubSpot sync | $0/mo |
-| **Vidyard (Free)** | 2-Minute Screencast recording, HubSpot auto-logging, viewer analytics | $0/mo |
 | **Zapier / Make.com** | Workflow automation (Fathom → Claude API → HubSpot) | ~$30/mo |
 
 **Total new monthly cost: ~$30**
@@ -469,25 +468,7 @@ To build muscle memory and ensure that the sales staff (Albert and Isha) fully m
 3. **Execute Prompts:** The rep pastes the call transcript and runs the prompts for the required reports (Recap Email, Summary Sheet, Detailed Notes, Proposal Draft, Questionnaire Mapping, and Action Items).
 4. **Verify & Learn:** The rep reviews Tiny's output. This review step is crucial: it forces the rep to digest the prospect's responses and internalize the qualifying parameters before handoff.
 5. **Log in CRM:** The rep copies the verified reports and pastes them into the **HubSpot Ticket** as a consolidated Note.
-6. **SDR Reality:** Isha finishes the call, runs the copy-paste flow with Tiny, and updates HubSpot within 5 minutes. She then records her 2-Minute Screencast via **Vidyard** (Section 5.1b), completing the deal handover.
-
-**5.1b The 2-Minute Screencast (Vidyard)**
-
-The screencast is the ultimate human layer. It gives Kevin/Steny/Amendra the rep's gut feel on the deal -- tone, body language cues, and confidence level that AI cannot capture.
-
-| Setting | Value |
-|---|---|
-| Tool | **Vidyard** (Free tier: 25 videos/month, unlimited with Pro at $19/user/mo) |
-| Format | Screen + camera (picture-in-picture) |
-| Duration | Exactly 2 minutes. No more. |
-| HubSpot Logging | Vidyard auto-logs the video to the Contact Activity Timeline |
-| Viewer Analytics | Kevin/Steny can see if/when the video was watched |
-
-Content structure for the 2-minute debrief:
-1. **0:00-0:30** -- Lead temperature (Hot/Warm/Cold) and why
-2. **0:30-1:00** -- Key pain points that surfaced (in the rep's own words)
-3. **1:00-1:30** -- What the AI reports may have missed (gut feel, tone, unspoken signals)
-4. **1:30-2:00** -- Specific prep suggestion for the Positional Meeting partner
+6. **SDR Reality:** Isha finishes the call, runs the copy-paste flow with Tiny, and updates HubSpot within 5 minutes, completing the deal handover.
 
 **5.1c Zapier/Make.com Automation Upgrade (Phase 2)**
 
@@ -642,7 +623,6 @@ These can be scoped separately once Components 01-05 are operational.
 
 | Priority | Tool | Cost | What It Adds |
 |---|---|---|---|
-| **P1** | **Vidyard Free** | $0/mo | Standardises the 2-min screencast with HubSpot auto-logging + viewer analytics |
 | **P2** | Keep **Fathom Free** | $0/mo | Already optimal for current team size |
 | **P3** | Keep **Zapier** | ~$30/mo | Already configured, low complexity |
 
@@ -671,14 +651,13 @@ These can be scoped separately once Components 01-05 are operational.
 | **Notta** | 🇯🇵 Japan | Best Japanese transcription. Bilingual meeting support. In-person hardware (Notta Memo). Relevant if Octane expands into Japanese market. |
 | **Sansan** | 🇯🇵 Japan | Business card CRM with Claude MCP connector. APAC-focused. Event lead processing. |
 | **Pabbly Connect** | 🇮🇳 India | Zapier alternative with lifetime deal pricing (~$249 one-time). No per-task limits. Budget fallback for P6. |
-| **Hippo Video** | 🇮🇳 India | AI video generation for sales. Multilingual. Interactive in-video CTAs. Alternative to Vidyard. |
 | **Salesken** | 🇮🇳 India | Real-time in-call coaching. Battle cards and objection prompts appear live during the call. |
 
 ### Cost Projection
 
 | Configuration | Monthly Cost | Coverage |
 |---|---|---|
-| **Current (P1-P3)** | ~$30-35/mo | Fathom Free + Vidyard Free + Zapier + Claude API |
+| **Current (P1-P3)** | ~$30-35/mo | Fathom Free + Zapier + Claude API |
 | **+ Apollo (P4)** | ~$80-85/mo | Fully automated prep + recording + reports |
 | **+ n8n swap (P6)** | ~$60-65/mo | Drops Zapier, unlimited automations |
 | **Full stack (P1-P7)** | ~$100-130/mo | Fully automated pipeline with proposals + e-sign |

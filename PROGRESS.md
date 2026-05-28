@@ -13,7 +13,7 @@
 | :--- | :--- | :--- |
 | **Pipeline Rebranding** | ✅ Completed | Reverted pipeline branding back to the original **"Early Game"** name across all deliverables. |
 | **Workflow Diagram** | ✅ Completed | Embedded a responsive dark-themed Mermaid flowchart at the top and in Section 2 of `executive-summary.html`. |
-| **Tool Stack Mapping** | ✅ Completed | Defined the $0 extra-spend tooling stack (HubSpot, Fathom, Jamie AI, Vidyard, 3CX, Teams). |
+| **Tool Stack Mapping** | ✅ Completed | Defined the $0 extra-spend tooling stack (HubSpot, Fathom, Jamie AI, 3CX, Teams). |
 | **Google Drive Integration** | ✅ Completed | Replaced OneDrive mockup with a live Google Drive API v3 connection using Service Account credentials. |
 | **Component 03 Hardening** | ✅ Completed | Integrated the collapsible pre-screen Rapport Guide panel and client-side vCalendar (`.ics`) file generation for Positional Meetings. |
 

@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     playBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         
-                        // Handle external player pages (Vidyard, Fathom)
+                        // Handle external player pages (Teams, Fathom)
                         if (recordingUrl && !isDirectAudio) {
                             showToast("Opening recording page in new tab...");
                             window.open(recordingUrl, '_blank');
@@ -400,9 +400,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     badge.style.display = 'none';
                 }
             }
-            prepTrackSelect.value = item.track || 'Planning & Analytics (TM1)';
-            prepIntakeText.value = item.intakeAnswers || '';
-            prepLinkedinText.value = item.linkedinInfo || '';
+            if(prepTrackSelect) prepTrackSelect.value = item.track || 'Planning & Analytics (TM1)';
+            if(prepIntakeText) prepIntakeText.value = item.intakeAnswers || '';
+            if(prepLinkedinText) prepLinkedinText.value = item.linkedinInfo || '';
             
             // Save raw dossier text and render accordion
             currentDossierText = item.content;
@@ -630,7 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
             newPlayBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 
-                // Handle external player pages (Vidyard, Fathom)
+                // Handle external player pages (Teams, Fathom)
                 if (recordingUrl && !isDirectAudio) {
                     showToast("Opening recording page in new tab...");
                     window.open(recordingUrl, '_blank');
@@ -1435,6 +1435,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+    window.goToStep = goToStep;
 
     function renderQuickReference() {
         if (!currentDossierText) {
@@ -1981,9 +1982,9 @@ Target SOW: Migrate current managed support to Octane Black to include full proa
             gdriveBadge.style.display = 'flex';
         }
 
-        prepTrackSelect.value = "Planning & Analytics (TM1)";
-        prepIntakeText.value = "Service track interest: IBM Planning Analytics / TM1 support\nExcel spreadsheets consolidated: 35 sheets currently consolidated manually\nWorkflow description: Monthly actuals vs budget consolidation and reporting\nGL/ERP system: NetSuite ERP\nReporting tools: Power BI, Excel (PAX)\nDiscuss details: We have a major bottleneck during monthly forecasting. Consolidating the NetSuite actuals with our Excel model templates takes us 45 minutes per worksheet. We want to automate this data transfer and move to a unified database.";
-        prepLinkedinText.value = "Experience:\n- Head of FP&A at Meridian Logistics (3 years - Present)\n  * Leading financial planning, forecasting, and consolidation processes\n  * Managing a team of 4 financial analysts\n- Senior Financial Analyst at Linfox Logistics (4 years)\nEducation:\n- Master of Applied Finance, University of Melbourne";
+        if(prepTrackSelect) prepTrackSelect.value = "Planning & Analytics (TM1)";
+        if(prepIntakeText) prepIntakeText.value = "Service track interest: IBM Planning Analytics / TM1 support\nExcel spreadsheets consolidated: 35 sheets currently consolidated manually\nWorkflow description: Monthly actuals vs budget consolidation and reporting\nGL/ERP system: NetSuite ERP\nReporting tools: Power BI, Excel (PAX)\nDiscuss details: We have a major bottleneck during monthly forecasting. Consolidating the NetSuite actuals with our Excel model templates takes us 45 minutes per worksheet. We want to automate this data transfer and move to a unified database.";
+        if(prepLinkedinText) prepLinkedinText.value = "Experience:\n- Head of FP&A at Meridian Logistics (3 years - Present)\n  * Leading financial planning, forecasting, and consolidation processes\n  * Managing a team of 4 financial analysts\n- Senior Financial Analyst at Linfox Logistics (4 years)\nEducation:\n- Master of Applied Finance, University of Melbourne";
         if (linkedinDropText) {
             linkedinDropText.innerHTML = '📁 Drop LinkedIn PDF/TXT here, or click to upload';
         }
@@ -2157,6 +2158,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
 
     // --- Form Submit handlers ---
     prepForm.addEventListener('submit', async (e) => {
+        console.log('SUBMIT EVENT FIRED in app.js!');
         e.preventDefault();
         
         const params = {
@@ -2170,9 +2172,9 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
             gDriveFile: attachedGDriveFile,
             gDriveFileId: attachedGDriveFileId,
             gDriveFileContent: attachedGDriveFileContent,
-            track: prepTrackSelect.value,
-            intakeAnswers: prepIntakeText.value.trim(),
-            linkedinInfo: prepLinkedinText.value.trim()
+            track: prepTrackSelect?.value || '',
+            intakeAnswers: prepIntakeText?.value?.trim() || '',
+            linkedinInfo: prepLinkedinText?.value?.trim() || ''
         };
 
         if (!params.name || !params.company) {

@@ -25,7 +25,7 @@ function getDriveClient() {
     try {
         const auth = new google.auth.GoogleAuth({
             keyFile: KEY_FILE_PATH,
-            scopes: ['https://www.googleapis.com/auth/drive.readonly']
+            scopes: ['https://www.googleapis.com/auth/drive']
         });
 
         driveClient = google.drive({ version: 'v3', auth });
@@ -189,8 +189,53 @@ async function searchFiles(query, rootFolderId) {
     }
 }
 
+/**
+ * Creates a formatted plain text intake document in the target Google Drive folder.
+ * @param {string} fileName File name to create (e.g. Lead_Intake_Sarah_Chen.txt)
+ * @param {string} contentText Text content of the intake summary
+ * @param {string} parentFolderId Optional target folder ID (defaults to root/env)
+ * @returns {Promise<Object>} Created file metadata (id, name)
+ */
+async function createIntakeFile(fileName, contentText, parentFolderId) {
+    const drive = getDriveClient();
+    if (!drive) {
+        throw new Error('Google Drive client not initialized. Check credentials.');
+    }
+
+    const { Readable } = require('stream');
+    const folderId = parentFolderId || process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+
+    try {
+        console.log(`📤 Uploading lead intake file "${fileName}" to GDrive folder: ${folderId}`);
+        const fileMetadata = {
+            name: fileName,
+            parents: [folderId],
+            mimeType: 'text/plain'
+        };
+
+        const media = {
+            mimeType: 'text/plain',
+            body: Readable.from([contentText])
+        };
+
+        const response = await drive.files.create({
+            resource: fileMetadata,
+            media: media,
+            fields: 'id, name',
+            supportsAllDrives: true
+        });
+
+        console.log(`✅ Google Drive file created: "${response.data.name}" (ID: ${response.data.id})`);
+        return response.data;
+    } catch (err) {
+        console.error(`❌ Error creating GDrive file "${fileName}":`, err.message);
+        throw err;
+    }
+}
+
 module.exports = {
     listFolder,
     getFileContent,
-    searchFiles
+    searchFiles,
+    createIntakeFile
 };

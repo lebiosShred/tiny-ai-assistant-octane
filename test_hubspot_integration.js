@@ -77,7 +77,7 @@ https.request = function (options, callback) {
                 id: '456',
                 properties: {
                     hs_call_body: 'Albert: Hi Sarah, tell me about your systems. Sarah Chen: We use NetSuite and copy-paste 35 sheets. I want generative AI and watsonx integration.',
-                    hs_call_recording_url: 'https://share.vidyard.com/watch/mock_video'
+                    hs_call_recording_url: 'https://teams.microsoft.com/l/meetup-join/mock'
                 }
             });
         }
