@@ -1287,10 +1287,22 @@ document.addEventListener('DOMContentLoaded', () => {
             dashboardGrid.classList.remove('layout-split', 'layout-focus-left', 'layout-focus-right');
             if (stepNum === 1) {
                 dashboardGrid.classList.add('layout-split');
+                const savedSplit = localStorage.getItem('tiny_workspace_split');
+                if (savedSplit) {
+                    const percentage = parseFloat(savedSplit);
+                    if (!isNaN(percentage)) {
+                        dashboardGrid.style.setProperty('--left-panel-width', `${percentage}%`);
+                        dashboardGrid.style.setProperty('--right-panel-width', `calc(${100 - percentage}% - 12px)`);
+                    }
+                }
             } else if (stepNum === 2) {
                 dashboardGrid.classList.add('layout-focus-left');
+                dashboardGrid.style.removeProperty('--left-panel-width');
+                dashboardGrid.style.removeProperty('--right-panel-width');
             } else if (stepNum === 3) {
                 dashboardGrid.classList.add('layout-focus-right');
+                dashboardGrid.style.removeProperty('--left-panel-width');
+                dashboardGrid.style.removeProperty('--right-panel-width');
             }
         }
 
@@ -3167,28 +3179,29 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
     }
 
     // SDR Identity persistence
-    const activeSdrSelect = document.getElementById('active-sdr');
-    const prepRepSelect = document.getElementById('prep-rep');
+    // ── Zero-UI URL Parameter Configuration ──
+    const urlParams = new URLSearchParams(window.location.search);
     
-    const savedSdr = localStorage.getItem('tiny_active_sdr') || 'Albert';
-    
-    if (activeSdrSelect) {
-        activeSdrSelect.value = savedSdr;
-        activeSdrSelect.addEventListener('change', () => {
-            const newSdr = activeSdrSelect.value;
-            localStorage.setItem('tiny_active_sdr', newSdr);
-            
-            if (prepRepSelect) {
-                prepRepSelect.value = newSdr;
-            }
-            if (directoryFilterRep) {
-                directoryFilterRep.value = newSdr;
-                renderDirectoryList();
-            }
-            showToast(`Active Sales Rep switched to ${newSdr}`);
-        });
+    // 1. Identity Parsing
+    if (urlParams.has('sdr')) {
+        const sdrParam = urlParams.get('sdr');
+        if (sdrParam) {
+            localStorage.setItem('tiny_active_sdr', sdrParam);
+            console.log(`[Zero-UI] Active SDR set to: ${sdrParam}`);
+        }
     }
     
+    // 2. Demo Mode Parsing
+    if (urlParams.has('demo')) {
+        const demoParam = urlParams.get('demo') === 'true';
+        localStorage.setItem('tiny_demo_mode', demoParam);
+        console.log(`[Zero-UI] Demo Mode set to: ${demoParam}`);
+    }
+
+    // Apply configuration
+    const savedSdr = localStorage.getItem('tiny_active_sdr') || 'Albert';
+    
+    const prepRepSelect = document.getElementById('prep-rep');
     if (prepRepSelect) {
         prepRepSelect.value = savedSdr;
     }
@@ -3196,15 +3209,101 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
         directoryFilterRep.value = savedSdr;
     }
 
-    // Demo Mode state initialize
-    const settingsDemoMode = document.getElementById('settings-demo-mode');
-    if (settingsDemoMode) {
-        const isDemo = localStorage.getItem('tiny_demo_mode') === 'true';
-        settingsDemoMode.checked = isDemo;
-        toggleDemoButtons(isDemo);
-    }
+    const isDemo = localStorage.getItem('tiny_demo_mode') === 'true';
+    toggleDemoButtons(isDemo);
 
     // Run sync initially after all functions and datasets are defined
     syncServiceTrackToVariant();
+
+    // ── Interactive Split-Pane Workspace Engine ──
+    const splitter = document.getElementById('workspace-splitter');
+    const dbGrid = document.querySelector('.dashboard-grid');
+
+    if (splitter && dbGrid) {
+        let isDragging = false;
+        
+        // Restore saved split position from localStorage
+        const savedSplit = localStorage.getItem('tiny_workspace_split');
+        if (savedSplit) {
+            const splitVal = parseFloat(savedSplit);
+            if (!isNaN(splitVal) && splitVal > 10 && splitVal < 90) {
+                applySplitRatio(splitVal);
+            }
+        }
+
+        // Apply grid ratios to CSS variables
+        function applySplitRatio(percentage) {
+            dbGrid.style.setProperty('--left-panel-width', `${percentage}%`);
+            dbGrid.style.setProperty('--right-panel-width', `calc(${100 - percentage}% - 12px)`);
+        }
+
+        // Mousedown handler
+        splitter.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            isDragging = true;
+            splitter.classList.add('active');
+            document.body.classList.add('resizing');
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        // Throttled mousemove
+        let animationFrameId = null;
+        function onMouseMove(e) {
+            if (!isDragging) return;
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+
+            animationFrameId = requestAnimationFrame(() => {
+                const gridRect = dbGrid.getBoundingClientRect();
+                const totalWidth = gridRect.width - 12; // subtract gutter width
+                const offsetX = e.clientX - gridRect.left;
+                
+                // Calculate percentage
+                let percentage = (offsetX / totalWidth) * 100;
+                
+                // Defensive minimum column boundaries (e.g. min 320px for inputs, 380px for outputs)
+                const minLeftPct = (320 / gridRect.width) * 100;
+                const minRightPct = (380 / gridRect.width) * 100;
+                const maxLeftPct = 100 - minRightPct;
+                
+                if (percentage < minLeftPct) percentage = minLeftPct;
+                if (percentage > maxLeftPct) percentage = maxLeftPct;
+
+                applySplitRatio(percentage);
+            });
+        }
+
+        // Mouseup handler
+        function onMouseUp() {
+            if (!isDragging) return;
+            isDragging = false;
+            splitter.classList.remove('active');
+            document.body.classList.remove('resizing');
+
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+
+            // Persist state
+            const leftWidth = dbGrid.style.getPropertyValue('--left-panel-width');
+            if (leftWidth) {
+                localStorage.setItem('tiny_workspace_split', parseFloat(leftWidth));
+            }
+        }
+
+        // Double click to reset layout to ideal balance
+        splitter.addEventListener('dblclick', () => {
+            localStorage.removeItem('tiny_workspace_split');
+            dbGrid.style.removeProperty('--left-panel-width');
+            dbGrid.style.removeProperty('--right-panel-width');
+        });
+    }
 
 });

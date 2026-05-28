@@ -239,15 +239,72 @@ body {
 /* Main Dashboard Grid */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: minmax(380px, 1fr) minmax(420px, 1.2fr);
-    gap: 1.25rem;
+    grid-template-columns: var(--left-panel-width, 1fr) 12px var(--right-panel-width, 1.2fr);
     min-height: calc(100vh - 180px);
+    position: relative;
 }
 
 @media (max-width: 768px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
+        gap: 1.25rem;
     }
+    #workspace-splitter {
+        display: none !important;
+    }
+}
+
+/* Splitter Gutter Handle */
+.gutter-handle {
+    grid-column: 2;
+    position: relative;
+    cursor: col-resize;
+    width: 12px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: background 0.15s ease;
+    z-index: 100;
+}
+
+/* Broad hover active state visible lines */
+.gutter-handle::after {
+    content: "";
+    width: 2px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
+    transition: all 0.15s ease;
+}
+
+.gutter-handle:hover::after,
+.gutter-handle.active::after {
+    background: var(--primary);
+    height: 100%;
+    width: 3px;
+    box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.gutter-handle:hover {
+    background: rgba(77, 174, 235, 0.04);
+}
+
+.gutter-handle.active {
+    background: rgba(77, 174, 235, 0.08);
+}
+
+/* Resizing Safety Overrides */
+body.resizing {
+    cursor: col-resize !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+body.resizing * {
+    pointer-events: none !important;
+    user-select: none !important;
 }
 
 /* Panels */

@@ -26,13 +26,6 @@
                 <a href="/book" class="header-link" style="color: #4b5563; text-decoration: none; font-size: 0.8rem; font-weight: 600; padding: 4px 8px; transition: color 0.2s;" onmouseover="this.style.color='#0ea5e9'" onmouseout="this.style.color='#4b5563'">Booking Page</a>
             </nav>
 
-            <div class="sdr-selector-wrapper" style="display: none; align-items: center; gap: 8px; margin-right: 1.25rem;">
-                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Active Sales Rep:</span>
-                <select id="active-sdr" class="sdr-selector" style="background: #ffffff; color: #1a1a1a; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">
-                    <option value="Albert">Albert</option>
-                    <option value="Isha">Isha</option>
-                </select>
-            </div>
             <a href="admin_setup.html" class="btn btn-secondary" style="height: 32px; padding: 0 12px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">⚙ Admin Console</a>
         </header>
 
@@ -322,6 +315,9 @@
                     <!-- Moved to #call-directory-workspace at top-level -->
                 </div>
             </div>
+
+            <!-- Workspace Resizer Splitter -->
+            <div class="gutter-handle" id="workspace-splitter" title="Drag to resize workspace panels, double click to center"></div>
 
             <!-- Right Panel (Console Output) -->
             <div class="panel">
