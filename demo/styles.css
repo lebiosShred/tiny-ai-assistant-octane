@@ -239,12 +239,12 @@ body {
 /* Main Dashboard Grid */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 1.2fr;
+    grid-template-columns: minmax(380px, 1fr) minmax(420px, 1.2fr);
     gap: 1.25rem;
     min-height: calc(100vh - 180px);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
@@ -1633,12 +1633,12 @@ body {
 /* Call Recording Directory Workspace Layout (Master-Detail) */
 .directory-workspace {
     display: grid;
-    grid-template-columns: 1fr 1.5fr;
+    grid-template-columns: minmax(320px, 1fr) minmax(400px, 1.5fr);
     gap: 1.25rem;
     min-height: calc(100vh - 180px);
     width: 100%;
 }
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
     .directory-workspace {
         grid-template-columns: 1fr;
     }
