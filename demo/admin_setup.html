@@ -244,7 +244,7 @@
 
         .btn-save {
             background: var(--primary);
-            color: #000;
+            color: #ffffff;
             font-weight: 700;
             box-shadow: 0 0 12px var(--primary-glow);
         }
@@ -995,6 +995,7 @@
         const btnRestoreDefaults = document.getElementById('btn-restore-defaults');
 
         // ── Section Headers Map ──
+        const SECTION_META = {
             'project-setup':   { icon: '🏗️', label: 'Project Setup' },
             'api-config':      { icon: '🔑', label: 'API Configuration' },
             'persona-prompts': { icon: '📝', label: 'Persona & Prompts' },
@@ -1141,7 +1142,6 @@
             el.addEventListener('input', markUnsaved);
             el.addEventListener('change', markUnsaved);
         });
-        cfgDemoMode.addEventListener('change', markUnsaved);
 
         // ── Knowledge Base Functions ──
         function escapeHTML(str) {
