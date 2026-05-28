@@ -32,7 +32,7 @@
 A single booking system with timezone-aware shift-based routing, embedded on a branded context page with QR code support.
 
 > [!NOTE]
-> **Operational vs. Technical Routing:** Operationally, this is not a true randomized or load-balanced round-robin. Because Albert and Isha work non-overlapping shifts (Albert: 7 AM – 2 PM AEST; Isha: 2 PM – 9 PM AEST), calendar bookings route deterministically based on the selected time slot. However, to aggregate both reps' calendars into a single booking link, we must select the **Round Robin** meeting page type in HubSpot.
+> **Operational vs. Technical Routing:** Calendar bookings route deterministically based on the selected time slot, as Albert and Isha cover shift-deterministic hours (Albert: 7 AM – 2 PM AEST; Isha: 2 PM – 9 PM AEST). To combine both representatives' availability under a single scheduling link, HubSpot's shared calendar configuration is utilized.
 
 ### HOW -- Step by Step
 
@@ -128,7 +128,7 @@ The "Early Game" sales pipeline Ticket progresses through 7 mandatory stages on 
 For bulk leads gathered at events (e.g., Forefront), manual pre-screening is inefficient.
 - **Upload:** Export event leads to CSV and import into HubSpot.
 - **Batch Score:** Run a bulk HubSpot workflow that triggers a Claude API script to score leads (1-10) based on firmographics (Title, Company Size, Industry).
-- **Skip Path:** Leads scoring 8+ bypass the SDR Pre-Screen and are routed directly to the "Warm Outreach" cadence. Leads < 8 are routed to generic nurture sequences. Isha and Albert only manually process the 8+ leads.
+- **Skip Path:** Leads scoring 8+ bypass the Sales Team Pre-Screen and are routed directly to the "Warm Outreach" cadence. Leads < 8 are routed to generic nurture sequences. Isha and Albert only manually process the 8+ leads.
 
 ---
 
@@ -155,7 +155,7 @@ In Phase 1, Tiny is configured as a Claude Project. The sales representatives (A
 
 During the design phase, the team deliberated on the underlying platform for the Tiny AI Assistant:
 - **watsonx Orchestrate:** As Octane's primary AI offering, watsonx Orchestrate has zero incremental licensing costs for the business. However, it requires significant build time and technical integration before the sales team can use it.
-- **Claude Projects (Selected for Phase 1):** Claude Projects provide an immediate, out-of-the-box UI for SDRs to run manual-first prep prompts. It provides the fastest go-to-market speed with no initial development overhead.
+- **Claude Projects (Selected for Phase 1):** Claude Projects provide an immediate, out-of-the-box UI for the Sales Team to run manual-first prep prompts. It provides the fastest go-to-market speed with no initial development overhead.
 - **Token Costs & Limits:** Amendra noted that high prep volume means Claude will frequently require manual token/credit top-ups, which introduces minor operational friction.
 - **Future State (Phase 2):** If Claude's API token costs become a burden, the team will evaluate switching the backend to watsonx Orchestrate or leveraging Open Router API endpoints to manage token budgets.
 
@@ -271,7 +271,7 @@ The team uses three recording tools depending on the call type and security/GDPR
 - Anthony does NOT need a Fathom account (he reviews calls via HubSpot's Call Index)
 
 **Jamie AI Setup (GDPR Fallback):**
-- Deploy Jamie AI local application on SDRs' desktop devices
+- Deploy Jamie AI local application on Sales Representatives' desktop devices
 - Configure for invisible, bot-free background recording on sensitive calls
 - Process transcripts locally with data hosted in Frankfurt, Germany
 - Rep manually uploads output to HubSpot ticket timeline
@@ -379,12 +379,12 @@ Before ending the call, the rep books the prospect directly with Amendra:
 
 The booking confirmation auto-creates a second ticket in HubSpot linked to the same contact.
 
-**3.5 The 2-Minute Screencast (SDR Handover)**
+**3.5 The 2-Minute Screencast (Sales Team Handover)**
 
-Before the ticket is moved to "Ready for Positional Meeting", the SDR must record a mandatory 2-minute video debrief using a tool like Loom or Fathom's built-in recorder.
+Before the ticket is moved to "Ready for Positional Meeting", the representative must record a mandatory 2-minute video debrief using a tool like Loom or Fathom's built-in recorder.
 - **0-30s:** Introduce the prospect and company.
 - **30-90s:** Explain the primary pain point and why they need TM1/AI.
-- **90-120s:** The SDR's "gut feel" on the deal (hot/cold, red flags).
+- **90-120s:** The representative's "gut feel" on the deal (hot/cold, red flags).
 - **Action:** Paste the video link into the HubSpot ticket alongside the Claude Mega-Prompt output.
 
 ---
@@ -468,7 +468,7 @@ To build muscle memory and ensure that the sales staff (Albert and Isha) fully m
 3. **Execute Prompts:** The rep pastes the call transcript and runs the prompts for the required reports (Recap Email, Summary Sheet, Detailed Notes, Proposal Draft, Questionnaire Mapping, and Action Items).
 4. **Verify & Learn:** The rep reviews Tiny's output. This review step is crucial: it forces the rep to digest the prospect's responses and internalize the qualifying parameters before handoff.
 5. **Log in CRM:** The rep copies the verified reports and pastes them into the **HubSpot Ticket** as a consolidated Note.
-6. **SDR Reality:** Isha finishes the call, runs the copy-paste flow with Tiny, and updates HubSpot within 5 minutes, completing the deal handover.
+6. **Sales Representative Reality:** Isha finishes the call, runs the copy-paste flow with Tiny, and updates HubSpot within 5 minutes, completing the deal handover.
 
 **5.1c Zapier/Make.com Automation Upgrade (Phase 2)**
 
@@ -630,7 +630,7 @@ These can be scoped separately once Components 01-05 are operational.
 
 | Priority | Tool | Cost | Trigger | What It Adds |
 |---|---|---|---|---|
-| **P4** | **Apollo.io Basic** | $49/user/mo | SDRs spend > 30 min/day on prep | Automates Component 02 entirely (lead enrichment → Claude → HubSpot briefing). 275M+ contacts, native HubSpot sync. |
+| **P4** | **Apollo.io Basic** | $49/user/mo | Representatives spend > 30 min/day on prep | Automates Component 02 entirely (lead enrichment → Claude → HubSpot briefing). 275M+ contacts, native HubSpot sync. |
 | **P5** | **Fathom Paid** | ~$15-20/user/mo | Zapier task limits become a bottleneck | Native HubSpot field-level sync without Zapier middleman |
 | **P6** | **n8n (self-hosted)** 🇩🇪 | ~$10/mo (VPS) | Running 50+ automations/month | Eliminates Zapier per-task costs. Open-source, German-built, unlimited executions, full JS/Python code nodes for custom AI workflows. |
 
@@ -639,7 +639,7 @@ These can be scoped separately once Components 01-05 are operational.
 | Priority | Tool | Cost | Trigger | What It Adds |
 |---|---|---|---|---|
 | **P7** | **PandaDoc** | $19/user/mo | Proposal volume > 10/month | Branded proposals + e-signatures from Claude-generated content. Auto-fills from HubSpot deal fields. |
-| **P8** | **Retorio** 🇩🇪 | Quote-based | Hiring 3+ new SDRs | AI avatar role-play for SDR onboarding. Behavioral analysis (tone, body language). EU AI Act + GDPR compliant. |
+| **P8** | **Retorio** 🇩🇪 | Quote-based | Hiring 3+ new representatives | AI avatar role-play for sales onboarding. Behavioral analysis (tone, body language). EU AI Act + GDPR compliant. |
 | **P9** | **Jamie AI** 🇩🇪 | Paid tier | Prospects push back on Fathom bot | Bot-free, invisible meeting recording. Runs locally on device. 100+ languages. GDPR-first, Frankfurt hosting. |
 
 ### Non-English Tools of Note

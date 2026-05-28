@@ -1853,6 +1853,14 @@ const server = http.createServer(async (req, res) => {
         relativePath = '/demo/docs.html';
     } else if (pathname === '/book') {
         relativePath = '/demo/book.html';
+    } else if (pathname === '/projects') {
+        relativePath = '/demo/github_projects.html';
+    } else if (pathname === '/admin') {
+        relativePath = '/demo/claude_admin_advanced.html';
+    } else if (pathname === '/audit') {
+        relativePath = '/demo/audit_log.html';
+    } else if (pathname === '/analytics') {
+        relativePath = '/demo/analytics_dashboard.html';
     }
     
     // Check if file is in /demo folder or root folder

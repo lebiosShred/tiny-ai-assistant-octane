@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const badgeTypeClass = item.type === 'synthesis' ? 'synthesis' : 'dossier';
             const badgeTypeLabel = item.type === 'synthesis' ? 'Synthesis' : 'Dossier';
             
-            const repBadge = item.rep ? `<span class="directory-badge-rep" style="background: rgba(0, 120, 215, 0.08); color: #0078d4; font-size: 0.65rem; font-weight: bold; padding: 1px 6px; border-radius: 4px; text-transform: uppercase;">SDR: ${escapeHTML(item.rep)}</span>` : '';
+            const repBadge = item.rep ? `<span class="directory-badge-rep" style="background: rgba(0, 120, 215, 0.08); color: #0078d4; font-size: 0.65rem; font-weight: bold; padding: 1px 6px; border-radius: 4px; text-transform: uppercase;">Sales Rep: ${escapeHTML(item.rep)}</span>` : '';
             const stageId = item.stage || 'prep';
             const stageConfig = PIPELINE_STAGES.find(s => s.id === stageId) || PIPELINE_STAGES[0];
             const stageBadge = `<span class="directory-badge-stage" style="background: ${stageConfig.color}; color: #fff; font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 4px;">${stageConfig.label}</span>`;
@@ -759,7 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formatted = formatted.replace(/<strong>(QUALIFICATION SCORE:.*?|SCORING RATIONALE:?|RECOMMENDED NEXT STEP:?|RED FLAGS:?)<\/strong>/gi, '<h4>$1</h4>');
         formatted = formatted.replace(/<strong>(Call Context:?|Systems Discussed:?|Pain Points:?|Goals:?|Timeline & Budget:?|Next Steps:?|Direct Quotes:?)<\/strong>/gi, '<h4>$1</h4>');
         formatted = formatted.replace(/<strong>(UNDERSTANDING OF REQUIREMENTS|PROPOSED SOLUTION|APPROACH & METHODOLOGY|TEAM & RESOURCES|NEXT STEPS & DISCOVERY OPEN ITEMS):?<\/strong>/gi, '<h4>$1</h4>');
-        formatted = formatted.replace(/<strong>(Prospect:?|Octane \(SDR\):?|Octane \(TM1 Team\):?)<\/strong>/gi, '<h4>$1</h4>');
+        formatted = formatted.replace(/<strong>(Prospect:?|Octane \(Sales Team\):?|Octane \(TM1 Team\):?)<\/strong>/gi, '<h4>$1</h4>');
 
         const lines = formatted.split(/\r?\n/);
         let htmlContent = "";
@@ -1995,21 +1995,21 @@ Target SOW: Migrate current managed support to Octane Black to include full proa
 
     synthLoadSampleBtn.addEventListener('click', () => {
         synthVariantSelect.value = "Variant A";
-        synthTranscriptText.value = `Albert (SDR): Hi Sarah, thank you for booking some time with us. I saw on the discovery form that you're currently leading the FP&A team at Meridian Logistics.
+        synthTranscriptText.value = `Albert (Sales Team): Hi Sarah, thank you for booking some time with us. I saw on the discovery form that you're currently leading the FP&A team at Meridian Logistics.
 Sarah Chen: Yes, that's correct. We've been experiencing quite a bit of scale lately, and it's putting a lot of pressure on our finance team, especially during our monthly forecast close.
-Albert (SDR): I saw you mentioned a bottleneck regarding NetSuite data consolidation in Excel. Can you elaborate on that?
+Albert (Sales Team): I saw you mentioned a bottleneck regarding NetSuite data consolidation in Excel. Can you elaborate on that?
 Sarah Chen: Sure. Our actuals reside in NetSuite, but all our planning models are housed in Excel. We have about 35 separate spreadsheets that get sent out to different department heads. When they come back, we have to manually extract the data and update our consolidation worksheets. It takes about 45 minutes per sheet, and with 35 sheets, it's easily several days of mind-numbing copy-pasting. It's incredibly prone to formula errors.
-Albert (SDR): That's a classic bottleneck. It sounds like you're spending 80% of your time just moving data instead of analyzing it.
+Albert (Sales Team): That's a classic bottleneck. It sounds like you're spending 80% of your time just moving data instead of analyzing it.
 Sarah Chen: Exactly. We are using Power BI and PAX for some basic reporting, but they're fed from these manual Excel files.
-Albert (SDR): If we could integrate your NetSuite actuals directly with a central IBM Planning Analytics database, and push that clean data straight to your Power BI reports in real time, what would that mean for your team?
+Albert (Sales Team): If we could integrate your NetSuite actuals directly with a central IBM Planning Analytics database, and push that clean data straight to your Power BI reports in real time, what would that mean for your team?
 Sarah Chen: It would save us at least 3 days every month. My analysts could actually focus on tracking logistics variance instead of doing data entry.
-Albert (SDR): Wonderful. Now, in terms of timeline, when are you hoping to have a solution in place?
+Albert (Sales Team): Wonderful. Now, in terms of timeline, when are you hoping to have a solution in place?
 Sarah Chen: We want this resolved before the Q3 planning cycle, which starts in about two months.
-Albert (SDR): And is there a budget allocated specifically for this integration project?
+Albert (Sales Team): And is there a budget allocated specifically for this integration project?
 Sarah Chen: We have a sign-off threshold of up to $40,000 for this financial year if we can show a clear return on investment.
-Albert (SDR): Excellent. I want to book a deep dive meeting for you with Amendra Pratap, our TM1 Practice Lead. He can walk you through the architecture of our DataFusion connector to NetSuite. Let me pull up his calendar. How does next Tuesday at 10:00 AM AEST look for you?
+Albert (Sales Team): Excellent. I want to book a deep dive meeting for you with Amendra Pratap, our TM1 Practice Lead. He can walk you through the architecture of our DataFusion connector to NetSuite. Let me pull up his calendar. How does next Tuesday at 10:00 AM AEST look for you?
 Sarah Chen: That works perfectly for me. Let's schedule it.
-Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I look forward to working with you, Sarah.`;
+Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation. I look forward to working with you, Sarah.`;
         showToast("Prefilled Call Transcript template!");
     });
 
@@ -3305,7 +3305,7 @@ Albert (SDR): Fantastic, I've booked that meeting and sent the invitation. I loo
                 directoryFilterRep.value = newSdr;
                 renderDirectoryList();
             }
-            showToast(`Active SDR switched to ${newSdr}`);
+            showToast(`Active Sales Rep switched to ${newSdr}`);
         });
     }
     

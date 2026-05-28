@@ -786,11 +786,11 @@
             <div class="component-card">
                 <div class="component-label">Component 01</div>
                 <div class="component-title">Pre-Screen Calendar</div>
-                <div class="component-desc">A single booking link serves prospects globally. Routing is shift-deterministic based on selected time slot (configured as a Round-Robin page in HubSpot to merge availability). Enforces a 12-hour buffer. 28 x 30-minute slots per day across a combined 14-hour window.</div>
+                <div class="component-desc">A single booking link serves prospects globally. Routing is shift-deterministic based on selected time slot (utilizing HubSpot's shared calendar configuration to merge availability). Enforces a 12-hour buffer. 28 x 30-minute slots per day across a combined 14-hour window.</div>
 
                 <!-- ✏️ EDIT:TEAM-ROSTER -- Change team members, time slots, or add/remove reps -->
                 <div class="route-section">
-                    <div class="route-label">Shift-Based Link (HubSpot Round-Robin Setup)</div>
+                    <div class="route-label">Shift-Based Link (HubSpot Shared Calendar)</div>
                     <div class="route-row">
                         <div class="route-card">
                             <div class="flow-icon human" style="width:28px;height:28px;font-size:0.65rem;">C</div>
@@ -852,7 +852,7 @@
                         <!-- ✏️ EDIT:HUBSPOT-CONFIG — Change meeting link settings, buffer, capacity -->
                         <h4>HubSpot Meeting Link Config</h4>
                         <ul>
-                            <li>HubSpot → Sales → Meetings → Create <strong>Round Robin</strong> link</li>
+                            <li>HubSpot → Sales → Meetings → Create <strong>Shared Calendar</strong> link</li>
                             <li>Add Albert + Isha as team members</li>
                             <li>Set each rep's availability in their HubSpot calendar profile</li>
                             <li>Scheduling tab: set <strong>Minimum notice time = 12 hours</strong></li>
@@ -1028,7 +1028,7 @@ and your knowledge of Octane's services, produce a 10-POINT BRIEFING.
                         <!-- ✏️ EDIT:JAMIE-AI-SETUP — Change Jamie AI fallback recording config -->
                         <h4>Jamie AI Setup (GDPR Fallback)</h4>
                         <ul>
-                            <li>Deploy Jamie AI local application on SDRs' desktop devices</li>
+                            <li>Deploy Jamie AI local application on Sales Representatives' desktop devices</li>
                             <li>Configure for invisible, bot-free background recording on sensitive calls</li>
                             <li>Process transcripts locally with data hosted in Frankfurt, Germany</li>
                             <li>Reps export the Jamie AI transcript and manually attach it to the HubSpot Ticket</li>
@@ -1380,7 +1380,7 @@ Format as a clean bulleted list grouped by Owner.
                         <ol>
                             <li><strong>Lead Captured</strong> -- Initial prospect details logged in CRM</li>
                             <li><strong>MQL</strong> -- Marketing Qualified Lead status verified</li>
-                            <li><strong>Prescreen Booked</strong> -- Pre-screen call scheduled via round-robin or direct link</li>
+                            <li><strong>Prescreen Booked</strong> -- Pre-screen call scheduled via the shared calendar or direct link</li>
                             <li><strong>Prescreen Completed</strong> -- Pre-screen call done, transcript and 6 reports attached</li>
                             <li><strong>Discovery Booked</strong> -- Positional Meeting scheduled with Steny, Kevin, or Amendra</li>
                             <li><strong>Discovery Completed</strong> -- Positional Meeting done, technical constraints documented</li>
@@ -1411,7 +1411,7 @@ Format as a clean bulleted list grouped by Owner.
                 </blockquote>
 
                 <h3>Component 01: Pre-Screen Calendar</h3>
-                <p><strong>Tue 10:14 AM:</strong> Sarah visits the site and clicks "Book a Discovery Call". The round-robin routes her to Albert's availability block (7am-2pm AEST). Due to the 12-hour buffer, she books for Wednesday 9:00 AM. HubSpot auto-creates her contact record, generates a ticket, and blocks Albert's calendar.</p>
+                <p><strong>Tue 10:14 AM:</strong> Sarah visits the site and clicks "Book a Discovery Call". The system routes her to Albert's availability block (7am-2pm AEST). Due to the 12-hour buffer, she books for Wednesday 9:00 AM. HubSpot auto-creates her contact record, generates a ticket, and blocks Albert's calendar.</p>
 
                 <h3>Component 02: Pre-Screen Preparation</h3>
                 <p><strong>Tue 2:30 PM:</strong> Albert inputs Sarah's LinkedIn PDF, company URL, and form answers into the <strong>Tiny - Pre-Screen Prep</strong> Claude Project. <strong>Tiny</strong> outputs a structured 10-point briefing revealing her ASX-listed company suffers from "planning tool frustrations". Albert learns Meridian's TM1 consolidation takes 45 minutes and their developer left 3 weeks ago.</p>

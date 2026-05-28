@@ -651,12 +651,13 @@
         <!-- Navigation Sidebar -->
         <aside class="sidebar">
             <nav id="doc-navigation">
+<nav id="doc-navigation">
                 <div class="nav-group-title">Getting Started</div>
                 <ul class="sidebar-links">
                     <li class="sidebar-link-item active" data-section="intro"><a href="#intro">Introduction & Overview</a></li>
                 </ul>
 
-                <div class="nav-group-title">SDR Workflow Components</div>
+                <div class="nav-group-title">Sales Team Workflow Components</div>
                 <ul class="sidebar-links">
                     <li class="sidebar-link-item" data-section="comp-01"><a href="#comp-01">Component 01: Booking Page</a></li>
                     <li class="sidebar-link-item" data-section="comp-02"><a href="#comp-02">Component 02: Ingestion & Prep</a></li>
@@ -664,6 +665,10 @@
                     <li class="sidebar-link-item" data-section="comp-05"><a href="#comp-05">Component 05: Automated Reports</a></li>
                     <li class="sidebar-link-item" data-section="comp-06"><a href="#comp-06">Component 06: Meeting Booking</a></li>
                     <li class="sidebar-link-item" data-section="comp-07"><a href="#comp-07">Component 07: Settings Panel</a></li>
+                    <li class="sidebar-link-item" data-section="comp-08"><a href="#comp-08">Component 08: Kanban Board</a></li>
+                    <li class="sidebar-link-item" data-section="comp-09"><a href="#comp-09">Component 09: Audit Logs</a></li>
+                    <li class="sidebar-link-item" data-section="comp-10"><a href="#comp-10">Component 10: Advanced Admin</a></li>
+                    <li class="sidebar-link-item" data-section="comp-11"><a href="#comp-11">Component 11: Live Analytics</a></li>
                 </ul>
 
                 <div class="nav-group-title">Playbook References</div>
@@ -681,13 +686,13 @@
             <!-- SECTION 1: Intro -->
             <section class="doc-section" id="intro">
                 <h1>Introduction & Product Architecture</h1>
-                <p>The <strong>Tiny AI Assistant</strong> is an enterprise-grade sales pipeline coprocessor designed specifically for <strong>Octane Software Solutions</strong> to optimize prospect intake, pre-screening discovery preparations, and call synthesis deliverables. It aligns with standard playbook rules to support designated Sales Development Representatives (SDRs) — specifically <strong>Albert</strong> and <strong>Isha</strong> — in executing discovery operations while enforcing strict pricing sovereignty guidelines.</p>
+                <p>The <strong>Tiny AI Assistant</strong> is an enterprise-grade sales pipeline coprocessor designed specifically for <strong>Octane Software Solutions</strong> to optimize prospect intake, pre-screening discovery preparations, and call synthesis deliverables. It aligns with standard playbook rules to support designated Sales Representatives — specifically <strong>Albert</strong> and <strong>Isha</strong> — in executing discovery operations while enforcing strict pricing sovereignty guidelines.</p>
                 
                 <h2>Business Objectives & Team Roles</h2>
                 <p>The coprocessor implements a disciplined, simple sales process to generate and qualify high-value leads for Octane Software Solutions, resolving the lack of structure in early pipeline stages that historically caused deals to stall. The system design and workflow coordination are distributed across key stakeholder roles:</p>
                 <ul>
-                    <li><strong>Amiel / Amendra Pratap (Director & Lead Engineer)</strong>: Technical architect responsible for compiling the core codebase, Express backend integration, and Google Cloud Run deployment.</li>
-                    <li><strong>Amie Lebios (SEO & Marketing Team)</strong>: Sole operator of digital assets, downloads page codebase, tracking, and HubSpot integration pipelines.</li>
+                    <li><strong>Amiel / Amendra Pratap (Director & Lead Engineer)</strong>: Technical architect responsible for compiling the core application logic, system integrations, and cloud hosting architecture.</li>
+                    <li><strong>Amie Lebios (SEO & Marketing Team)</strong>: Sole operator of digital assets, downloads page management, conversion tracking, and CRM synchronization workflows.</li>
                     <li><strong>Sheila Ocana (Operations)</strong>: Author of the Standard Operating Procedures (SOPs), training resources, and user workflows.</li>
                     <li><strong>Anthony Coundouris (Sales Trainer & Coach)</strong>: Reviewer of the sales components, developer of prompt guidelines, and lead coach for sales staff enablement.</li>
                 </ul>
@@ -699,7 +704,7 @@
                         <tr>
                             <th>Pipeline Stage / Purpose</th>
                             <th>Designated Software Tool</th>
-                            <th>Conventions & SDR Actions</th>
+                            <th>Conventions & Sales Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -710,7 +715,7 @@
                         </tr>
                         <tr>
                             <td><strong>Calendar Booking Widget</strong></td>
-                            <td>Host SDR Scheduling Engine</td>
+                            <td>Host Scheduling Engine</td>
                             <td>Represented by the integrated calendar interface (Component 01).</td>
                         </tr>
                         <tr>
@@ -726,7 +731,7 @@
                         <tr>
                             <td><strong>Screencast Video Delivery</strong></td>
                             <td>Microsoft Teams</td>
-                            <td>Used by SDRs to record and send 2-minute recap videos to prospects.</td>
+                            <td>Used by representatives to record and send 2-minute recap videos to prospects.</td>
                         </tr>
                         <tr>
                             <td><strong>In-person Meetings</strong></td>
@@ -737,26 +742,26 @@
                 </table>
 
                 <h2>Pipeline Sequence Model</h2>
-                <p>The application coordinates a 6-component process mapped to SDR daily operations:</p>
+                <p>The application coordinates a 6-component process mapped to sales daily operations:</p>
                 <div class="alert-box">
                     <strong>Architecture Workflow</strong>
                     1. Prospect Schedules call on Booking Page (Component 01) &rarr; <br>
                     2. Real-Time Alert triggers "Mount Lead" to ingest Booking into Prep Panel (Component 02) &rarr; <br>
                     3. System compiles 12-point Dossier and Rapport Guides (Component 03) &rarr; <br>
-                    4. SDR runs call with Battlecard Questionnaire (Component 03) &rarr; <br>
+                    4. Representative runs call with Battlecard Questionnaire (Component 03) &rarr; <br>
                     5. Synthesis Console parses transcript and outputs 9 deliverables (Component 05) &rarr; <br>
-                    6. SDR downloads ICS positional meeting invite for Founder Hand-over (Component 06).
+                    6. Sales representative downloads ICS positional meeting invite for Founder Hand-over (Component 06).
                 </div>
 
                 <!-- NEW INTERACTIVE TRAINING ACADEMY HUB -->
-                <h2 style="margin-top: 2.5rem;">🎓 SDR Training Academy</h2>
+                <h2 style="margin-top: 2.5rem;">🎓 Sales Team Training Academy</h2>
                 <p>This interactive video training course covers the end-to-end sales process using the Tiny AI Assistant. Select any module to view its video walkthrough and corresponding documentation section.</p>
 
                 <div class="academy-grid">
                     <div class="academy-card">
                         <div class="academy-card-badge">Module 1</div>
                         <h4>Prospect Booking Experience</h4>
-                        <p>Dynamic slot booking, automatic timezone adjustments, and Round-Robin SDR scheduling.</p>
+                        <p>Dynamic slot booking, automatic timezone adjustments, and Round-Robin Representative scheduling.</p>
                         <a href="#comp-01" class="academy-card-link">Watch Walkthrough &rarr;</a>
                     </div>
                     <div class="academy-card">
@@ -789,13 +794,37 @@
                         <p>Grounding context playbooks, API setup, custom instructions prompts, and demo mode controls.</p>
                         <a href="#comp-07" class="academy-card-link">Watch Walkthrough &rarr;</a>
                     </div>
+                    <div class="academy-card">
+                        <div class="academy-card-badge">Module 7</div>
+                        <h4>Kanban Board Pipeline</h4>
+                        <p>Simulating GitHub project workflows with drag-and-drop ticket routing.</p>
+                        <a href="#comp-08" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                    </div>
+                    <div class="academy-card">
+                        <div class="academy-card-badge">Module 8</div>
+                        <h4>Audit Logs &amp; PII Redaction</h4>
+                        <p>Security compliance dashboards showing auto-redaction of PII in event streams.</p>
+                        <a href="#comp-09" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                    </div>
+                    <div class="academy-card">
+                        <div class="academy-card-badge">Module 9</div>
+                        <h4>Advanced Admin Configuration</h4>
+                        <p>Injecting custom prompts to control the AI Coprocessor persona dynamically.</p>
+                        <a href="#comp-10" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                    </div>
+                    <div class="academy-card">
+                        <div class="academy-card-badge">Module 10</div>
+                        <h4>Live Analytics Dashboard</h4>
+                        <p>Real-time token usage, ROI tracking, and engagement metrics presentation.</p>
+                        <a href="#comp-11" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                    </div>
                 </div>
             </section>
 
             <!-- SECTION 2: Component 01 -->
             <section class="doc-section" id="comp-01">
                 <h1>Component 01: Client Booking Page</h1>
-                <p>The booking site <code>book.html</code> provides an interactive calendar interface for prospects while dynamically applying calendar availability and buffer constraints based on the chosen host. A single scheduling link is used for all prospects across Australia (AU), New Zealand (NZ), and the Middle East (ME).</p>
+                <p>The Client Booking Page provides an interactive calendar interface for prospects while dynamically applying calendar availability and buffer constraints based on the chosen host. A single scheduling link is used for all prospects across Australia (AU), New Zealand (NZ), and the Middle East (ME).</p>
                 
                 <!-- MODULE 1 EMBED -->
                 <div class="video-container">
@@ -809,11 +838,11 @@
                     </video>
                 </div>
 
-                <h2>Designated SDR Hosts & Shift Coverage</h2>
-                <p>Calls are routed dynamically to Octane's designated Sales Development Representatives (SDRs) based on timezone-deterministic shift windows:</p>
+                <h2>Designated Sales Team Hosts & Shift Coverage</h2>
+                <p>Calls are routed dynamically to Octane's designated Sales Representatives based on timezone-deterministic shift windows:</p>
                 <ul>
-                    <li><strong>Albert (SDR)</strong>: Operates the early shift from <strong>7:00 AM -- 2:00 PM AEST (Sydney time)</strong>.</li>
-                    <li><strong>Isha (SDR)</strong>: Operates the late shift from <strong>2:00 PM -- 9:00 PM AEST (Sydney time)</strong>.</li>
+                    <li><strong>Albert (Sales Team)</strong>: Operates the early shift from <strong>7:00 AM -- 2:00 PM AEST (Sydney time)</strong>.</li>
+                    <li><strong>Isha (Sales Team)</strong>: Operates the late shift from <strong>2:00 PM -- 9:00 PM AEST (Sydney time)</strong>.</li>
                     <li>Together, Albert and Isha cover a combined 14-hour window providing exactly <strong>28 x 30-minute booking slots</strong> per day.</li>
                 </ul>
 
@@ -829,7 +858,7 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>Round Robin SDRs (Albert & Isha)</strong></td>
+                            <td><strong>Round Robin Sales Representatives (Albert & Isha)</strong></td>
                             <td>12-Hour Buffer Required</td>
                             <td>Current Month Dates (May 2026)</td>
                             <td>Richmond Office or Online (Teams/Zoom)</td>
@@ -838,14 +867,14 @@
                 </table>
                 <div class="alert-box">
                     <strong>Host Selection Removed</strong>
-                    The booking page no longer presents a host selector dropdown. Since all pre-screen calls are exclusively handled by the Round Robin SDR pool (Albert and Isha), the host assignment is automatic. The system assigns Albert for morning slots (7 AM -- 2 PM AEST) and Isha for afternoon/evening slots (2 PM -- 9 PM AEST).
+                    Since all pre-screen calls are exclusively handled by the Round Robin sales representative pool (Albert and Isha), the host assignment is automatic. The system assigns Albert for morning slots (7 AM -- 2 PM AEST) and Isha for afternoon/evening slots (2 PM -- 9 PM AEST).
                 </div>
 
                 <h2>Calendar Widget Integration & Context Page</h2>
                 <p>The booking widget is embedded within a contextual page that gives the attendee information about what to expect — not presented as a standalone, bare calendar widget. The structure of this page is inspired by the professional context page model at <code>salesstar.com/steve-hughson-meeting</code>.</p>
                 
                 <h2>Offline QR Code Access</h2>
-                <p>A QR code is generated dynamically on the booking page linking directly to its URL. This code is required for offline materials such as business cards, brochures, or event flyers, allowing prospective clients to scan and book sessions instantly. SDRs can download the high-resolution QR code directly in PNG format from the interface.</p>
+                <p>A QR code is generated dynamically on the booking page linking directly to its URL. This code is required for offline materials such as business cards, brochures, or event flyers, allowing prospective clients to scan and book sessions instantly. Representatives can download the high-resolution QR code directly in PNG format from the interface.</p>
 
                 <h2>Information Collected at Booking</h2>
                 <p>To pre-qualify prospects, the booking widget collects the following structured parameters:</p>
@@ -859,28 +888,28 @@
 
                 <div class="alert-box">
                     <strong>Simplified Booking Flow</strong>
-                    Since the host selector has been removed, the calendar always displays current-month dates with a 12-hour buffer. The booking page automatically assigns the SDR based on the selected time slot (Albert for morning, Isha for afternoon/evening).
+                    Since the host selector has been removed, the calendar always displays current-month dates with a 12-hour buffer. The booking page automatically assigns the sales representative based on the selected time slot (Albert for morning, Isha for afternoon/evening).
                 </div>
             </section>
 
             <!-- SECTION 3: Component 02 -->
             <section class="doc-section" id="comp-02">
                 <h1>Component 02: Ingestion & Call Prep</h1>
-                <p>Before a requirements session call, the assigned SDR prepares using the AI Assistant. This module accesses GDrive client folders, SOWs, and history files to give the representative context about the account.</p>
+                <p>Before a requirements session call, the assigned Sales Representative prepares using the AI Assistant. This module accesses GDrive client folders, SOWs, and history files to give the representative context about the account.</p>
 
                 <h2>Automated Intake & Real-time Alerts</h2>
-                <p>The system leverages a <strong>Server-Sent Events (SSE)</strong> stream to push new bookings instantly to the SDR Dashboard. When a prospect schedules a call:</p>
+                <p>The system automatically updates the Sales Team Dashboard instantly when a prospect schedules a call:</p>
                 <ol>
-                    <li><strong>Google Drive Upload:</strong> The backend automatically writes the lead intake file into the shared Google Drive directory.</li>
-                    <li><strong>Email Notification:</strong> An operational alert email is sent to Albert and Isha, containing all prospect fields.</li>
-                    <li><strong>Interactive Toast Alert:</strong> A glassmorphism banner appears on the SDR Console with a <strong>⚡ Mount Lead</strong> button.</li>
-                    <li><strong>One-Click Workflow Restoration:</strong> Clicking the action button restores the lead parameters seamlessly without requiring manual SDR copy-pasting.</li>
+                    <li><strong>Google Drive Sync:</strong> The system automatically writes the lead intake details into the shared Google Drive folder.</li>
+                    <li><strong>Email Notification:</strong> An operational alert email is sent to the sales team, containing all prospect fields.</li>
+                    <li><strong>Interactive Alert:</strong> A notification appears on the Sales Team Console with a <strong>⚡ Mount Lead</strong> button.</li>
+                    <li><strong>One-Click Workflow Restoration:</strong> Clicking the action button restores the lead parameters seamlessly without requiring manual representative copy-pasting.</li>
                 </ol>
 
                 <!-- MODULE 2 EMBED -->
                 <div class="video-container">
                     <div class="video-caption">
-                        <span>🎬 Module 2 Walkthrough: Lead Ingestion, SDR Email Alert &amp; GDrive Sync</span>
+                        <span>🎬 Module 2 Walkthrough: Lead Ingestion, Sales Team Email Alert &amp; GDrive Sync</span>
                         <span class="badge-duration">⏱️ 1:01</span>
                     </div>
                     <video controls preload="metadata">
@@ -890,10 +919,10 @@
                 </div>
                 
                 <h2>Google Drive File Attachment Explorer</h2>
-                <p>The assistant links to Google Drive directories to compile deep contextual briefings. The connection accesses files shared with the service account: <code>28323029503-compute@developer.gserviceaccount.com</code>.</p>
+                <p>The assistant links to Google Drive client directories to compile deep contextual briefings, securely retrieving client materials and scope documents.</p>
                 <ul>
-                    <li><strong>Directory Browsing</strong>: Live dynamic loading of folder indices via the <code>/api/gdrive/list</code> endpoint.</li>
-                    <li><strong>Full-text Search</strong>: Leverages debounced text search (300ms) calling <code>/api/gdrive/search</code> to locate files matching keywords in name or contents.</li>
+                    <li><strong>Directory Browsing</strong>: Live dynamic loading of folder indices via secure folder synchronization.</li>
+                    <li><strong>Full-text Search</strong>: Leverages debounced text search (300ms) calling secure search workflows to locate files matching keywords in name or contents.</li>
                     <li><strong>Content Extraction</strong>:
                         <ul>
                             <li>Google Docs: Exported as <code>text/plain</code>.</li>
@@ -904,12 +933,12 @@
                 </ul>
 
                 <h2>12-Section Briefing Dossier</h2>
-                <p>Generating the prep brief runs the inputs against the Mistral model to construct a 12-section dossier. Dossier progress is tracked via a completeness progress meter (0--100%). The dossier outputs the following 12 components:</p>
+                <p>Generating the preparation briefing synthesizes all inputs to construct an actionable 12-section dossier. Progress is tracked via a completeness meter (0--100%). The dossier outputs the following 12 operational components:</p>
 
                 <!-- MODULE 3 EMBED -->
                 <div class="video-container">
                     <div class="video-caption">
-                        <span>🎬 Module 3 Walkthrough: Briefing Dossier Generation (Mistral AI)</span>
+                        <span>🎬 Module 3 Walkthrough: Briefing Dossier Generation</span>
                         <span class="badge-duration">⏱️ 0:48</span>
                     </div>
                     <video controls preload="metadata">
@@ -937,7 +966,7 @@
             <!-- SECTION 4: Component 03 -->
             <section class="doc-section" id="comp-03">
                 <h1>Component 03: Live Discovery Call</h1>
-                <p>Step 2 contains call facilitation tools, including teleprompters, discovery scripts, and pre-compiled icebreaker dossiers. The requirements session lasts exactly <strong>30 minutes</strong> and is conducted by Albert or Isha.</p>
+                <p>Step 2 contains call facilitation tools, including teleprompters, discovery scripts, and pre-compiled icebreaker dossiers. The requirements session lasts exactly <strong>30 minutes</strong> and is facilitated by Albert or Isha.</p>
 
                 <!-- MODULE 4 EMBED -->
                 <div class="video-container">
@@ -951,14 +980,14 @@
                     </video>
                 </div>
                 
-                <h2>Meeting Objectives & SDR Rules</h2>
-                <p>SDRs must adhere to the 5 primary objectives during the pre-screen call:</p>
+                <h2>Meeting Objectives & Sales Team Rules</h2>
+                <p>Representatives must adhere to the 5 primary objectives during the pre-screen call:</p>
                 <ol>
                     <li><strong>Build Rapport</strong>: Open the call using the 3 conversation starters compiled in the Rapport Guide (Component 02).</li>
                     <li><strong>Execute Discovery Questionnaire</strong>: Walk the prospect through the 12 structured questions from the battlecard script.</li>
-                    <li><strong>No Typing Allowed</strong>: The SDR must focus fully on conversation. Answers are captured via automatic transcription (Fathom, Jamie AI, or Fireflies).</li>
-                    <li><strong>Post-Call Synthesis</strong>: SDR copies the transcript from the recording tool and pastes it into Step 3 to map answers and auto-generate reports.</li>
-                    <li><strong>Schedule Hand-over</strong>: Before ending the call, the SDR must book a Positional Meeting with Amendra Pratap.</li>
+                    <li><strong>No Typing Allowed</strong>: The representative must focus fully on conversation. Answers are captured via automatic transcription (Fathom, Jamie AI, or Fireflies).</li>
+                    <li><strong>Post-Call Synthesis</strong>: The representative copies the transcript from the recording tool and pastes it into Step 3 to map answers and auto-generate reports.</li>
+                    <li><strong>Schedule Hand-over</strong>: Before ending the call, the representative must book a Positional Meeting with Amendra Pratap.</li>
                 </ol>
 
                 <h2>Pre-Screen Call Rapport Guides</h2>
@@ -967,7 +996,7 @@
                     <li><strong>Opening Statements</strong>: Curated hooks to build immediate rapport.</li>
                     <li><strong>Key Facts</strong>: Vital prospect metrics (budget parameters, consolidated sheet counts).</li>
                     <li><strong>Core Pain Points</strong>: Primary business obstacles identified during booking.</li>
-                    <li><strong>Forbidden Phrases</strong>: Guardrail warnings blocking SDRs from mentioning unapproved discounts or service items.</li>
+                    <li><strong>Forbidden Phrases</strong>: Guardrail warnings blocking representatives from mentioning unapproved discounts or service items.</li>
                 </ul>
 
                 <h2>Battlecard Questionnaire Variants</h2>
@@ -1046,13 +1075,13 @@
                 <p>The coprocessor synthesizes 9 distinct deliverables, mapping the 7 required reports from the brief plus 2 internal/archival documents:</p>
                 <ol>
                     <li><strong>Questionnaire Answers</strong>: Formatted responses mapping the transcript answers to the 12 discovery script questions based on the selected variant.</li>
-                    <li><strong>Qualification & Next Steps</strong>: The SDR lead scorecard containing the Qualification Score (HOT, WARM, or COLD), scoring rationale, recommended next steps, and red flags.</li>
+                    <li><strong>Qualification & Next Steps</strong>: The lead scorecard containing the Qualification Score (HOT, WARM, or COLD), scoring rationale, recommended next steps, and red flags.</li>
                     <li><strong>Migration Report</strong>: A branded technical migration checklist and readiness assessment, crucial for legacy TM1 upgrade prospects.</li>
                     <li><strong>Client Recap Email</strong>: A standard follow-up email layout compiling the top 3 takeaways and automatically embedding the Teams screencast link.</li>
                     <li><strong>Summary Sheet</strong>: An internal table summarizing attendees, service track interest, key discussion points, and prospect sentiment.</li>
                     <li><strong>Meeting Notes</strong>: Chronological meeting minutes capturing the contextual details, technical notes, and direct quotes from the call.</li>
                     <li><strong>Consultative Proposal</strong>: A preliminary B2B scope document outlining requirements, proposed services, approach/timeline, and team structure.</li>
-                    <li><strong>Action Items</strong>: A tasks matrix outlining clear follow-up deliverables and explicit deadlines assigned to the SDR or the client.</li>
+                    <li><strong>Action Items</strong>: A tasks matrix outlining clear follow-up deliverables and explicit deadlines assigned to the representative or the client.</li>
                     <li><strong>Raw Call Transcript</strong>: An archived record of the copy-pasted transcript.</li>
                 </ol>
 
@@ -1160,7 +1189,7 @@
                 </table>
 
                 <h2>Screencast Video Integration</h2>
-                <p>SDRs can input a screencast URL in the synthesis console:
+                <p>Representatives can input a screencast URL in the synthesis console:
                     <ul>
                         <li>Direct video URLs (<code>.mp4</code>, <code>.webm</code>) render inside an inline HTML5 video player.</li>
                         <li>External video URLs (e.g. Microsoft Teams, or Google Drive views) render a styled link card with an "Open Link ↗" shortcut.</li>
@@ -1171,10 +1200,10 @@
             <!-- SECTION 6: Component 06 -->
             <section class="doc-section" id="comp-06">
                 <h1>Component 06: Positional Meeting Booking</h1>
-                <p>Once reports resolve, the SDR schedules a hand-over meeting. The booking console generates direct vCalendar files to accelerate calendar invitations.</p>
+                <p>Once reports resolve, the representative schedules a hand-over meeting. The booking console generates direct calendar invitation files to accelerate scheduling.</p>
                 
                 <h2>Invite File Generation</h2>
-                <p>Clicking the booking action generates an RFC 5545 <code>.ics</code> invite file in the browser:</p>
+                <p>Clicking the booking action downloads a calendar invite (<code>.ics</code>) file directly to the representative's device:</p>
                 <ul>
                     <li><strong>Organizer</strong>: Set to <code>amie.lebios@octanesolutions.com.au</code>.</li>
                     <li><strong>Attendees</strong>: Maps Amendra Pratap and the Client Email.</li>
@@ -1187,7 +1216,7 @@
             <!-- SECTION 7: Component 07 - Settings Panel -->
             <section class="doc-section" id="comp-07">
                 <h1>Component 07: Settings Panel</h1>
-                <p>The <strong>⚙ Assistant Configurations &amp; Custom System Instructions</strong> panel is a collapsible settings drawer accessed via the <code>⚙ Settings</code> button in the dashboard header. It controls the AI engine, persona behavior, prompt templates, knowledge base documents, and developer options. All settings persist to <code>localStorage</code> and are restored on page reload.</p>
+                <p>The <strong>⚙ Assistant Configurations &amp; Custom System Instructions</strong> panel is a collapsible settings drawer accessed via the <code>⚙ Settings</code> button in the dashboard header. It controls the AI engine, persona behavior, prompt templates, knowledge base documents, and developer options. All settings persist to the secure browser cache and are restored on page reload.</p>
 
                 <!-- MODULE 6 EMBED -->
                 <div class="video-container">
@@ -1207,31 +1236,27 @@
                     <thead>
                         <tr>
                             <th>Control</th>
-                            <th>ID</th>
                             <th>Purpose</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>LLM Provider</strong></td>
-                            <td><code>#settings-api-provider</code></td>
-                            <td>Selects the AI provider (Mistral AI, Anthropic Claude). This determines the API authentication format and model catalog available in the engine dropdown.</td>
+                            <td><strong>AI Engine Provider</strong></td>
+                            <td>Selects the primary AI engine provider to power the intelligence layer.</td>
                         </tr>
                         <tr>
-                            <td><strong>API Base URL</strong></td>
-                            <td><code>#settings-api-url</code></td>
-                            <td>The endpoint URL for the AI backend. Default is <code>/api/chat</code> (proxied through the Express server). Can be overridden to point to a custom self-hosted endpoint or direct API URL.</td>
+                            <td><strong>System Base URL</strong></td>
+                             <td>The network connection endpoint for the AI service, defaults to the built-in local coprocessor path.</td>
                         </tr>
                         <tr>
-                            <td><strong>LLM Model / Engine</strong></td>
-                            <td><code>#settings-api-model</code></td>
-                            <td>Selects the specific model to use. Options include <em>Mistral Large</em>, <em>Mistral Small</em>, <em>Claude 3.5 Sonnet</em>, and <em>Claude 3.5 Haiku</em>. The model determines response quality, latency, and token cost.</td>
+                            <td><strong>AI Performance Model</strong></td>
+                            <td>Selects the specific AI model to run based on speed, capability, and intelligence requirements.</td>
                         </tr>
                     </tbody>
                 </table>
                 <div class="alert-box">
-                    <strong>How it works</strong>
-                    When the SDR clicks "Save Configuration", these values are written to <code>localStorage</code> and sent as headers/body parameters on every subsequent AI request. The Express backend reads the provider and model to route the request to the correct upstream API.
+                    <strong>Active Configuration Rules</strong>
+                    When the team updates these settings, they are applied instantly to all subsequent AI-generated briefs and reports. The selections persist in the browser cache so they remain active on page reload.
                 </div>
 
                 <h2>Section 2: Persona Tone &amp; Behavior Presets</h2>
@@ -1277,19 +1302,16 @@
                     <thead>
                         <tr>
                             <th>Prompt Field</th>
-                            <th>ID</th>
                             <th>Controls</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td><strong>Prospect Call Prep Dossier Prompt</strong></td>
-                            <td><code>#settings-prep-prompt</code></td>
                             <td>The system instruction sent to the LLM when generating the 12-section pre-call dossier (Step 1). Defines how LinkedIn data, company website, booking intake, and GDrive SOWs are synthesized into actionable briefing sections.</td>
                         </tr>
                         <tr>
                             <td><strong>Call Transcript Synthesizer Prompt</strong></td>
-                            <td><code>#settings-synth-prompt</code></td>
                             <td>The system instruction sent to the LLM when generating reports from call transcripts (Step 3). Controls how questionnaire answers are extracted, pricing sovereignty is enforced, and deliverable formatting rules are applied.</td>
                         </tr>
                     </tbody>
@@ -1311,7 +1333,7 @@
                     <tbody>
                         <tr>
                             <td><strong>Upload Drop Zone</strong></td>
-                            <td>Drag-and-drop or click-to-upload interface supporting PDF, DOCX, TXT, and MD files (max 2MB per file). Uploaded files are stored in the Express backend's <code>uploads/</code> directory and registered in the knowledge file index.</td>
+                            <td>Drag-and-drop or click-to-upload interface supporting PDF, DOCX, TXT, and MD files (max 2MB per file). Uploaded files are stored in the system's secure document storage and registered in the knowledge file index.</td>
                         </tr>
                         <tr>
                             <td><strong>Stored Playbooks &amp; Files</strong></td>
@@ -1330,21 +1352,19 @@
                     <thead>
                         <tr>
                             <th>Toggle</th>
-                            <th>ID</th>
                             <th>Effect When Enabled</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td><strong>Enable Demo / Testing Mode</strong></td>
-                            <td><code>#settings-demo-mode</code></td>
-                            <td>Shows sample data pre-fill buttons ("💡 Load Sample Sarah Chen", "💡 Load Sample Transcript") in the pipeline steps. Also reveals the <strong>Active SDR</strong> selector in the header, and enables the intake copy-to-clipboard section on the booking success page. This mode is stored in <code>localStorage</code> under the key <code>tiny_demo_mode</code>.</td>
+                            <td>Shows sample data pre-fill buttons ("💡 Load Sample Sarah Chen", "💡 Load Sample Transcript") in the pipeline steps. Also reveals the <strong>Active Sales Rep</strong> selector in the header, and enables the intake copy-to-clipboard section on the booking success page. This mode is stored securely in the browser cache.</td>
                         </tr>
                     </tbody>
                 </table>
                 <div class="alert-box alert-box-warning">
                     <strong>Demo Mode UI Rules</strong>
-                    In production (Demo Mode disabled), the dashboard presents a clean SDR workspace without developer shortcuts. The Active SDR dropdown and sample data buttons are hidden. Enable Demo Mode only for internal testing, screencast recording, or stakeholder walk-throughs.
+                    In production (Demo Mode disabled), the dashboard presents a clean sales team workspace without developer shortcuts. The Active Sales Rep dropdown and sample data buttons are hidden. Enable Demo Mode only for internal testing, screencast recording, or stakeholder walk-throughs.
                 </div>
             </section>
 
@@ -1483,6 +1503,74 @@
                         </ul>
                     </li>
                 </ul>
+            </section>
+
+            <!-- SECTION 8: Component 08 - Kanban -->
+            <section class="doc-section" id="comp-08">
+                <h1>Component 08: Kanban Board Pipeline</h1>
+                <p>The interactive project board interface built for GitHub-style task orchestration.</p>
+                
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 7 Walkthrough: Technical Setup &amp; Pipeline Execution</span>
+                        <span class="badge-duration">⏱️ 0:35</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_7_technical.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </section>
+
+            <!-- SECTION 9: Component 09 - Audit Logs -->
+            <section class="doc-section" id="comp-09">
+                <h1>Component 09: Security Audit Logging</h1>
+                <p>Real-time event stream dashboard that redacts Personal Identifiable Information (PII) before it is sent to external APIs.</p>
+                
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 8 Walkthrough: PII Redaction and Log Management</span>
+                        <span class="badge-duration">⏱️ 0:28</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_8_audit.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </section>
+
+            <!-- SECTION 10: Component 10 - Advanced Admin -->
+            <section class="doc-section" id="comp-10">
+                <h1>Component 10: Advanced Admin Access</h1>
+                <p>Restricted admin panels for modifying underlying prompt architecture.</p>
+                
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 9 Walkthrough: Advanced AI Persona Modifications</span>
+                        <span class="badge-duration">⏱️ 0:31</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_9_admin.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </section>
+
+            <!-- SECTION 11: Component 11 - Live Analytics -->
+            <section class="doc-section" id="comp-11">
+                <h1>Component 11: Live Engagement Analytics</h1>
+                <p>Dashboard for generating visual graphs covering system utilization, ROI, and agent efficiency tracking.</p>
+                
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 10 Walkthrough: Live Token Analytics &amp; Reporting</span>
+                        <span class="badge-duration">⏱️ 0:26</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_10_analytics.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
             </section>
         </main>
         

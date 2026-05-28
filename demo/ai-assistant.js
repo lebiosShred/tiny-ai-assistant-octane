@@ -218,7 +218,7 @@ Estimate the travel distance/time for an in-person meeting. The travel origin is
     async function generateRapportGuide(dossierContent, customConfig = {}) {
         const config = { ...DEFAULT_CONFIG, ...customConfig };
         const prompt = `You are a senior sales coach at Octane Software Solutions.
-Based on the following prospect preparation dossier, extract and structure a high-impact, quick-reference RAPPORT GUIDE for the sales representative (SDR) to use during their 30-minute pre-screen call.
+Based on the following prospect preparation dossier, extract and structure a high-impact, quick-reference RAPPORT GUIDE for the sales representative (Sales Team) to use during their 30-minute pre-screen call.
 
 Dossier Content:
 ${dossierContent}
@@ -349,8 +349,8 @@ Questions:
 ${questionFramework}
 
 --- SPEAKER IDENTIFICATION ---
-The transcript may use labels like 'Albert (SDR)', 'SDR:', 'Sarah Chen:', 'Prospect:', 'Speaker 1', or 'Speaker 2'.
-Before analyzing, map the speakers: the person asking discovery questions is the Octane Sales Representative (SDR), and the person describing requirements, pain points, budget, and timelines is the Client Prospect. Attribute all pain points and qualifications to the Prospect, not the SDR.
+The transcript may use labels like 'Albert (Sales Team)', 'Sales Team:', 'Sarah Chen:', 'Prospect:', 'Speaker 1', or 'Speaker 2'.
+Before analyzing, map the speakers: the person asking discovery questions is the Octane Sales Representative (Sales Team), and the person describing requirements, pain points, budget, and timelines is the Client Prospect. Attribute all pain points and qualifications to the Prospect, not the Sales Team.
 
 --- RECONCILING REPRESENTATIVE NOTES AND TRANSCRIPT ---
 Under "Questions:", some questions may include "Representative Notes" capturing answers, facts, or observations typed by the sales representative during the call.
@@ -688,15 +688,15 @@ Prospect Name: ${prospectData.name}
 Prospect Title: ${prospectData.title || "Head of Finance"}
 Company Name: ${prospectData.company}
 Service Track Interest: ${prospectData.track}
-SDR: ${prospectData.rep || "Albert"}
+Sales Representative: ${prospectData.rep || "Albert"}
 
 Prep Dossier Information:
 ${dossierData || "Not available"}
 
-Format: HTML email from the SDR to the prospect. Include key points about how Octane can address their likely pain points.`;
+Format: HTML email from the Sales Representative to the prospect. Include key points about how Octane can address their likely pain points.`;
 
         const messages = [
-            { role: "system", content: "You are a professional B2B SDR. You write highly personalized HTML re-engagement emails." },
+            { role: "system", content: "You are a professional B2B Sales Representative. You write highly personalized HTML re-engagement emails." },
             { role: "user", content: prompt }
         ];
 
@@ -847,7 +847,7 @@ ${screencastSegment}
 
             summarySheet: `<p><strong>SUMMARY:</strong> Meridian Logistics — ${new Date().toLocaleDateString()}</p>
 <ul>
-    <li><strong>ATTENDEES:</strong> Sarah Chen (Head of FP&A), Albert (SDR)</li>
+    <li><strong>ATTENDEES:</strong> Sarah Chen (Head of FP&A), Albert (Sales Team)</li>
     <li><strong>SERVICE TRACK:</strong> Planning & Analytics (TM1)</li>
     <li><strong>KEY DISCUSSION POINTS:</strong>
         <ul>
@@ -893,7 +893,7 @@ ${screencastSegment}
 <h4>5. NEXT STEPS</h4>
 <p>Book a Positional Meeting with Amendra to confirm NetSuite API sandbox access and custom multi-currency table mapping.</p>`,
             
-            actionItems: `<p><strong>Actions for Octane (SDR):</strong></p>
+            actionItems: `<p><strong>Actions for Octane (Sales Team):</strong></p>
 <ul>
     <li>Log synthesis deliverables to HubSpot. (Done)</li>
     <li>Share pre-screen brief and SOW with Amendra Pratap before the positional meeting. (Pending)</li>

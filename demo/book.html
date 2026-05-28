@@ -98,7 +98,7 @@
                         </a>
                     </div>
 
-                    <!-- SDR Hosts Display -->
+                    <!-- Sales Team Hosts Display -->
                     <div class="hosts-display" id="hosts-display-panel">
                         <div class="hosts-avatars" id="hosts-avatars-container">
                             <div class="host-avatar-circle" id="host-avatar-1">
@@ -144,7 +144,7 @@
                                 </div>
                             </div>
 
-                            <!-- Host is auto-assigned to Round Robin SDRs (Albert / Isha) based on availability -->
+                            <!-- Host is auto-assigned to Round Robin Sales Reps (Albert / Isha) based on availability -->
                             <input type="hidden" id="meeting-host" value="Round Robin">
  
                             <!-- Custom Text Field (Shown only when 'Other' is selected) -->
@@ -299,7 +299,7 @@
                         </div>
                     </div>
 
-                    <!-- STEP 4: Success / Confirmation Summary (For SDR paste) -->
+                    <!-- STEP 4: Success / Confirmation Summary (For Sales Team paste) -->
                     <div id="booking-step-success" class="booking-step" style="display: none;">
                         <div class="hero__calendar-header">Booking Confirmed!</div>
                         <div class="hero__calendar-body" style="gap: 1rem; overflow-y: auto; max-height: 480px; justify-content: center; align-items: center; text-align: center;">
@@ -542,7 +542,7 @@
             }
 
             // Update details
-            selectedReasonDisplay.textContent = `Reason: ${displayReason} (Host: Round Robin SDRs)`;
+            selectedReasonDisplay.textContent = `Reason: ${displayReason} (Host: Sales Representative)`;
             selectedMeetingTitle.textContent = title;
             selectedMeetingDesc.textContent = desc;
 
@@ -661,7 +661,7 @@
         btnConfirm.addEventListener('click', () => {
             const val = selectReason.value;
             let displayReason = val === 'other' ? otherReasonText.value.trim() : val;
-            detailsReasonDisplay.textContent = `Reason: ${displayReason} (Host: Round Robin SDRs)`;
+            detailsReasonDisplay.textContent = `Reason: ${displayReason} (Host: Sales Representative)`;
             
             // Pre-fill track selection based on booking reason keyword
             const reasonLower = displayReason.toLowerCase();
@@ -697,7 +697,7 @@
             const host = 'Round Robin';
             const monthText = 'May';
             
-            // Calculate assigned SDR (Albert: 7 AM - 2 PM, Isha: 2 PM - 9 PM)
+            // Calculate assigned Sales Representative (Albert: 7 AM - 2 PM, Isha: 2 PM - 9 PM)
             let assignedRep = "Albert";
             if (selectedTime) {
                 const timeMatch = selectedTime.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
@@ -713,7 +713,7 @@
                 }
             }
 
-            // Format intake summary text exactly as required by SDR parse
+            // Format intake summary text exactly as required by Sales Team parse
             const summaryText = `Service track interest: ${track === 'AI' ? 'AI' : 'Planning Analytics (TM1)'}
 Excel spreadsheets consolidated: 35 sheets currently consolidated manually (verify on call)
 Workflow description: ${discuss}
