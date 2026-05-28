@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:04,691
+In Module 9, we review Advanced A I Parameters.
+
+2
+00:00:04,691 --> 00:00:09,367
+Administrators need precise control over the model's behavior.
+
+3
+00:00:09,367 --> 00:00:16,882
+The Advanced Admin panel exposes system prompts, safety filters, and context window sizes.
+
+4
+00:00:16,882 --> 00:00:27,235
+This guarantees the A I agent strictly follows corporate guidelines, mitigating the risk of hallucination or unauthorized data exposure.
+

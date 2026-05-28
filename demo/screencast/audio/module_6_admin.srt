@@ -1,0 +1,24 @@
+1
+00:00:00,050 --> 00:00:07,573
+Finally, in Module 6, we cover the administrator setup of the Tiny A I Assistant itself.
+
+2
+00:00:07,573 --> 00:00:11,941
+Tiny is powered by a dedicated Claude Project workspace.
+
+3
+00:00:11,941 --> 00:00:20,441
+To build this capability, an administrator first creates a new project and uploads the static Octane knowledge base.
+
+4
+00:00:20,441 --> 00:00:28,823
+This includes our proprietary Service Catalog, key Competitor Profiles, Case Studies, and Pricing Frameworks.
+
+5
+00:00:28,823 --> 00:00:37,573
+Once the context files are uploaded, the administrator configures the custom instructions, embedding the 'Mega-Prompt' logic.
+
+6
+00:00:37,573 --> 00:00:51,749
+This forces the A I to output the strict ten-point prep dossier and the six standardized sales reports, ensuring consistent, enterprise-grade output from the sales team on every single deal.
+

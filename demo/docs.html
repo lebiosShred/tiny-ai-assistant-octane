@@ -1004,504 +1004,162 @@
                 
                 <h3>Variant A: First-Time TM1 / Planning Analytics Users</h3>
                 <p><em>Targeting: Prospects consolidating data manually in Excel who do not run a dedicated multi-dimensional database.</em></p>
-                <ol>
-                    <li><strong>ERP Integration:</strong> What general ledger/ERP system (e.g., SAP, MS Business Central, NetSuite) are you using, and does it currently integrate with your planning tool?</li>
-                    <li><strong>Spreadsheets Count:</strong> How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting, and are there issues with version control?</li>
-                    <li><strong>Planning Workflows:</strong> What specific planning workflows (e.g., actuals, payroll allocations, cost analysis, budgeting, forecasting) are you executing, and are allocations inconsistent or time-consuming?</li>
-                    <li><strong>Reporting Stack:</strong> What reporting tools (e.g., Power BI, Qlik, Tableau, Excel PAX/PAW) do you use for management reporting, and do you manually export CSV files to reconcile data?</li>
-                    <li><strong>Drill Down Capability:</strong> Do users need to drill down from high-level reports to transaction-level GL data, and do you perform multi-currency transactions?</li>
-                    <li><strong>Admin Staffing:</strong> Do you have internal developers/admins to manage these systems, or is there a key-person risk if someone leaves?</li>
-                    <li><strong>User Counts:</strong> How many planning contributors, read-only users, and administrators are involved, and would they need formal training?</li>
-                    <li><strong>Repetitive Operations:</strong> What repetitive financial tasks feel most manual, and would conversational AI access to financial queries benefit your executives?</li>
-                    <li><strong>Timeline:</strong> What is your target timeline for going live, and do you need a parallel run?</li>
-                    <li><strong>Budget Framework:</strong> Is there a budget allocated for licensing and delivery, and what is your internal approval/purchase order process?</li>
-                    <li><strong>Tool Evaluation:</strong> Have you evaluated other tools (e.g. Workday, Anaplan), and who else is involved in the final decision?</li>
-                    <li><strong>Success Criteria:</strong> What does success look like, and would a 60-day trial of connectors (like DataFusion) or a free Proof of Concept (POC) help validate?</li>
-                </ol>
+                
+                <h4>Context</h4>
+                <ul>
+                    <li>Why did you contact us? What do you hope to achieve?</li>
+                    <li>Why do you think you need TM1?</li>
+                    <li>Is this for a single department or across the company?</li>
+                    <li>What will you primarily use TM1 for?</li>
+                    <li>What application would you like TM1 to replace?</li>
+                    <li>How are you currently managing budgeting and forecasting?</li>
+                    <li>How many people are involved in the planning process?</li>
+                    <li>How long does your budgeting or forecasting cycle typically take?</li>
+                    <li>What is the most frustrating part of your current process?</li>
+                    <li>How confident are you in the numbers you are producing?</li>
+                </ul>
+
+                <h4>Project</h4>
+                <ul>
+                    <li>What does success look like for this project?</li>
+                    <li>Do you have a target completion date?</li>
+                    <li>Does your firm have a policy on cloud or on-premise?</li>
+                    <li>What is the minimum you need TM1 to do?</li>
+                    <li>What are the nice-to-have functions that can be added later?</li>
+                    <li>Who will support TM1 after handover — IT or finance?</li>
+                    <li>Who are the project stakeholders? First names and titles will do.</li>
+                </ul>
+
+                <h4>Planning</h4>
+                <ul>
+                    <li>What are the busiest times of year we should plan around?</li>
+                    <li>Can you share a requirements document?</li>
+                    <li>What budget range do you have in mind?</li>
+                    <li>How many data sources need to integrate with TM1 eg ERP, ledgers, databases? Are they cloud or on-premise, and will any new ones need to be added?</li>
+                    <li>Are data reconciliation and load processes manual or automated?</li>
+                </ul>
+
+                <h4>Licenses</h4>
+                <ul>
+                    <li>How many TM1 licenses will you need?</li>
+                    <li>How many will be admin licenses?</li>
+                    <li>Do you expect to need more licenses over time?</li>
+                    <li>Do you have casual users who only log in once a year?</li>
+                </ul>
+
+                <h4>Reports</h4>
+                <ul>
+                    <li>Do you use any reporting tools against TM1 data eg Power BI?</li>
+                    <li>How many reports need to be built?</li>
+                    <li>Will you report using cube views, PAX or PAW?</li>
+                    <li>Do you need static reports or dynamic dashboards? If you have a dashboard, please paste a screenshot below.</li>
+                </ul>
+
+                <h4>Excel users</h4>
+                <ul>
+                    <li>What are the manual data reconciliation processes?</li>
+                    <li>Are data load and mapping processes manual or automated?</li>
+                    <li>What are the most complicated Excel computations? Please describe the logic and paste screenshots below.</li>
+                    <li>How much of what you need from TM1 is already being done in Excel today?</li>
+                    <li>Do users contribute data directly? If yes, please paste screenshots of the input templates below.</li>
+                </ul>
+
+                <h4>Anaplan users</h4>
+                <ul>
+                    <li>Which business processes are covered eg budgeting, forecasting, workforce planning, sales planning?</li>
+                    <li>How many models do you have and how many users interact with them?</li>
+                    <li>How is data loaded into Anaplan — manually, via CloudWorks, Anaplan Connect, or API?</li>
+                    <li>What source systems feed data into Anaplan eg ERP, CRM, HR?</li>
+                    <li>How do users interact with the model — via dashboards, NUX pages, or Excel?</li>
+                    <li>Do users contribute data directly, or is the model read-only for most?</li>
+                </ul>
+
+                <h4>Jedox users</h4>
+                <ul>
+                    <li>Which business processes are covered eg budgeting, forecasting, consolidation, reporting?</li>
+                    <li>Is Jedox deployed on-premise or cloud?</li>
+                    <li>How is data loaded into Jedox — via ETL integrator, scripts, or manually?</li>
+                    <li>What source systems feed data into Jedox eg SAP, ERP, databases?</li>
+                    <li>Do users interact via Excel reports, Jedox Web, or both?</li>
+                    <li>Do users contribute data directly via input templates?</li>
+                </ul>
 
                 <h3>Variant B: Existing TM1 / Planning Analytics Users</h3>
                 <p><em>Targeting: Prospects who already run IBM Planning Analytics / TM1 but face support bottlenecks, performance limits, or require upgrades.</em></p>
-                <ol>
-                    <li><strong>Version & Deployment:</strong> What version of TM1/Planning Analytics are you running, and is it deployed on-premise or in the IBM Cloud?</li>
-                    <li><strong>Instance Count:</strong> How many TM1 instances do you run (e.g., production-only, or separate dev and test environments)?</li>
-                    <li><strong>Model Scale:</strong> How many models, cubes, dimensions, and user groups are you currently running?</li>
-                    <li><strong>Performance Metrics:</strong> Have you checked your system's performance, RAM usage, hard disk space, or feeder memory usage?</li>
-                    <li><strong>Log File Size:</strong> Are log files being automatically cleared, and what is the typical size of your TM1 log files (e.g., is it under or over the 50MB standard)?</li>
-                    <li><strong>Report Load Times:</strong> What are the typical report load times for your end-users, and are they above the 5-second threshold?</li>
-                    <li><strong>Team Staffing:</strong> Do you have dedicated in-house TM1 administrators/developers, or are you dependent on key individuals?</li>
-                    <li><strong>Vendor Lock-in:</strong> Are you currently working with another TM1 vendor? Are you locked into a rigid contract with separate rates for support and development?</li>
-                    <li><strong>Backlog Scale:</strong> What is your current backlog of enhancements, bugs, or data reconciliation tasks, and how is it prioritized?</li>
-                    <li><strong>Training Portals:</strong> Have your TM1 developers and power users had formal training, and would they benefit from free access to professional training courses?</li>
-                    <li><strong>Reporting Integration:</strong> Are you using Power BI, Tableau, or Qlik, and do you have a direct database connection?</li>
-                    <li><strong>Approval Timeline:</strong> Who has final authority to approve support changes, and what is the timeline to transition support?</li>
-                </ol>
-
-                <h3>Variant C: First-Time Generative AI Users</h3>
-                <p><em>Targeting: Enterprise prospects wanting to automate processes or integrate AI agent networks.</em></p>
-                <ol>
-                    <li><strong>Reporting Bottlenecks:</strong> How many slides are in your monthly executive financial reports, and how much time does the finance team spend manually extracting, cleansing, and formatting data for them?</li>
-                    <li><strong>Data Source Matrix:</strong> What enterprise systems and data sources (e.g., TM1, Adobe Analytics, Google Ad Manager, Adobe AdSlot, BigQuery, SQL) need to connect for automated reporting?</li>
-                    <li><strong>Natural Language Queries:</strong> Would executives and managers benefit from asking natural language questions (e.g. "AskFinance") to query financial data in real time?</li>
-                    <li><strong>Operational Repetition:</strong> What other areas in the business (e.g. Sales, Editorial, HR, IT, Procurement, Legal) have repetitive workflows ripe for automation?</li>
-                    <li><strong>AI Exposure:</strong> Have you experimented with or deployed any generative AI or automation tools internally?</li>
-                    <li><strong>Cloud Stack:</strong> What is your primary cloud environment (e.g. GCP, AWS, Azure, on-premise) and how do you manage data security?</li>
-                    <li><strong>Access Control:</strong> Do you require specific role-based access controls and security protocols for financial data queried by AI?</li>
-                    <li><strong>Co-Creation POC:</strong> Would you be open to a 2-to-6 week co-creation Proof of Concept (POC) to demonstrate value before full production rollout?</li>
-                    <li><strong>Resource Commitment:</strong> Can you commit a primary business contact and technical resource to collaborate during a 2-to-6 week POC?</li>
-                    <li><strong>Decision Timelines:</strong> Are you willing to commit to a Decision Workshop within 10 days of POC completion to confirm next steps?</li>
-                    <li><strong>Budget Awareness:</strong> Are you aware of the indicative costs for enterprise generative AI licensing ($160k+/yr) and implementation services ($125k+)?</li>
-                    <li><strong>Stakeholders:</strong> What is your timeline for starting an AI pilot, and who are the key executive stakeholders involved?</li>
-                </ol>
-            </section>
-
-            <!-- SECTION 5: Component 05 -->
-            <section class="doc-section" id="comp-05">
-                <h1>Component 05: Automated Reports & Synthesis</h1>
-                <p>Pasting a transcript in Step 3 compiles a suite of 9 reports (incorporating the 7 playbooks and standard summaries). The assistant ensures output layout compliance and structural integrity.</p>
-
-                <!-- MODULE 5 EMBED -->
-                <div class="video-container">
-                    <div class="video-caption">
-                        <span>🎬 Module 5 Walkthrough: Post-Call Transcription &amp; Synthesis Hub</span>
-                        <span class="badge-duration">⏱️ 0:51</span>
-                    </div>
-                    <video controls preload="metadata">
-                        <source src="screencast/recording/module_5_synthesis.mp4" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
                 
-                <h2>The 9 Generated Deliverables</h2>
-                <p>The coprocessor synthesizes 9 distinct deliverables, mapping the 7 required reports from the brief plus 2 internal/archival documents:</p>
-                <ol>
-                    <li><strong>Questionnaire Answers</strong>: Formatted responses mapping the transcript answers to the 12 discovery script questions based on the selected variant.</li>
-                    <li><strong>Qualification & Next Steps</strong>: The lead scorecard containing the Qualification Score (HOT, WARM, or COLD), scoring rationale, recommended next steps, and red flags.</li>
-                    <li><strong>Migration Report</strong>: A branded technical migration checklist and readiness assessment, crucial for legacy TM1 upgrade prospects.</li>
-                    <li><strong>Client Recap Email</strong>: A standard follow-up email layout compiling the top 3 takeaways and automatically embedding the Teams screencast link.</li>
-                    <li><strong>Summary Sheet</strong>: An internal table summarizing attendees, service track interest, key discussion points, and prospect sentiment.</li>
-                    <li><strong>Meeting Notes</strong>: Chronological meeting minutes capturing the contextual details, technical notes, and direct quotes from the call.</li>
-                    <li><strong>Consultative Proposal</strong>: A preliminary B2B scope document outlining requirements, proposed services, approach/timeline, and team structure.</li>
-                    <li><strong>Action Items</strong>: A tasks matrix outlining clear follow-up deliverables and explicit deadlines assigned to the representative or the client.</li>
-                    <li><strong>Raw Call Transcript</strong>: An archived record of the copy-pasted transcript.</li>
-                </ol>
-
-                <h2>Standard Services Catalog &amp; List Rates</h2>
-                <p>The coprocessor strictly enforces <strong>Pricing Sovereignty</strong> against any verbal discounts or custom client claims made during requirements calls. The generated Consultative Proposals and Recap Emails are cross-checked against the following standard services catalog:</p>
-                
-                <h3>1. DevOps Support Packages</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Package Name</th>
-                            <th>Pricing (AUD)</th>
-                            <th>Features &amp; SLAs</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>DevOps Blue Support</strong></td>
-                            <td>A$4,560 / month</td>
-                            <td>Flat-rate base support. No distinction between support and development hours. Rollover hours allowed. Monthly system health checks &amp; performance optimization reports. Free unlimited access to the professional training library for power users. SLAs: Urgent &lt; 1hr (24/7), High &lt; 4hr, Medium &lt; 8hr, Low &lt; 24hr.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>DevOps Red Support</strong></td>
-                            <td>Custom Scope</td>
-                            <td>Advanced customized pricing tier. Targeted for larger database instances, complex integrations, or organizations with high deployment cadences requiring dedicated developer resources.</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3>2. Advisory &amp; Flight Check Services</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Service Name</th>
-                            <th>Pricing (AUD)</th>
-                            <th>Duration &amp; Scope</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>TM1 Flight Check</strong></td>
-                            <td>A$5,800 (Fixed price)</td>
-                            <td>6 days. Comprehensive analysis of TM1 system health, RAM and hard disk space assessment, log file rotation, feeder memory optimization, and key developer/power user interviews. Detailed bottleneck resolution and upgrade readiness report.</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3>3. Integration &amp; Connector Packages</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Package Name</th>
-                            <th>Pricing (AUD)</th>
-                            <th>Features &amp; Inclusions / Exclusions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>DataFusion Connector Setup</strong></td>
-                            <td>A$6,950 (Fixed price)</td>
-                            <td>Automates data transfer from source ERPs (e.g. NetSuite, SAP) directly into central IBM Planning Analytics database. Includes up to 5 standard report conversions and configuring 1 instance per environment (Dev, Test, Prod). Excludes database service account creation.</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3>4. Power User Training</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Service Name</th>
-                            <th>Pricing (AUD)</th>
-                            <th>Scope</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Custom Power User Training</strong></td>
-                            <td>A$1,850 / day</td>
-                            <td>Customized training plans focusing on model architecture, rule writing, TI process development, or end-user dashboard design.</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3>5. Generative AI &amp; Automation Packages</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Package Name</th>
-                            <th>Pricing (AUD)</th>
-                            <th>Features &amp; Inclusions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Generative AI FastClose Entry</strong></td>
-                            <td>A$12,500 (Setup) + A$850/mo</td>
-                            <td>Integrates conversational AI query engine for simple month-end bookkeeping tasks. Grounded on single GL context. Excludes multi-currency cubes.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>watsonx Finance Agent Pilot</strong></td>
-                            <td>A$125,000 (Implementation)</td>
-                            <td>2-to-6 week co-creation Proof of Concept (POC). Builds conversational B2B AI financial advisor linked to active Planning Analytics cubes. Excludes custom connector development. SaaS licensing starting at $160,000/yr.</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h2>Screencast Video Integration</h2>
-                <p>Representatives can input a screencast URL in the synthesis console:
-                    <ul>
-                        <li>Direct video links render inside an inline video player.</li>
-                        <li>External video URLs (e.g. Microsoft Teams, or Google Drive views) render a styled link card with an "Open Link ↗" shortcut.</li>
-                    </ul>
-                </p>
-            </section>
-
-            <!-- SECTION 6: Component 06 -->
-            <section class="doc-section" id="comp-06">
-                <h1>Component 06: Positional Meeting Booking</h1>
-                <p>Once reports resolve, the representative schedules a hand-over meeting. The booking console generates direct calendar invitation files to accelerate scheduling.</p>
-                
-                <h2>Invite File Generation</h2>
-                <p>Clicking the booking action downloads a calendar invite file directly to the representative's device:</p>
+                <h4>Context</h4>
                 <ul>
-                    <li><strong>Organizer</strong>: Set to <strong>admin@octanesolutions.com.au</strong>.</li>
-                    <li><strong>Attendees</strong>: Maps System Administrator and the Client Email.</li>
-                    <li><strong>Location</strong>: In-Person Richmond address or Online Microsoft Teams/Zoom link.</li>
-                    <li><strong>Timezones</strong>: Calculated in standard UTC.</li>
+                    <li>Why did you contact us? What do you hope to achieve?</li>
+                    <li>How long have you been using TM1?</li>
+                    <li>What do you primarily use TM1 for?</li>
+                    <li>Where does it fall short — including performance, speed, or usability issues?</li>
+                    <li>Is TM1 used across the business or only within finance?</li>
+                    <li>Have users adopted TM1 or do they resort to Excel?</li>
+                    <li>Is it difficult to make enhancements? Who makes them?</li>
+                    <li>Is the instance cloud or on-premise?</li>
                 </ul>
-                <p>The calendar file auto-downloads on trigger. The booking input form is replaced with a <strong>Confirmation Card</strong> showing schedule metadata, organizer details, and hand-over checklist status.</p>
-            </section>
 
-            <!-- SECTION 7: Component 07 - Settings Panel -->
-            <section class="doc-section" id="comp-07">
-                <h1>Component 07: Settings Panel</h1>
-                <p>The <strong>⚙ Assistant Configurations &amp; Custom System Instructions</strong> panel is a collapsible settings drawer accessed via the <strong>⚙ Settings</strong> button in the dashboard header. It controls the AI engine, persona behavior, prompt templates, and knowledge base documents. All settings are saved automatically and restored on page reload.</p>
-
-                <!-- MODULE 6 EMBED -->
-                <div class="video-container">
-                    <div class="video-caption">
-                        <span>🎬 Module 6 Walkthrough: Administrator System Configurations</span>
-                        <span class="badge-duration">⏱️ 0:52</span>
-                    </div>
-                    <video controls preload="metadata">
-                        <source src="screencast/recording/module_6_admin.mp4" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
-
-                <h2>Section 1: API Authentication</h2>
-                <p>Configures the connection to the large language model (LLM) backend that powers the AI Coprocessor.</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Control</th>
-                            <th>Purpose</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>AI Engine Provider</strong></td>
-                            <td>Selects the primary AI engine provider to power the intelligence layer.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>System Base URL</strong></td>
-                             <td>The network connection endpoint for the AI service, defaults to the built-in local coprocessor path.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>AI Performance Model</strong></td>
-                            <td>Selects the specific AI model to run based on speed, capability, and intelligence requirements.</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="alert-box">
-                    <strong>Active Configuration Rules</strong>
-                    When the team updates these settings, they are applied instantly to all subsequent AI-generated briefs and reports. The selections persist in the browser cache so they remain active on page reload.
-                </div>
-
-                <h2>Section 2: Persona Tone &amp; Behavior Presets</h2>
-                <p>Controls the writing style and analytical posture of all AI-generated outputs (dossiers, reports, emails, proposals). The selected preset modifies the system prompt wrapper injected before every LLM call.</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Preset Name</th>
-                            <th>Behavior Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Clinical / Professional B2B</strong> (Default)</td>
-                            <td>Formal enterprise tone. Direct, structured outputs. No filler language. Suitable for CFO-facing deliverables.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Empathetic / Warm B2B</strong></td>
-                            <td>Softer tone with empathetic framing. Acknowledges pain points before presenting solutions. Suitable for first-contact rapport.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Skeptical / Critical Analyst</strong></td>
-                            <td>Challenges assumptions in the transcript. Flags inconsistencies and red flags. Outputs include counter-arguments.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>High-Detail Consultant</strong></td>
-                            <td>Verbose, deeply technical outputs. Includes implementation specifics, architecture notes, and expanded rationale blocks.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Concisely Direct</strong></td>
-                            <td>Minimal prose. Bullet-point outputs. Maximum signal density. Suitable for internal team handoffs.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Custom (Manual Prompts Modification)</strong></td>
-                            <td>Unlocks direct editing of the system prompt textareas in Section 3. Use this when none of the presets match the desired output style.</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h2>Section 3: Custom System Instructions</h2>
-                <p>Two editable prompt textareas that define the core behavior of the AI engine for the two primary workflows. These are pre-populated with production-grade system prompts and can be customized when the "Custom" tone preset is selected.</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Prompt Field</th>
-                            <th>Controls</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Prospect Call Prep Dossier Prompt</strong></td>
-                            <td>The system instruction sent to the LLM when generating the 12-section pre-call dossier (Step 1). Defines how LinkedIn data, company website, booking intake, and GDrive SOWs are synthesized into actionable briefing sections.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Call Transcript Synthesizer Prompt</strong></td>
-                            <td>The system instruction sent to the LLM when generating reports from call transcripts (Step 3). Controls how questionnaire answers are extracted, pricing sovereignty is enforced, and deliverable formatting rules are applied.</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="alert-box alert-box-warning">
-                    <strong>Caution</strong>
-                    Modifying these prompts without understanding their structure can break report formatting, remove pricing guardrails, or cause hallucinated outputs. Only modify when using the "Custom" tone preset and test with a sample transcript first.
-                </div>
-
-                <h2>Section 4: Knowledge Base Documents</h2>
-                <p>Manages the playbook files and training documents that are injected into every AI request as grounding context. The assistant uses these files to ensure outputs align with Octane's actual service offerings, pricing, and sales methodology.</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Feature</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Upload Drop Zone</strong></td>
-                            <td>Drag-and-drop or click-to-upload interface supporting PDF, DOCX, TXT, and MD files (max 2MB per file). Uploaded files are stored in the system's secure document storage and registered in the knowledge file index.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Stored Playbooks &amp; Files</strong></td>
-                            <td>Lists all active knowledge base documents. Core system files (e.g., customer profiles playbook, services catalog) are marked with a lock icon and cannot be deleted. User-uploaded files show a red delete button.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>🔄 Restore Defaults</strong></td>
-                            <td>Resets the knowledge base to the original factory playbook files, removing all user-uploaded custom documents. Does not affect API credentials or prompt settings.</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h2>Section 5: Developer Options</h2>
-                <p>Developer-facing toggles that control UI behavior for testing and demonstration purposes.</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Toggle</th>
-                            <th>Effect When Enabled</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Enable Demo / Testing Mode</strong></td>
-                            <td>Shows sample data pre-fill buttons ("💡 Load Sample Sarah Chen", "💡 Load Sample Transcript") in the pipeline steps. Also reveals the <strong>Active Sales Rep</strong> selector in the header, and enables the intake copy-to-clipboard section on the booking success page. This mode is stored securely in the browser cache.</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="alert-box alert-box-warning">
-                    <strong>Demo Mode UI Rules</strong>
-                    In production (Demo Mode disabled), the dashboard presents a clean sales team workspace without developer shortcuts. The Active Sales Rep dropdown and sample data buttons are hidden. Enable Demo Mode only for internal testing, screencast recording, or stakeholder walk-throughs.
-                </div>
-            </section>
-
-            <!-- SECTION 8: Playbook Profiles -->
-            <section class="doc-section" id="ref-profiles">
-                <h1>Playbook Reference: Customer Profiles</h1>
-                <p>The official buyer segments and client references used by the assistant to classify leads and map pain points during dossier compilation.</p>
-                
-                <h2>Core Buyer Segments</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Segment Name</th>
-                            <th>Typical Title</th>
-                            <th>Key Pain Points</th>
-                            <th>Recommended Octane Product/Service</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Large TM1 Shops</strong></td>
-                            <td>System Owner or IT</td>
-                            <td>High resource cost, accessing skilled resources, inflexible vendors, support maturity.</td>
-                            <td><strong>Octane Black</strong> (Full onshore/offshore support for 200+ users)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Mid-Size TM1 Shops</strong></td>
-                            <td>CFO or Head of FP&A</td>
-                            <td>High support costs, project backlog, ad-hoc support structures.</td>
-                            <td><strong>Octane Blue Support</strong> with licenses expansion roadmap</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Small TM1 Shops</strong></td>
-                            <td>CFO or Head of FP&A</td>
-                            <td>Spreadsheet dependency, backlog of bugs/enhancements, manual forecasting.</td>
-                            <td><strong>Octane Blue Support</strong> (DevOps base package)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>On-Premise TM1 Shops</strong></td>
-                            <td>CFO or Head of FP&A</td>
-                            <td>Legacy version limitations, migration risks, outdated hardware infrastructure.</td>
-                            <td><strong>TM1 Modernisation Play</strong> (Cloud / PA migration roadmap)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Supply Chain Prospects</strong></td>
-                            <td>CFO / Head of Supply Chain</td>
-                            <td>Manual Excel demand planning, disconnected operations, reconciliation lags.</td>
-                            <td><strong>Custom Supply Chain Model</strong> using accelerated templates</td>
-                        </tr>
-                        <tr>
-                            <td><strong>New FP&A Prospects</strong></td>
-                            <td>CFO or Head of FP&A</td>
-                            <td>Manual budgeting, slow management reporting cycles, turnover >$50M.</td>
-                            <td><strong>IBM Planning Analytics (TM1)</strong> base deployment</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Enterprise AI (Large)</strong></td>
-                            <td>CFO</td>
-                            <td>Slow month-end close (5+ days), repetitive accounting queries, turnover >$500M.</td>
-                            <td><strong>Octane Finance Agent + FastClose</strong> integration</td>
-                        </tr>
-                        <tr>
-                            <td><strong>MidMarket AI in Finance</strong></td>
-                            <td>CFO</td>
-                            <td>Manual report extraction, board packs take too long, struggling to hire, turnover $100M-$500M.</td>
-                            <td><strong>FastClose</strong> entry product, upselling to <strong>Finance Agent</strong></td>
-                        </tr>
-                        <tr>
-                            <td><strong>IBM PA + AI Upgrade</strong></td>
-                            <td>CFO / System Owner</td>
-                            <td>Underutilized Planning Analytics investment, competitor pressure, manual analysis.</td>
-                            <td><strong>Finance Agent</strong> integration on top of existing TM1 models</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h2>Historical & Active Clients Reference</h2>
+                <h4>Project</h4>
                 <ul>
-                    <li><strong>Steric</strong> (Healthcare / Sterilisation):
-                        <ul>
-                            <li><em>Pain Points:</em> Limited in-house developer bandwidth, support responsiveness.</li>
-                            <li><em>Product:</em> <strong>Octane Blue</strong></li>
-                        </ul>
-                    </li>
-                    <li><strong>GreyOrange</strong> (Tech / Robotics):
-                        <ul>
-                            <li><em>Pain Points:</em> Need for stable analytics support, faster SLA ticket resolution.</li>
-                            <li><em>Product:</em> <strong>Octane Blue Support</strong></li>
-                        </ul>
-                    </li>
-                    <li><strong>Iqony / STEAG</strong> (Energy / Utilities):
-                        <ul>
-                            <li><em>Pain Points:</em> Data integration complexity between ERPs and TM1.</li>
-                            <li><em>Product:</em> <strong>DataFusion Connector Setup</strong></li>
-                        </ul>
-                    </li>
-                    <li><strong>Shift</strong> (Financial Services / FinTech):
-                        <ul>
-                            <li><em>Pain Points:</em> Spreadsheet dependency, slow forecasting cycles.</li>
-                            <li><em>Product:</em> <strong>Octane Blue</strong> & <strong>IBM Planning Analytics</strong></li>
-                        </ul>
-                    </li>
-                    <li><strong>mycar</strong> (Automotive / Retail):
-                        <ul>
-                            <li><em>Pain Points:</em> Memory limitations in legacy instances, RAM bottlenecks.</li>
-                            <li><em>Product:</em> <strong>Infrastructure Upgrade (RAM)</strong> & <strong>Planning Analytics Upgrade</strong></li>
-                        </ul>
-                    </li>
-                    <li><strong>McPherson's</strong> (Consumer Goods):
-                        <ul>
-                            <li><em>Pain Points:</em> Legacy reporting limits, disconnected planning sheets.</li>
-                            <li><em>Product:</em> <strong>IBM Planning Analytics</strong></li>
-                        </ul>
-                    </li>
-                    <li><strong>News Corp Australia</strong> (Media):
-                        <ul>
-                            <li><em>Pain Points:</em> User collaboration inefficiencies, dashboard renewal bottlenecks.</li>
-                            <li><em>Product:</em> <strong>TeamOne Platform Renewal</strong></li>
-                        </ul>
-                    </li>
-                    <li><strong>Fintechs</strong> (Financial Services / Payments / AU & NZ):
-                        <ul>
-                            <li><em>Segment Criteria:</em> Operating 3+ years, CFO present, $10M+ annual revenue, raised Series C, currently using Excel or TM1.</li>
-                            <li><em>Scenario A (Accounts Payable Volume):</em>
-                                <ul>
-                                    <li><strong>Pain Points:</strong> Dealing with excessively high transaction volumes in accounts payable.</li>
-                                    <li><strong>Recommended Product:</strong> <strong>IBM Planning Analytics (TM1)</strong></li>
-                                </ul>
-                            </li>
-                            <li><em>Scenario B (Hiring AP Staff):</em>
-                                <ul>
-                                    <li><strong>Pain Points:</strong> Attempted to hire accounts payable staff in the last 3 months and faced recruiting bottlenecks.</li>
-                                    <li><strong>Recommended Product:</strong> <strong>AI Assistants (finance agent integration)</strong></li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
+                    <li>What does success look like for this project?</li>
+                    <li>Do you have a target completion date?</li>
+                    <li>Does your firm have a policy on cloud or on-premise?</li>
+                    <li>What is the minimum you need TM1 to do?</li>
+                    <li>What are the nice-to-have functions that can be added later?</li>
+                    <li>How long ago did users receive training?</li>
+                    <li>Who are the project stakeholders? First names and titles will do.</li>
+                </ul>
+
+                <h4>Planning</h4>
+                <ul>
+                    <li>What are the busiest times of year we should plan around?</li>
+                    <li>Can you share a requirements document?</li>
+                    <li>What budget range do you have in mind?</li>
+                    <li>How many data sources does TM1 integrate with eg ERP, ledgers, databases? Are they cloud or on-premise?</li>
+                    <li>Will any new data sources need to be added?</li>
+                    <li>Are data reconciliation and load processes manual or automated?</li>
+                    <li>Are you using PAW, Perspectives, Excel, or a combination?</li>
+                </ul>
+
+                <h4>Licenses</h4>
+                <ul>
+                    <li>How many TM1 licenses do you have?</li>
+                    <li>How many are admin licenses?</li>
+                    <li>Do you expect to need more licenses?</li>
+                    <li>Do you have casual users who only log in once a year?</li>
+                    <li>What is the license renewal date? We may be able to get you a better rate.</li>
+                    <li>Were the licenses purchased directly from IBM or via a third party?</li>
+                </ul>
+
+                <h4>Reports</h4>
+                <ul>
+                    <li>Do you use any reporting tools against TM1 data eg Power BI?</li>
+                    <li>How many reports need to be built?</li>
+                    <li>Will you report using cube views, PAX or PAW?</li>
+                    <li>Do you need static reports or dynamic dashboards? If you have a dashboard, please paste a screenshot below.</li>
+                </ul>
+
+                <h4>Technical</h4>
+                <ul>
+                    <li>How many developers have worked on TM1 since it was set up?</li>
+                    <li>How many cubes are in TM1?</li>
+                    <li>How many reports are in TM1?</li>
+                    <li>How many security groups do you have?</li>
+                    <li>What are the log file sizes?</li>
+                    <li>How much memory does TM1 use in total?</li>
+                    <li>How much memory do the feeders use?</li>
+                </ul>
+
+                <h4>On-premise users only</h4>
+                <ul>
+                    <li>Do you need a like-for-like migration or are you building from scratch?</li>
+                    <li>What is the server RAM size?</li>
+                    <li>What is the server hard disk size?</li>
+                    <li>What version of TM1 are you using?</li>
+                    <li>Is there a prod and dev server?</li>
+                    <li>How many instances of TM1 do you have?</li>
+                    <li>Do any Excel reports use Action Buttons?</li>
+                    <li>Do you use TM1 Web? If yes, how many Excel reports are published to it?</li>
                 </ul>
             </section>
 

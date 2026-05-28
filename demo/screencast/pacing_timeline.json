@@ -1,0 +1,148 @@
+[
+  {
+    "scene_id": "module_1_capture",
+    "actions": [
+      {
+        "name": "select_reason",
+        "trigger_time_s": 15.0
+      },
+      {
+        "name": "click_calendar",
+        "trigger_time_s": 22.5
+      },
+      {
+        "name": "fill_form",
+        "trigger_time_s": 32.0
+      },
+      {
+        "name": "submit_booking",
+        "trigger_time_s": 38.5
+      }
+    ]
+  },
+  {
+    "scene_id": "module_2_routing",
+    "actions": [
+      {
+        "name": "view_email",
+        "trigger_time_s": 12.0
+      },
+      {
+        "name": "scroll_email",
+        "trigger_time_s": 17.0
+      },
+      {
+        "name": "view_gdrive_folder",
+        "trigger_time_s": 29.0
+      },
+      {
+        "name": "view_gdrive_files",
+        "trigger_time_s": 41.0
+      }
+    ]
+  },
+  {
+    "scene_id": "module_3_preparation",
+    "actions": [
+      {
+        "name": "paste_linkedin",
+        "trigger_time_s": 14.0
+      },
+      {
+        "name": "attach_sow",
+        "trigger_time_s": 19.0
+      },
+      {
+        "name": "click_generate_briefing",
+        "trigger_time_s": 28.0
+      },
+      {
+        "name": "view_dossier",
+        "trigger_time_s": 32.5
+      }
+    ]
+  },
+  {
+    "scene_id": "module_4_execution",
+    "actions": [
+      {
+        "name": "click_session_tab",
+        "trigger_time_s": 12.0
+      },
+      {
+        "name": "view_docs",
+        "trigger_time_s": 20.0
+      },
+      {
+        "name": "confirm_booking",
+        "trigger_time_s": 40.0
+      },
+      {
+        "name": "click_completed",
+        "trigger_time_s": 52.0
+      }
+    ]
+  },
+  {
+    "scene_id": "module_5_synthesis",
+    "actions": [
+      {
+        "name": "paste_transcript",
+        "trigger_time_s": 10.0
+      },
+      {
+        "name": "click_synthesize",
+        "trigger_time_s": 14.0
+      },
+      {
+        "name": "click_reports_tab",
+        "trigger_time_s": 17.5
+      },
+      {
+        "name": "view_proposal",
+        "trigger_time_s": 23.5
+      },
+      {
+        "name": "view_docs",
+        "trigger_time_s": 29.5
+      },
+      {
+        "name": "click_copy",
+        "trigger_time_s": 39.0
+      }
+    ]
+  },
+  {
+    "scene_id": "module_6_admin",
+    "actions": [
+      {
+        "name": "create_project",
+        "trigger_time_s": 12.5
+      },
+      {
+        "name": "upload_files",
+        "trigger_time_s": 16.5
+      },
+      {
+        "name": "save_project",
+        "trigger_time_s": 41.0
+      }
+    ]
+  },
+  {
+    "scene_id": "module_7_technical",
+    "actions": []
+  },
+  {
+    "scene_id": "module_8_audit",
+    "actions": []
+  },
+  {
+    "scene_id": "module_9_admin",
+    "actions": []
+  },
+  {
+    "scene_id": "module_10_analytics",
+    "actions": []
+  }
+]

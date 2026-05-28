@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tiny AI - Advanced Prompt Settings</title>
+<style>
+  :root { --bg: #f9f9fb; --surface: #ffffff; --border: #e2e8f0; --text: #0f172a; --text-muted: #64748b; --primary: #d97757; }
+  body { background-color: var(--bg); color: var(--text); font-family: "Inter", sans-serif; margin: 0; display: flex; height: 100vh; }
+  .sidebar { width: 260px; background-color: var(--surface); border-right: 1px solid var(--border); padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .logo { font-size: 18px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+  .nav { padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text-muted); }
+  .nav.active { background-color: #fff1ee; color: var(--primary); }
+  .main { flex: 1; padding: 40px; overflow-y: auto; }
+  .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  h1 { margin: 0 0 8px 0; font-size: 24px; }
+  p { color: var(--text-muted); margin: 0 0 24px 0; font-size: 15px; line-height: 1.5; }
+  label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+  textarea { width: 100%; height: 350px; padding: 16px; font-family: "JetBrains Mono", monospace; font-size: 13px; line-height: 1.6; border: 1px solid var(--border); border-radius: 8px; resize: none; color: #334155; background-color: #f8fafc; box-sizing: border-box; outline: none; }
+  textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.1); }
+  .btn-save { background-color: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px; float: right; transition: background 0.2s; }
+  .btn-save:hover { background-color: #c26143; }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo"><span style="color:var(--primary);">❈</span> Tiny AI Settings</div>
+    <div class="nav">Knowledge Base</div>
+    <div class="nav active">Custom Instructions</div>
+    <div class="nav">API Keys</div>
+    <div class="nav">Usage & Billing</div>
+  </div>
+  <div class="main">
+    <div class="card">
+      <h1>Custom Instructions (Mega-Prompt)</h1>
+      <p>Configure the foundational logic and rules that Tiny will follow across all interactions. Use XML tags to structure specific workflows and SLA constraints.</p>
+      
+      <label for="prompt">System Prompt</label>
+      <textarea id="prompt" spellcheck="false">
+&lt;role&gt;
+You are Tiny, the lead intake AI for Octane. You analyze Fathom transcripts and output enterprise-ready dossiers.
+&lt;/role&gt;
+
+&lt;sla_constraints&gt;
+- Never output raw PII. Mask all emails with [REDACTED].
+- Force JSON output format matching schema v2.4.
+- If prospect mentions 'Meridian', apply Enterprise Tier SLA pricing overrides automatically.
+&lt;/sla_constraints&gt;
+
+&lt;output_format&gt;
+Generate a 6-part array including:
+1. Executive Summary
+2. Technical Pain Points
+3. Competitor Matrix
+4. Action Items
+5. Questionnaire Mapping
+6. Financial Proposal
+&lt;/output_format&gt;</textarea>
+      
+      <button class="btn-save" id="saveBtn">Save Instructions</button>
+      <div style="clear:both;"></div>
+    </div>
+  </div>
+</body>
+</html>

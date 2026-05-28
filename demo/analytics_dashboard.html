@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operations Analytics</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root { --bg: #f8fafc; --surface: #ffffff; --border: #e2e8f0; --text: #0f172a; --text-muted: #64748b; }
+  body { background-color: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 40px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+  h1 { margin: 0; font-size: 24px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+  .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+  .card-title { font-size: 16px; font-weight: 600; margin: 0 0 20px 0; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Pipeline Telemetry</h1>
+    <select style="padding:8px 16px; border-radius:6px; border:1px solid var(--border);">
+      <option>Last 30 Days</option>
+      <option>Q2 2026</option>
+    </select>
+  </div>
+  
+  <div class="grid">
+    <div class="card">
+      <h2 class="card-title">Conversion Rates by Module</h2>
+      <canvas id="conversionChart" height="120"></canvas>
+    </div>
+    <div class="card">
+      <h2 class="card-title">Dossier Generation Time (s)</h2>
+      <canvas id="latencyChart" height="250"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const ctx1 = document.getElementById('conversionChart').getContext('2d');
+    new Chart(ctx1, {
+      type: 'line',
+      data: {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+        datasets: [{
+          label: 'Pre-Screen Completed',
+          data: [42, 48, 55, 62, 70, 85],
+          borderColor: '#2563eb',
+          tension: 0.4,
+          fill: true,
+          backgroundColor: 'rgba(37, 99, 235, 0.1)'
+        }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+
+    const ctx2 = document.getElementById('latencyChart').getContext('2d');
+    new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: ['Capture', 'Prep', 'Synthesis'],
+        datasets: [{
+          label: 'Latency',
+          data: [1.2, 4.5, 12.8],
+          backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+          borderRadius: 4
+        }]
+      },
+      options: { plugins: { legend: { display: false } } }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# This file specifies files and directories to ignore when uploading to Google Cloud Build.
+.gcloudignore
+.git
+.gitignore
+.vercel/
+node_modules/
+scratch/
+.env
+.env.*
+*.log
+chrome-debug-profile/
+demo/screencast/recording/
+demo/screencast/output/
+demo/screencast/audio/
+demo/screencast/images/
+__pycache__/
+*.mp4
+*.mkv
+*.png
+*.zip
+*.tgz

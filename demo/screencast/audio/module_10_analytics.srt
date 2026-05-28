@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:03,911
+Finally, Module 10 covers Live Analytics.
+
+2
+00:00:03,911 --> 00:00:07,882
+Demonstrating ROI is critical for enterprise renewal.
+
+3
+00:00:07,882 --> 00:00:17,823
+The Analytics Dashboard aggregates real-time token usage, cost estimations, and user engagement metrics across all deployed agents.
+
+4
+00:00:17,823 --> 00:00:24,808
+Stakeholders can immediately verify value generation and pinpoint areas for optimization.
+

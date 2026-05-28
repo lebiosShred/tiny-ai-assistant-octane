@@ -1,0 +1,15 @@
+{
+  "type": "dossier",
+  "stage": "prep",
+  "name": "Sarah Chen",
+  "title": "Director of Planning",
+  "company": "Test Corp",
+  "email": "sarah.chen@testcorp.com",
+  "phone": "+61 2 9876 5432",
+  "url": "https://testcorp.com",
+  "track": "AI",
+  "rep": "Albert",
+  "intakeAnswers": "Service track interest: AI\nExcel spreadsheets consolidated: 35 sheets currently consolidated manually (verify on call)\nWorkflow description: We need an AI POC to automate our monthly consolidated sheet ingestion from 35 manual spreadsheets into a structured analytics portal.\nGL/ERP system: NetSuite ERP (verify on call)\nDiscuss details: We need an AI POC to automate our monthly consolidated sheet ingestion from 35 manual spreadsheets into a structured analytics portal.\nCompany Website: https://testcorp.com\nPosition: Director of Planning\nCompany: Test Corp\nEmail: sarah.chen@testcorp.com\nPhone: +61 2 9876 5432\nName: Sarah Chen\nBooking Host: Albert",
+  "id": "dossier_Test_Corp_1779877036315_917c9db6",
+  "date": "2026-05-27T10:17:16.315Z"
+}

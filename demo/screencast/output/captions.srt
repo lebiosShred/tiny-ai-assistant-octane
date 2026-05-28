@@ -1,0 +1,152 @@
+1
+00:00:00,000 --> 00:00:03,280
+Let's say there's a prospect whose name is Sarah Chun.
+
+2
+00:00:03,280 --> 00:00:07,920
+She goes to the Octane booking page to request a pre-screen discovery call.
+
+3
+00:00:07,920 --> 00:00:12,320
+Sarah inputs her reason for reaching out from the B2B options drop down.
+
+4
+00:00:13,840 --> 00:00:17,840
+Next, Sarah selects a date and time slot from the calendar.
+
+5
+00:00:17,840 --> 00:00:24,080
+To protect rep calendars, the system blocks same-day slots and enforces a 12-hour buffer.
+
+6
+00:00:24,080 --> 00:00:28,960
+Sarah fills in her contact information, company website, and service track.
+
+7
+00:00:28,960 --> 00:00:34,560
+She submits the form and her intake data is automatically routed to our sales team.
+
+8
+00:00:36,080 --> 00:00:39,360
+Now, let's switch to the sales team dashboard.
+
+9
+00:00:39,360 --> 00:00:46,000
+Here, Albert or Isha will receive a notification containing Sarah's intake information via email.
+
+10
+00:00:46,000 --> 00:00:52,000
+Albert or Isha opens the pre-screen prep tab, paste Sarah's intake summary, and clicks
+
+11
+00:00:52,960 --> 00:00:59,200
+This manual process extracts her contact details instantly, eliminating tedious data entry.
+
+12
+00:01:00,720 --> 00:01:06,720
+Next, Albert or Isha attaches research inputs to feed the AI co-processor.
+
+13
+00:01:06,720 --> 00:01:12,400
+They upload Sarah's LinkedIn experience profile to understand her professional background.
+
+14
+00:01:12,400 --> 00:01:18,320
+Then, they search Google Drive for historical SOW files related to meridian logistics,
+
+15
+00:01:18,320 --> 00:01:24,720
+selecting the company folder. This manual link feeds historical context directly into the prep engine.
+
+16
+00:01:26,160 --> 00:01:33,040
+Albert or Isha clicks generate prep briefing. The AI analyzes Sarah's LinkedIn profile,
+
+17
+00:01:33,040 --> 00:01:38,160
+the G drive files, and her company website to compile a 12-point dossier.
+
+18
+00:01:38,160 --> 00:01:44,320
+This dossier displays competitors list likely technical pain points and drafts three-tailored
+
+19
+00:01:44,320 --> 00:01:51,120
+icebreakers. This manual prep gives the sales team complete confidence and deep context before
+
+20
+00:01:51,120 --> 00:01:58,560
+jumping on the call with Sarah. When the requirements session begins, Albert or Isha switches to the
+
+21
+00:01:58,560 --> 00:02:04,080
+session tab. The structured 12-question qualification battle card is displayed.
+
+22
+00:02:04,080 --> 00:02:08,880
+They can navigate to the documentation to view the detailed playbook for these questions,
+
+23
+00:02:08,880 --> 00:02:14,400
+selecting from variant A, B, or C depending on Sarah's specific profile.
+
+24
+00:02:14,400 --> 00:02:19,600
+Returning to the console, they ask these questions without typing, letting Fathom or
+
+25
+00:02:19,600 --> 00:02:26,240
+3CX record the call. Before hanging up, the representative books a positional meeting with Amindra,
+
+26
+00:02:26,240 --> 00:02:29,360
+downloading a V calendar invite to hand over the client.
+
+27
+00:02:30,800 --> 00:02:36,560
+After the call, Albert or Isha records a brief two-minute video art screencast to log their
+
+28
+00:02:36,560 --> 00:02:44,160
+gut feel on the deal. The call recording from Fathom or 3CX is saved to the shared Google Drive folder.
+
+29
+00:02:44,160 --> 00:02:50,160
+This central repository allows the sales team to review active deals and helps our trainer,
+
+30
+00:02:50,160 --> 00:02:56,000
+Anthony, compile playlist for rep coaching. The representative then proceeds to the Reports tab.
+
+31
+00:02:57,440 --> 00:03:02,880
+To close out the requirements session, Albert or Isha paced the call transcript into the
+
+32
+00:03:02,880 --> 00:03:09,440
+Reports tab. They click synthesize call reports. The AI processes the transcript and generates
+
+33
+00:03:09,440 --> 00:03:15,280
+seven distinct deliverables for Sarah. We can click documentation in the header to review the
+
+34
+00:03:15,280 --> 00:03:20,960
+official services catalog, verifying that all generated pricing figures in the proposal
+
+35
+00:03:20,960 --> 00:03:27,440
+conforms strictly to standard list rates. Returning to the console, the reports are fully populated.
+
+36
+00:03:28,000 --> 00:03:35,440
+Finally, Albert or Isha reviews the deliverables. With a single click, they copy the recap,
+
+37
+00:03:35,440 --> 00:03:41,360
+email, and proposal and paste them directly into the HubSpot deal record. This completes the
+
+38
+00:03:41,360 --> 00:03:43,920
+pre-screen workflow, leaving a fully d-
+

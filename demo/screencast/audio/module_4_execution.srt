@@ -1,0 +1,28 @@
+1
+00:00:00,050 --> 00:00:03,720
+In Module 4, we execute the Discovery Call.
+
+2
+00:00:03,720 --> 00:00:11,000
+When the Teams meeting begins, the Fathom bot automatically joins to record and transcribe the session.
+
+3
+00:00:11,000 --> 00:00:17,632
+The sales team navigates to the Session tab to view the twelve-question qualification battlecard.
+
+4
+00:00:17,632 --> 00:00:27,264
+Depending on whether Kevin is a first-time user or an existing user, the sales team references Playbook Variant A, B, or C.
+
+5
+00:00:27,264 --> 00:00:35,102
+The sales team asks these questions conversationally, letting Fathom capture the responses without manual typing.
+
+6
+00:00:35,102 --> 00:00:45,720
+Before ending the call, the sales team secures the next step by booking a Positional Meeting with Steny, Kevin, or Amendra directly on the calendar.
+
+7
+00:00:45,720 --> 00:00:56,191
+Finally, the sales team documents their gut feel on the deal, capturing the unspoken signals and lead temperature before handing the account over.
+

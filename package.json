@@ -1,0 +1,15 @@
+{
+  "name": "tiny-ai-assistant",
+  "version": "1.0.0",
+  "description": "Early Game Sales Pipeline backend for Octane Software Solutions",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "googleapis": "^137.0.0",
+    "pdf-parse": "^1.1.1"
+  }
+}

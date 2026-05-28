@@ -1,0 +1,80 @@
+{
+  "voice": "en-US-AndrewNeural",
+  "rate": "-15%",
+  "total_duration_s": 424.22,
+  "mastered_duration_s": 424.2,
+  "total_words": 816,
+  "average_wpm": 115.4,
+  "sections": [
+    {
+      "name": "module_1_capture",
+      "file": "C:\\Users\\SkyDr\\OneDrive\\Desktop\\PROJECTS\\Anthony\\demo\\screencast\\audio\\module_1_capture.mp3",
+      "duration_s": 42.0,
+      "word_count": 91,
+      "wpm": 130.0
+    },
+    {
+      "name": "module_2_routing",
+      "file": "C:\\Users\\SkyDr\\OneDrive\\Desktop\\PROJECTS\\Anthony\\demo\\screencast\\audio\\module_2_routing.mp3",
+      "duration_s": 61.25,
+      "word_count": 122,
+      "wpm": 119.5
+    },
+    {
+      "name": "module_3_preparation",
+      "file": "C:\\Users\\SkyDr\\OneDrive\\Desktop\\PROJECTS\\Anthony\\demo\\screencast\\audio\\module_3_preparation.mp3",
+      "duration_s": 48.53,
+      "word_count": 96,
+      "wpm": 118.7
+    },
+    {
+      "name": "module_4_execution",
+      "file": "C:\\Users\\SkyDr\\OneDrive\\Desktop\\PROJECTS\\Anthony\\demo\\screencast\\audio\\module_4_execution.mp3",
+      "duration_s": 56.26,
+      "word_count": 123,
+      "wpm": 131.2
+    },
+    {
+      "name": "module_5_synthesis",
+      "file": "C:\\Users\\SkyDr\\OneDrive\\Desktop\\PROJECTS\\Anthony\\demo\\screencast\\audio\\module_5_synthesis.mp3",
+      "duration_s": 51.12,
+      "word_count": 108,
+      "wpm": 126.8
+    },
+    {
+      "name": "module_6_admin",
+      "file": "C:\\Users\\SkyDr\\OneDrive\\Desktop\\PROJECTS\\Anthony\\demo\\screencast\\audio\\module_6_admin.mp3",
+      "duration_s": 51.82,
+      "word_count": 101,
+      "wpm": 116.9
+    },
+    {
+      "name": "module_7_technical",
+      "file": "C:\\Users\\SkyDr\\OneDrive\\Desktop\\PROJECTS\\Anthony\\demo\\screencast\\audio\\module_7_technical.mp3",
+      "duration_s": 25.58,
+      "word_count": 45,
+      "wpm": 105.6
+    },
+    {
+      "name": "module_8_audit",
+      "file": "C:\\Users\\SkyDr\\OneDrive\\Desktop\\PROJECTS\\Anthony\\demo\\screencast\\audio\\module_8_audit.mp3",
+      "duration_s": 26.47,
+      "word_count": 42,
+      "wpm": 95.2
+    },
+    {
+      "name": "module_9_admin",
+      "file": "C:\\Users\\SkyDr\\OneDrive\\Desktop\\PROJECTS\\Anthony\\demo\\screencast\\audio\\module_9_admin.mp3",
+      "duration_s": 27.29,
+      "word_count": 47,
+      "wpm": 103.3
+    },
+    {
+      "name": "module_10_analytics",
+      "file": "C:\\Users\\SkyDr\\OneDrive\\Desktop\\PROJECTS\\Anthony\\demo\\screencast\\audio\\module_10_analytics.mp3",
+      "duration_s": 24.86,
+      "word_count": 41,
+      "wpm": 99.0
+    }
+  ]
+}

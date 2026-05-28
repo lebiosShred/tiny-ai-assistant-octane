@@ -1,0 +1,56 @@
+{
+  "module_1_capture": {
+    "select_reason": "Kevin selects a reason",
+    "click_calendar": "Kevin selects a time slot",
+    "fill_form": "completes the seven point",
+    "submit_booking": "before submitting the request"
+  },
+  "module_2_routing": {
+    "view_email": "Isha and Albert receive an instant email",
+    "scroll_email": "assigned representative can begin preparation",
+    "view_gdrive_folder": "organized and stored in a dedicated client folder",
+    "view_gdrive_files": "containing Kevin's intake form"
+  },
+  "module_3_preparation": {
+    "paste_linkedin": "exported LinkedIn profile",
+    "attach_sow": "Statement of Work pulled",
+    "click_generate_briefing": "generates a structured",
+    "view_dossier": "provides three tailored conversation"
+  },
+  "module_4_execution": {
+    "click_session_tab": "navigates to the Session",
+    "view_docs": "references Playbook Variant",
+    "confirm_booking": "booking a Positional Meeting",
+    "click_completed": "handing the account over"
+  },
+  "module_5_synthesis": {
+    "paste_transcript": "the fathom transcript",
+    "click_synthesize": "instantly generates six critical",
+    "click_reports_tab": "the Recap Email",
+    "view_docs": "official Services Catalog",
+    "view_proposal": "strictly matches our standard",
+    "click_copy": "are copied out"
+  },
+  "module_6_admin": {
+    "create_project": "creates a new project",
+    "upload_files": "uploads the static",
+    "paste_prompt": "configures the custom instructions",
+    "save_project": "ensuring consistent"
+  },
+  "module_7_technical": {
+    "view_board": "an automated GitHub repository",
+    "drag_ticket": "drag tickets across statuses"
+  },
+  "module_8_audit": {
+    "view_logs": "Audit Log dashboard captures",
+    "expand_log": "instantly identify anomalies"
+  },
+  "module_9_admin": {
+    "view_admin": "Advanced Admin panel exposes",
+    "edit_prompt": "mitigating the risk of hallucination"
+  },
+  "module_10_analytics": {
+    "view_dashboard": "Analytics Dashboard aggregates",
+    "hover_chart": "pinpoint areas for optimization"
+  }
+}

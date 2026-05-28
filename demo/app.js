@@ -2572,154 +2572,102 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
     // --- SDR Battlecards Reference Datasets ---
     const BATTLECARDS = {
         A: [
-            {
-                q: "What general ledger/ERP system (e.g., SAP, MS Business Central, Sun Systems, NetSuite) are you using, and does it currently integrate with your planning tool?",
-                tip: "Identify the GL source system to understand connection options."
-            },
-            {
-                q: "How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting, and are there issues with version control?",
-                tip: "Highlight version control errors and manual consolidation labor."
-            },
-            {
-                q: "What specific planning workflows (e.g., actuals, payroll allocations, cost analysis, budgeting, forecasting) are you executing, and are allocations (like payroll across business units) inconsistent or time-consuming?",
-                tip: "Inconsistent payroll/BU allocations are prime candidates for database logic."
-            },
-            {
-                q: "What reporting tools (e.g., Power BI, Qlik, Tableau, Excel PAX/PAW) do you use for management reporting, and do you manually export CSV files to reconcile data?",
-                tip: "Reconciling CSV manual exports indicates a need for DataFusion."
-            },
-            {
-                q: "Do users need to drill down from high-level reports to transaction-level GL data, and do you perform multi-currency transactions at the transaction level?",
-                tip: "Multi-currency transactions at transaction level require cube rules."
-            },
-            {
-                q: "Do you have internal developers/admins to manage these systems, or is there a key-person risk if someone leaves?",
-                tip: "Position Octane's managed DevOps support as key-person risk insurance."
-            },
-            {
-                q: "How many planning contributors, read-only users, and administrators are involved, and would they need formal end-user or developer training?",
-                tip: "Factor in training licensing and developer/end-user seat requirements."
-            },
-            {
-                q: "What repetitive financial tasks (e.g., monthly slides or reports) feel most manual, and would conversational AI access to financial queries benefit your executives?",
-                tip: "Introduce AskFinance for conversational executive queries."
-            },
-            {
-                q: "What is your target timeline for going live, and do you need a parallel run (e.g., completing by a specific month like June)?",
-                tip: "Check if they require parallel runs to complete by June end."
-            },
-            {
-                q: "Is there a budget allocated for licensing and delivery, and what is your internal approval/purchase order process?",
-                tip: "Qualify sign-off thresholds and PO approval processes."
-            },
-            {
-                q: "Have you evaluated other tools (e.g. Workday, Anaplan, TM1), and who else is involved in the final decision?",
-                tip: "Probe if they are evaluating Anaplan, Workday, or competing partners."
-            },
-            {
-                q: "What does success look like, and would a 60-day trial of connectors (like DataFusion) or a free Proof of Concept (POC) help validate the solution?",
-                tip: "Pitch a 60-day trial of DataFusion connectors or free POC."
-            }
+            {q: "Why did you contact us? What do you hope to achieve?", tip: "Understand the main driving force."},
+            {q: "Why do you think you need TM1?", tip: "Validate TM1 as the correct solution."},
+            {q: "Is this for a single department or across the company?", tip: "Gauge project scope."},
+            {q: "What will you primarily use TM1 for?", tip: "Core use-case definition."},
+            {q: "What application would you like TM1 to replace?", tip: "Identify current legacy system."},
+            {q: "How are you currently managing budgeting and forecasting?", tip: "Find manual pain points."},
+            {q: "How many people are involved in the planning process?", tip: "Estimate license requirements."},
+            {q: "How long does your budgeting or forecasting cycle typically take?", tip: "Time-saving ROI."},
+            {q: "What is the most frustrating part of your current process?", tip: "Emphasize pain points."},
+            {q: "How confident are you in the numbers you are producing?", tip: "Highlight data integrity risks."},
+            {q: "What does success look like for this project?", tip: "Define success criteria."},
+            {q: "Do you have a target completion date?", tip: "Timeline constraints."},
+            {q: "Does your firm have a policy on cloud or on-premise?", tip: "Deployment environment."},
+            {q: "What is the minimum you need TM1 to do?", tip: "Define MVP scope."},
+            {q: "What are the nice-to-have functions that can be added later?", tip: "Phase 2 scope."},
+            {q: "Who will support TM1 after handover — IT or finance?", tip: "Post-go-live ownership."},
+            {q: "Who are the project stakeholders? First names and titles will do.", tip: "Identify decision makers."},
+            {q: "What are the busiest times of year we should plan around?", tip: "Avoid deployment conflicts."},
+            {q: "Can you share a requirements document?", tip: "Expedite scoping."},
+            {q: "What budget range do you have in mind?", tip: "Qualify financial capacity."},
+            {q: "How many data sources need to integrate with TM1 eg ERP, ledgers, databases? Are they cloud or on-premise, and will any new ones need to be added?", tip: "Data integration complexity."},
+            {q: "Are data reconciliation and load processes manual or automated?", tip: "Pitch DataFusion if manual."},
+            {q: "How many TM1 licenses will you need?", tip: "Seat count estimation."},
+            {q: "How many will be admin licenses?", tip: "Admin ratio."},
+            {q: "Do you expect to need more licenses over time?", tip: "Growth trajectory."},
+            {q: "Do you have casual users who only log in once a year?", tip: "Differentiate user types."},
+            {q: "Do you use any reporting tools against TM1 data eg Power BI?", tip: "BI integration needs."},
+            {q: "How many reports need to be built?", tip: "Delivery scope."},
+            {q: "Will you report using cube views, PAX or PAW?", tip: "UI preferences."},
+            {q: "Do you need static reports or dynamic dashboards? If you have a dashboard, please paste a screenshot below.", tip: "Dashboard complexity."},
+            {q: "What are the manual data reconciliation processes?", tip: "Automatable tasks."},
+            {q: "Are data load and mapping processes manual or automated?", tip: "Identify ETL gaps."},
+            {q: "What are the most complicated Excel computations? Please describe the logic and paste screenshots below.", tip: "Rule complexity."},
+            {q: "How much of what you need from TM1 is already being done in Excel today?", tip: "Current Excel footprint."},
+            {q: "Do users contribute data directly? If yes, please paste screenshots of the input templates below.", tip: "Write-back requirements."},
+            {q: "Which business processes are covered eg budgeting, forecasting, workforce planning, sales planning? (Anaplan)", tip: "Current Anaplan footprint."},
+            {q: "How many models do you have and how many users interact with them? (Anaplan)", tip: "Model scale."},
+            {q: "How is data loaded into Anaplan — manually, via CloudWorks, Anaplan Connect, or API?", tip: "Migration approach."},
+            {q: "What source systems feed data into Anaplan eg ERP, CRM, HR?", tip: "Integrations."},
+            {q: "How do users interact with the model — via dashboards, NUX pages, or Excel? (Anaplan)", tip: "UI translation."},
+            {q: "Do users contribute data directly, or is the model read-only for most? (Anaplan)", tip: "Write-back vs Reporting."},
+            {q: "Which business processes are covered eg budgeting, forecasting, consolidation, reporting? (Jedox)", tip: "Jedox footprint."},
+            {q: "Is Jedox deployed on-premise or cloud?", tip: "Hosting."},
+            {q: "How is data loaded into Jedox — via ETL integrator, scripts, or manually?", tip: "Data pipelines."},
+            {q: "What source systems feed data into Jedox eg SAP, ERP, databases?", tip: "Source mapping."},
+            {q: "Do users interact via Excel reports, Jedox Web, or both?", tip: "End-user experience."},
+            {q: "Do users contribute data directly via input templates? (Jedox)", tip: "Write-back needs."}
         ],
         B: [
-            {
-                q: "What version of TM1/Planning Analytics are you running, and is it deployed on-premise or in the IBM Cloud?",
-                tip: "Old versions indicate an upgrade project opportunity."
-            },
-            {
-                q: "How many TM1 instances do you run (e.g., production-only, or separate dev and test environments)?",
-                tip: "Dev/Test/Prod environment isolation shows organizational maturity."
-            },
-            {
-                q: "How many models, cubes, dimensions, and user groups are you currently running?",
-                tip: "Cube count and dimensions determine model complexity."
-            },
-            {
-                q: "Have you checked your system's performance, RAM usage, hard disk space, or feeder memory usage? Are they approaching high limits?",
-                tip: "Feeder memory leaks cause crashes; prompt for Flight Check."
-            },
-            {
-                q: "Are log files being automatically cleared, and what is the typical size of your TM1 log files (e.g., is it under or over the 50MB standard)?",
-                tip: "Log files over 50MB indicate poor configuration or runaway processes."
-            },
-            {
-                q: "What are the typical report load times for your end-users, and are they above the 5-second threshold (e.g. 15-25 seconds)?",
-                tip: "Load times >5 seconds point to bad rules, feeders, or MDX views."
-            },
-            {
-                q: "Do you have dedicated in-house TM1 administrators/developers, or are you dependent on key individuals?",
-                tip: "Managed support helps bridge internal admin staffing resource gaps."
-            },
-            {
-                q: "Are you currently working with another TM1 vendor? Are you locked into a rigid contract with separate rates for support and development?",
-                tip: "Octane does not distinguish support vs dev rates; explain rollover hours."
-            },
-            {
-                q: "What is your current backlog of enhancements, bugs, or data reconciliation tasks, and how is it prioritized?",
-                tip: "A large backlog warrants a block of DevOps hours to clear."
-            },
-            {
-                q: "Have your TM1 developers and power users had formal training, and would they benefit from free access to professional training courses?",
-                tip: "Pitch free library access as a sweetener for support contracts."
-            },
-            {
-                q: "Are you using Power BI, Tableau, or Qlik, and do you have a direct database connection or are you manually handling CSVs?",
-                tip: "Offer direct REST API connectors to replace CSV dumps."
-            },
-            {
-                q: "Who has final authority to approve support changes, and what is the timeline to transition support (e.g. target date like October 31)?",
-                tip: "Standardize on an October 31 support transition date."
-            }
-        ],
-        C: [
-            {
-                q: "How many slides are in your monthly executive financial reports, and how much time does the finance team spend manually extracting, cleansing, and formatting data for them?",
-                tip: "Quantify hours spent on monthly PowerPoint slide decks."
-            },
-            {
-                q: "What enterprise systems and data sources (e.g., TM1, Adobe Analytics, Google Ad Manager, Adobe AdSlot, BigQuery, SQL) need to connect for automated reporting?",
-                tip: "Probe for Adobe AdSlot, Google Ad Manager, BigQuery integrations."
-            },
-            {
-                q: "Would executives and managers benefit from asking natural language questions (e.g. \"AskFinance\") to query financial data in real time?",
-                tip: "Pitch real-time NLP querying to replace static dashboard sheets."
-            },
-            {
-                q: "What other areas in the business (e.g. Sales, Editorial, HR, Customer Support, IT, Procurement, Legal) have repetitive workflows ripe for automation?",
-                tip: "Look for cross-departmental opportunities (Legal, Editorial, HR)."
-            },
-            {
-                q: "Have you experimented with or deployed any generative AI or automation tools internally?",
-                tip: "Understand current internal AI experiments or policies."
-            },
-            {
-                q: "What is your primary cloud environment (e.g. GCP, AWS, Azure, on-premise) and how do you manage data security?",
-                tip: "Align with their primary cloud preference (GCP, AWS, Azure)."
-            },
-            {
-                q: "Do you require specific role-based access controls and security protocols for financial data queried by AI?",
-                tip: "Highlight watsonx role-based access control (RBAC) security."
-            },
-            {
-                q: "Would you be open to a 2-to-6 week co-creation Proof of Concept (POC) to demonstrate value before full production rollout?",
-                tip: "Co-creation POC generates a custom demo with client data in weeks."
-            },
-            {
-                q: "Can you commit a primary business contact and technical resource to collaborate during a 2-to-6 week POC?",
-                tip: "Validate that both business and IT sponsors are available to support."
-            },
-            {
-                q: "Are you willing to commit to a Decision Workshop within 10 days of POC completion to confirm next steps?",
-                tip: "Lock in the Decision Workshop within 10 days post-POC."
-            },
-            {
-                q: "Are you aware of the indicative costs for enterprise generative AI licensing ($160k+/yr) and implementation services ($125k+)?",
-                tip: "Pre-qualify budget: $160k+/yr licensing, $125k+ delivery services."
-            },
-            {
-                q: "What is your timeline for starting an AI pilot, and who are the key executive stakeholders involved?",
-                tip: "Verify timeline and locate the ultimate executive sponsor."
-            }
+            {q: "Why did you contact us? What do you hope to achieve?", tip: "Understand primary goal."},
+            {q: "How long have you been using TM1?", tip: "Legacy vs fresh deployment."},
+            {q: "What do you primarily use TM1 for?", tip: "Core business function."},
+            {q: "Where does it fall short — including performance, speed, or usability issues?", tip: "Identify pain points."},
+            {q: "Is TM1 used across the business or only within finance?", tip: "Determine enterprise spread."},
+            {q: "Have users adopted TM1 or do they resort to Excel?", tip: "Adoption issues."},
+            {q: "Is it difficult to make enhancements? Who makes them?", tip: "Identify internal capability gaps."},
+            {q: "Is the instance cloud or on-premise?", tip: "Hosting environment."},
+            {q: "What does success look like for this project?", tip: "Success criteria."},
+            {q: "Do you have a target completion date?", tip: "Timeline."},
+            {q: "Does your firm have a policy on cloud or on-premise?", tip: "Deployment restrictions."},
+            {q: "What is the minimum you need TM1 to do?", tip: "MVP Scope."},
+            {q: "What are the nice-to-have functions that can be added later?", tip: "Phase 2."},
+            {q: "How long ago did users receive training?", tip: "Pitch training courses."},
+            {q: "Who are the project stakeholders? First names and titles will do.", tip: "Stakeholder mapping."},
+            {q: "What are the busiest times of year we should plan around?", tip: "Scheduling conflicts."},
+            {q: "Can you share a requirements document?", tip: "Fast-track scoping."},
+            {q: "What budget range do you have in mind?", tip: "Budget qualification."},
+            {q: "How many data sources does TM1 integrate with eg ERP, ledgers, databases? Are they cloud or on-premise?", tip: "ETL complexity."},
+            {q: "Will any new data sources need to be added?", tip: "Future integration needs."},
+            {q: "Are data reconciliation and load processes manual or automated?", tip: "Pitch automation."},
+            {q: "Are you using PAW, Perspectives, Excel, or a combination?", tip: "UI preferences."},
+            {q: "How many TM1 licenses do you have?", tip: "Current scale."},
+            {q: "How many are admin licenses?", tip: "Ratio check."},
+            {q: "Do you expect to need more licenses?", tip: "Growth check."},
+            {q: "Do you have casual users who only log in once a year?", tip: "Usage frequency."},
+            {q: "What is the license renewal date? We may be able to get you a better rate.", tip: "Renewal timeline."},
+            {q: "Were the licenses purchased directly from IBM or via a third party?", tip: "Licensing channel."},
+            {q: "Do you use any reporting tools against TM1 data eg Power BI?", tip: "BI Tools."},
+            {q: "How many reports need to be built?", report: "Scope estimation."},
+            {q: "Will you report using cube views, PAX or PAW?", tip: "UI strategy."},
+            {q: "Do you need static reports or dynamic dashboards? If you have a dashboard, please paste a screenshot below.", tip: "Dashboard design."},
+            {q: "How many developers have worked on TM1 since it was set up?", tip: "Codebase history."},
+            {q: "How many cubes are in TM1?", tip: "Model complexity."},
+            {q: "How many reports are in TM1?", tip: "Reporting scope."},
+            {q: "How many security groups do you have?", tip: "Security overhead."},
+            {q: "What are the log file sizes?", tip: "Rule performance checks."},
+            {q: "How much memory does TM1 use in total?", tip: "RAM usage."},
+            {q: "How much memory do the feeders use?", tip: "Feeder optimization."},
+            {q: "Do you need a like-for-like migration or are you building from scratch? (On-premise)", tip: "Migration scope."},
+            {q: "What is the server RAM size? (On-premise)", tip: "Hardware capability."},
+            {q: "What is the server hard disk size? (On-premise)", tip: "Hardware limits."},
+            {q: "What version of TM1 are you using? (On-premise)", tip: "Upgrade requirement."},
+            {q: "Is there a prod and dev server? (On-premise)", tip: "Environment isolation."},
+            {q: "How many instances of TM1 do you have? (On-premise)", tip: "Instance sprawl."},
+            {q: "Do any Excel reports use Action Buttons? (On-premise)", tip: "Macro dependencies."},
+            {q: "Do you use TM1 Web? If yes, how many Excel reports are published to it? (On-premise)", tip: "Web reporting."}
         ]
     };
 
@@ -2792,8 +2740,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
             synthVariantSelect.value = "Variant A";
         } else if (variant === "B") {
             synthVariantSelect.value = "Variant B";
-        } else if (variant === "C") {
-            synthVariantSelect.value = "Variant C";
+        
         }
     });
 
@@ -2801,9 +2748,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
     synthVariantSelect.addEventListener('change', async () => {
         const val = synthVariantSelect.value;
         let variant = "A";
-        if (val === "Variant C") {
-            variant = "C";
-        } else if (val === "Variant B") {
+        if (val === "Variant B") {
             variant = "B";
         }
         battlecardSelector.value = variant;

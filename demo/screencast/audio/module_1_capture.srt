@@ -1,0 +1,24 @@
+1
+00:00:00,050 --> 00:00:04,132
+Welcome to the Early Game Pipeline operational training.
+
+2
+00:00:04,132 --> 00:00:08,117
+In Module 1, we cover the prospect experience.
+
+3
+00:00:08,117 --> 00:00:18,779
+When a prospect like Kevin Smith visits the Octane booking page, he is presented with clear expectations of the thirty-minute pre-screen format before booking.
+
+4
+00:00:18,779 --> 00:00:24,705
+Kevin selects a reason to meet us from the dropdown, then Kevin selects a time slot.
+
+5
+00:00:24,705 --> 00:00:29,632
+The calendar automatically routes the meeting to the active representative.
+
+6
+00:00:29,632 --> 00:00:41,941
+Kevin completes the seven-point intake form, providing his role at Meridian Logistics, his service track interest, and his direct contact details, before submitting the request.
+

@@ -1,0 +1,24 @@
+1
+00:00:00,050 --> 00:00:04,558
+Module 5 concludes the workflow with Post-Call Synthesis.
+
+2
+00:00:04,558 --> 00:00:12,264
+After hanging up, the sales team copies the Fathom transcript and pastes it back into the Tiny Claude Project.
+
+3
+00:00:12,264 --> 00:00:27,617
+By running the synthesis prompt, the A I instantly generates six critical deliverables: the Recap Email, a Summary Sheet, Detailed Notes, Questionnaire Mapping, Action Items, and a preliminary Proposal.
+
+4
+00:00:27,617 --> 00:00:37,779
+The sales team verifies the Proposal against the official Services Catalog to guarantee all pricing strictly matches our standard list rates.
+
+5
+00:00:37,779 --> 00:00:44,220
+Once verified, the deliverables are copied out and saved to the client folder in Google Drive.
+
+6
+00:00:44,220 --> 00:00:51,058
+The deal is marked as Prescreen Completed, and is successfully handed over to the technical team.
+
