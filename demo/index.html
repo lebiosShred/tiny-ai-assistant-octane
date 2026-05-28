@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tiny AI Assistant - SaaS Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="tiny.png">
     <meta name="description" content="Functional sales enablement application for prospect pre-screening briefings and call transcript report synthesis.">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
 
@@ -20,13 +20,13 @@
                 <span class="brand-logo">Tiny AI Assistant</span>
                 <span class="brand-badge">Active</span>
             </div>
-            <nav class="app-nav" style="display: flex; align-items: center; gap: 0.5rem; margin: 0 auto 0 2rem;">
+            <nav class="app-nav">
                 <button class="nav-btn active" id="nav-pipeline">Pipeline</button>
-                <a href="/docs" class="header-link" target="_blank" style="color: #4b5563; text-decoration: none; font-size: 0.8rem; font-weight: 600; padding: 4px 8px; transition: color 0.2s;" onmouseover="this.style.color='#0ea5e9'" onmouseout="this.style.color='#4b5563'">Documentation</a>
-                <a href="/book" class="header-link" style="color: #4b5563; text-decoration: none; font-size: 0.8rem; font-weight: 600; padding: 4px 8px; transition: color 0.2s;" onmouseover="this.style.color='#0ea5e9'" onmouseout="this.style.color='#4b5563'">Booking Page</a>
+                <a href="/docs" class="header-link" target="_blank">Documentation</a>
+                <a href="/book" class="header-link">Booking Page</a>
             </nav>
 
-            <a href="admin_setup.html" class="btn btn-secondary" style="height: 32px; padding: 0 12px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">⚙ Admin Console</a>
+            <a href="admin_setup.html" class="btn btn-secondary header-admin-btn">⚙ Admin Console</a>
         </header>
 
 
@@ -41,7 +41,7 @@
                 
                 <div class="panel-body">
                     <!-- Active Pipeline View Container -->
-                    <div id="active-pipeline-view" style="display: flex; flex-direction: column; gap: 1rem; flex: 1; height: 100%;">
+                    <div id="active-pipeline-view" class="active-pipeline-view">
                         <!-- Stepper Header -->
                         <div class="stepper-header">
                             <div class="step-indicator active" id="step-1-indicator" data-step="1">
@@ -62,39 +62,39 @@
 
                         <!-- Step 1 Content: Prospect Prep -->
                         <div class="step-content active" id="step-1-content">
-                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Preparation for Requirement Session</h3>
-                            <form id="prep-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
+                            <h3 class="step-section-title">Preparation for Requirement Session</h3>
+                            <form id="prep-form" class="flex-form-col">
 
-                                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
-                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                <div class="form-row-wrap">
+                                    <div class="form-group min-200">
                                         <label for="prep-name">Prospect Full Name *</label>
                                         <input type="text" id="prep-name" class="form-input" placeholder="e.g. Sarah Chen" required>
                                     </div>
-                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <div class="form-group min-200">
                                         <label for="prep-title">Position / Title</label>
                                         <input type="text" id="prep-title" class="form-input" placeholder="e.g. Head of FP&A">
                                     </div>
                                 </div>
-                                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
-                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                <div class="form-row-wrap">
+                                    <div class="form-group min-200">
                                         <label for="prep-company">Company Name *</label>
                                         <input type="text" id="prep-company" class="form-input" placeholder="e.g. Meridian Logistics" required>
                                     </div>
-                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <div class="form-group min-200">
                                         <label for="prep-url">Company Website URL</label>
                                         <input type="text" id="prep-url" class="form-input" placeholder="e.g. meridianlogistics.com.au">
                                     </div>
-                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <div class="form-group min-200">
                                         <label for="prep-email">Company Email *</label>
                                         <input type="email" id="prep-email" class="form-input" placeholder="e.g. sarah.chen@meridianlogistics.com.au" required>
                                     </div>
                                 </div>
-                                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
-                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                <div class="form-row-wrap">
+                                    <div class="form-group min-200">
                                         <label for="prep-phone">Prospect Phone Number *</label>
                                         <input type="tel" id="prep-phone" class="form-input" placeholder="e.g. +61 2 9876 5432" required>
                                     </div>
-                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <div class="form-group min-200">
                                         <label for="prep-rep">Sales Representative *</label>
                                         <select id="prep-rep" class="form-input select-input" required>
                                             <option value="Albert">Albert</option>
@@ -102,90 +102,88 @@
                                         </select>
                                     </div>
                                 </div>
-                                    <div class="form-group">
-                                        <label for="prep-track">Service Track Interest</label>
-                                        <select id="prep-track" class="form-input select-input">
-                                            <option value="Planning & Analytics (TM1)">Planning & Analytics (TM1)</option>
-                                            <option value="AI">AI</option>
-                                        </select>
-                                    </div>
+                                <div class="form-group">
+                                    <label for="prep-track">Service Track Interest</label>
+                                    <select id="prep-track" class="form-input select-input">
+                                        <option value="Planning & Analytics (TM1)">Planning & Analytics (TM1)</option>
+                                        <option value="AI">AI</option>
+                                    </select>
                                 </div>
                                 <div class="form-group">
                                     <label for="prep-intake">Booking Intake Answers / What they want to discuss</label>
-                                    <textarea id="prep-intake" class="form-input textarea-input" placeholder="Paste booking notes or specific discussion points here..." style="min-height: 60px; margin-top: 0.25rem;"></textarea>
+                                    <textarea id="prep-intake" class="form-input textarea-input h-60 mt-1" placeholder="Paste booking notes or specific discussion points here..."></textarea>
                                 </div>
-                                <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; background: rgba(0,0,0,0.02); padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(0,0,0,0.05);">
-                                    <input type="checkbox" id="prep-crm-sync" class="form-checkbox" style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer;" checked>
-                                    <label for="prep-crm-sync" style="margin: 0; cursor: pointer; color: var(--text-dark); font-weight: 500;">CRM Sync: Verify HubSpot History</label>
+                                <div class="form-group checkbox-panel">
+                                    <input type="checkbox" id="prep-crm-sync" class="form-checkbox" checked>
+                                    <label for="prep-crm-sync">CRM Sync: Verify HubSpot History</label>
                                 </div>
-                                                        <div class="form-group">
+                                <div class="form-group">
                                     <label>Google Drive Client folders connection</label>
-                                    <div class="gdrive-status-bar" style="display: flex; align-items: center; justify-content: space-between; background: rgba(26, 115, 232, 0.05); border: 1px solid rgba(26, 115, 232, 0.15); padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.5rem;">
-                                        <div style="display: flex; align-items: center; gap: 6px;">
-                                            <span class="status-dot green" style="width: 8px; height: 8px; border-radius: 50%; background: #34a853; box-shadow: 0 0 6px #34a853; display: inline-block;"></span>
-                                            <span style="font-size: 0.8rem; font-weight: 500; color: #1a73e8; display: inline-flex; align-items: center; gap: 4px;">📂 Connected to Google Drive</span>
+                                    <div class="gdrive-status-bar">
+                                        <div class="flex-align-center gap-6">
+                                            <span class="status-dot green"></span>
+                                            <span class="gdrive-status-text">📂 Connected to Google Drive</span>
                                         </div>
-                                        <span style="font-size: 0.75rem; color: rgba(0, 0, 0, 0.5); font-weight: 500;">Drive: <span style="font-family: monospace; color: #5f6368;">My Drive/Clients</span></span>
+                                        <span class="gdrive-status-meta">Drive: <span class="mono-text">My Drive/Clients</span></span>
                                     </div>
-                                    <div class="gdrive-search-wrapper" style="display: flex; gap: 0.5rem;">
-                                        <div style="position: relative; flex: 1;">
-                                            <input type="text" id="prep-gdrive-search" class="form-input" placeholder="🔍 Search past job specifications & SOWs in GDrive..." style="padding-left: 1.75rem;">
-                                            <span style="position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: #1a73e8;">📁</span>
+                                    <div class="gdrive-search-wrapper flex-row gap-2">
+                                        <div class="relative flex-1">
+                                            <input type="text" id="prep-gdrive-search" class="form-input" placeholder="🔍 Search past job specifications & SOWs in GDrive...">
+                                            <span class="input-icon-left">📁</span>
                                         </div>
-                                        <button type="button" class="btn btn-secondary" id="prep-gdrive-browse-btn" style="border-color: rgba(26, 115, 232, 0.2); color: #1a73e8; background: rgba(26, 115, 232, 0.02); height: 34px; font-size: 0.8rem;">Browse Folders</button>
+                                        <button type="button" class="btn btn-secondary gdrive-browse-btn" id="prep-gdrive-browse-btn">Browse Folders</button>
                                     </div>
                                     
                                     <!-- Embedded mock file browser (collapsible) -->
-                                    <div class="gdrive-browser" id="gdrive-browser" style="display: none; border: 1px solid rgba(26, 115, 232, 0.15); border-radius: 6px; margin-top: 0.5rem; background: #fafafa; padding: 0.5rem; max-height: 150px; overflow-y: auto;">
-                                        <div class="gdrive-folder-path" style="font-size: 0.75rem; font-weight: 600; color: #1a73e8; padding-bottom: 0.35rem; border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 0.35rem; display: flex; align-items: center; justify-content: space-between;">
+                                    <div class="gdrive-browser" id="gdrive-browser">
+                                        <div class="gdrive-folder-path">
                                             <span>📂 root / Clients / <span id="gdrive-current-folder">Active Clients</span></span>
-                                            <button type="button" id="gdrive-back-btn" style="font-size: 0.65rem; padding: 1px 4px; background: transparent; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 4px; cursor: pointer; display: none;">↰ Up</button>
+                                            <button type="button" id="gdrive-back-btn">↰ Up</button>
                                         </div>
-                                        <div class="gdrive-items-list" id="gdrive-items-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                        <div class="gdrive-items-list" id="gdrive-items-list">
                                             <!-- Loaded dynamically in app.js -->
                                         </div>
                                     </div>
  
                                     <!-- Attached Google Drive SOW badge -->
-                                    <div id="gdrive-attached-badge" class="gdrive-attached-badge" style="display: none; align-items: center; gap: 6px; background: rgba(26, 115, 232, 0.05); border: 1px solid rgba(26, 115, 232, 0.12); padding: 0.35rem 0.50rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem;">
-                                        <span style="font-size: 0.85rem;">📄</span>
-                                        <span style="flex: 1; font-weight: 500; color: #1a73e8;" id="gdrive-attached-name">Meridian_Logistics_SOW_2025.pdf</span>
-                                        <button type="button" id="gdrive-attached-remove" style="background: transparent; border: none; color: #ff4d4d; cursor: pointer; font-size: 0.85rem; padding: 0; font-weight: bold;">❌</button>
+                                    <div id="gdrive-attached-badge" class="gdrive-attached-badge">
+                                        <span>📄</span>
+                                        <span id="gdrive-attached-name">Meridian_Logistics_SOW_2025.pdf</span>
+                                        <button type="button" id="gdrive-attached-remove">❌</button>
                                     </div>
-                                </div>                             </div>
+                                </div>
                                 <!-- Moved to top of Step 1 -->
                                 <div class="form-group">
                                     <label for="prep-linkedin">LinkedIn Profile Bio / Experience</label>
                                     <div class="file-drop-zone" id="linkedin-drop-zone">
                                         <span id="linkedin-drop-text">📁 Drop LinkedIn PDF/TXT here, or click to upload</span>
-                                        <input type="file" id="prep-linkedin-file" accept=".pdf,.txt,.docx" style="display: none;">
+                                        <input type="file" id="prep-linkedin-file" accept=".pdf,.txt,.docx" class="hidden">
                                     </div>
-                                    <textarea id="prep-linkedin" class="form-input textarea-input" placeholder="Or paste LinkedIn profile experience details here..." style="margin-top: 0.5rem;"></textarea>
+                                    <textarea id="prep-linkedin" class="form-input textarea-input mt-2" placeholder="Or paste LinkedIn profile experience details here..."></textarea>
                                 </div>
                                 <div class="action-row">
                                     <button type="button" class="template-loader" id="prep-load-sample-btn">💡 Load Sample Sarah Chen</button>
                                     <button type="submit" class="btn btn-primary" id="prep-submit-btn">⚡ Generate Prep Briefing</button>
                                 </div>
-                                <div class="action-row" style="margin-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem; justify-content: flex-end;">
-                                    <button type="button" class="btn btn-primary" id="step-1-next-btn" style="display: none;">Next: Start Call ➡</button>
+                                <div class="action-row footer-row end">
+                                    <button type="button" class="btn btn-primary hidden" id="step-1-next-btn">Next: Start Call ➡</button>
                                 </div>
                             </form>
                         </div>
 
                         <!-- Step 2 Content: Live Call Companion -->
                         <div class="step-content" id="step-2-content">
-                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Requirement Session</h3>
-                            <div class="battlecard-container" id="battlecard-container" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1; height: 100%;">
-                                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap; flex: none;">
-                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                            <h3 class="step-section-title">Requirement Session</h3>
+                            <div class="battlecard-container flex-col-1 h-100" id="battlecard-container">
+                                <div class="form-row-wrap">
+                                    <div class="form-group min-180 mb-0">
                                         <label for="battlecard-selector">Questionnaire Variant</label>
                                         <select id="battlecard-selector" class="form-input select-input">
                                             <option value="A">Variant A: First-Time TM1 User</option>
                                             <option value="B">Variant B: Existing TM1 User</option>
-                                            
                                         </select>
                                     </div>
-                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                    <div class="form-group min-180 mb-0">
                                         <label>Call Outcome</label>
                                         <div class="call-outcome-bar" id="call-outcome-bar">
                                             <button type="button" class="outcome-btn active" data-outcome="completed">✅ Completed</button>
@@ -196,14 +194,14 @@
                                 </div>
 
                                 <!-- Collapsible Rapport Guide Panel -->
-                                <div class="rapport-guide-panel" id="rapport-guide-panel" style="display: none; border: 1px solid rgba(26, 115, 232, 0.15); border-radius: 6px; background: rgba(26, 115, 232, 0.02); padding: 0.75rem; margin-bottom: 0.25rem; flex-shrink: 0;">
-                                    <div class="rapport-guide-header" id="rapport-guide-header" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-weight: 600; color: #1a73e8; font-size: 0.85rem; user-select: none;">
+                                <div class="rapport-guide-panel" id="rapport-guide-panel">
+                                    <div class="rapport-guide-header" id="rapport-guide-header">
                                         <span>💡 Pre-Screen Call Rapport Guide</span>
-                                        <span id="rapport-guide-toggle-icon" style="font-size: 0.7rem;">▶ Expand</span>
+                                        <span id="rapport-guide-toggle-icon">▶ Expand</span>
                                     </div>
-                                    <div class="rapport-guide-body" id="rapport-guide-body" style="margin-top: 0.5rem; font-size: 0.75rem; color: #333; line-height: 1.4; display: none; max-height: 180px; overflow-y: auto; padding-right: 0.25rem;">
+                                    <div class="rapport-guide-body" id="rapport-guide-body">
                                         <!-- Loaded dynamically after dossier generation -->
-                                        <div style="font-style: italic; color: rgba(0,0,0,0.4);">Generate a prep dossier first to view talking points.</div>
+                                        <div class="italic muted">Generate a prep dossier first to view talking points.</div>
                                     </div>
                                 </div>
 
@@ -213,7 +211,7 @@
                                         <span class="teleprompter-counter" id="teleprompter-counter">Question 1 of 12</span>
                                         <span class="teleprompter-hint">Click a question to highlight it during the call</span>
                                     </div>
-                                    <div class="battlecard-body" id="battlecard-body" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; padding-right: 0.25rem;">
+                                    <div class="battlecard-body battlecard-body-inner" id="battlecard-body">
                                         <!-- Loaded via app.js -->
                                     </div>
                                 </div>
@@ -225,23 +223,23 @@
                                         <span>📅 Book Positional Meeting with Directors</span>
                                         <span class="positional-meeting-travel" id="positional-travel-distance"></span>
                                     </div>
-                                    <div class="positional-meeting-body" style="flex-wrap: wrap;">
-                                        <div class="form-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
+                                    <div class="positional-meeting-body wrap">
+                                        <div class="form-group min-140 mb-0">
                                             <label for="positional-director">Director Calendar</label>
                                             <select id="positional-director" class="form-input select-input">
                                                 <option value="amendra">Amendra's Calendar</option>
                                                 <option value="steny">Steny's Calendar</option>
                                             </select>
                                         </div>
-                                        <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
+                                        <div class="form-group min-120 mb-0">
                                             <label for="positional-date">Date</label>
                                             <input type="date" id="positional-date" class="form-input">
                                         </div>
-                                        <div class="form-group" style="flex: 1; min-width: 100px; margin-bottom: 0;">
+                                        <div class="form-group min-100 mb-0">
                                             <label for="positional-time">Time</label>
                                             <input type="time" id="positional-time" class="form-input">
                                         </div>
-                                        <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
+                                        <div class="form-group min-120 mb-0">
                                             <label for="positional-format">Format</label>
                                             <select id="positional-format" class="form-input select-input">
                                                 <option value="in-person">In-Person</option>
@@ -249,15 +247,15 @@
                                                 <option value="phone">Phone</option>
                                             </select>
                                         </div>
-                                        <button type="button" class="btn btn-primary" id="positional-confirm-btn" style="align-self: flex-end; height: 34px; font-size: 0.8rem; margin-top: auto;">📅 Confirm Booking</button>
+                                        <button type="button" class="btn btn-primary btn-sm align-end mt-auto" id="positional-confirm-btn">📅 Confirm Booking</button>
                                     </div>
                                 </div>
-                                <div class="add-question-wrapper" style="margin-top: 0.25rem;">
-                                    <button type="button" class="btn btn-secondary" id="battlecard-add-btn" style="width: 100%; border-style: dashed; border-color: var(--primary); color: var(--primary); font-size: 0.8rem; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem;">➕ Add Custom Question</button>
+                                <div class="add-question-wrapper mt-1">
+                                    <button type="button" class="btn btn-secondary btn-dashed-primary w-100" id="battlecard-add-btn">➕ Add Custom Question</button>
                                 </div>
-                                <div class="action-row" style="margin-top: 1rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem; gap: 0.5rem; flex-wrap: wrap;">
+                                <div class="action-row footer-row wrap">
                                     <button type="button" class="btn btn-secondary" id="step-2-back-btn">⬅ Back to Prep</button>
-                                    <button type="button" class="btn btn-secondary" id="step-2-save-btn" style="border-color: var(--primary); color: var(--primary);">💾 Save Questions</button>
+                                    <button type="button" class="btn btn-secondary primary-outline" id="step-2-save-btn">💾 Save Questions</button>
                                     <button type="button" class="btn btn-primary" id="step-2-next-btn">⚡ Call Completed: Go to Reports ➡</button>
                                 </div>
                             </div>
@@ -265,43 +263,42 @@
 
                         <!-- Step 3 Content: Call report Synthesizer -->
                         <div class="step-content" id="step-3-content">
-                            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Automated Reports</h3>
-                            <form id="synth-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
-                                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
-                                    <div class="form-group" style="flex: 1; min-width: 180px;">
+                            <h3 class="step-section-title">Automated Reports</h3>
+                            <form id="synth-form" class="flex-form-col">
+                                <div class="form-row-wrap" style="margin-bottom: 0.25rem;">
+                                    <div class="form-group min-180">
                                         <label for="synth-variant">Questionnaire Variant</label>
                                         <select id="synth-variant" class="form-input select-input">
                                             <option value="Variant A">Variant A: First-Time TM1 User</option>
                                             <option value="Variant B">Variant B: Existing TM1 User</option>
-                                            
                                         </select>
                                     </div>
-                                    <div class="form-group" style="flex: 1.5; min-width: 240px;">
+                                    <div class="form-group min-240">
                                         <label for="synth-screencast">Screencast Video Link (Teams / GDrive)</label>
                                         <input type="url" id="synth-screencast" class="form-input" placeholder="e.g. https://drive.google.com/file/d/.../view">
                                     </div>
                                 </div>
-                                <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
+                                <div class="form-group flex-col-1">
                                     <label for="synth-transcript">Call Transcript *</label>
-                                    <textarea id="synth-transcript" class="form-input textarea-input textarea-transcript" placeholder="Paste verbatim call transcript here..." required style="flex: 1; min-height: 200px;"></textarea>
+                                    <textarea id="synth-transcript" class="form-input textarea-input textarea-transcript flex-1" placeholder="Paste verbatim call transcript here..." required></textarea>
                                 </div>
-                                <div class="action-row" style="margin-top: 1rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.85rem; display: flex; flex-direction: column; gap: 0.75rem; align-items: stretch;">
-                                    <div class="report-generator-container" style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
-                                        <label style="font-size: 0.75rem; font-weight: 600; color: rgba(0, 0, 0, 0.75); text-transform: uppercase; letter-spacing: 0.5px;">Generate Deliverables</label>
-                                        <div class="report-type-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem;">
-                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="questionnaireAnswers" style="font-size: 0.8rem; justify-content: flex-start;">📋 Questionnaire Answers</button>
-                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="migrationReport" style="font-size: 0.8rem; justify-content: flex-start;">📊 Migration Report</button>
-                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="recapEmail" style="font-size: 0.8rem; justify-content: flex-start;">✉️ Recap Email</button>
-                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="summarySheet" style="font-size: 0.8rem; justify-content: flex-start;">📄 Summary Sheet</button>
-                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="notes" style="font-size: 0.8rem; justify-content: flex-start;">📝 Notes</button>
-                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="actionItems" style="font-size: 0.8rem; justify-content: flex-start;">✅ Action Items</button>
-                                            <button type="button" class="btn btn-secondary report-type-btn" data-report="proposal" style="font-size: 0.8rem; justify-content: flex-start;">📝 Consultative Proposal</button>
+                                <div class="action-row footer-row flex-col stretch">
+                                    <div class="report-generator-container w-100">
+                                        <label class="generator-label">Generate Deliverables</label>
+                                        <div class="report-type-grid">
+                                            <button type="button" class="btn btn-secondary report-type-btn text-start text-sm" data-report="questionnaireAnswers">📋 Questionnaire Answers</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn text-start text-sm" data-report="migrationReport">📊 Migration Report</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn text-start text-sm" data-report="recapEmail">✉️ Recap Email</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn text-start text-sm" data-report="summarySheet">📄 Summary Sheet</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn text-start text-sm" data-report="notes">📝 Notes</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn text-start text-sm" data-report="actionItems">✅ Action Items</button>
+                                            <button type="button" class="btn btn-secondary report-type-btn text-start text-sm" data-report="proposal">📝 Consultative Proposal</button>
                                         </div>
                                     </div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 0.5rem;">
+                                    <div class="footer-row split top-border w-100 mt-2">
                                         <button type="button" class="btn btn-secondary" id="step-3-back-btn">⬅ Back to Call</button>
-                                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                            <button type="button" class="template-loader" id="synth-load-sample-btn" style="margin-right: 1rem;">💡 Load Sample Transcript</button>
+                                        <div class="flex-align-center gap-2">
+                                            <button type="button" class="template-loader mr-4" id="synth-load-sample-btn">💡 Load Sample Transcript</button>
                                             <button type="submit" class="btn btn-primary" id="synth-submit-btn">⚡ Generate All Reports</button>
                                         </div>
                                     </div>
@@ -309,10 +306,6 @@
                             </form>
                         </div>
                     </div>
-
-
-
-                    <!-- Moved to #call-directory-workspace at top-level -->
                 </div>
             </div>
 
@@ -325,7 +318,7 @@
                     <span class="panel-title">AI Coprocessor Console</span>
                 </div>
                 
-                <div class="panel-body" style="padding: 0; position: relative;">
+                <div class="panel-body no-pad relative">
                     
                     <div class="output-console" id="output-console">
                         
@@ -343,7 +336,7 @@
                         </div>
 
                         <!-- Results Container -->
-                        <div class="output-results" id="output-results" style="display: none; width: 100%; height: 100%; flex-direction: column; padding: 1.25rem;">
+                        <div class="output-results hidden" id="output-results">
                             <!-- Floating Action Buttons -->
                             <div class="output-actions">
                                 <button class="output-btn" id="copy-content-btn">📋 Copy</button>
@@ -351,7 +344,7 @@
                             </div>
 
                             <!-- Delimiter Documents Tab Navigation -->
-                            <div class="docs-nav" id="output-doc-nav" style="display: none;">
+                            <div class="docs-nav hidden" id="output-doc-nav">
                                 <button class="doc-tab-btn active" data-doc="questionnaireAnswers" onclick="setDocTab('questionnaireAnswers')">Questionnaire Answers</button>
                                 <button class="doc-tab-btn" data-doc="migrationReport" onclick="setDocTab('migrationReport')">Migration Report</button>
                                 <button class="doc-tab-btn" data-doc="recapEmail" onclick="setDocTab('recapEmail')">Recap Email</button>
@@ -363,7 +356,7 @@
                             </div>
 
                             <!-- Document Content Panel -->
-                            <div id="output-doc-content" style="flex: 1; overflow-y: auto; padding-right: 0.5rem; margin-top: 0.5rem;">
+                            <div id="output-doc-content" class="output-doc-content">
                                 <!-- AI Content Output Here -->
                             </div>
                         </div>

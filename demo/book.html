@@ -697,21 +697,8 @@
             const host = 'Round Robin';
             const monthText = 'May';
             
-            // Calculate assigned Sales Representative (Albert: 7 AM - 2 PM, Isha: 2 PM - 9 PM)
-            let assignedRep = "Albert";
-            if (selectedTime) {
-                const timeMatch = selectedTime.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
-                if (timeMatch) {
-                    let hour = parseInt(timeMatch[1], 10);
-                    const isPm = timeMatch[3].toUpperCase() === 'PM';
-                    if (isPm && hour !== 12) hour += 12;
-                    if (!isPm && hour === 12) hour = 0;
-                    
-                    if (hour >= 14 && hour < 21) {
-                        assignedRep = "Isha";
-                    }
-                }
-            }
+            // Calculate assigned Sales Representative (Round Robin load balancing across their shared shift)
+            let assignedRep = Math.random() > 0.5 ? "Albert" : "Isha";
 
             // Format intake summary text exactly as required by Sales Team parse
             const summaryText = `Service track interest: ${track === 'AI' ? 'AI' : 'Planning Analytics (TM1)'}
