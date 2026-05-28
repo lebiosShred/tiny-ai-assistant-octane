@@ -1596,13 +1596,13 @@ body.resizing * {
 
 /* Layout Modifiers for Dashboard Grid */
 .dashboard-grid.layout-split {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 12px 1fr;
 }
 .dashboard-grid.layout-focus-left {
-    grid-template-columns: 1.4fr 0.6fr;
+    grid-template-columns: 1.4fr 12px 0.6fr;
 }
 .dashboard-grid.layout-focus-right {
-    grid-template-columns: 0.6fr 1.4fr;
+    grid-template-columns: 0.6fr 12px 1.4fr;
 }
 
 /* Dossier Accordion Styles */
