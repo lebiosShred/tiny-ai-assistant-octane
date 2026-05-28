@@ -1,0 +1,14 @@
+{
+  "max_bullet_point_length": 120,
+  "patterns": {
+    "dash_forbidden": "[\\u2013\\u2014]",
+    "backtick_link": "\\[`([^`\\]]+)`\\]\\((file:///[^)]+)\\)",
+    "file_link": "\\[([^\\]]+)\\]\\((file:///([^)#\\n]+))(#[^)]+)?\\)"
+  },
+  "messages": {
+    "EM_DASH": "Em-dash or en-dash detected. Use double-hyphens '--'.",
+    "BACKTICK_LINK": "Backticks surrounding file link text detected. Remove backticks.",
+    "LINK_BASENAME_MISMATCH": "Link text does not match file basename.",
+    "LONG_BULLET_POINT": "Bullet point line length exceeds maximum character limit."
+  }
+}
