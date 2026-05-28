@@ -8,22 +8,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #09090b;
-            --bg-surface: #111113;
-            --bg-elevated: #18181b;
-            --bg-card: rgba(255,255,255,0.04);
-            --border-glass: rgba(255,255,255,0.08);
-            --border-focus: rgba(77,174,235,0.5);
-            --primary: #4daeeb;
-            --primary-glow: rgba(77,174,235,0.3);
-            --primary-dim: rgba(77,174,235,0.15);
-            --green: #22c55e;
-            --green-glow: rgba(34,197,94,0.25);
+            --bg-base: #f9fafb; /* Light background */
+            --bg-surface: #ffffff; /* White panels */
+            --bg-elevated: #f3f4f6; /* Subtle grey panels */
+            --bg-card: #ffffff;
+            --border-glass: #e5e7eb; /* Subtle light border */
+            --border-focus: rgba(77, 174, 235, 0.5);
+            --primary: #4daeeb; /* Octane Blue */
+            --primary-glow: rgba(77, 174, 235, 0.25);
+            --primary-dim: rgba(77, 174, 235, 0.08);
+            --green: #10b981;
+            --green-glow: rgba(16, 185, 129, 0.15);
             --amber: #f59e0b;
             --red: #ef4444;
-            --text-main: #fafafa;
-            --text-muted: rgba(255,255,255,0.55);
-            --text-dark: rgba(255,255,255,0.3);
+            --text-main: #1f2937; /* Dark text for readability */
+            --text-muted: #6b7280;
+            --text-dark: #9ca3af;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -107,7 +107,7 @@
         }
 
         .sidebar-item:hover {
-            background: rgba(255,255,255,0.05);
+            background: rgba(0,0,0,0.04);
             color: var(--text-main);
         }
 
@@ -140,7 +140,7 @@
 
         .sidebar-back:hover {
             color: var(--primary);
-            background: rgba(255,255,255,0.03);
+            background: rgba(0,0,0,0.02);
         }
 
         .sidebar-footer {
@@ -369,7 +369,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0.5rem 0.75rem;
-            background: rgba(255,255,255,0.02);
+            background: #fafafa;
             border: 1px solid var(--border-glass);
             border-bottom: none;
             border-radius: 8px 8px 0 0;
@@ -385,16 +385,16 @@
 
         .prompt-editor-meta {
             font-size: 0.7rem;
-            color: var(--text-dark);
+            color: var(--text-muted);
         }
 
         .prompt-editor {
             width: 100%;
             min-height: 200px;
-            background: rgba(0,0,0,0.4);
+            background: #ffffff;
             border: 1px solid var(--border-glass);
             border-radius: 0 0 8px 8px;
-            color: #c9d1d9;
+            color: var(--text-main);
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.82rem;
             line-height: 1.7;
@@ -448,7 +448,7 @@
         .token-bar {
             flex: 1;
             height: 5px;
-            background: rgba(255,255,255,0.06);
+            background: rgba(0,0,0,0.06);
             border-radius: 3px;
             overflow: hidden;
             position: relative;
@@ -464,7 +464,7 @@
 
         /* ── File Upload Zone ── */
         .upload-zone {
-            border: 2px dashed rgba(255,255,255,0.1);
+            border: 2px dashed rgba(0,0,0,0.1);
             border-radius: 12px;
             padding: 1.5rem;
             text-align: center;
@@ -508,14 +508,14 @@
             justify-content: space-between;
             padding: 0.4rem 0.6rem;
             border-radius: 6px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.04);
+            background: #ffffff;
+            border: 1px solid var(--border-glass);
             font-size: 0.8rem;
             transition: background 0.15s ease;
         }
 
         .knowledge-file-item:hover {
-            background: rgba(255,255,255,0.05);
+            background: var(--bg-elevated);
         }
 
         .knowledge-file-info {
@@ -586,8 +586,8 @@
             font-weight: 600;
             padding: 4px 10px;
             border-radius: 4px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-glass);
+            background: var(--bg-surface);
             color: var(--text-muted);
             cursor: pointer;
             transition: all 0.15s ease;
@@ -644,7 +644,7 @@
             position: absolute;
             cursor: pointer;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.1);
             border-radius: 12px;
             transition: 0.3s;
         }
@@ -700,8 +700,8 @@
         /* ── Scrollbar ── */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-base); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
@@ -737,10 +737,6 @@
             <div class="sidebar-item" data-section="knowledge-base">
                 <span class="sidebar-item-icon">📚</span>
                 Knowledge Base
-            </div>
-            <div class="sidebar-item" data-section="team-config">
-                <span class="sidebar-item-icon">👥</span>
-                Team & SDR Config
             </div>
         </div>
 
@@ -929,39 +925,6 @@
                 </div>
             </div>
 
-            <!-- Section 5: Team & SDR Config -->
-            <div class="config-section" id="section-team-config">
-                <div class="config-section-header">
-                    <div class="config-section-title">
-                        <span class="icon">👥</span> Team & SDR Configuration
-                    </div>
-                </div>
-                <div class="config-section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Active Sales Representative</label>
-                            <select class="form-input" id="cfg-active-sdr">
-                                <option value="Albert">Albert</option>
-                                <option value="Isha">Isha</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 1rem;">
-                        <div class="toggle-row">
-                            <div class="toggle-label-group">
-                                <span class="toggle-label">Demo Mode</span>
-                                <span class="toggle-desc">Enable sample data loaders and demo-specific behaviors</span>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="cfg-demo-mode">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </main>
 
@@ -1010,8 +973,6 @@
         const cfgTonePreset = document.getElementById('cfg-tone-preset');
         const cfgPrepPrompt = document.getElementById('cfg-prep-prompt');
         const cfgSynthPrompt = document.getElementById('cfg-synth-prompt');
-        const cfgActiveSdr = document.getElementById('cfg-active-sdr');
-        const cfgDemoMode = document.getElementById('cfg-demo-mode');
 
         const btnSaveAll = document.getElementById('btn-save-all');
         const btnDiscard = document.getElementById('btn-discard');
@@ -1034,12 +995,10 @@
         const btnRestoreDefaults = document.getElementById('btn-restore-defaults');
 
         // ── Section Headers Map ──
-        const SECTION_META = {
             'project-setup':   { icon: '🏗️', label: 'Project Setup' },
             'api-config':      { icon: '🔑', label: 'API Configuration' },
             'persona-prompts': { icon: '📝', label: 'Persona & Prompts' },
-            'knowledge-base':  { icon: '📚', label: 'Knowledge Base' },
-            'team-config':     { icon: '👥', label: 'Team & SDR Config' }
+            'knowledge-base':  { icon: '📚', label: 'Knowledge Base' }
         };
 
         // ── Sidebar Navigation ──
@@ -1085,9 +1044,6 @@
             cfgPrepPrompt.value = localStorage.getItem('tiny_prep_system_prompt') || TONE_PRESETS.professional.prep;
             cfgSynthPrompt.value = localStorage.getItem('tiny_synth_system_prompt') || TONE_PRESETS.professional.synth;
 
-            cfgActiveSdr.value = localStorage.getItem('tiny_active_sdr') || 'Albert';
-            cfgDemoMode.checked = localStorage.getItem('tiny_demo_mode') === 'true';
-
             updateTokenStats();
         }
 
@@ -1099,8 +1055,6 @@
             localStorage.setItem('tiny_tone', cfgTonePreset.value);
             localStorage.setItem('tiny_prep_system_prompt', cfgPrepPrompt.value.trim());
             localStorage.setItem('tiny_synth_system_prompt', cfgSynthPrompt.value.trim());
-            localStorage.setItem('tiny_active_sdr', cfgActiveSdr.value);
-            localStorage.setItem('tiny_demo_mode', cfgDemoMode.checked);
 
             configStatus.textContent = 'Saved';
             configStatus.style.borderColor = 'var(--green)';
@@ -1122,8 +1076,7 @@
 
             const keys = [
                 'tiny_api_provider', 'tiny_api_url', 'tiny_api_model',
-                'tiny_tone', 'tiny_prep_system_prompt', 'tiny_synth_system_prompt',
-                'tiny_active_sdr', 'tiny_demo_mode'
+                'tiny_tone', 'tiny_prep_system_prompt', 'tiny_synth_system_prompt'
             ];
             keys.forEach(k => localStorage.removeItem(k));
             loadConfig();

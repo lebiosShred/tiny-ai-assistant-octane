@@ -5,11 +5,16 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test:prompts": "promptfoo eval",
+    "test:prompts:view": "promptfoo view"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
     "googleapis": "^137.0.0",
     "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "promptfoo": "^0.60.0"
   }
 }

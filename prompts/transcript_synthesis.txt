@@ -1,0 +1,14 @@
+{{tone_preset}}
+
+Analyze the following call transcript between the Prospect and Sales Rep:
+SDR: {{rep}}
+Prospect: {{name}}
+Transcript:
+{{transcript}}
+
+Generate the standard deliverables. Ensure each deliverable is separated by the exact delimiter string "=== DELIMITER ===" so the application can split the outputs dynamically:
+1. Deliverable A: Qualification Score (HOT/WARM/COLD) and summary rationale.
+2. Deliverable B: Key Requirements and Client Objectives.
+3. Deliverable C: Next Steps & Booking Details.
+
+Use clean HTML tags for formatting inside each delimited block.

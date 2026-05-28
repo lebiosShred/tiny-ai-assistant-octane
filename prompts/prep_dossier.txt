@@ -1,0 +1,15 @@
+{{tone_preset}}
+
+Conduct research on the prospect and their organization based on the following intake data:
+Name: {{name}}
+Title: {{title}}
+Company: {{company}}
+Website: {{website}}
+Email: {{email}}
+Rep: {{rep}}
+Interest: {{interest}}
+
+Discussion Points:
+{{intake_notes}}
+
+Output the dossier using clean, structured HTML sections with explicit delimiters for the app to parse. Make sure you use <h3> headers and clear list items. Do not include conversational preamble.
