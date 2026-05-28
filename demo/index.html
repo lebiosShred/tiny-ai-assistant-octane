@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tiny AI Assistant - SaaS Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="tiny.png">
     <meta name="description" content="Functional sales enablement application for prospect pre-screening briefings and call transcript report synthesis.">
     <link rel="stylesheet" href="styles.css">
@@ -21,10 +22,8 @@
             </div>
             <nav class="app-nav" style="display: flex; align-items: center; gap: 0.5rem; margin: 0 auto 0 2rem;">
                 <button class="nav-btn active" id="nav-pipeline">Pipeline</button>
-                <button class="nav-btn" id="nav-directory" style="display: none;">Call Directory</button>
-                <span id="nav-directory-divider" style="color: rgba(255,255,255,0.15); margin: 0 0.5rem; display: none;">|</span>
-                <a href="docs.html" class="header-link" target="_blank" style="color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.8rem; font-weight: 500; padding: 4px 8px; transition: color 0.2s;" onmouseover="this.style.color='#4daeeb'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">Documentation</a>
-                <a href="book.html" class="header-link" style="color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.8rem; font-weight: 500; padding: 4px 8px; transition: color 0.2s;" onmouseover="this.style.color='#4daeeb'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">Booking Page</a>
+                <a href="/docs" class="header-link" target="_blank" style="color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.8rem; font-weight: 500; padding: 4px 8px; transition: color 0.2s;" onmouseover="this.style.color='#4daeeb'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">Documentation</a>
+                <a href="/book" class="header-link" style="color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.8rem; font-weight: 500; padding: 4px 8px; transition: color 0.2s;" onmouseover="this.style.color='#4daeeb'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">Booking Page</a>
             </nav>
             <div class="sdr-selector-wrapper" style="display: none; align-items: center; gap: 8px; margin-right: 1.25rem;">
                 <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Active SDR:</span>
@@ -133,14 +132,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- Demo Mode Toggle -->
-                <div class="settings-section" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
-                    <h4 class="section-title">Developer Options</h4>
-                    <div class="form-group" style="display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: auto;">
-                        <input type="checkbox" id="settings-demo-mode" style="width: 16px; height: 16px; cursor: pointer;">
-                        <label for="settings-demo-mode" style="margin: 0 !important; cursor: pointer; color: #fff; text-transform: none; font-size: 0.8rem; font-weight: normal; letter-spacing: normal;">Enable Demo / Testing Mode (Shows sample data pre-fill buttons)</label>
-                    </div>
-                </div>
+
             </div>
 
             <div class="settings-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.75rem;">
@@ -186,14 +178,7 @@
                         <div class="step-content active" id="step-1-content">
                             <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Preparation for Requirement Session</h3>
                             <form id="prep-form" style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
-                                <div class="form-group" style="border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 0.85rem; margin-bottom: 0.5rem;">
-                                    <label for="prep-intake">HubSpot Booking Form Intake Answers</label>
-                                    <div style="display: flex; gap: 0.5rem; width: 100%;">
-                                        <textarea id="prep-intake" class="form-input textarea-input" placeholder="Paste HubSpot scheduler booking form response here..." style="flex: 1; min-height: 80px;"></textarea>
-                                        <button type="button" class="btn btn-secondary" id="prep-parse-btn" style="align-self: stretch; padding: 0 1rem; border-color: var(--primary); color: var(--primary);">📋 Parse Form</button>
-                                    </div>
-                                    <span style="font-size: 0.7rem; color: rgba(0,0,0,0.4); margin-top: 0.25rem;">Paste booking form questions & answers to parse and pre-populate fields.</span>
-                                </div>
+
                                 <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
                                     <div class="form-group" style="flex: 1; min-width: 200px;">
                                         <label for="prep-name">Prospect Full Name *</label>
@@ -248,7 +233,7 @@
                                     </div>
                                     <div class="gdrive-search-wrapper" style="display: flex; gap: 0.5rem;">
                                         <div style="position: relative; flex: 1;">
-                                            <input type="text" id="prep-gdrive-search" class="form-input" placeholder="🔍 Search past job specifications & SOWs in GDrive..." style="padding-left: 1.75rem; background: #ffffff; color: #000000; border-color: rgba(26, 115, 232, 0.2);">
+                                            <input type="text" id="prep-gdrive-search" class="form-input" placeholder="🔍 Search past job specifications & SOWs in GDrive..." style="padding-left: 1.75rem; background: rgba(17, 24, 39, 0.6); color: var(--text-main); border-color: rgba(26, 115, 232, 0.2);">
                                             <span style="position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: #1a73e8;">📁</span>
                                         </div>
                                         <button type="button" class="btn btn-secondary" id="prep-gdrive-browse-btn" style="border-color: rgba(26, 115, 232, 0.2); color: #1a73e8; background: rgba(26, 115, 232, 0.02); height: 34px; font-size: 0.8rem;">Browse Folders</button>
@@ -336,20 +321,8 @@
                                         <!-- Loaded via app.js -->
                                     </div>
                                 </div>
-                                <!-- No Answer fallback view -->
-                                <div class="no-answer-view" id="no-answer-view" style="display: none; flex-direction: column; gap: 1rem; flex: 1; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
-                                    <div style="font-size: 2.5rem;">📵</div>
-                                    <h4 style="margin: 0; color: rgba(0,0,0,0.7);">Prospect Did Not Answer</h4>
-                                    <p style="margin: 0; color: rgba(0,0,0,0.5); font-size: 0.85rem; max-width: 320px;">Generate a Requirement Email using the prep dossier to re-engage the prospect.</p>
-                                    <button type="button" class="btn btn-primary" id="generate-req-email-btn">✉️ Generate Requirement Email</button>
-                                </div>
-                                <!-- Rescheduled view -->
-                                <div class="rescheduled-view" id="rescheduled-view" style="display: none; flex-direction: column; gap: 1rem; flex: 1; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
-                                    <div style="font-size: 2.5rem;">🔄</div>
-                                    <h4 style="margin: 0; color: rgba(0,0,0,0.7);">Call Rescheduled</h4>
-                                    <p style="margin: 0; color: rgba(0,0,0,0.5); font-size: 0.85rem; max-width: 320px;">The call will appear in your pipeline when the new time arrives. Send a confirmation email to the prospect.</p>
-                                    <button type="button" class="btn btn-secondary" id="send-reschedule-email-btn">📧 Draft Reschedule Confirmation</button>
-                                </div>
+
+
                                 <!-- Positional Meeting Booking Panel -->
                                 <div class="positional-meeting-panel" id="positional-meeting-panel">
                                     <div class="positional-meeting-header">
@@ -359,11 +332,11 @@
                                     <div class="positional-meeting-body">
                                         <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
                                             <label for="positional-date">Date</label>
-                                            <input type="date" id="positional-date" class="form-input" style="background: #fff; color: #000;">
+                                            <input type="date" id="positional-date" class="form-input" style="background: rgba(17, 24, 39, 0.6); color: var(--text-main);">
                                         </div>
                                         <div class="form-group" style="flex: 1; min-width: 100px; margin-bottom: 0;">
                                             <label for="positional-time">Time</label>
-                                            <input type="time" id="positional-time" class="form-input" style="background: #fff; color: #000;">
+                                            <input type="time" id="positional-time" class="form-input" style="background: rgba(17, 24, 39, 0.6); color: var(--text-main);">
                                         </div>
                                         <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
                                             <label for="positional-format">Format</label>
@@ -401,8 +374,8 @@
                                         </select>
                                     </div>
                                     <div class="form-group" style="flex: 1.5; min-width: 240px;">
-                                        <label for="synth-screencast">Screencast Video Link (Teams / GDrive / Vidyard)</label>
-                                        <input type="url" id="synth-screencast" class="form-input" placeholder="e.g. https://drive.google.com/file/d/.../view" style="background: #fff; color: #000;">
+                                        <label for="synth-screencast">Screencast Video Link (Teams / GDrive)</label>
+                                        <input type="url" id="synth-screencast" class="form-input" placeholder="e.g. https://drive.google.com/file/d/.../view" style="background: rgba(17, 24, 39, 0.6); color: var(--text-main);">
                                     </div>
                                 </div>
                                 <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
@@ -434,44 +407,7 @@
                         </div>
                     </div>
 
-                    <!-- Collapsible Catalog Pricing Reference Panel -->
-                    <div class="pricing-catalog-panel" id="pricing-catalog-panel" style="border: 1px solid rgba(77, 174, 235, 0.15); border-radius: 6px; background: rgba(77, 174, 235, 0.02); padding: 0.75rem; margin-top: 0.5rem; flex-shrink: 0;">
-                        <div class="pricing-catalog-header" id="pricing-catalog-header" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-weight: 600; color: var(--primary); font-size: 0.85rem; user-select: none;">
-                            <span>🏷️ Standard Catalog Pricing Reference</span>
-                            <span id="pricing-catalog-toggle-icon" style="font-size: 0.7rem;">▶ Expand</span>
-                        </div>
-                        <div class="pricing-catalog-body" id="pricing-catalog-body" style="margin-top: 0.5rem; font-size: 0.75rem; color: #333; line-height: 1.4; display: none; padding-right: 0.25rem;">
-                            <table style="width: 100%; border-collapse: collapse; margin-top: 0.25rem;">
-                                <thead>
-                                    <tr style="border-bottom: 1px solid rgba(77, 174, 235, 0.15); text-align: left;">
-                                        <th style="padding: 4px; font-weight: bold; color: var(--primary);">Service / Track</th>
-                                        <th style="padding: 4px; font-weight: bold; color: var(--primary);">Standard Catalog Rate</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
-                                        <td style="padding: 4px; font-weight: 600;">watsonx AI Pilot SaaS</td>
-                                        <td style="padding: 4px; font-family: monospace;">A$160,000+ / year</td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
-                                        <td style="padding: 4px; font-weight: 600;">watsonx AI Implementation</td>
-                                        <td style="padding: 4px; font-family: monospace;">A$125,000 (once)</td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
-                                        <td style="padding: 4px; font-weight: 600;">TM1 Flight Check</td>
-                                        <td style="padding: 4px; font-family: monospace;">A$5,800 (fixed)</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 4px; font-weight: 600;">TM1 DevOps Blue Support</td>
-                                        <td style="padding: 4px; font-family: monospace;">A$4,560 / month</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div style="font-size: 0.65rem; color: rgba(0,0,0,0.4); margin-top: 0.5rem; text-align: center; border-top: 1px dashed rgba(77, 174, 235, 0.15); padding-top: 0.25rem;">
-                                ⚠️ Pricing Sovereignty: Enforce standard catalog rates in proposals.
-                            </div>
-                        </div>
-                    </div>
+
 
                     <!-- Moved to #call-directory-workspace at top-level -->
                 </div>
@@ -523,117 +459,6 @@
                             <!-- Document Content Panel -->
                             <div id="output-doc-content" style="flex: 1; overflow-y: auto; padding-right: 0.5rem; margin-top: 0.5rem;">
                                 <!-- AI Content Output Here -->
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Central Call Recording Directory Workspace (Full Width Master-Detail) -->
-        <div id="call-directory-workspace" class="directory-workspace" style="display: none;">
-            <!-- Left Side: Master List -->
-            <div class="panel directory-master">
-                <div class="panel-header">
-                    <span class="panel-title">Central Call Recording Directory</span>
-                </div>
-                <div class="panel-body" style="display: flex; flex-direction: column; gap: 1rem; height: 100%;">
-                    <div class="directory-filter-bar" style="display: flex; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap;">
-                        <input type="text" id="directory-search" class="form-input" placeholder="Search by name, company, or track..." style="flex: 1; min-width: 150px;">
-                        <select id="directory-filter-rep" class="form-input select-input" style="width: 140px; font-weight: 500;">
-                            <option value="ALL">All Reps</option>
-                            <option value="Albert">Albert</option>
-                            <option value="Isha">Isha</option>
-                        </select>
-                        <select id="directory-filter-score" class="form-input select-input" style="width: 120px; font-weight: 500;">
-                            <option value="ALL">All Scores</option>
-                            <option value="HOT">Hot</option>
-                            <option value="WARM">Warm</option>
-                            <option value="COLD">Cold</option>
-                            <option value="NONE">Unrated</option>
-                        </select>
-                        <button type="button" class="btn btn-secondary" id="directory-refresh-btn" style="height: 34px; padding: 0 10px; min-width: auto; font-size: 0.8rem;">🔄 Refresh</button>
-                    </div>
-                    <div class="directory-list-container" id="directory-list-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
-                        <div style="font-size: 0.85rem; color: rgba(0,0,0,0.4); text-align: center; margin-top: 3rem;">Loading call directory...</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Right Side: Detail Panel -->
-            <div class="panel directory-detail" id="directory-detail-panel">
-                <div class="panel-header">
-                    <span class="panel-title">Selected Recording Detail</span>
-                </div>
-                <div class="panel-body" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; height: 100%;">
-                    <div id="directory-detail-empty" class="empty-state">
-                        <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" style="width: 64px; height: 64px;">
-                        <h3>Select a Call</h3>
-                        <p>Select a call from the directory list on the left to view recording, transcripts, and generated reports.</p>
-                    </div>
-                    <div id="directory-detail-content" style="display: none; flex-direction: column; gap: 1rem; height: 100%;">
-                        <div class="detail-header-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <h3 id="detail-company-name" style="margin: 0; color: var(--primary);">Company Name</h3>
-                                <span id="detail-score-badge" class="badge-score">HOT</span>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
-                                <div><strong>Contact:</strong> <span id="detail-contact-name">Name</span></div>
-                                <div><strong>SDR:</strong> <span id="detail-sdr-name">Albert</span></div>
-                                <div><strong>Service Track:</strong> <span id="detail-track">Track</span></div>
-                                <div><strong>Date:</strong> <span id="detail-date">Date</span></div>
-                            </div>
-                            <!-- Stage Selector -->
-                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.5rem;">
-                                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Pipeline Stage:</span>
-                                <select id="detail-stage-select" class="form-input select-input" style="width: 200px; padding: 4px 8px; font-size: 0.8rem; height: 28px; background-color: #fff; color: #000;">
-                                    <!-- Populated in app.js -->
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Mock Audio Player Container -->
-                        <div class="detail-audio-section">
-                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--primary); text-transform: uppercase;">Call Recording</label>
-                            <div class="directory-audio-player" id="detail-audio-player">
-                                <button type="button" class="audio-play-btn" id="detail-audio-play-btn">▶</button>
-                                <div class="audio-track" id="detail-audio-track">
-                                    <div class="audio-progress" id="detail-audio-progress"></div>
-                                </div>
-                                <span class="audio-time" id="detail-audio-time">00:00 / 00:00</span>
-                            </div>
-                        </div>
-
-                        <!-- Mock Screencast Video Container -->
-                        <div class="detail-video-section" id="detail-video-section" style="display: none; flex-direction: column; gap: 0.25rem;">
-                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--primary); text-transform: uppercase;">Screencast Video Preview</label>
-                            <div class="directory-video-player" style="background: #000; border-radius: 6px; overflow: hidden; position: relative; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.08);">
-                                <video id="detail-video-player" controls style="width: 100%; height: 100%; object-fit: contain; display: none;"></video>
-                                <div id="detail-video-placeholder" style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                                    <span>📺 Screen Recording Attached</span>
-                                    <span id="detail-video-url-label" style="font-size: 0.7rem; font-family: monospace; word-break: break-all; opacity: 0.7;"></span>
-                                    <button type="button" class="btn btn-secondary" id="detail-video-open-btn" style="height: 24px; padding: 0 8px; font-size: 0.7rem; margin-top: 4px;">Open Video Link ↗</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tab Options inside directory detailed view -->
-                        <div class="detail-reports-section" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; min-height: 0;">
-                            <label style="font-weight: 600; font-size: 0.8rem; color: var(--primary); text-transform: uppercase;">Generated Deliverables & Notes</label>
-                            <div class="docs-nav" id="detail-doc-nav" style="margin-bottom: 0.5rem;">
-                                <button class="doc-tab-btn active" data-detail-doc="questionnaireAnswers">Answers</button>
-                                <button class="doc-tab-btn" data-detail-doc="migrationReport">Migration</button>
-                                <button class="doc-tab-btn" data-detail-doc="recapEmail">Recap</button>
-                                <button class="doc-tab-btn" data-detail-doc="summarySheet">Summary</button>
-                                <button class="doc-tab-btn" data-detail-doc="notes">Notes</button>
-                                <button class="doc-tab-btn" data-detail-doc="proposal">Proposal</button>
-                                <button class="doc-tab-btn" data-detail-doc="actionItems">Actions</button>
-                                <button class="doc-tab-btn" data-detail-doc="transcript">Transcript</button>
-                            </div>
-                            <div id="detail-doc-content" style="flex: 1; overflow-y: auto; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 1rem; color: #fff; font-size: 0.85rem; line-height: 1.5;">
-                                <!-- Content rendered on tab click -->
                             </div>
                         </div>
                     </div>

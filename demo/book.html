@@ -14,23 +14,55 @@
     <link rel="stylesheet" href="book.css">
     <link rel="icon" type="image/png" href="tiny.png">
     <style>
+        /* Custom Select Overlay */
+        .custom-select-container { position: relative; width: 100%; user-select: none; }
+        .custom-select-trigger {
+            width: 100%; padding: 12px; background: #fff; border: 1px solid rgba(0, 0, 0, 0.1); 
+            border-radius: 6px; font-size: 0.95rem; color: #555; cursor: pointer; transition: all 0.2s;
+            display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;
+        }
+        .custom-select-trigger::after { content: "▼"; font-size: 0.7rem; color: #999; }
+        .custom-select-trigger.open { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,115,232,0.15); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .custom-select-trigger.selected { color: #000; font-weight: 500; }
+        .custom-select-options {
+            position: absolute; top: 100%; left: 0; width: 100%; background: #fff; 
+            border: 1px solid rgba(26,115,232,0.3); border-top: none; border-bottom-left-radius: 6px; 
+            border-bottom-right-radius: 6px; z-index: 100; display: none; max-height: 250px; 
+            overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box;
+        }
+        .custom-select-options.open { display: block; }
+        .custom-option { padding: 10px 12px; font-size: 0.9rem; color: #333; cursor: pointer; transition: background 0.2s; }
+        .custom-option:hover { background: rgba(26,115,232,0.05); color: var(--primary); }
         body {
             padding-top: 64px;
         }
     </style>
+    <script>
+        // Lightweight API Security: Inject API Key into all fetch requests
+        const originalFetch = window.fetch;
+        window.fetch = async function() {
+            let [resource, config] = arguments;
+            if (typeof resource === 'string' && resource.startsWith('/api/')) {
+                config = config || {};
+                config.headers = config.headers || {};
+                config.headers['x-api-key'] = 'octane-secret-key-2026';
+            }
+            return originalFetch(resource, config);
+        };
+    </script>
 </head>
 <body>
 
     <!-- ====== Top Navigation Header ====== -->
-    <header class="booking-header" style="position: fixed; top: 0; left: 0; width: 100%; height: 64px; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 1000; display: flex; align-items: center;">
+    <header class="booking-header">
         <div class="container" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-            <a href="/demo/index.html" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #FFFFFF; font-weight: 700; font-size: 1.1rem; font-family: 'Roboto', sans-serif;">
+            <a href="/" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #FFFFFF; font-weight: 700; font-size: 1.1rem;">
                 <img src="tiny.png" alt="Tiny AI Assistant Logo" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid #4daeeb;">
                 <span>Octane Booking</span>
             </a>
-            <div style="display: flex; align-items: center; gap: 1.5rem; font-family: 'Roboto', sans-serif;">
-                <a href="/demo/book.html" id="nav-booking-page" style="color: #4daeeb; font-weight: 600; font-size: 0.85rem; text-decoration: none;">Booking Page</a>
-                <a href="/demo/docs.html" id="nav-docs-page" target="_blank" style="color: rgba(255,255,255,0.7); font-weight: 500; font-size: 0.85rem; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#4daeeb'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">Documentation</a>
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <a href="/book" id="nav-booking-page" class="nav-link active">Booking Page</a>
+                <a href="/docs" id="nav-docs-page" target="_blank" class="nav-link">Documentation</a>
             </div>
         </div>
     </header>
@@ -55,9 +87,15 @@
                     </p>
 
                     <div class="hero__social">
-                        <a href="#" class="hero__social-link hero__social-link--linkedin" title="LinkedIn" aria-label="LinkedIn">in</a>
-                        <a href="tel:+61000000000" class="hero__social-link hero__social-link--phone" title="Call us" aria-label="Phone">📞</a>
-                        <a href="mailto:sales@octanesolutions.com.au" class="hero__social-link hero__social-link--email" title="Email" aria-label="Email">✉</a>
+                        <a href="#" class="hero__social-link hero__social-link--linkedin" title="LinkedIn" aria-label="LinkedIn">
+                            <svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                        </a>
+                        <a href="tel:+61000000000" class="hero__social-link hero__social-link--phone" title="Call us" aria-label="Phone">
+                            <svg viewBox="0 0 24 24"><path d="M20 22.621l-3.521-6.795c-.008.004-1.974.97-2.064 1.011-2.24 1.086-6.753-7.859-4.509-8.948.025-.013 1.992-.98 2.003-.986l-3.521-6.795c-.012.006-2.133 1.054-2.193 1.085-3.696 1.808-1.513 10.609 3.011 19.349 4.526 8.741 12.186 10.231 15.879 8.423.059-.029 2.115-1.042 2.214-1.091-.01-.004-2.1-1.011-2.299-1.134z"/></svg>
+                        </a>
+                        <a href="mailto:sales@octanesolutions.com.au" class="hero__social-link hero__social-link--email" title="Email" aria-label="Email">
+                            <svg viewBox="0 0 24 24"><path d="M12 12.713l-11.985-9.713h23.97l-11.985 9.713zm0 2.574l-12-9.725v15.438h24v-15.438l-12 9.725z"/></svg>
+                        </a>
                     </div>
 
                     <!-- SDR Hosts Display -->
@@ -85,8 +123,8 @@
                         <div class="hero__calendar-header">Book a Meeting</div>
                         <div class="hero__calendar-body">
                             <label for="meeting-reason" class="booking-label">What is the reason for your meeting?</label>
-                            <div class="select-wrapper" style="margin-bottom: 0.85rem;">
-                                <select id="meeting-reason" class="booking-select" required>
+                            <div class="select-wrapper custom-select-container">
+                                <select id="meeting-reason" class="booking-select" required style="display: none;">
                                     <option value="" disabled selected>Select an option...</option>
                                     <option value="Pre-Screen Discovery Call | 30 mins">Pre-Screen Discovery Call | 30 mins</option>
                                     <option value="Positional Meeting | 45 mins">Positional Meeting | 45 mins</option>
@@ -95,13 +133,22 @@
                                     <option value="AI Solutions Discussion | 45 mins">AI Solutions Discussion | 45 mins</option>
                                     <option value="other">Other (please specify)</option>
                                 </select>
+                                <div class="custom-select-trigger" id="custom-reason-trigger">Select an option...</div>
+                                <div class="custom-select-options" id="custom-reason-options">
+                                    <div class="custom-option" data-value="Pre-Screen Discovery Call | 30 mins">Pre-Screen Discovery Call | 30 mins</div>
+                                    <div class="custom-option" data-value="Positional Meeting | 45 mins">Positional Meeting | 45 mins</div>
+                                    <div class="custom-option" data-value="TM1 Demo Session | 60 mins">TM1 Demo Session | 60 mins</div>
+                                    <div class="custom-option" data-value="Planning & Analytics Consultation | 45 mins">Planning & Analytics Consultation | 45 mins</div>
+                                    <div class="custom-option" data-value="AI Solutions Discussion | 45 mins">AI Solutions Discussion | 45 mins</div>
+                                    <div class="custom-option" data-value="other">Other (please specify)</div>
+                                </div>
                             </div>
 
                             <!-- Host is auto-assigned to Round Robin SDRs (Albert / Isha) based on availability -->
                             <input type="hidden" id="meeting-host" value="Round Robin">
  
                             <!-- Custom Text Field (Shown only when 'Other' is selected) -->
-                            <div id="other-reason-wrapper" class="other-reason-wrapper" style="display: none; margin-bottom: 0.85rem;">
+                            <div id="other-reason-wrapper" class="other-reason-wrapper" style="display: none;">
                                 <label for="other-reason" class="booking-label">Please specify your reason:</label>
                                 <textarea id="other-reason" class="booking-textarea" rows="3" placeholder="Describe what you need help with..."></textarea>
                             </div>
@@ -201,38 +248,38 @@
                             </div>
                         </div>
                         <div class="hero__calendar-body">
-                            <form id="details-form" style="display: flex; flex-direction: column; gap: 0.65rem;">
-                                <div class="form-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                            <form id="details-form">
+                                <div class="form-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px;">
                                         <label for="booking-name" class="booking-label">Your Name *</label>
                                         <input type="text" id="booking-name" class="booking-input" required placeholder="e.g. Sarah Chen">
                                     </div>
-                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px;">
                                         <label for="booking-email" class="booking-label">Company Email *</label>
                                         <input type="email" id="booking-email" class="booking-input" required placeholder="e.g. sarah.chen@company.com">
                                     </div>
                                 </div>
-                                <div class="form-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <div class="form-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px;">
                                         <label for="booking-company" class="booking-label">Company Name *</label>
                                         <input type="text" id="booking-company" class="booking-input" required placeholder="e.g. Meridian Logistics">
                                     </div>
-                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px;">
                                         <label for="booking-position" class="booking-label">Your Position *</label>
                                         <input type="text" id="booking-position" class="booking-input" required placeholder="e.g. Head of FP&A">
                                     </div>
                                 </div>
-                                <div class="form-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <div class="form-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px;">
                                         <label for="booking-track" class="booking-label">Service Interest *</label>
                                         <div class="select-wrapper">
-                                            <select id="booking-track" class="booking-select" required style="padding: 0.65rem;">
+                                            <select id="booking-track" class="booking-select" required>
                                                 <option value="Planning & Analytics (TM1)">Planning & Analytics (TM1)</option>
                                                 <option value="AI">AI</option>
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px;">
                                         <label for="booking-url" class="booking-label">Company Website URL *</label>
                                         <input type="url" id="booking-url" class="booking-input" required placeholder="e.g. https://company.com">
                                     </div>
@@ -255,24 +302,18 @@
                     <!-- STEP 4: Success / Confirmation Summary (For SDR paste) -->
                     <div id="booking-step-success" class="booking-step" style="display: none;">
                         <div class="hero__calendar-header">Booking Confirmed!</div>
-                        <div class="hero__calendar-body" style="gap: 0.65rem; overflow-y: auto; max-height: 480px;">
-                            <div class="success-icon" style="font-size: 2rem; text-align: center; color: #00c853; margin-top: 0.25rem;">🎉</div>
-                            <h4 style="text-align: center; margin: 0; color: var(--text-dark); font-size: 0.95rem;">Thank you, <span id="success-name-display">Client</span>!</h4>
-                            <p style="font-size: 0.75rem; text-align: center; color: var(--text-dark-muted); margin-bottom: 0.25rem;" id="success-time-display">Your meeting is scheduled for May 26 @ 10:30 AM.</p>
+                        <div class="hero__calendar-body" style="gap: 1rem; overflow-y: auto; max-height: 480px; justify-content: center; align-items: center; text-align: center;">
+                            <div class="success-icon" style="font-size: 3rem; color: #00c853; margin-bottom: 0.5rem;">🎉</div>
+                            <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Thank you, <span id="success-name-display">Client</span>!</h4>
+                            <p style="font-size: 0.9rem; color: var(--accent); margin-bottom: 0.5rem;" id="success-time-display">Your meeting is scheduled for May 26 @ 10:30 AM.</p>
                             
-                            <div class="success-prospect-message" style="text-align: center; padding: 0.5rem; font-family: 'Roboto', sans-serif;">
-                                <p style="font-size: 0.8rem; color: var(--text-dark-muted); line-height: 1.5; margin: 0.5rem 0;">
+                            <div class="success-prospect-message" style="padding: 0.5rem;">
+                                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; margin: 0.5rem 0;">
                                     A calendar invitation with the video call link has been sent to your email. We look forward to exploring how Octane can help optimize your operations.
                                 </p>
                             </div>
 
-                            <div id="prospect-prep-copy-container" style="display: none; border-top: 1px solid var(--border-light); padding-top: 0.5rem; margin-top: 0.25rem;">
-                                <label class="booking-label" style="font-weight: bold; font-size: 0.75rem; color: var(--accent); margin-bottom: 0.25rem;">Intake Summary (Copy for SDR Console Step 1)</label>
-                                <textarea id="success-intake-copy" class="booking-textarea" readonly rows="7" style="font-family: monospace; font-size: 0.7rem; background: #f9f9f9; color: #333;" onclick="this.select()"></textarea>
-                                <button type="button" class="booking-btn" id="btn-copy-intake" style="background: rgba(77, 174, 235, 0.08); color: var(--accent); font-size: 0.75rem; padding: 0.5rem; margin-top: 0.35rem; border: 1px solid rgba(77, 174, 235, 0.15); height: 32px;">📋 Copy Intake for SDR Console</button>
-                            </div>
-                            
-                            <button type="button" id="btn-book-another" class="booking-btn booking-btn--primary" style="margin-top: 0.35rem; padding: 0.65rem;">Book Another Meeting</button>
+                            <button type="button" id="btn-book-another" class="booking-btn booking-btn--primary" style="margin-top: 1rem;">Book Another Meeting</button>
                         </div>
                     </div>
 
@@ -358,7 +399,7 @@
     (function() {
         'use strict';
 
-        // === Booking Widget Flow ===
+        // === Booking Widget Flow & Calendar State DOM Elements ===
         const stepReason = document.getElementById('booking-step-reason');
         const stepCalendar = document.getElementById('booking-step-calendar');
         const stepDetails = document.getElementById('booking-step-details');
@@ -377,8 +418,6 @@
         
         const successNameDisplay = document.getElementById('success-name-display');
         const successTimeDisplay = document.getElementById('success-time-display');
-        const successIntakeCopy = document.getElementById('success-intake-copy');
-        const btnCopyIntake = document.getElementById('btn-copy-intake');
         const btnBookAnother = document.getElementById('btn-book-another');
 
         const selectReason = document.getElementById('meeting-reason');
@@ -396,6 +435,17 @@
         const selectedReasonDisplay = document.getElementById('selected-reason-display');
         const selectedMeetingTitle = document.getElementById('selected-meeting-title');
         const selectedMeetingDesc = document.getElementById('selected-meeting-desc');
+
+        const calendarGrid = document.getElementById('calendar-days-grid');
+        const timeSlotsHeader = document.getElementById('time-slots-header');
+        const timeSlotsGrid = document.getElementById('time-slots-grid');
+        const confirmationDetails = document.getElementById('booking-confirmation-details');
+        const summaryDateTime = document.getElementById('summary-date-time');
+        const btnConfirm = document.getElementById('btn-confirm-booking');
+
+        // State Variables
+        let selectedDay = '26'; // Default
+        let selectedTime = '';
 
         // Reasons details mapping
         const reasonDetails = {
@@ -436,8 +486,8 @@
             }
         };
 
-        // Host is fixed to Round Robin -- initialize display immediately
-        (function initHostDisplay() {
+        // Define function to initialize host display panel
+        function initHostDisplay() {
             const profile = hostsProfiles['Round Robin'];
             if (profile) {
                 hostsDisplayTitle.textContent = profile.title;
@@ -445,7 +495,7 @@
                 hostsAvatarsContainer.innerHTML = profile.html;
             }
             updateCalendarDatesForHost('Round Robin');
-        })();
+        }
 
         // Enable button based on selection validity
         function validateSelection() {
@@ -505,17 +555,6 @@
             stepCalendar.style.display = 'none';
             stepReason.style.display = 'block';
         });
-
-        // === Calendar Interaction ===
-        const calendarGrid = document.getElementById('calendar-days-grid');
-        const timeSlotsHeader = document.getElementById('time-slots-header');
-        const timeSlotsGrid = document.getElementById('time-slots-grid');
-        const confirmationDetails = document.getElementById('booking-confirmation-details');
-        const summaryDateTime = document.getElementById('summary-date-time');
-        const btnConfirm = document.getElementById('btn-confirm-booking');
-
-        let selectedDay = '26'; // Default
-        let selectedTime = '';
 
         // Pre-configured times for demonstration
         const timesData = {
@@ -616,8 +655,8 @@
             renderTimeSlots(selectedDay, false);
         });
 
-        // Initialize default calendar state
-        selectHost.dispatchEvent(new Event('change'));
+        // Initialize default calendar state and host display panel
+        initHostDisplay();
 
         btnConfirm.addEventListener('click', () => {
             const val = selectReason.value;
@@ -718,28 +757,9 @@ Booking Host: ${assignedRep}`;
             // Update Success page details
             successNameDisplay.textContent = name;
             successTimeDisplay.textContent = `Your meeting with ${assignedRep} is scheduled for ${monthText} ${selectedDay} at ${selectedTime}.`;
-            successIntakeCopy.value = summaryText;
-            
-            // Show intake summary copy container ONLY in Demo Mode to support automated screencast recording
-            const prospectContainer = document.getElementById('prospect-prep-copy-container');
-            if (prospectContainer) {
-                const isDemo = localStorage.getItem('tiny_demo_mode') === 'true';
-                prospectContainer.style.display = isDemo ? 'block' : 'none';
-            }
             
             stepDetails.style.display = 'none';
             stepSuccess.style.display = 'block';
-        });
-
-        btnCopyIntake.addEventListener('click', () => {
-            successIntakeCopy.select();
-            navigator.clipboard.writeText(successIntakeCopy.value)
-                .then(() => {
-                    alert("Intake summary copied to clipboard! You can paste this in Step 1 of your Tiny AI Assistant.");
-                })
-                .catch(err => {
-                    console.error("Copy failed:", err);
-                });
         });
 
         btnBookAnother.addEventListener('click', () => {
@@ -808,6 +828,43 @@ Booking Host: ${assignedRep}`;
         }
     })();
     </script>
+    <script>
+        // Custom Dropdown Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const trigger = document.getElementById('custom-reason-trigger');
+            const optionsPanel = document.getElementById('custom-reason-options');
+            const nativeSelect = document.getElementById('meeting-reason');
+            const options = document.querySelectorAll('.custom-option');
 
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                trigger.classList.toggle('open');
+                optionsPanel.classList.toggle('open');
+            });
+
+            options.forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const val = opt.getAttribute('data-value');
+                    const text = opt.textContent;
+                    
+                    // Update trigger UI
+                    trigger.textContent = text;
+                    trigger.classList.add('selected');
+                    trigger.classList.remove('open');
+                    optionsPanel.classList.remove('open');
+                    
+                    // Update native hidden select and dispatch change event
+                    nativeSelect.value = val;
+                    nativeSelect.dispatchEvent(new Event('change'));
+                });
+            });
+
+            document.addEventListener('click', () => {
+                trigger.classList.remove('open');
+                optionsPanel.classList.remove('open');
+            });
+        });
+    </script>
 </body>
 </html>

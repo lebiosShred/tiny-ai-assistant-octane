@@ -3,6 +3,7 @@
     { "source": "/openapi.json", "destination": "https://tiny-ai-assistant-351972137415.us-central1.run.app/openapi.json" },
     { "source": "/api/:path*", "destination": "https://tiny-ai-assistant-351972137415.us-central1.run.app/api/:path*" },
     { "source": "/favicon.ico", "destination": "/demo/tiny.png" },
+    { "source": "/docs", "destination": "/demo/docs.html" },
     { "source": "/book", "destination": "/demo/book.html" },
     { "source": "/book.css", "destination": "/demo/book.css" },
     { "source": "/", "destination": "/demo/index.html" },

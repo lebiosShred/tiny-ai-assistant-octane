@@ -8,23 +8,50 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="tiny.png">
     
     <style>
         :root {
-            --primary: #4daeeb;
-            --primary-light: rgba(77, 174, 235, 0.08);
-            --primary-border: rgba(77, 174, 235, 0.2);
-            --black: #000000;
-            --dark-gray: #1f2937;
-            --light-gray: #f9fafb;
-            --border-color: #e5e7eb;
-            --text: #374151;
-            --text-heading: #111827;
-            --white: #ffffff;
+            /* Sleek HSL Tailored light theme colors */
+            --bg-page: hsl(210, 40%, 98%);
+            --bg-sidebar: hsl(210, 30%, 95%);
+            --bg-card: hsl(0, 0%, 100%);
+            --bg-code: hsl(222, 47%, 11%);
+            --text-main: hsl(215, 25%, 27%);
+            --text-heading: hsl(222, 47%, 11%);
+            --text-light: hsl(215, 15%, 55%);
+            --border-color: hsl(214, 32%, 91%);
+            --primary: hsl(202, 80%, 48%);
+            --primary-light: hsla(202, 80%, 48%, 0.08);
+            --primary-border: hsla(202, 80%, 48%, 0.2);
+            --accent: hsl(262, 83%, 58%);
+            --white: hsl(0, 0%, 100%);
+            
             --font-display: 'Outfit', sans-serif;
-            --font-body: 'Inter', sans-serif;
+            --font-body: 'Roboto', sans-serif;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+            
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Pure black theme color scheme - Night Theme Override */
+        [data-theme="dark"] {
+            --bg-page: hsl(0, 0%, 0%);
+            --bg-sidebar: hsl(0, 0%, 0%);
+            --bg-card: hsl(222, 15%, 8%);
+            --bg-code: hsl(222, 15%, 4%);
+            --text-main: hsl(215, 20%, 80%);
+            --text-heading: hsl(0, 0%, 100%);
+            --text-light: hsl(215, 15%, 60%);
+            --border-color: hsl(222, 15%, 18%);
+            --primary: hsl(202, 90%, 55%);
+            --primary-light: hsla(202, 90%, 55%, 0.15);
+            --primary-border: hsla(202, 90%, 55%, 0.25);
+            --accent: hsl(262, 89%, 65%);
         }
 
         * {
@@ -34,13 +61,14 @@
         }
 
         body {
-            background-color: var(--white);
-            color: var(--text);
+            background-color: var(--bg-page);
+            color: var(--text-main);
             font-family: var(--font-body);
-            line-height: 1.6;
+            line-height: 1.7;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            transition: var(--transition);
         }
 
         /* Top Header Navigation */
@@ -50,11 +78,13 @@
             left: 0;
             width: 100%;
             height: 64px;
-            background-color: var(--white);
+            background-color: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
             z-index: 100;
             display: flex;
             align-items: center;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
         }
         .header-container {
             width: 100%;
@@ -68,32 +98,33 @@
         .logo-container {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
             text-decoration: none;
-            color: var(--black);
+            color: var(--text-heading);
         }
         .logo-image {
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             object-fit: cover;
-            border: 1px solid var(--primary);
-            box-shadow: 0 0 6px rgba(77, 174, 235, 0.2);
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
         }
         .logo-text {
             font-family: var(--font-display);
-            font-size: 1.25rem;
-            font-weight: 700;
-            letter-spacing: -0.01em;
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
         }
         .logo-badge {
             font-size: 0.65rem;
-            background-color: var(--black);
+            background: #000000;
             color: var(--white);
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         .header-nav {
             display: flex;
@@ -101,259 +132,485 @@
             gap: 1.5rem;
         }
         .header-link {
-            font-size: 0.85rem;
-            color: var(--text);
+            font-size: 0.9rem;
+            color: var(--text-main);
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.2s;
+            transition: var(--transition);
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
         }
         .header-link:hover {
             color: var(--primary);
+            background-color: var(--primary-light);
+        }
+        .header-link.active {
+            color: var(--primary);
+            font-weight: 600;
+            background-color: var(--primary-light);
         }
         .btn-launch {
             background-color: var(--primary);
-            color: var(--white);
-            padding: 0.45rem 1rem;
-            border-radius: 6px;
+            color: var(--white) !important;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
             text-decoration: none;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            transition: background-color 0.2s;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
         }
         .btn-launch:hover {
-            background-color: #3ba3df;
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(26, 115, 232, 0.25);
         }
 
-        /* Documentation Layout Container */
-        .doc-layout {
+        /* Theme Toggle Button */
+        .theme-toggle-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
             display: flex;
-            flex: 1;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-heading);
+            transition: var(--transition);
+        }
+        .theme-toggle-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+        .theme-toggle-icon {
+            font-size: 1.1rem;
+        }
+
+        
+        /* Enterprise Layout */
+        .doc-layout {
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            gap: 2.5rem;
             margin-top: 64px;
             max-width: 1400px;
             width: 100%;
             margin-left: auto;
             margin-right: auto;
+            padding: 0 2rem;
         }
 
-        /* Left Sidebar */
         .sidebar {
-            width: 280px;
-            position: fixed;
+            position: sticky;
             top: 64px;
-            bottom: 0;
-            left: max(0px, calc((100vw - 1400px) / 2));
+            height: calc(100vh - 64px);
             border-right: 1px solid var(--border-color);
-            background-color: var(--light-gray);
+            background-color: var(--bg-page);
             overflow-y: auto;
-            padding: 2rem 1.5rem;
+            padding: 2.25rem 2rem 2.25rem 0;
             z-index: 10;
         }
-        .search-box {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-        .search-input {
+
+        .content-panel {
+            padding: 2.25rem 0;
+            max-width: 960px;
             width: 100%;
-            padding: 0.5rem 0.75rem 0.5rem 2rem;
-            font-size: 0.85rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            outline: none;
-            font-family: var(--font-body);
         }
-        .search-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px var(--primary-light);
-        }
-        .search-icon {
-            position: absolute;
-            left: 0.7rem;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            pointer-events: none;
-        }
+
+        /* Sidebar Navigation Polish */
         .nav-group-title {
             font-family: var(--font-display);
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 700;
+            color: var(--text-heading);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--black);
+            letter-spacing: 0.08em;
+            margin-top: 1.75rem;
             margin-bottom: 0.75rem;
-            margin-top: 1.5rem;
-        }
-        .nav-group-title:first-child {
-            margin-top: 0;
+            opacity: 0.8;
         }
         .sidebar-links {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 0.35rem;
+            gap: 0.3rem;
+            margin-bottom: 1.5rem;
+        }
+        .sidebar-link-item {
+            border-radius: 8px;
+            transition: var(--transition);
         }
         .sidebar-link-item a {
             display: block;
-            font-size: 0.85rem;
-            color: var(--text);
+            padding: 0.45rem 0.75rem;
+            color: var(--text-light);
+            font-size: 0.88rem;
+            font-weight: 500;
             text-decoration: none;
-            padding: 0.35rem 0.5rem;
-            border-radius: 4px;
-            transition: background-color 0.2s, color 0.2s;
+            border-radius: 8px;
+            transition: var(--transition);
+            border-left: 2px solid transparent;
         }
         .sidebar-link-item a:hover {
-            background-color: rgba(0, 0, 0, 0.03);
-            color: var(--black);
+            color: var(--primary);
+            background-color: var(--primary-light);
+            padding-left: 0.95rem;
+        }
+        .sidebar-link-item.active {
+            background-color: var(--primary-light);
         }
         .sidebar-link-item.active a {
-            background-color: var(--primary-light);
             color: var(--primary);
             font-weight: 600;
             border-left: 2px solid var(--primary);
-            border-radius: 0 4px 4px 0;
-            padding-left: calc(0.5rem - 2px);
+            padding-left: 0.95rem;
         }
-
-        /* Main Content Panel */
-        .content-panel {
-            flex: 1;
-            margin-left: 280px;
-            padding: 3rem 4rem;
-            overflow-y: auto;
-            max-width: 900px;
+        
+        .toc-title {
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-
-        /* Content Typography Styling */
+        
+        .toc-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            border-left: 1px solid var(--border-color);
+            padding-left: 0;
+            margin-left: 2px;
+        }
+        
+        .toc-link {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            text-decoration: none;
+            transition: var(--transition);
+            display: block;
+            padding-left: 1rem;
+            position: relative;
+            line-height: 1.4;
+        }
+        
+        .toc-link:hover {
+            color: var(--primary);
+        }
+        
+        .toc-link.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .toc-link.active::before {
+            content: '';
+            position: absolute;
+            left: -1px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--primary);
+        }
+        
+        header {
+            background-color: hsla(var(--bg-card-hsl, 0, 0%, 100%), 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        [data-theme="dark"] header {
+            background-color: rgba(0, 0, 0, 0.85);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        @media (max-width: 1024px) {
+            .doc-layout {
+                grid-template-columns: 240px minmax(0, 1fr);
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .doc-layout {
+                grid-template-columns: 1fr;
+                padding: 0 1rem;
+            }
+            .sidebar {
+                display: none;
+            }
+        }
+/* Content Typography Styling */
         .doc-section {
-            margin-bottom: 4rem;
+            margin-bottom: 4.5rem;
             scroll-margin-top: 90px;
         }
         .doc-section:not(:last-child) {
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 3rem;
+            padding-bottom: 3.5rem;
         }
         .doc-section h1 {
             font-family: var(--font-display);
-            font-size: 2.25rem;
-            color: var(--black);
+            font-size: 2.5rem;
+            color: var(--text-heading);
             font-weight: 800;
             margin-bottom: 1.5rem;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
         }
         .doc-section h2 {
             font-family: var(--font-display);
-            font-size: 1.5rem;
+            font-size: 1.65rem;
             color: var(--text-heading);
             font-weight: 700;
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-            letter-spacing: -0.01em;
+            margin-top: 2.25rem;
+            margin-bottom: 1.15rem;
+            letter-spacing: -0.02em;
         }
         .doc-section h3 {
             font-family: var(--font-display);
-            font-size: 1.15rem;
+            font-size: 1.25rem;
             color: var(--text-heading);
-            font-weight: 600;
-            margin-top: 1.5rem;
-            margin-bottom: 0.75rem;
+            font-weight: 700;
+            margin-top: 1.75rem;
+            margin-bottom: 0.85rem;
         }
         .doc-section p {
-            font-size: 0.95rem;
-            color: var(--text);
-            margin-bottom: 1.25rem;
-            line-height: 1.7;
+            font-size: 0.975rem;
+            color: var(--text-main);
+            margin-bottom: 1.5rem;
+            line-height: 1.75;
         }
         .doc-section ul, .doc-section ol {
-            margin-left: 1.5rem;
-            margin-bottom: 1.5rem;
+            margin-left: 1.75rem;
+            margin-bottom: 1.75rem;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
-            font-size: 0.95rem;
+            gap: 0.6rem;
+            font-size: 0.975rem;
         }
         .doc-section li strong {
-            color: var(--black);
-        }
-
-        /* Code snippets */
-        pre {
-            background-color: var(--light-gray);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            overflow-x: auto;
-            margin-bottom: 1.5rem;
-            font-family: monospace;
-            font-size: 0.85rem;
-        }
-        code {
-            font-family: monospace;
-            font-size: 0.85rem;
-            background-color: var(--light-gray);
-            padding: 0.15rem 0.3rem;
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
-        }
-        pre code {
-            border: none;
-            background: transparent;
-            padding: 0;
+            color: var(--text-heading);
         }
 
         /* Tables styling */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
+            margin: 2rem 0;
+            font-size: 0.925rem;
+            box-shadow: var(--shadow-sm);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
         }
         th, td {
-            border-bottom: 1px solid var(--border-color);
-            padding: 0.75rem 1rem;
+            padding: 1rem 1.25rem;
             text-align: left;
+            border-bottom: 1px solid var(--border-color);
         }
         th {
-            font-weight: 600;
-            color: var(--black);
-            background-color: var(--light-gray);
+            font-weight: 700;
+            color: var(--text-heading);
+            background-color: var(--bg-sidebar);
+            font-family: var(--font-display);
+        }
+        tr {
+            background-color: var(--bg-card);
+            transition: var(--transition);
         }
         tr:hover td {
-            background-color: rgba(0, 0, 0, 0.01);
+            background-color: var(--primary-light);
+        }
+
+        /* Code snippets */
+        pre {
+            background-color: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 1.75rem 0;
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 0.875rem;
+            color: hsl(210, 40%, 98%);
+            box-shadow: var(--shadow-md);
+        }
+        code {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 0.875rem;
+            background-color: var(--bg-sidebar);
+            color: var(--primary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-weight: 500;
+        }
+        pre code {
+            border: none;
+            background: transparent;
+            padding: 0;
+            color: inherit;
         }
 
         /* Alerts standard style */
         .alert-box {
             border-left: 4px solid var(--primary);
             background-color: var(--primary-light);
-            padding: 1rem 1.25rem;
-            border-radius: 0 8px 8px 0;
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
+            padding: 1.25rem 1.5rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.75rem 0;
+            font-size: 0.95rem;
+            border-top: 1px solid var(--primary-border);
+            border-right: 1px solid var(--primary-border);
+            border-bottom: 1px solid var(--primary-border);
+            box-shadow: var(--shadow-sm);
         }
         .alert-box strong {
-            color: var(--black);
+            color: var(--text-heading);
             display: block;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.4rem;
+            font-family: var(--font-display);
+            font-size: 1.05rem;
         }
         .alert-box-warning {
-            border-left-color: #f59e0b;
-            background-color: rgba(245, 158, 11, 0.05);
+            border-left-color: hsl(38, 92%, 50%);
+            background-color: hsla(38, 92%, 50%, 0.05);
+            border-top-color: hsla(38, 92%, 50%, 0.15);
+            border-right-color: hsla(38, 92%, 50%, 0.15);
+            border-bottom-color: hsla(38, 92%, 50%, 0.15);
         }
         .alert-box-danger {
-            border-left-color: #ef4444;
-            background-color: rgba(239, 68, 68, 0.05);
+            border-left-color: hsl(0, 84%, 60%);
+            background-color: hsla(0, 84%, 60%, 0.05);
+            border-top-color: hsla(0, 84%, 60%, 0.15);
+            border-right-color: hsla(0, 84%, 60%, 0.15);
+            border-bottom-color: hsla(0, 84%, 60%, 0.15);
+        }
+
+        /* Video Container Walkthroughs */
+        .video-container {
+            margin: 2.25rem 0;
+            background: #000000;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--primary-border);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .video-container:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary);
+        }
+        .video-container video {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+            outline: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            background-color: #000;
+        }
+        .video-caption {
+            padding: 12px 14px;
+            color: hsl(210, 40%, 98%);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+        .video-caption span {
+            font-family: var(--font-display);
+        }
+        .badge-duration {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid var(--primary-border);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        /* Academy Interactive Hub Grid */
+        .academy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2.5rem 0;
+        }
+        .academy-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+        }
+        .academy-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+        .academy-card h4 {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            margin-bottom: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .academy-card p {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            margin-bottom: 1.25rem;
+            line-height: 1.5;
+            flex: 1;
+        }
+        .academy-card-badge {
+            align-self: flex-start;
+            font-size: 0.7rem;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid var(--primary-border);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .academy-card-link {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-decoration: none;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+        }
+        .academy-card-link:hover {
+            color: var(--primary-hover);
+            transform: translateX(3px);
         }
 
         /* Footer */
         footer {
             border-top: 1px solid var(--border-color);
-            padding: 2rem;
-            background-color: var(--light-gray);
+            padding: 2.5rem;
+            background-color: var(--bg-sidebar);
             text-align: center;
-            font-size: 0.8rem;
-            color: var(--text-muted);
+            font-size: 0.875rem;
+            color: var(--text-light);
             margin-top: auto;
+            transition: var(--transition);
         }
 
         @media (max-width: 1024px) {
@@ -372,15 +629,18 @@
     <!-- Header bar navigation -->
     <header>
         <div class="header-container">
-            <a href="index.html" class="logo-container">
+            <a href="/" class="logo-container">
                 <img src="tiny.png" alt="Tiny AI Assistant" class="logo-image">
                 <span class="logo-text">Tiny AI Assistant</span>
                 <span class="logo-badge">Docs</span>
             </a>
             <div class="header-nav">
-                <a href="docs.html" class="header-link active">Documentation</a>
-                <a href="book.html" class="header-link">Booking Page</a>
-                <a href="index.html" class="btn-launch">Launch Console</a>
+                <a href="/docs" class="header-link active">Documentation</a>
+                <a href="/book" class="header-link">Booking Page</a>
+                <a href="/" class="btn-launch">Launch Console</a>
+                <button id="theme-toggle" class="theme-toggle-btn" title="Toggle color scheme">
+                    <span class="theme-toggle-icon">🌙</span>
+                </button>
             </div>
         </div>
     </header>
@@ -390,11 +650,6 @@
         
         <!-- Navigation Sidebar -->
         <aside class="sidebar">
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="doc-search" class="search-input" placeholder="Search documentation...">
-            </div>
-            
             <nav id="doc-navigation">
                 <div class="nav-group-title">Getting Started</div>
                 <ul class="sidebar-links">
@@ -406,7 +661,6 @@
                     <li class="sidebar-link-item" data-section="comp-01"><a href="#comp-01">Component 01: Booking Page</a></li>
                     <li class="sidebar-link-item" data-section="comp-02"><a href="#comp-02">Component 02: Ingestion & Prep</a></li>
                     <li class="sidebar-link-item" data-section="comp-03"><a href="#comp-03">Component 03: Live Discovery Call</a></li>
-                    <li class="sidebar-link-item" data-section="comp-04"><a href="#comp-04">Component 04: Call Directory</a></li>
                     <li class="sidebar-link-item" data-section="comp-05"><a href="#comp-05">Component 05: Automated Reports</a></li>
                     <li class="sidebar-link-item" data-section="comp-06"><a href="#comp-06">Component 06: Meeting Booking</a></li>
                     <li class="sidebar-link-item" data-section="comp-07"><a href="#comp-07">Component 07: Settings Panel</a></li>
@@ -415,13 +669,14 @@
                 <div class="nav-group-title">Playbook References</div>
                 <ul class="sidebar-links">
                     <li class="sidebar-link-item" data-section="ref-profiles"><a href="#ref-profiles">Customer Profiles Playbook</a></li>
-                    <li class="sidebar-link-item" data-section="ref-catalog"><a href="#ref-catalog">Standard Services Catalog</a></li>
                 </ul>
             </nav>
         </aside>
 
+        
         <!-- Main Content Area -->
         <main class="content-panel">
+
             
             <!-- SECTION 1: Intro -->
             <section class="doc-section" id="intro">
@@ -450,12 +705,12 @@
                     <tbody>
                         <tr>
                             <td><strong>CRM (Customer Relationship Management)</strong></td>
-                            <td>HubSpot</td>
-                            <td>Synchronizes leads, details, and call summaries to deal tickets.</td>
+                            <td>HubSpot (Future Phase)</td>
+                            <td>Envisaged for synchronizing leads, details, and call summaries to deal tickets.</td>
                         </tr>
                         <tr>
                             <td><strong>Calendar Booking Widget</strong></td>
-                            <td>HubSpot Scheduling Engine</td>
+                            <td>Host SDR Scheduling Engine</td>
                             <td>Represented by the integrated calendar interface (Component 01).</td>
                         </tr>
                         <tr>
@@ -470,7 +725,7 @@
                         </tr>
                         <tr>
                             <td><strong>Screencast Video Delivery</strong></td>
-                            <td>Vidyard or Microsoft Teams</td>
+                            <td>Microsoft Teams</td>
                             <td>Used by SDRs to record and send 2-minute recap videos to prospects.</td>
                         </tr>
                         <tr>
@@ -486,12 +741,54 @@
                 <div class="alert-box">
                     <strong>Architecture Workflow</strong>
                     1. Prospect Schedules call on Booking Page (Component 01) &rarr; <br>
-                    2. SDR ingests Booking details into Prep Panel (Component 02) &rarr; <br>
+                    2. Real-Time Alert triggers "Mount Lead" to ingest Booking into Prep Panel (Component 02) &rarr; <br>
                     3. System compiles 12-point Dossier and Rapport Guides (Component 03) &rarr; <br>
-                    4. SDR runs call with Battlecard Questionnaire (Component 03/04) &rarr; <br>
-                    5. Call Directory & History logs the session metadata and restores workflows (Component 04) &rarr; <br>
-                    6. Synthesis Console parses transcript and outputs 9 deliverables (Component 05) &rarr; <br>
-                    7. SDR downloads ICS positional meeting invite for Founder Hand-over (Component 06).
+                    4. SDR runs call with Battlecard Questionnaire (Component 03) &rarr; <br>
+                    5. Synthesis Console parses transcript and outputs 9 deliverables (Component 05) &rarr; <br>
+                    6. SDR downloads ICS positional meeting invite for Founder Hand-over (Component 06).
+                </div>
+
+                <!-- NEW INTERACTIVE TRAINING ACADEMY HUB -->
+                <h2 style="margin-top: 2.5rem;">🎓 SDR Training Academy</h2>
+                <p>This interactive video training course covers the end-to-end sales process using the Tiny AI Assistant. Select any module to view its video walkthrough and corresponding documentation section.</p>
+
+                <div class="academy-grid">
+                    <div class="academy-card">
+                        <div class="academy-card-badge">Module 1</div>
+                        <h4>Prospect Booking Experience</h4>
+                        <p>Dynamic slot booking, automatic timezone adjustments, and Round-Robin SDR scheduling.</p>
+                        <a href="#comp-01" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                    </div>
+                    <div class="academy-card">
+                        <div class="academy-card-badge">Module 2</div>
+                        <h4>Lead Ingestion &amp; Routing</h4>
+                        <p>Real-time booking capture, email alerts for representative pooling, and Google Drive client folders.</p>
+                        <a href="#comp-02" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                    </div>
+                    <div class="academy-card">
+                        <div class="academy-card-badge">Module 3</div>
+                        <h4>Discovery Briefing Dossier</h4>
+                        <p>12-point contextual briefings mapping technical pain points, LinkedIn background, and rapport prompts.</p>
+                        <a href="#comp-02" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                    </div>
+                    <div class="academy-card">
+                        <div class="academy-card-badge">Module 4</div>
+                        <h4>Discovery Call Facilitation</h4>
+                        <p>Executing live discovery sessions utilizing dynamic question playbooks and battlecards.</p>
+                        <a href="#comp-03" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                    </div>
+                    <div class="academy-card">
+                        <div class="academy-card-badge">Module 5</div>
+                        <h4>Post-Call Synthesis Console</h4>
+                        <p>Pasting transcripts to auto-generate 9 core sales deliverables and proposals.</p>
+                        <a href="#comp-05" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                    </div>
+                    <div class="academy-card">
+                        <div class="academy-card-badge">Module 6</div>
+                        <h4>Administrator Panel Setup</h4>
+                        <p>Grounding context playbooks, API setup, custom instructions prompts, and demo mode controls.</p>
+                        <a href="#comp-07" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                    </div>
                 </div>
             </section>
 
@@ -500,6 +797,18 @@
                 <h1>Component 01: Client Booking Page</h1>
                 <p>The booking site <code>book.html</code> provides an interactive calendar interface for prospects while dynamically applying calendar availability and buffer constraints based on the chosen host. A single scheduling link is used for all prospects across Australia (AU), New Zealand (NZ), and the Middle East (ME).</p>
                 
+                <!-- MODULE 1 EMBED -->
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 1 Walkthrough: Client Booking Experience</span>
+                        <span class="badge-duration">⏱️ 0:47</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_1_capture.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
                 <h2>Designated SDR Hosts & Shift Coverage</h2>
                 <p>Calls are routed dynamically to Octane's designated Sales Development Representatives (SDRs) based on timezone-deterministic shift windows:</p>
                 <ul>
@@ -559,17 +868,26 @@
                 <h1>Component 02: Ingestion & Call Prep</h1>
                 <p>Before a requirements session call, the assigned SDR prepares using the AI Assistant. This module accesses GDrive client folders, SOWs, and history files to give the representative context about the account.</p>
 
-                <h2>Manual SDR Inputs (6 Core Inputs)</h2>
-                <p>The SDR gathers and pastes the following 6 core inputs into Step 1 of the dashboard to prepare the briefing dossier:</p>
+                <h2>Automated Intake & Real-time Alerts</h2>
+                <p>The system leverages a <strong>Server-Sent Events (SSE)</strong> stream to push new bookings instantly to the SDR Dashboard. When a prospect schedules a call:</p>
                 <ol>
-                    <li><strong>Client Name, Company Name, & Job Title</strong> (e.g. CFO, Head of FP&A).</li>
-                    <li><strong>Completed Booking Form Intake Summary</strong> (copied from the book.html success card clipboard output).</li>
-                    <li><strong>LinkedIn Profile Text</strong> (copied from LinkedIn PDF export).</li>
-                    <li><strong>Company Website URL</strong>.</li>
-                    <li><strong>Service Track Interest</strong> (AI or TM1).</li>
-                    <li><strong>Company Email Address</strong>.</li>
+                    <li><strong>Google Drive Upload:</strong> The backend automatically writes the lead intake file into the shared Google Drive directory.</li>
+                    <li><strong>Email Notification:</strong> An operational alert email is sent to Albert and Isha, containing all prospect fields.</li>
+                    <li><strong>Interactive Toast Alert:</strong> A glassmorphism banner appears on the SDR Console with a <strong>⚡ Mount Lead</strong> button.</li>
+                    <li><strong>One-Click Workflow Restoration:</strong> Clicking the action button restores the lead parameters seamlessly without requiring manual SDR copy-pasting.</li>
                 </ol>
-                <p><em>Note: The CRM check (verifying if contact/company exists in HubSpot and pulling history) is currently a manual step listed in the brief and is deferred from direct system integration.</em></p>
+
+                <!-- MODULE 2 EMBED -->
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 2 Walkthrough: Lead Ingestion, SDR Email Alert &amp; GDrive Sync</span>
+                        <span class="badge-duration">⏱️ 1:01</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_2_routing.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
                 
                 <h2>Google Drive File Attachment Explorer</h2>
                 <p>The assistant links to Google Drive directories to compile deep contextual briefings. The connection accesses files shared with the service account: <code>28323029503-compute@developer.gserviceaccount.com</code>.</p>
@@ -587,6 +905,19 @@
 
                 <h2>12-Section Briefing Dossier</h2>
                 <p>Generating the prep brief runs the inputs against the Mistral model to construct a 12-section dossier. Dossier progress is tracked via a completeness progress meter (0--100%). The dossier outputs the following 12 components:</p>
+
+                <!-- MODULE 3 EMBED -->
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 3 Walkthrough: Briefing Dossier Generation (Mistral AI)</span>
+                        <span class="badge-duration">⏱️ 0:48</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_3_preparation.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
                 <ol>
                     <li><strong>Section 1: LinkedIn Analysis</strong> (Detailed profile breakdown & recent social activities).</li>
                     <li><strong>Section 2: Company Products & Services</strong> (Core business offerings and revenue lines).</li>
@@ -607,6 +938,18 @@
             <section class="doc-section" id="comp-03">
                 <h1>Component 03: Live Discovery Call</h1>
                 <p>Step 2 contains call facilitation tools, including teleprompters, discovery scripts, and pre-compiled icebreaker dossiers. The requirements session lasts exactly <strong>30 minutes</strong> and is conducted by Albert or Isha.</p>
+
+                <!-- MODULE 4 EMBED -->
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 4 Walkthrough: Executing the Discovery Call (Albert/Isha)</span>
+                        <span class="badge-duration">⏱️ 1:01</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_4_execution.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
                 
                 <h2>Meeting Objectives & SDR Rules</h2>
                 <p>SDRs must adhere to the 5 primary objectives during the pre-screen call:</p>
@@ -682,24 +1025,22 @@
                 </ol>
             </section>
 
-            <!-- SECTION 5: Component 04 -->
-            <section class="doc-section" id="comp-04">
-                <h1>Component 04: Central Call Recording Directory</h1>
-                <p>The technical brief outlines a central, chronological directory for recorded calls (attaching to HubSpot tickets, filterable by SDR, with inline audio player and transcript extractors).</p>
-                <div class="alert-box alert-box-warning">
-                    <strong>Integration Status: Deferred</strong>
-                    In alignment with the $0 extra-spend tooling constraint and the preference for manual copy-paste workflows to establish operational maturity first, Component 04 integrations (HubSpot CRM ticket sync and Fireflies API hooks) are currently deferred. The system currently caches lead history locally for immediate workspace restoration.
-                </div>
-                <ul>
-                    <li><strong>Local Lead Storage Card</strong>: Saves and archives all past preparation sessions and synthesis runs locally in the browser's persistent session store.</li>
-                    <li><strong>Workspace Restoration</strong>: Clicking <strong>Load Console</strong> on any historical lead retrieves the session parameters, attached document contents, transcript texts, and restores all 9 rendered report tabs instantly.</li>
-                </ul>
-            </section>
-
-            <!-- SECTION 6: Component 05 -->
+            <!-- SECTION 5: Component 05 -->
             <section class="doc-section" id="comp-05">
                 <h1>Component 05: Automated Reports & Synthesis</h1>
                 <p>Pasting a transcript in Step 3 compiles a suite of 9 reports (incorporating the 7 playbooks and standard summaries). The assistant ensures output layout compliance and structural integrity.</p>
+
+                <!-- MODULE 5 EMBED -->
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 5 Walkthrough: Post-Call Transcription &amp; Synthesis Hub</span>
+                        <span class="badge-duration">⏱️ 0:51</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_5_synthesis.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
                 
                 <h2>The 9 Generated Deliverables</h2>
                 <p>The coprocessor synthesizes 9 distinct deliverables, mapping the 7 required reports from the brief plus 2 internal/archival documents:</p>
@@ -707,32 +1048,127 @@
                     <li><strong>Questionnaire Answers</strong>: Formatted responses mapping the transcript answers to the 12 discovery script questions based on the selected variant.</li>
                     <li><strong>Qualification & Next Steps</strong>: The SDR lead scorecard containing the Qualification Score (HOT, WARM, or COLD), scoring rationale, recommended next steps, and red flags.</li>
                     <li><strong>Migration Report</strong>: A branded technical migration checklist and readiness assessment, crucial for legacy TM1 upgrade prospects.</li>
-                    <li><strong>Client Recap Email</strong>: A standard follow-up email layout compiling the top 3 takeaways and automatically embedding the Vidyard/Teams screencast link.</li>
+                    <li><strong>Client Recap Email</strong>: A standard follow-up email layout compiling the top 3 takeaways and automatically embedding the Teams screencast link.</li>
                     <li><strong>Summary Sheet</strong>: An internal table summarizing attendees, service track interest, key discussion points, and prospect sentiment.</li>
                     <li><strong>Meeting Notes</strong>: Chronological meeting minutes capturing the contextual details, technical notes, and direct quotes from the call.</li>
-                    <li><strong>Consultative Proposal</strong>: A preliminary B2B scope document outlining requirements, proposed services (grounded in standard catalog pricing), approach/timeline, and team structure.</li>
+                    <li><strong>Consultative Proposal</strong>: A preliminary B2B scope document outlining requirements, proposed services, approach/timeline, and team structure.</li>
                     <li><strong>Action Items</strong>: A tasks matrix outlining clear follow-up deliverables and explicit deadlines assigned to the SDR or the client.</li>
                     <li><strong>Raw Call Transcript</strong>: An archived record of the copy-pasted transcript.</li>
                 </ol>
+
+                <h2>Standard Services Catalog &amp; List Rates</h2>
+                <p>The coprocessor strictly enforces <strong>Pricing Sovereignty</strong> against any verbal discounts or custom client claims made during requirements calls. The generated Consultative Proposals and Recap Emails are cross-checked against the following standard services catalog:</p>
+                
+                <h3>1. DevOps Support Packages</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package Name</th>
+                            <th>Pricing (AUD)</th>
+                            <th>Features &amp; SLAs</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>DevOps Blue Support</strong></td>
+                            <td>A$4,560 / month</td>
+                            <td>Flat-rate base support. No distinction between support and development hours. Rollover hours allowed. Monthly system health checks &amp; performance optimization reports. Free unlimited access to the professional training library for power users. SLAs: Urgent &lt; 1hr (24/7), High &lt; 4hr, Medium &lt; 8hr, Low &lt; 24hr.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DevOps Red Support</strong></td>
+                            <td>Custom Scope</td>
+                            <td>Advanced customized pricing tier. Targeted for larger database instances, complex integrations, or organizations with high deployment cadences requiring dedicated developer resources.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>2. Advisory &amp; Flight Check Services</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service Name</th>
+                            <th>Pricing (AUD)</th>
+                            <th>Duration &amp; Scope</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>TM1 Flight Check</strong></td>
+                            <td>A$5,800 (Fixed price)</td>
+                            <td>6 days. Comprehensive analysis of TM1 system health, RAM and hard disk space assessment, log file rotation, feeder memory optimization, and key developer/power user interviews. Detailed bottleneck resolution and upgrade readiness report.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>3. Integration &amp; Connector Packages</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package Name</th>
+                            <th>Pricing (AUD)</th>
+                            <th>Features &amp; Inclusions / Exclusions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>DataFusion Connector Setup</strong></td>
+                            <td>A$6,950 (Fixed price)</td>
+                            <td>Automates data transfer from source ERPs (e.g. NetSuite, SAP) directly into central IBM Planning Analytics database. Includes up to 5 standard report conversions and configuring 1 instance per environment (Dev, Test, Prod). Excludes database service account creation.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>4. Power User Training</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service Name</th>
+                            <th>Pricing (AUD)</th>
+                            <th>Scope</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Custom Power User Training</strong></td>
+                            <td>A$1,850 / day</td>
+                            <td>Customized training plans focusing on model architecture, rule writing, TI process development, or end-user dashboard design.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>5. Generative AI &amp; Automation Packages</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package Name</th>
+                            <th>Pricing (AUD)</th>
+                            <th>Features &amp; Inclusions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Generative AI FastClose Entry</strong></td>
+                            <td>A$12,500 (Setup) + A$850/mo</td>
+                            <td>Integrates conversational AI query engine for simple month-end bookkeeping tasks. Grounded on single GL context. Excludes multi-currency cubes.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>watsonx Finance Agent Pilot</strong></td>
+                            <td>A$125,000 (Implementation)</td>
+                            <td>2-to-6 week co-creation Proof of Concept (POC). Builds conversational B2B AI financial advisor linked to active Planning Analytics cubes. Excludes custom connector development. SaaS licensing starting at $160,000/yr.</td>
+                        </tr>
+                    </tbody>
+                </table>
 
                 <h2>Screencast Video Integration</h2>
                 <p>SDRs can input a screencast URL in the synthesis console:
                     <ul>
                         <li>Direct video URLs (<code>.mp4</code>, <code>.webm</code>) render inside an inline HTML5 video player.</li>
-                        <li>External video URLs (e.g. Vidyard, Microsoft Teams, or Google Drive views) render a styled link card with an "Open Link ↗" shortcut.</li>
+                        <li>External video URLs (e.g. Microsoft Teams, or Google Drive views) render a styled link card with an "Open Link ↗" shortcut.</li>
                     </ul>
                 </p>
-
-                <h2>Pricing Sovereignty Enforcement</h2>
-                <p>The coprocessor strictly overrides transcript references to custom discounts or verbal promises. Pricing details are grounded in standard catalog rates:</p>
-                <pre><code>watsonx AI Pilot SaaS:          A$160,000+ / year
-watsonx AI Implementation:      A$125,000 (one-time)
-TM1 Flight Check:               A$5,800 (fixed)
-TM1 DevOps Blue Support:        A$4,560 / month</code></pre>
-                <p>If anomalous or custom pricing values are discovered, the model replaces them with standard list rates and appends a Grounded Pricing Failsafe warning label.</p>
             </section>
 
-            <!-- SECTION 7: Component 06 -->
+            <!-- SECTION 6: Component 06 -->
             <section class="doc-section" id="comp-06">
                 <h1>Component 06: Positional Meeting Booking</h1>
                 <p>Once reports resolve, the SDR schedules a hand-over meeting. The booking console generates direct vCalendar files to accelerate calendar invitations.</p>
@@ -748,10 +1184,22 @@ TM1 DevOps Blue Support:        A$4,560 / month</code></pre>
                 <p>The calendar file auto-downloads on trigger. The booking input form is replaced with a <strong>Confirmation Card</strong> showing schedule metadata, organizer details, and hand-over checklist status.</p>
             </section>
 
-            <!-- SECTION 7b: Component 07 - Settings Panel -->
+            <!-- SECTION 7: Component 07 - Settings Panel -->
             <section class="doc-section" id="comp-07">
                 <h1>Component 07: Settings Panel</h1>
                 <p>The <strong>⚙ Assistant Configurations &amp; Custom System Instructions</strong> panel is a collapsible settings drawer accessed via the <code>⚙ Settings</code> button in the dashboard header. It controls the AI engine, persona behavior, prompt templates, knowledge base documents, and developer options. All settings persist to <code>localStorage</code> and are restored on page reload.</p>
+
+                <!-- MODULE 6 EMBED -->
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 6 Walkthrough: Administrator System Configurations</span>
+                        <span class="badge-duration">⏱️ 0:52</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_6_admin.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
 
                 <h2>Section 1: API Authentication</h2>
                 <p>Configures the connection to the large language model (LLM) backend that powers the AI Coprocessor.</p>
@@ -890,13 +1338,13 @@ TM1 DevOps Blue Support:        A$4,560 / month</code></pre>
                         <tr>
                             <td><strong>Enable Demo / Testing Mode</strong></td>
                             <td><code>#settings-demo-mode</code></td>
-                            <td>Shows sample data pre-fill buttons ("💡 Load Sample Sarah Chen", "💡 Load Sample Transcript") in the pipeline steps. Also reveals the <strong>Call Directory</strong> nav button and the <strong>Active SDR</strong> selector in the header, and enables the intake copy-to-clipboard section on the booking success page. This mode is stored in <code>localStorage</code> under the key <code>tiny_demo_mode</code>.</td>
+                            <td>Shows sample data pre-fill buttons ("💡 Load Sample Sarah Chen", "💡 Load Sample Transcript") in the pipeline steps. Also reveals the <strong>Active SDR</strong> selector in the header, and enables the intake copy-to-clipboard section on the booking success page. This mode is stored in <code>localStorage</code> under the key <code>tiny_demo_mode</code>.</td>
                         </tr>
                     </tbody>
                 </table>
-                <div class="alert-box">
-                    <strong>Production vs. Demo Mode</strong>
-                    In production (Demo Mode disabled), the dashboard presents a clean SDR workspace without developer shortcuts. The Call Directory, Active SDR dropdown, and sample data buttons are hidden. Enable Demo Mode only for internal testing, screencast recording, or stakeholder walk-throughs.
+                <div class="alert-box alert-box-warning">
+                    <strong>Demo Mode UI Rules</strong>
+                    In production (Demo Mode disabled), the dashboard presents a clean SDR workspace without developer shortcuts. The Active SDR dropdown and sample data buttons are hidden. Enable Demo Mode only for internal testing, screencast recording, or stakeholder walk-throughs.
                 </div>
             </section>
 
@@ -1036,70 +1484,9 @@ TM1 DevOps Blue Support:        A$4,560 / month</code></pre>
                     </li>
                 </ul>
             </section>
-
-            <!-- SECTION 9: Playbook Catalog -->
-            <section class="doc-section" id="ref-catalog">
-                <h1>Playbook Reference: Standard Services Catalog</h1>
-                <p>Standard product definitions, pricing guidelines, and SLA requirements used to enforce pricing sovereignty.</p>
-                
-                <h2>1. DevOps Support Packages</h2>
-                <h3>DevOps Blue Support</h3>
-                <ul>
-                    <li><strong>Pricing</strong>: A$4,560 / month (Flat-rate base support).</li>
-                    <li><strong>Key Features</strong>:
-                        <ul>
-                            <li>No rate difference between development hours and support hours.</li>
-                            <li>Rollover hours (unused package hours roll forward to the next month).</li>
-                            <li>Monthly system checks and model optimization logs.</li>
-                            <li>Free unlimited power-user training library access.</li>
-                        </ul>
-                    </li>
-                    <li><strong>SLAs (Response Times)</strong>:
-                        <ul>
-                            <li><em>Urgent:</em> &lt; 1 hour (24/7 coverage)</li>
-                            <li><em>High:</em> &lt; 4 hours</li>
-                            <li><em>Medium:</em> &lt; 8 hours</li>
-                            <li><em>Low:</em> &lt; 24 hours</li>
-                        </ul>
-                    </li>
-                </ul>
-                <h3>DevOps Red Support</h3>
-                <ul>
-                    <li><strong>Pricing</strong>: Advanced customized pricing tier.</li>
-                    <li><strong>Target</strong>: Larger database instances, complex integrations, or organizations with high deployment cadences requiring dedicated developer resources.</li>
-                </ul>
-
-                <h2>2. Advisory & Flight Check Services</h2>
-                <h3>TM1 Flight Check</h3>
-                <ul>
-                    <li><strong>Pricing</strong>: Fixed price of A$5,800.</li>
-                    <li><strong>Duration</strong>: 6 days.</li>
-                    <li><strong>Inclusions</strong>: Feeder memory optimization analysis, RAM/disk bottleneck reviews, and developer interviews compiling a readiness roadmap.</li>
-                </ul>
-
-                <h2>3. Integration Connectors</h2>
-                <h3>DataFusion Connector</h3>
-                <ul>
-                    <li><strong>Pricing</strong>: Fixed setup rate of A$6,950.</li>
-                    <li><strong>Inclusions</strong>: ERP integration (e.g. NetSuite to TM1) for up to 5 standard report conversions in Dev, Test, and Prod instances.</li>
-                    <li><strong>Exclusions</strong>: Client must provide G/L database service accounts.</li>
-                </ul>
-
-                <h2>4. Training Services</h2>
-                <ul>
-                    <li><strong>Pricing</strong>: Standard custom developer or power user training rate is A$1,850/day.</li>
-                    <li><strong>Scope</strong>: Customized training plans focusing on model architecture, rule writing, TI process development, or end-user dashboard design.</li>
-                </ul>
-
-                <h2>5. Generative AI Packages</h2>
-                <h3>watsonx AI Pilot & Orchestrate</h3>
-                <ul>
-                    <li><strong>Indicative SaaS License</strong>: Starting at $160,000 / year.</li>
-                    <li><strong>Implementation Services</strong>: Starting at $125,000.</li>
-                    <li><strong>Co-Creation Proof of Concept (POC)</strong>: 2-to-6 week co-creation roadmap delivering active TM1/Adobe/Google database integrations.</li>
-                </ul>
-            </section>
         </main>
+        
+
     </div>
 
     <!-- Page Footer -->
@@ -1110,7 +1497,6 @@ TM1 DevOps Blue Support:        A$4,560 / month</code></pre>
     <!-- Search Filtering and Anchor Link Highlight Scripts -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const searchInput = document.getElementById('doc-search');
             const navItems = document.querySelectorAll('.sidebar-link-item');
             const sections = document.querySelectorAll('.doc-section');
             
@@ -1132,28 +1518,29 @@ TM1 DevOps Blue Support:        A$4,560 / month</code></pre>
                 });
             });
 
-            // Live Search Filter
-            searchInput.addEventListener('input', () => {
-                const query = searchInput.value.toLowerCase().trim();
-                
-                navItems.forEach(item => {
-                    const text = item.textContent.toLowerCase();
-                    if (text.includes(query)) {
-                        item.style.display = 'block';
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
-
-                // Toggle headers based on children visibility
-                document.querySelectorAll('.sidebar ul').forEach(ul => {
-                    const hasVisibleChildren = Array.from(ul.children).some(li => li.style.display !== 'none');
-                    const header = ul.previousElementSibling;
-                    if (header && header.classList.contains('nav-group-title')) {
-                        header.style.display = hasVisibleChildren ? 'block' : 'none';
-                    }
-                });
+            // Theme toggle logic
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const themeToggleIcon = document.querySelector('.theme-toggle-icon');
+            
+            const savedTheme = localStorage.getItem('tiny_docs_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+            
+            themeToggleBtn.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('tiny_docs_theme', newTheme);
+                updateThemeIcon(newTheme);
             });
+            
+            function updateThemeIcon(theme) {
+                if (theme === 'dark') {
+                    themeToggleIcon.textContent = '☀️';
+                } else {
+                    themeToggleIcon.textContent = '🌙';
+                }
+            }
         });
     </script>
 </body>
