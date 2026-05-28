@@ -1846,7 +1846,14 @@ const server = http.createServer(async (req, res) => {
     }
 
     // Static Files Resolution
-    let relativePath = pathname === '/' ? '/demo/book.html' : pathname;
+    let relativePath = pathname;
+    if (pathname === '/') {
+        relativePath = '/demo/book.html';
+    } else if (pathname === '/docs') {
+        relativePath = '/demo/docs.html';
+    } else if (pathname === '/book') {
+        relativePath = '/demo/book.html';
+    }
     
     // Check if file is in /demo folder or root folder
     let targetPath = path.join(PUBLIC_DIR, relativePath);
