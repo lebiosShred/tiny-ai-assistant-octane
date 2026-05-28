@@ -2122,3 +2122,108 @@ body.resizing * {
     color: rgba(14, 165, 233, 0.3) !important;
 }
 
+/* ==========================================================================
+   Step 3: Automated Reports UI/UX Adjustments
+   ========================================================================== */
+
+/* Layout structure fixes for the crooked step 3 footer */
+.footer-row.flex-col {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--space-md) !important;
+    width: 100% !important;
+    margin-top: var(--space-md) !important;
+}
+
+.footer-row.stretch {
+    align-self: stretch !important;
+}
+
+.w-100 {
+    width: 100% !important;
+}
+
+.mt-2 {
+    margin-top: var(--space-md) !important;
+}
+
+.gap-2 {
+    gap: var(--space-sm) !important;
+}
+
+.mr-4 {
+    margin-right: var(--space-lg) !important;
+}
+
+/* Report Generator Container Styling */
+.report-generator-container {
+    width: 100% !important;
+    background: rgba(15, 23, 42, 0.02) !important;
+    border: 1px solid var(--border-glass) !important;
+    border-radius: 8px !important;
+    padding: var(--space-md) !important;
+    margin-bottom: var(--space-sm) !important;
+}
+
+.generator-label {
+    display: block !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    color: var(--text-muted) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: var(--space-sm) !important;
+}
+
+/* 2-column clean layout for report generation buttons */
+.report-type-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+    gap: 8px !important;
+    margin-top: 4px !important;
+}
+
+/* Styles for individual report selection buttons */
+.report-type-btn {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 6px !important;
+    background: #ffffff !important;
+    border: 1px solid var(--border-glass) !important;
+    color: var(--text-main) !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.report-type-btn:hover {
+    background: var(--bg-card-hover) !important;
+    border-color: var(--primary) !important;
+    box-shadow: var(--shadow-card-hover) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Bottom navigation row for Step 3 */
+.footer-row.split {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+.top-border {
+    border-top: 1px solid var(--border-glass) !important;
+    padding-top: var(--space-md) !important;
+}
+
+.flex-align-center {
+    display: flex !important;
+    align-items: center !important;
+}
+

@@ -1685,6 +1685,7 @@ document.addEventListener('DOMContentLoaded', () => {
         outputConsole.classList.remove('has-content');
         outputEmptyState.style.display = 'flex';
         outputLoading.style.display = 'none';
+        outputResults.classList.add('hidden');
         outputResults.style.display = 'none';
         currentDocs = null;
         currentScreencastUrl = "";
@@ -1698,6 +1699,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showLoading(text) {
         outputConsole.classList.remove('has-content');
         outputEmptyState.style.display = 'none';
+        outputResults.classList.add('hidden');
         outputResults.style.display = 'none';
         outputLoading.style.display = 'flex';
         document.getElementById('loading-text-label').innerText = text;
@@ -1707,12 +1709,15 @@ document.addEventListener('DOMContentLoaded', () => {
         outputLoading.style.display = 'none';
         outputEmptyState.style.display = 'none';
         outputConsole.classList.add('has-content');
+        outputResults.classList.remove('hidden');
         outputResults.style.display = 'flex';
 
         if (isCollection) {
+            outputDocNav.classList.remove('hidden');
             outputDocNav.style.display = 'flex';
             renderActiveDocument();
         } else {
+            outputDocNav.classList.add('hidden');
             outputDocNav.style.display = 'none';
             outputDocContent.innerHTML = window.DOMPurify ? DOMPurify.sanitize(htmlContent) : fallbackSanitize(htmlContent);
         }
@@ -2348,8 +2353,15 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
             activeDocTab = 'questionnaireAnswers'; // default tab to show
             showResults(null, true);
             
-            // Navigate back to Step 2 so SDR can review and refine mapped answers
-            goToStep(2);
+            // Mark all individual report buttons as generated
+            document.querySelectorAll('.report-type-btn').forEach(btn => {
+                btn.style.borderColor = '#00c853';
+                btn.style.color = '#00c853';
+                btn.style.background = 'rgba(0, 200, 83, 0.05)';
+            });
+
+            // Navigate to Step 3 to display generated reports on the right console
+            goToStep(3);
         } catch (err) {
             resetOutput();
             showToast(`Error: ${err.message}`);
