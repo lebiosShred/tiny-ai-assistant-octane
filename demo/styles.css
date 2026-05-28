@@ -1955,3 +1955,170 @@ body.resizing * {
     padding-left: 2.25rem !important;
 }
 
+/* ==========================================================================
+   🛡️ Aegis Audited: Premium Rapport Guide Component Style Rules
+   ========================================================================== */
+.rapport-guide-panel {
+    margin-bottom: var(--space-md);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 4px 20px -2px rgba(14, 165, 233, 0.03);
+    overflow: hidden;
+    display: none; /* Controlled dynamically by app.js */
+    flex-shrink: 0;
+}
+
+.rapport-guide-header {
+    padding: var(--space-md) var(--space-lg);
+    background: linear-gradient(90deg, rgba(14, 165, 233, 0.05) 0%, rgba(14, 165, 233, 0.01) 100%);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 0.9rem;
+    user-select: none;
+    border-bottom: 1px solid var(--border-glass);
+    transition: background 0.2s ease;
+}
+
+.rapport-guide-header:hover {
+    background: linear-gradient(90deg, rgba(14, 165, 233, 0.08) 0%, rgba(14, 165, 233, 0.03) 100%);
+}
+
+#rapport-guide-toggle-icon {
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.rapport-guide-body {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: #fcfcfd;
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    .rapport-guide-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Accordion transition utility */
+.rapport-guide-body[style*="display: none"] {
+    display: none !important;
+}
+
+/* Card Structures */
+.rapport-card {
+    padding: var(--space-md) var(--space-lg);
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.rapport-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.04);
+}
+
+/* Left Accent Borders & Gradients */
+.card-openers {
+    border-left: 4px solid var(--primary);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.01) 0%, #ffffff 100%);
+}
+
+.card-context {
+    border-left: 4px solid #8b5cf6;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.01) 0%, #ffffff 100%);
+}
+
+.card-pain {
+    border-left: 4px solid #ef4444;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.01) 0%, #ffffff 100%);
+}
+
+.card-avoid {
+    border-left: 4px solid #f59e0b;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.01) 0%, #ffffff 100%);
+}
+
+/* Card Headings */
+.rapport-card-title {
+    margin: 0 0 var(--space-md) 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.card-openers .rapport-card-title { color: var(--primary); }
+.card-context .rapport-card-title { color: #7c3aed; }
+.card-pain .rapport-card-title { color: #dc2626; }
+.card-avoid .rapport-card-title { color: #d97706; }
+
+/* Stylized Card Lists */
+.rapport-card-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.rapport-card-list li {
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: #334155;
+    position: relative;
+    padding-left: 1rem;
+}
+
+.rapport-card-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.card-openers .rapport-card-list li::before { color: var(--primary); }
+.card-context .rapport-card-list li::before { color: #8b5cf6; }
+.card-pain .rapport-card-list li::before { color: #ef4444; }
+.card-avoid .rapport-card-list li::before { color: #f59e0b; }
+
+/* Quote Styling for Conversation Openers */
+.card-openers .rapport-card-list li {
+    font-style: italic;
+    color: #1e293b;
+    font-size: 0.78rem;
+    background: rgba(14, 165, 233, 0.02);
+    padding: 0.5rem 0.75rem 0.5rem 1.5rem;
+    border-radius: 6px;
+    border-left: 2px solid rgba(14, 165, 233, 0.3);
+    margin-bottom: 0.25rem;
+}
+
+.card-openers .rapport-card-list li::before {
+    content: "“" !important;
+    font-size: 1.8rem !important;
+    font-family: serif !important;
+    left: 0.4rem !important;
+    top: 0.1rem !important;
+    color: rgba(14, 165, 233, 0.3) !important;
+}
+
