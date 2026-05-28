@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian - GitHub Projects</title>
+<style>
+  :root { --bg: #0d1117; --bg-column: #161b22; --border: #30363d; --text: #c9d1d9; --text-muted: #8b949e; --accent: #2f81f7; }
+  body { background-color: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 250px; border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+  .sidebar h2 { font-size: 14px; margin: 0; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .nav-item { padding: 8px 12px; border-radius: 6px; cursor: pointer; color: var(--text); font-size: 14px; }
+  .nav-item.active { background-color: rgba(47, 129, 247, 0.1); color: var(--accent); font-weight: 600; }
+  .main-content { flex: 1; display: flex; flex-direction: column; }
+  .header { padding: 20px 30px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  .board { flex: 1; padding: 20px 30px; display: flex; gap: 20px; overflow-x: auto; }
+  .column { background-color: var(--bg-column); border: 1px solid var(--border); border-radius: 6px; width: 350px; display: flex; flex-direction: column; max-height: 100%; }
+  .column-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 14px; }
+  .column-header .count { background-color: var(--border); padding: 2px 8px; border-radius: 12px; font-size: 12px; color: var(--text-muted); }
+  .cards { padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .card { background-color: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; cursor: grab; display: flex; flex-direction: column; gap: 8px; transition: transform 0.1s ease, border-color 0.2s ease; }
+  .card:hover { border-color: var(--text-muted); }
+  .card-title { font-size: 14px; font-weight: 500; line-height: 1.4; }
+  .card-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 10px; }
+  .tag { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; border: 1px solid transparent; }
+  .tag.blue { background-color: rgba(47, 129, 247, 0.1); color: var(--accent); border-color: rgba(47, 129, 247, 0.4); }
+  .tag.green { background-color: rgba(46, 160, 67, 0.1); color: #3fb950; border-color: rgba(46, 160, 67, 0.4); }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Projects</h2>
+    <div class="nav-item">Octane Backend</div>
+    <div class="nav-item active">Meridian Onboarding</div>
+    <div class="nav-item">Security Audits</div>
+  </div>
+  <div class="main-content">
+    <div class="header">
+      <h1>Meridian Technical Handoff</h1>
+      <div style="display:flex; gap:10px;">
+        <input type="text" placeholder="Filter by keyword..." style="background:var(--bg); border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:6px;">
+        <button style="background:var(--bg-column); border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:6px; cursor:pointer;">+ New Item</button>
+      </div>
+    </div>
+    <div class="board">
+      <div class="column" id="col-todo">
+        <div class="column-header">
+          <span>Todo</span>
+          <span class="count">2</span>
+        </div>
+        <div class="cards" id="cards-todo">
+          <div class="card" id="ticket-1">
+            <div class="card-title">Kevin Smith - Meridian Technical SLA Handoff</div>
+            <div style="display:flex; gap:6px;">
+              <span class="tag blue">onboarding</span>
+              <span class="tag green">high-priority</span>
+            </div>
+            <div class="card-meta">#142 • Opened by System Administrator</div>
+          </div>
+          <div class="card" id="ticket-2">
+            <div class="card-title">Provision IAM Roles for Meridian QA Team</div>
+            <div style="display:flex; gap:6px;">
+              <span class="tag blue">security</span>
+            </div>
+            <div class="card-meta">#143 • Opened by System</div>
+          </div>
+        </div>
+      </div>
+      <div class="column" id="col-progress">
+        <div class="column-header">
+          <span>In Progress</span>
+          <span class="count">0</span>
+        </div>
+        <div class="cards" id="cards-progress">
+        </div>
+      </div>
+      <div class="column" id="col-done">
+        <div class="column-header">
+          <span>Done</span>
+          <span class="count">1</span>
+        </div>
+        <div class="cards" id="cards-done">
+          <div class="card" style="opacity:0.6;">
+            <div class="card-title">Create Dedicated Slack Channel</div>
+            <div class="card-meta">#140 • Closed 2 hours ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

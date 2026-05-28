@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Compliance - Audit Log</title>
+<style>
+  :root { --bg: #09090b; --surface: #18181b; --border: #27272a; --text: #fafafa; --text-muted: #a1a1aa; --accent: #10b981; --danger: #ef4444; }
+  body { background-color: var(--bg); color: var(--text); font-family: "Inter", -apple-system, sans-serif; margin: 0; padding: 40px; }
+  .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-end; }
+  h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.5px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; margin-top: 8px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .stat-card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+  .stat-label { color: var(--text-muted); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 28px; font-weight: 600; margin-top: 8px; }
+  .table-container { background-color: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; text-align: left; }
+  th { background-color: rgba(255,255,255,0.02); padding: 16px; font-size: 13px; font-weight: 500; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+  td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .badge.success { background-color: rgba(16, 185, 129, 0.1); color: var(--accent); }
+  .badge.warning { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+  .badge.redacted { background-color: rgba(239, 68, 68, 0.1); color: var(--danger); font-family: monospace; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Data Sovereignty & Audit Logs</h1>
+        <div class="subtitle">Real-time event streaming and PII redaction verification.</div>
+      </div>
+      <button style="background:var(--text); color:var(--bg); border:none; padding:10px 20px; border-radius:6px; font-weight:600; cursor:pointer;">Export CSV</button>
+    </div>
+    
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Events Processed (24h)</div>
+        <div class="stat-value">14,208</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">PII Entities Redacted</div>
+        <div class="stat-value" style="color:var(--accent);">2,410</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Policy Violations</div>
+        <div class="stat-value">0</div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>TIMESTAMP</th>
+            <th>EVENT TYPE</th>
+            <th>ACTOR / SERVICE</th>
+            <th>RESOURCE URI</th>
+            <th>STATUS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--text-muted);">2026-05-28 13:22:01</td>
+            <td>Transcription Sync</td>
+            <td>Fathom.ai Webhook</td>
+            <td>/api/v1/ingest/<span class="badge redacted">[REDACTED]</span></td>
+            <td><span class="badge success">SANITIZED</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text-muted);">2026-05-28 13:21:45</td>
+            <td>File Upload (GDrive)</td>
+            <td>Tiny AI Agent</td>
+            <td>/drive/v3/files/<span class="badge redacted">[REDACTED]</span></td>
+            <td><span class="badge success">COMPLETED</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text-muted);">2026-05-28 13:19:10</td>
+            <td>SLA Policy Check</td>
+            <td>Compliance Engine</td>
+            <td>urn:meridian:onboarding:req:142</td>
+            <td><span class="badge warning">EVALUATING</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text-muted);">2026-05-28 13:10:05</td>
+            <td>Authentication</td>
+            <td>System Administrator</td>
+            <td>/auth/sso/saml/callback</td>
+            <td><span class="badge success">SUCCESS</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

@@ -1552,9 +1552,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 `DESCRIPTION:Positional Meeting to discuss FP\\&A or AI requirements.\\n\\nClient: ${clientName}\\nCompany: ${companyName}\\nFormat: ${format}`,
                 `LOCATION:${location}`,
                 'STATUS:CONFIRMED',
-                'ORGANIZER;CN="Amie Lebios":MAILTO:amie.lebios@octanesolutions.com.au',
+                'ORGANIZER;CN="System Administrator":MAILTO:admin@octanesolutions.com.au',
                 `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN="${clientName}":MAILTO:${clientEmail}`,
-                'ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="Amendra Pratap":MAILTO:amendra.pratap@octanesolutions.com.au',
+                'ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="System Administrator":MAILTO:System Administrator.pratap@octanesolutions.com.au',
                 'END:VEVENT',
                 'END:VCALENDAR'
             ].join('\r\n');
@@ -1588,8 +1588,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05); border-radius: 6px; padding: 0.5rem; font-size: 0.75rem; color: #333; display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem;">
                                 <div><strong>Date/Time:</strong> ${dateStr} at ${time} (UTC)</div>
                                 <div><strong>Location:</strong> ${location}</div>
-                                <div><strong>Organizer:</strong> Amie Lebios</div>
-                                <div><strong>Attendees:</strong> Amendra Pratap, ${clientName} (${clientEmail})</div>
+                                <div><strong>Organizer:</strong> System Administrator</div>
+                                <div><strong>Attendees:</strong> System Administrator, ${clientName} (${clientEmail})</div>
                             </div>
                         </div>
                     `;
@@ -2007,7 +2007,7 @@ Albert (Sales Team): Wonderful. Now, in terms of timeline, when are you hoping t
 Sarah Chen: We want this resolved before the Q3 planning cycle, which starts in about two months.
 Albert (Sales Team): And is there a budget allocated specifically for this integration project?
 Sarah Chen: We have a sign-off threshold of up to $40,000 for this financial year if we can show a clear return on investment.
-Albert (Sales Team): Excellent. I want to book a deep dive meeting for you with Amendra Pratap, our TM1 Practice Lead. He can walk you through the architecture of our DataFusion connector to NetSuite. Let me pull up his calendar. How does next Tuesday at 10:00 AM AEST look for you?
+Albert (Sales Team): Excellent. I want to book a deep dive meeting for you with System Administrator, our TM1 Practice Lead. He can walk you through the architecture of our DataFusion connector to NetSuite. Let me pull up his calendar. How does next Tuesday at 10:00 AM AEST look for you?
 Sarah Chen: That works perfectly for me. Let's schedule it.
 Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation. I look forward to working with you, Sarah.`;
         showToast("Prefilled Call Transcript template!");

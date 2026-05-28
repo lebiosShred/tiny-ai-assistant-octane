@@ -167,7 +167,7 @@ Likely pain points based on role, company size, and service interest.
 Classify the prospect into one of Octane's 9 target customer profiles based on the playbook. Detail the rationale and recommended product/service.
 
 === TRAVEL DISTANCE ===
-Estimate the travel distance/time for an in-person meeting. The travel origin is Amendra's home address (Richmond, Melbourne, VIC 3121). Based on the prospect's company address or office location (e.g., if Australian/Melbourne, compute drive/transit time, if interstate or international, indicate 'Online/Phone only'). Output only a brief string, e.g., '~45 min from Amendra's location' or 'Online/Phone call'.`;
+Estimate the travel distance/time for an in-person meeting. The travel origin is System Administrator's home address (Richmond, Melbourne, VIC 3121). Based on the prospect's company address or office location (e.g., if Australian/Melbourne, compute drive/transit time, if interstate or international, indicate 'Online/Phone only'). Output only a brief string, e.g., '~45 min from System Administrator's location' or 'Online/Phone call'.`;
 
         const messages = [
             {
@@ -226,7 +226,7 @@ Estimate the travel distance/time for an in-person meeting. The travel origin is
 <p><strong>Octane Customer Profile:</strong> Matches <strong>Mid Size TM1 Shops</strong> / <strong>MidMarket AI in Finance</strong>. The prospect has $100M+ revenue, 20 finance users, and significant spreadsheet dependency (35 spreadsheets), but wants to modernise their FP&A processes with automation, aligning with Octane's core mid-market support and AI options.</p>
 
 === TRAVEL DISTANCE ===
-~45 min from Amendra's location (Richmond, Melbourne, VIC 3121)`;
+~45 min from System Administrator's location (Richmond, Melbourne, VIC 3121)`;
         }
     }
 
@@ -725,7 +725,7 @@ Format: HTML email from the Sales Representative to the prospect. Include key po
 <p>I tried calling you today regarding your interest in our ${prospectData.track} services at Octane Software Solutions, but was unable to reach you.</p>
 <p>I put together a briefing for our call based on your role as ${prospectData.title || 'Head of Finance'} and some common challenges logistics/finance teams face, such as consolidating manual spreadsheets and version control issues.</p>
 <p>Specifically, I thought you might be interested in how we help companies automate NetSuite data loading to Planning Analytics, eliminating manual copy-paste cycles.</p>
-<p>Would you have 10 minutes next week for a brief online sync? You can book a time directly with our Director, Amendra Pratap, using our scheduler.</p>
+<p>Would you have 10 minutes next week for a brief online sync? You can book a time directly with our Director, System Administrator, using our scheduler.</p>
 <p>Kind regards,<br>${prospectData.rep || 'Albert'}<br>Octane Software Solutions</p>`;
         }
     }
@@ -788,9 +788,9 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
 <h4>3. APPROACH & METHODOLOGY</h4>
 <p>We recommend a 6-week implementation project with kickoff and decision workshops.</p>
 <h4>4. TEAM & RESOURCES</h4>
-<p>Staffing includes a dedicated onshore Lead Architect (Amendra Pratap) supported by our certified offshore developer team.</p>
+<p>Staffing includes a dedicated onshore Lead Architect (System Administrator) supported by our certified offshore developer team.</p>
 <h4>5. NEXT STEPS</h4>
-<p>Book a Positional Meeting with Amendra to confirm NetSuite API sandbox access and custom multi-currency table mapping.</p>`;
+<p>Book a Positional Meeting with System Administrator to confirm NetSuite API sandbox access and custom multi-currency table mapping.</p>`;
         }
     }
 
@@ -845,7 +845,7 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
             questionnaireAnswers: questionnaireHtml,
             summary: `<h4>QUALIFICATION SCORE: HOT</h4>
 <p><strong>SCORING RATIONALE:</strong> The prospect has a clear budget ($40,000 threshold), an urgent timeline (Q3 planning starting in 2 months), and a severe operational bottleneck (3 days wasted on manual consolidation of 35 spreadsheets).</p>
-<p><strong>RECOMMENDED NEXT STEP:</strong> Book a Deep-Dive Architectural meeting with Amendra Pratap to scoping the DataFusion NetSuite connector and DevOps Blue support.</p>
+<p><strong>RECOMMENDED NEXT STEP:</strong> Book a Deep-Dive Architectural meeting with System Administrator to scoping the DataFusion NetSuite connector and DevOps Blue support.</p>
 <p><strong>RED FLAGS:</strong> None. Approval threshold is well-aligned with implementation costs.</p>`,
             
             recapEmail: `<p>Hey Sarah Chen,</p>
@@ -903,18 +903,18 @@ ${screencastSegment}
 <h4>3. APPROACH & METHODOLOGY</h4>
 <p>We recommend a 6-week implementation project with kickoff and decision workshops.</p>
 <h4>4. TEAM & RESOURCES</h4>
-<p>Staffing includes a dedicated onshore Lead Architect (Amendra Pratap) supported by our certified offshore developer team.</p>
+<p>Staffing includes a dedicated onshore Lead Architect (System Administrator) supported by our certified offshore developer team.</p>
 <h4>5. NEXT STEPS</h4>
-<p>Book a Positional Meeting with Amendra to confirm NetSuite API sandbox access and custom multi-currency table mapping.</p>`,
+<p>Book a Positional Meeting with System Administrator to confirm NetSuite API sandbox access and custom multi-currency table mapping.</p>`,
             
             actionItems: `<p><strong>Actions for Octane (Sales Team):</strong></p>
 <ul>
     <li>Log synthesis deliverables to HubSpot. (Done)</li>
-    <li>Share pre-screen brief and SOW with Amendra Pratap before the positional meeting. (Pending)</li>
+    <li>Share pre-screen brief and SOW with System Administrator before the positional meeting. (Pending)</li>
 </ul>
 <p><strong>Actions for Prospect (Sarah Chen):</strong></p>
 <ul>
-    <li>Attend Positional meeting with Amendra Pratap on Tuesday at 10:00 AM AEST. (Pending)</li>
+    <li>Attend Positional meeting with System Administrator on Tuesday at 10:00 AM AEST. (Pending)</li>
     <li>Retrieve NetSuite sandbox login details for API scoping. (Pending)</li>
 </ul>`
         };

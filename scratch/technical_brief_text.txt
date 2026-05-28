@@ -217,7 +217,7 @@ of the client relationship rather than a single call.
 Action items. A clear list of who needs to do what following the call, with ownership assigned where identifiable 
 from the transcript. 
 SCOPE OF WORK 
-Amiel 
+System Administrator 
 Produce a proposal covering HOW each of the components will be built 
 Build five components 
 Sheila 

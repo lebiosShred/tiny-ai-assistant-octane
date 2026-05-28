@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny AI Assistant - Administrator Configuration</title>
+    <link rel="icon" type="image/png" href="tiny.png">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #09090b;
+            --bg-surface: #111113;
+            --bg-elevated: #18181b;
+            --bg-card: rgba(255,255,255,0.04);
+            --border-glass: rgba(255,255,255,0.08);
+            --border-focus: rgba(77,174,235,0.5);
+            --primary: #4daeeb;
+            --primary-glow: rgba(77,174,235,0.3);
+            --primary-dim: rgba(77,174,235,0.15);
+            --green: #22c55e;
+            --green-glow: rgba(34,197,94,0.25);
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --text-main: #fafafa;
+            --text-muted: rgba(255,255,255,0.55);
+            --text-dark: rgba(255,255,255,0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--bg-base);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .sidebar-brand img {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .sidebar-brand-text {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-brand-sub {
+            font-size: 0.65rem;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 1px;
+        }
+
+        .sidebar-section {
+            padding: 1rem 0.75rem;
+        }
+
+        .sidebar-section-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            padding: 0 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.55rem 0.75rem;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+        }
+
+        .sidebar-item.active {
+            background: var(--primary-dim);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-item-icon {
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-item-badge {
+            margin-left: auto;
+            font-size: 0.65rem;
+            font-weight: 700;
+            background: var(--primary-dim);
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .sidebar-user-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .sidebar-user-role {
+            font-size: 0.65rem;
+            color: var(--text-dark);
+        }
+
+        /* ── Main Content ── */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .main-header {
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-surface);
+        }
+
+        .main-header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-badge {
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 3px 8px;
+            border-radius: 100px;
+            border: 1px solid var(--green);
+            color: var(--green);
+        }
+
+        .header-actions-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-admin {
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.45rem 1rem;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border-color: var(--border-glass);
+            color: var(--text-muted);
+        }
+        .btn-ghost:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+        }
+
+        .btn-save {
+            background: var(--primary);
+            color: #000;
+            font-weight: 700;
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+        .btn-save:hover {
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .btn-save.saved {
+            background: var(--green);
+            box-shadow: 0 0 12px var(--green-glow);
+        }
+
+        /* ── Scrollable Body ── */
+        .main-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        /* ── Config Sections ── */
+        .config-section {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .config-section-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .config-section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .config-section-title .icon {
+            font-size: 1.1rem;
+        }
+
+        .config-section-body {
+            padding: 1.5rem;
+        }
+
+        /* ── Project Name Input ── */
+        .project-name-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .project-name-input {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            color: var(--text-main);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .project-name-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .project-name-input::placeholder {
+            color: var(--text-dark);
+        }
+
+        /* ── File Upload Zone ── */
+        .upload-zone {
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: rgba(77,174,235,0.03);
+        }
+
+        .upload-zone.active {
+            border-color: var(--green);
+            background: rgba(34,197,94,0.03);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.6;
+        }
+
+        .upload-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }
+
+        .upload-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-dark);
+        }
+
+        /* ── Uploaded Files List ── */
+        .uploaded-files {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .uploaded-file {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            animation: slideUp 0.3s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-icon {
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .file-meta {
+            font-size: 0.7rem;
+            color: var(--text-dark);
+        }
+
+        .file-status {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 100px;
+        }
+
+        .file-status.uploaded {
+            background: rgba(34,197,94,0.12);
+            color: var(--green);
+        }
+
+        .file-status.processing {
+            background: rgba(245,158,11,0.12);
+            color: var(--amber);
+        }
+
+        /* ── System Prompt Editor ── */
+        .prompt-editor-wrapper {
+            position: relative;
+        }
+
+        .prompt-editor-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-glass);
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .prompt-editor-lang {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .prompt-editor-meta {
+            font-size: 0.7rem;
+            color: var(--text-dark);
+        }
+
+        .prompt-editor {
+            width: 100%;
+            min-height: 320px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border-glass);
+            border-radius: 0 0 8px 8px;
+            color: #c9d1d9;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.7;
+            padding: 1.25rem;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .prompt-editor:focus {
+            border-color: var(--primary);
+        }
+
+        /* ── Token Counter ── */
+        .token-counter {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .token-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .token-stat-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .token-stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .token-stat-value.primary {
+            color: var(--primary);
+        }
+
+        .token-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .token-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--primary), #6366f1);
+            transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        /* ── Success Toast ── */
+        .admin-toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--green);
+            color: var(--text-main);
+            padding: 0.85rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .admin-toast.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="tiny.png" alt="Tiny">
+            <div>
+                <div class="sidebar-brand-text">Tiny AI</div>
+                <div class="sidebar-brand-sub">Admin Console</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">Workspaces</div>
+            <a class="sidebar-item active" id="nav-project-setup">
+                <span class="sidebar-item-icon">🏗️</span>
+                Project Setup
+            </a>
+            <a class="sidebar-item">
+                <span class="sidebar-item-icon">📚</span>
+                Knowledge Base
+                <span class="sidebar-item-badge" id="kb-count">0</span>
+            </a>
+            <a class="sidebar-item">
+                <span class="sidebar-item-icon">⚙️</span>
+                System Instructions
+            </a>
+            <a class="sidebar-item">
+                <span class="sidebar-item-icon">🧪</span>
+                Test Sandbox
+            </a>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">Active Projects</div>
+            <a class="sidebar-item">
+                <span class="sidebar-item-icon">📋</span>
+                Pre-Screen Prep
+                <span class="sidebar-item-badge">Live</span>
+            </a>
+            <a class="sidebar-item">
+                <span class="sidebar-item-icon">📊</span>
+                Call Synthesis
+                <span class="sidebar-item-badge">Live</span>
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-avatar">AL</div>
+            <div>
+                <div class="sidebar-user-name">System Administrator</div>
+                <div class="sidebar-user-role">Administrator</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="main-header">
+            <h1>
+                🏗️ New Project Configuration
+                <span class="header-badge" id="project-status">Draft</span>
+            </h1>
+            <div class="header-actions-row">
+                <button class="btn-admin btn-ghost" id="btn-discard">✕ Discard</button>
+                <button class="btn-admin btn-save" id="btn-save-project">💾 Save Project</button>
+            </div>
+        </div>
+
+        <div class="main-body">
+
+            <!-- Section 1: Project Identity -->
+            <div class="config-section">
+                <div class="config-section-header">
+                    <div class="config-section-title">
+                        <span class="icon">🏷️</span> Project Identity
+                    </div>
+                </div>
+                <div class="config-section-body">
+                    <div class="project-name-row">
+                        <input type="text" class="project-name-input" id="project-name" placeholder="Enter project name..." value="">
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.35rem;">AI Provider</label>
+                            <select class="project-name-input" style="width: 100%; font-weight: 500; font-size: 0.85rem;">
+                                <option>Anthropic (Claude 3.5 Sonnet)</option>
+                                <option>Anthropic (Claude 3.5 Haiku)</option>
+                                <option>Mistral Large</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.35rem;">Output Format</label>
+                            <select class="project-name-input" style="width: 100%; font-weight: 500; font-size: 0.85rem;">
+                                <option>Structured (10-Point Dossier)</option>
+                                <option>Free-Form Narrative</option>
+                                <option>JSON Schema</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Knowledge Base Upload -->
+            <div class="config-section">
+                <div class="config-section-header">
+                    <div class="config-section-title">
+                        <span class="icon">📚</span> Knowledge Base Files
+                    </div>
+                    <span style="font-size: 0.75rem; color: var(--text-dark);" id="file-counter">0 files uploaded</span>
+                </div>
+                <div class="config-section-body">
+                    <div class="upload-zone" id="upload-zone">
+                        <div>
+                            <div class="upload-icon">📁</div>
+                            <div class="upload-title">Drag & drop files here, or click to browse</div>
+                            <div class="upload-subtitle">Supported: PDF, DOCX, TXT, CSV, JSON &middot; Max 50MB per file</div>
+                        </div>
+                    </div>
+                    <div class="uploaded-files" id="uploaded-files"></div>
+                </div>
+            </div>
+
+            <!-- Section 3: System Instructions (Mega-Prompt) -->
+            <div class="config-section">
+                <div class="config-section-header">
+                    <div class="config-section-title">
+                        <span class="icon">📝</span> Custom System Instructions
+                    </div>
+                    <span style="font-size: 0.75rem; color: var(--text-dark);">Mega-Prompt v3.2</span>
+                </div>
+                <div class="config-section-body">
+                    <div class="prompt-editor-wrapper">
+                        <div class="prompt-editor-toolbar">
+                            <span class="prompt-editor-lang">System Prompt</span>
+                            <span class="prompt-editor-meta" id="char-count">0 characters</span>
+                        </div>
+                        <textarea class="prompt-editor" id="prompt-editor" spellcheck="false" placeholder="Paste or type your system instructions here..."></textarea>
+                    </div>
+                    <div class="token-counter" id="token-counter" style="display: none;">
+                        <div class="token-stat">
+                            <span class="token-stat-label">Characters</span>
+                            <span class="token-stat-value primary" id="stat-chars">0</span>
+                        </div>
+                        <div class="token-stat">
+                            <span class="token-stat-label">Est. Tokens</span>
+                            <span class="token-stat-value" id="stat-tokens">0</span>
+                        </div>
+                        <div class="token-bar">
+                            <div class="token-bar-fill" id="token-bar-fill" style="width: 0%;"></div>
+                        </div>
+                        <div class="token-stat">
+                            <span class="token-stat-label">Context Used</span>
+                            <span class="token-stat-value" id="stat-pct">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div class="admin-toast" id="admin-toast">
+        ✅ <span id="toast-msg">Project saved successfully</span>
+    </div>
+
+    <script>
+        // ── Knowledge Base File Upload Simulation ──
+        const FILES_DB = [
+            { name: "Octane_Service_Catalog_2025.pdf", size: "2.4 MB", type: "📄" },
+            { name: "Competitor_Profiles_AU_Market.pdf", size: "1.8 MB", type: "📄" },
+            { name: "Pricing_Frameworks_v4.pdf", size: "890 KB", type: "📄" },
+            { name: "TM1_Case_Studies_Portfolio.pdf", size: "3.1 MB", type: "📄" },
+            { name: "Sales_Qualification_Playbook.docx", size: "540 KB", type: "📝" },
+        ];
+
+        const uploadZone = document.getElementById("upload-zone");
+        const uploadedFiles = document.getElementById("uploaded-files");
+        const fileCounter = document.getElementById("file-counter");
+        const kbCount = document.getElementById("kb-count");
+        let uploadedCount = 0;
+
+        function simulateUpload(file, delay) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const el = document.createElement("div");
+                    el.className = "uploaded-file";
+                    el.innerHTML = `
+                        <span class="file-icon">${file.type}</span>
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-meta">${file.size}</div>
+                        </div>
+                        <span class="file-status processing">Processing...</span>
+                    `;
+                    el.style.animationDelay = `${delay * 0.05}s`;
+                    uploadedFiles.appendChild(el);
+
+                    setTimeout(() => {
+                        el.querySelector(".file-status").className = "file-status uploaded";
+                        el.querySelector(".file-status").textContent = "Indexed";
+                        uploadedCount++;
+                        fileCounter.textContent = `${uploadedCount} file${uploadedCount > 1 ? "s" : ""} uploaded`;
+                        kbCount.textContent = uploadedCount;
+                        resolve();
+                    }, 800 + delay * 200);
+                }, delay * 400);
+            });
+        }
+
+        uploadZone.addEventListener("click", async function() {
+            if (uploadedCount > 0) return;
+            uploadZone.classList.add("active");
+            uploadZone.querySelector(".upload-title").textContent = "Uploading files...";
+            for (let i = 0; i < FILES_DB.length; i++) {
+                await simulateUpload(FILES_DB[i], i);
+            }
+            uploadZone.querySelector(".upload-title").textContent = "All files indexed successfully";
+            uploadZone.querySelector(".upload-icon").textContent = "✅";
+        });
+
+        // ── System Prompt Editor ──
+        const MEGA_PROMPT = `You are "Tiny", an elite B2B sales intelligence co-processor built for Octane Solutions.
+
+ROLE: Pre-Screen Preparation & Post-Call Synthesis Engine.
+
+INPUTS YOU WILL RECEIVE:
+1. Prospect Intake Form (from HubSpot Booking)
+2. LinkedIn Profile Export (PDF or text)
+3. Historical SOW / Documents (from Google Drive)
+4. Call Transcript (from Fathom / 3CX recording)
+
+─── PRE-SCREEN MODE ───
+When given inputs 1-3, generate the 10-POINT PREP DOSSIER:
+
+  1. COMPANY SNAPSHOT: Size, industry, revenue band, key markets
+  2. DECISION MAKER PROFILE: Role, tenure, reporting line, career trajectory
+  3. TECHNICAL LANDSCAPE: Current tech stack, ERP, planning tools
+  4. PAIN POINT HYPOTHESIS: Top 3 likely pain points based on role + industry
+  5. COMPETITOR MAPPING: Known or likely vendors they are evaluating
+  6. SERVICE TRACK ALIGNMENT: Map to Octane service lines (TM1, NetSuite, etc.)
+  7. BUDGET SIGNALS: Public funding rounds, job postings, expansion indicators
+  8. CONVERSATION STARTERS: 3 tailored icebreakers referencing their background
+  9. RISK FLAGS: Red flags (budget constraints, long decision cycles, tire-kickers)
+ 10. RECOMMENDED PLAYBOOK: Variant A, B, or C based on prospect profile
+
+─── POST-CALL SYNTHESIS MODE ───
+When given input 4 (transcript), generate these 6 DELIVERABLES:
+
+  A. RECAP EMAIL: Professional follow-up email summarizing discussion and next steps
+  B. EXECUTIVE SUMMARY: One-page deal summary for CRM ticket
+  C. DETAILED NOTES: Timestamped key points from the conversation
+  D. QUESTIONNAIRE MAPPING: Map answers to the 12-question qualification battlecard
+  E. ACTION ITEMS: Assigned tasks with owners and deadlines
+  F. PRELIMINARY PROPOSAL: Service scope, timeline, and pricing (from Catalog ONLY)
+
+CRITICAL RULES:
+- All pricing MUST come from the uploaded Service Catalog. Never hallucinate prices.
+- All competitor mentions must be verified against the Competitor Profiles document.
+- Output must be in structured markdown with clear section headers.
+- Tone: Clinical, professional B2B. No fluff, no filler.`;
+
+        const promptEditor = document.getElementById("prompt-editor");
+        const charCount = document.getElementById("char-count");
+        const tokenCounter = document.getElementById("token-counter");
+        const statChars = document.getElementById("stat-chars");
+        const statTokens = document.getElementById("stat-tokens");
+        const statPct = document.getElementById("stat-pct");
+        const tokenBarFill = document.getElementById("token-bar-fill");
+
+        promptEditor.addEventListener("input", updateTokenStats);
+
+        function updateTokenStats() {
+            const len = promptEditor.value.length;
+            const tokens = Math.round(len / 3.8);
+            const maxTokens = 200000;
+            const pct = Math.min(100, (tokens / maxTokens) * 100);
+
+            charCount.textContent = `${len.toLocaleString()} characters`;
+            statChars.textContent = len.toLocaleString();
+            statTokens.textContent = tokens.toLocaleString();
+            statPct.textContent = `${pct.toFixed(1)}%`;
+            tokenBarFill.style.width = `${pct}%`;
+
+            if (len > 0) {
+                tokenCounter.style.display = "flex";
+            }
+        }
+
+        // ── Simulate Typing the Mega-Prompt ──
+        window.pasteSystemPrompt = function() {
+            promptEditor.value = MEGA_PROMPT;
+            updateTokenStats();
+        };
+
+        // ── Project Name ──
+        const projectNameInput = document.getElementById("project-name");
+        window.setProjectName = function(name) {
+            projectNameInput.value = "";
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < name.length) {
+                    projectNameInput.value += name[i];
+                    i++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 35);
+        };
+
+        // ── Save Project ──
+        const btnSave = document.getElementById("btn-save-project");
+        const projectStatus = document.getElementById("project-status");
+        const toast = document.getElementById("admin-toast");
+
+        btnSave.addEventListener("click", function() {
+            btnSave.textContent = "✅ Saved";
+            btnSave.classList.add("saved");
+            projectStatus.textContent = "Active";
+            projectStatus.style.borderColor = "var(--green)";
+            projectStatus.style.color = "var(--green)";
+            toast.classList.add("active");
+            setTimeout(() => toast.classList.remove("active"), 3000);
+        });
+
+        window.saveProject = function() {
+            btnSave.click();
+        };
+    </script>
+</body>
+</html>
