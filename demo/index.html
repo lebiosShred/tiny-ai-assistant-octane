@@ -217,12 +217,22 @@
                                         </select>
                                     </div>
                                 </div>
+                                    <div class="form-group">
+                                        <label for="prep-track">Service Track Interest</label>
+                                        <select id="prep-track" class="form-input select-input">
+                                            <option value="Planning & Analytics (TM1)">Planning & Analytics (TM1)</option>
+                                            <option value="AI">AI</option>
+                                        </select>
+                                    </div>
+                                </div>
                                 <div class="form-group">
-                                    <label for="prep-track">Service Track Interest</label>
-                                    <select id="prep-track" class="form-input select-input">
-                                        <option value="Planning & Analytics (TM1)">Planning & Analytics (TM1)</option>
-                                        <option value="AI">AI</option>
-                                    </select>
+                                    <label for="prep-intake">Booking Intake Answers / What they want to discuss</label>
+                                    <textarea id="prep-intake" class="form-input textarea-input" placeholder="Paste booking notes or specific discussion points here..." style="min-height: 60px; margin-top: 0.25rem;"></textarea>
+                                </div>
+                                <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; background: rgba(0,0,0,0.02); padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(0,0,0,0.05);">
+                                    <input type="checkbox" id="prep-crm-sync" class="form-checkbox" style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer;" checked>
+                                    <label for="prep-crm-sync" style="margin: 0; cursor: pointer; color: var(--text-dark); font-weight: 500;">CRM Sync: Verify HubSpot History</label>
+                                </div>
                                                         <div class="form-group">
                                     <label>Google Drive Client folders connection</label>
                                     <div class="gdrive-status-bar" style="display: flex; align-items: center; justify-content: space-between; background: rgba(26, 115, 232, 0.05); border: 1px solid rgba(26, 115, 232, 0.15); padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.5rem;">
@@ -327,10 +337,17 @@
                                 <!-- Positional Meeting Booking Panel -->
                                 <div class="positional-meeting-panel" id="positional-meeting-panel">
                                     <div class="positional-meeting-header">
-                                        <span>📅 Book Positional Meeting with System Administrator</span>
+                                        <span>📅 Book Positional Meeting with Directors</span>
                                         <span class="positional-meeting-travel" id="positional-travel-distance"></span>
                                     </div>
-                                    <div class="positional-meeting-body">
+                                    <div class="positional-meeting-body" style="flex-wrap: wrap;">
+                                        <div class="form-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
+                                            <label for="positional-director">Director Calendar</label>
+                                            <select id="positional-director" class="form-input select-input">
+                                                <option value="amendra">Amendra's Calendar</option>
+                                                <option value="steny">Steny's Calendar</option>
+                                            </select>
+                                        </div>
                                         <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
                                             <label for="positional-date">Date</label>
                                             <input type="date" id="positional-date" class="form-input">
@@ -347,7 +364,7 @@
                                                 <option value="phone">Phone</option>
                                             </select>
                                         </div>
-                                        <button type="button" class="btn btn-primary" id="positional-confirm-btn" style="align-self: flex-end; height: 34px; font-size: 0.8rem;">📅 Confirm Booking</button>
+                                        <button type="button" class="btn btn-primary" id="positional-confirm-btn" style="align-self: flex-end; height: 34px; font-size: 0.8rem; margin-top: auto;">📅 Confirm Booking</button>
                                     </div>
                                 </div>
                                 <div class="add-question-wrapper" style="margin-top: 0.25rem;">

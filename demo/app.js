@@ -1472,7 +1472,26 @@ document.addEventListener('DOMContentLoaded', () => {
         goToStep(2);
     });
     step2BackBtn.addEventListener('click', () => goToStep(1));
-    step2NextBtn.addEventListener('click', () => goToStep(3));
+    step2NextBtn.addEventListener('click', () => {
+        const activeOutcome = callOutcomeBar?.querySelector('.outcome-btn.active')?.getAttribute('data-outcome');
+        if (activeOutcome === 'completed' && positionalConfirmBtn && !positionalConfirmBtn.disabled) {
+            showToast('⚠️ Mandatory Action: You must book a Positional Meeting with a Director before proceeding.');
+            
+            // Highlight the positional meeting panel
+            const panel = document.getElementById('positional-meeting-panel');
+            if (panel) {
+                panel.style.border = '2px solid var(--primary)';
+                panel.style.boxShadow = '0 0 10px rgba(26, 115, 232, 0.3)';
+                panel.scrollIntoView({ behavior: 'smooth' });
+                setTimeout(() => {
+                    panel.style.border = '';
+                    panel.style.boxShadow = '';
+                }, 3000);
+            }
+            return;
+        }
+        goToStep(3);
+    });
     step3BackBtn.addEventListener('click', () => {
         goToStep(2);
     });
@@ -1507,10 +1526,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const date = document.getElementById('positional-date')?.value;
             const time = document.getElementById('positional-time')?.value;
             const format = document.getElementById('positional-format')?.value;
+            const directorSelect = document.getElementById('positional-director')?.value || 'amendra';
             
             if (!date || !time) {
                 showToast('Please select a date and time for the positional meeting.');
                 return;
+            }
+            
+            let directorName = "Amendra Pratap";
+            let directorEmail = "amendra.pratap@octanesolutions.com.au";
+            if (directorSelect === 'steny') {
+                directorName = "Steny";
+                directorEmail = "steny@octanesolutions.com.au";
             }
             
             const clientName = prepNameInput.value.trim() || 'Client';
@@ -1549,12 +1576,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 `DTSTART:${dtstart}`,
                 `DTEND:${dtend}`,
                 `SUMMARY:Positional Meeting: Octane Software Solutions & ${companyName}`,
-                `DESCRIPTION:Positional Meeting to discuss FP\\&A or AI requirements.\\n\\nClient: ${clientName}\\nCompany: ${companyName}\\nFormat: ${format}`,
+                `DESCRIPTION:Positional Meeting to discuss FP\\&A or AI requirements.\\n\\nClient: ${clientName}\\nCompany: ${companyName}\\nDirector: ${directorName}\\nFormat: ${format}`,
                 `LOCATION:${location}`,
                 'STATUS:CONFIRMED',
-                'ORGANIZER;CN="System Administrator":MAILTO:admin@octanesolutions.com.au',
+                `ORGANIZER;CN="${directorName}":MAILTO:${directorEmail}`,
                 `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN="${clientName}":MAILTO:${clientEmail}`,
-                'ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="System Administrator":MAILTO:System Administrator.pratap@octanesolutions.com.au',
+                `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="${directorName}":MAILTO:${directorEmail}`,
                 'END:VEVENT',
                 'END:VCALENDAR'
             ].join('\r\n');
@@ -1588,8 +1615,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05); border-radius: 6px; padding: 0.5rem; font-size: 0.75rem; color: #333; display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem;">
                                 <div><strong>Date/Time:</strong> ${dateStr} at ${time} (UTC)</div>
                                 <div><strong>Location:</strong> ${location}</div>
-                                <div><strong>Organizer:</strong> System Administrator</div>
-                                <div><strong>Attendees:</strong> System Administrator, ${clientName} (${clientEmail})</div>
+                                <div><strong>Director:</strong> ${directorName}</div>
+                                <div><strong>Attendees:</strong> ${directorName}, ${clientName} (${clientEmail})</div>
                             </div>
                         </div>
                     `;
@@ -2174,7 +2201,8 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
             gDriveFileContent: attachedGDriveFileContent,
             track: prepTrackSelect?.value || '',
             intakeAnswers: prepIntakeText?.value?.trim() || '',
-            linkedinInfo: prepLinkedinText?.value?.trim() || ''
+            linkedinInfo: prepLinkedinText?.value?.trim() || '',
+            crmSync: document.getElementById('prep-crm-sync')?.checked || false
         };
 
         if (!params.name || !params.company) {
@@ -2226,6 +2254,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
                 url: params.url,
                 intakeAnswers: params.intakeAnswers,
                 linkedinInfo: params.linkedinInfo,
+                crmSync: params.crmSync,
                 content: resultHtml
             };
             fetch('/api/history', {
