@@ -22,8 +22,8 @@
             </div>
             <nav class="app-nav">
                 <button class="nav-btn active" id="nav-pipeline">Pipeline</button>
-                <a href="/docs" class="header-link" target="_blank">Documentation</a>
-                <a href="/book" class="header-link">Booking Page</a>
+                <a href="/docs" class="nav-btn" target="_blank">Documentation</a>
+                <a href="/book" class="nav-btn">Booking Page</a>
             </nav>
 
             <a href="admin_setup.html" class="btn btn-secondary header-admin-btn">⚙ Admin Console</a>
@@ -219,37 +219,20 @@
                                 </div>
 
 
-                                <!-- Positional Meeting Booking Panel -->
                                 <div class="positional-meeting-panel" id="positional-meeting-panel">
                                     <div class="positional-meeting-header">
                                         <span>📅 Book Positional Meeting with Directors</span>
                                         <span class="positional-meeting-travel" id="positional-travel-distance"></span>
                                     </div>
                                     <div class="positional-meeting-body wrap">
-                                        <div class="form-group min-140 mb-0">
+                                        <div class="form-group min-140 mb-0 flex-grow-1">
                                             <label for="positional-director">Director Calendar</label>
                                             <select id="positional-director" class="form-input select-input">
                                                 <option value="amendra">Amendra's Calendar</option>
                                                 <option value="steny">Steny's Calendar</option>
                                             </select>
                                         </div>
-                                        <div class="form-group min-120 mb-0">
-                                            <label for="positional-date">Date</label>
-                                            <input type="date" id="positional-date" class="form-input">
-                                        </div>
-                                        <div class="form-group min-100 mb-0">
-                                            <label for="positional-time">Time</label>
-                                            <input type="time" id="positional-time" class="form-input">
-                                        </div>
-                                        <div class="form-group min-120 mb-0">
-                                            <label for="positional-format">Format</label>
-                                            <select id="positional-format" class="form-input select-input">
-                                                <option value="in-person">In-Person</option>
-                                                <option value="online">Online (Teams/Zoom)</option>
-                                                <option value="phone">Phone</option>
-                                            </select>
-                                        </div>
-                                        <button type="button" class="btn btn-primary btn-sm align-end mt-auto" id="positional-confirm-btn">📅 Confirm Booking</button>
+                                        <button type="button" class="btn btn-primary btn-sm align-end mt-auto" id="positional-confirm-btn">📅 Book via HubSpot</button>
                                     </div>
                                 </div>
                                 <div class="add-question-wrapper mt-1">

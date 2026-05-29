@@ -328,6 +328,32 @@ def scroll_smoothly(page, selector_or_window, pixels, steps=10, delay_ms=40):
 
 def scene_module_1_capture(page, scene_id):
     page.goto(BOOK_URL)
+    
+    # [ENTERPRISE] Mock out HubSpot CRM Embed to avoid spamming production calendar
+    page.route("**/MeetingsEmbedCode.js*", lambda route: route.fulfill(
+        status=200,
+        content_type="application/javascript",
+        body="""
+            setTimeout(() => {
+                const container = document.querySelector('.meetings-iframe-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="calendar-mock-grid" id="calendar-days-grid" style="display:flex;gap:10px;">
+                            <button type="button" class="calendar-day" data-day="27">27</button>
+                        </div>
+                        <button type="button" class="time-slot-btn" style="margin-top:10px;">10:30 AM</button>
+                        <button type="button" id="btn-confirm-booking" class="booking-btn booking-btn--primary" style="margin-top:10px;">Confirm</button>
+                    `;
+                    // Re-bind the mock confirm button to trigger step 3
+                    document.getElementById('btn-confirm-booking').addEventListener('click', () => {
+                        document.getElementById('booking-step-calendar').style.display = 'none';
+                        document.getElementById('booking-step-details').style.display = 'block';
+                    });
+                }
+            }, 500);
+        """
+    ))
+
     page.evaluate("localStorage.setItem('tiny_demo_mode', 'true')")
     page.reload()
     page.wait_for_selector("#custom-reason-trigger")
@@ -643,15 +669,13 @@ def scene_module_4_execution(page, scene_id):
     
     print("    Booking positional meeting...")
     scroll_smoothly(page, "window", 400, steps=8)
-    from datetime import datetime, timedelta
-    future_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
-    page.locator("#positional-date").fill(future_date)
-    page.locator("#positional-time").fill("14:00")
-    page.select_option("#positional-format", value="online")
     
     sync_action(page, scene_id, "confirm_booking")
-    with page.expect_download() as download_info:
+    with page.context.expect_page() as new_page_info:
         click_smoothly(page, "#positional-confirm-btn")
+    hubspot_page = new_page_info.value
+    hubspot_page.wait_for_timeout(1500)
+    hubspot_page.close()
     page.wait_for_timeout(1000)
     
     print("    Completing call...")

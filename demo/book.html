@@ -195,46 +195,8 @@
                                 configured for Albert + Isha.
                                 =======================================================
                             -->
-                            <div class="meetings-iframe-placeholder">
-                                <!-- Placeholders matching the selections for demonstration -->
-                                <div class="selected-meeting-info-card">
-                                    <div class="selected-meeting-title" id="selected-meeting-title">Discovery Call</div>
-                                    <div class="selected-meeting-desc" id="selected-meeting-desc">Please choose a convenient date and time on the calendar below.</div>
-                                </div>
-                                
-                                <div class="scheduler-container">
-                                    <!-- Left: Calendar Day Picker -->
-                                    <div class="calendar-mock-iframe">
-                                        <div class="calendar-mock-header">
-                                            <span>May 2026</span>
-                                        </div>
-                                        <div class="calendar-mock-grid" id="calendar-days-grid">
-                                            <button type="button" class="calendar-day" data-day="25">25</button>
-                                            <button type="button" class="calendar-day calendar-day--active" data-day="26">26</button>
-                                            <button type="button" class="calendar-day" data-day="27">27</button>
-                                            <button type="button" class="calendar-day" data-day="28">28</button>
-                                            <button type="button" class="calendar-day" data-day="29">29</button>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Right: Time Slots Picker -->
-                                    <div class="time-slots-container">
-                                        <div class="time-slots-header" id="time-slots-header">Times for May 26</div>
-                                        <div class="time-slots-grid" id="time-slots-grid">
-                                            <!-- Injected dynamically by JS -->
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Booking Confirmation Details -->
-                                <div id="booking-confirmation-details" class="booking-confirmation-details" style="display: none;">
-                                    <p class="confirmation-summary-text">Selected: <strong id="summary-date-time">May 26 @ 10:30 AM</strong></p>
-                                    <button type="button" id="btn-confirm-booking" class="booking-btn booking-btn--primary">Next: Enter Your Details <span>→</span></button>
-                                </div>
-                            </div>
-                            <div class="calendar-dev-hint">
-                                ⚠ Replace this placeholder with your HubSpot embed code. See HTML comments for instructions.
-                            </div>
+                            <script type="text/javascript" src="https://static.hsappstatic.net/MeetingsEmbed/ex/MeetingsEmbedCode.js"></script>
+                            <div class="meetings-iframe-container" data-src="https://meetings.hubspot.com/amendra-pratap?embed=true"></div>
                         </div>
                     </div>
 

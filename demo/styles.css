@@ -488,6 +488,14 @@ body.resizing * {
     color: var(--text-main);
 }
 
+.output-results {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    position: relative;
+    gap: 1rem;
+}
+
 .output-console {
     background: rgba(14, 165, 233, 0.02);
     border: 1px solid var(--border-glass);
@@ -1653,6 +1661,7 @@ body.resizing * {
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-decoration: none;
 }
 .app-nav .nav-btn:hover {
     color: var(--text-main);

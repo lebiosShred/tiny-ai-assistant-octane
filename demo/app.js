@@ -1452,106 +1452,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const positionalConfirmBtn = document.getElementById('positional-confirm-btn');
     if (positionalConfirmBtn) {
         positionalConfirmBtn.addEventListener('click', () => {
-            const date = document.getElementById('positional-date')?.value;
-            const time = document.getElementById('positional-time')?.value;
-            const format = document.getElementById('positional-format')?.value;
             const directorSelect = document.getElementById('positional-director')?.value || 'amendra';
-            
-            if (!date || !time) {
-                showToast('Please select a date and time for the positional meeting.');
-                return;
-            }
-            
-            let directorName = "Amendra Pratap";
-            let directorEmail = "amendra.pratap@octanesolutions.com.au";
-            if (directorSelect === 'steny') {
-                directorName = "Steny";
-                directorEmail = "steny@octanesolutions.com.au";
-            }
             
             const clientName = prepNameInput.value.trim() || 'Client';
             const companyName = prepCompanyInput.value.trim() || 'Prospect';
             const clientEmail = prepEmailInput.value.trim() || 'client@company.com';
             
-            const start = new Date(date + 'T' + time);
-            const end = new Date(start.getTime() + 30 * 60 * 1000); // 30-min duration
-            
-            const formatICSDate = (dateObj) => {
-                const pad = num => String(num).padStart(2, '0');
-                return dateObj.getUTCFullYear() +
-                    pad(dateObj.getUTCMonth() + 1) +
-                    pad(dateObj.getUTCDate()) + 'T' +
-                    pad(dateObj.getUTCHours()) +
-                    pad(dateObj.getUTCMinutes()) +
-                    pad(dateObj.getUTCSeconds()) + 'Z';
-            };
-
-            const dtstamp = formatICSDate(new Date());
-            const dtstart = formatICSDate(start);
-            const dtend = formatICSDate(end);
-            
-            const location = format === 'in-person' ? "Richmond, Melbourne, VIC 3121" : "Online Microsoft Teams/Zoom Meeting";
-            
-            // Construct ICS format content
-            const icsContent = [
-                'BEGIN:VCALENDAR',
-                'VERSION:2.0',
-                'PRODID:-//Octane Software Solutions//AI Assistant//EN',
-                'CALSCALE:GREGORIAN',
-                'METHOD:REQUEST',
-                'BEGIN:VEVENT',
-                `UID:meeting_${Date.now()}@octanesolutions.com.au`,
-                `DTSTAMP:${dtstamp}`,
-                `DTSTART:${dtstart}`,
-                `DTEND:${dtend}`,
-                `SUMMARY:Positional Meeting: Octane Software Solutions & ${companyName}`,
-                `DESCRIPTION:Positional Meeting to discuss FP\\&A or AI requirements.\\n\\nClient: ${clientName}\\nCompany: ${companyName}\\nDirector: ${directorName}\\nFormat: ${format}`,
-                `LOCATION:${location}`,
-                'STATUS:CONFIRMED',
-                `ORGANIZER;CN="${directorName}":MAILTO:${directorEmail}`,
-                `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN="${clientName}":MAILTO:${clientEmail}`,
-                `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="${directorName}":MAILTO:${directorEmail}`,
-                'END:VEVENT',
-                'END:VCALENDAR'
-            ].join('\r\n');
-            
             try {
-                // Download the ICS file in the browser
-                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8;' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.setAttribute('download', `positional-meeting-${companyName.replace(/[^a-zA-Z0-9]/g, '_')}.ics`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                // Redirect to director's HubSpot calendar
+                const hubspotUrl = directorSelect === 'steny' 
+                    ? 'https://meetings.hubspot.com/steny' 
+                    : 'https://meetings.hubspot.com/amendra-pratap';
+                    
+                window.open(hubspotUrl, '_blank');
                 
-                const dateStr = start.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                positionalConfirmBtn.innerText = '📅 Invite Downloaded';
+                positionalConfirmBtn.innerText = '📅 Opened Calendar';
                 positionalConfirmBtn.disabled = true;
                 positionalConfirmBtn.style.background = '#00c853';
                 
                 // Update UI state to show visual confirmation card
                 const bodyEl = document.querySelector('#positional-meeting-panel .positional-meeting-body');
                 if (bodyEl) {
+                    const directorName = directorSelect === 'steny' ? 'Steny' : 'Amendra Pratap';
                     bodyEl.innerHTML = `
                         <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%; padding: 0.25rem 0;">
                             <div style="display: flex; align-items: center; gap: 6px; color: #00c853; font-weight: 700; font-size: 0.8rem;">
-                                <span>✔️ Positional Meeting invite generated.</span>
+                                <span>✔️ Redirected to HubSpot Calendar.</span>
                             </div>
                             <p style="font-size: 0.75rem; color: rgba(0,0,0,0.6); margin: 0; line-height: 1.3;">
-                                Double-click the downloaded <strong>.ics</strong> file to add this event to Outlook or Google Calendar.
+                                Calendar booking opened in a new tab. Please complete the booking for <strong>${clientName}</strong> with <strong>${directorName}</strong> directly in HubSpot.
                             </p>
-                            <div style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05); border-radius: 6px; padding: 0.5rem; font-size: 0.75rem; color: #333; display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem;">
-                                <div><strong>Date/Time:</strong> ${dateStr} at ${time} (UTC)</div>
-                                <div><strong>Location:</strong> ${location}</div>
-                                <div><strong>Director:</strong> ${directorName}</div>
-                                <div><strong>Attendees:</strong> ${directorName}, ${clientName} (${clientEmail})</div>
-                            </div>
                         </div>
                     `;
                 }
                 
-                showToast(`Calendar invite downloaded: ${dateStr} at ${time} (${format})`);
+                showToast(`Opened HubSpot Calendar`);
             } catch (err) {
                 console.error("Failed to generate calendar invite:", err);
                 showToast(`Error creating calendar invite: ${err.message}`);

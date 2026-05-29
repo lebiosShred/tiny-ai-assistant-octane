@@ -436,7 +436,7 @@ async def scene_01(ws, vp):
 
     # Click "Booking Page" header link to go back
     print("    Returning to booking page...")
-    await click_elem(ws, "header a[href='book.html']", vp)
+    await click_elem(ws, "header a[href='/book']", vp)
     await asyncio.sleep(2.0)
     vp.update(await get_viewport_info(ws))
     await wait_for_selector(ws, "#meeting-reason", timeout=5)
@@ -693,7 +693,7 @@ async def scene_06(ws, vp):
 
     # Click "Documentation" header link
     print("    Navigating to Documentation for Question Playbook...")
-    await click_elem(ws, "header a[href='docs.html']", vp)
+    await click_elem(ws, "header a[href='/docs']", vp)
     await asyncio.sleep(2.0)
     vp.update(await get_viewport_info(ws))
     await wait_for_selector(ws, "#comp-03", timeout=5)
@@ -721,28 +721,6 @@ async def scene_06(ws, vp):
     print("    Booking positional meeting...")
     scroll_down(clicks=5, delay=0.15)
     await asyncio.sleep(1.0)
-
-    # Set positional meeting date (1 week from now via CDP)
-    from datetime import datetime, timedelta
-    future_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
-    pos = await elem_pos(ws, "#positional-date", vp)
-    if pos:
-        click_at(*pos, dur=0.4)
-        await asyncio.sleep(0.3)
-    await set_input_value(ws, "#positional-date", future_date)
-    await asyncio.sleep(0.5)
-
-    # Set time
-    pos = await elem_pos(ws, "#positional-time", vp)
-    if pos:
-        click_at(*pos, dur=0.3)
-        await asyncio.sleep(0.2)
-    await set_input_value(ws, "#positional-time", "14:00")
-    await asyncio.sleep(0.5)
-
-    # Set format to Online
-    await set_select(ws, "#positional-format", "online")
-    await asyncio.sleep(0.5)
 
     # Click "Confirm Booking"
     print("    Confirming positional meeting...")
@@ -840,7 +818,7 @@ async def scene_08(ws, vp):
 
     # Click "Documentation" header link
     print("    Navigating to Documentation for Services Catalog...")
-    await click_elem(ws, "header a[href='docs.html']", vp)
+    await click_elem(ws, "header a[href='/docs']", vp)
     await asyncio.sleep(2.0)
     vp.update(await get_viewport_info(ws))
     await wait_for_selector(ws, "#comp-05", timeout=5)
