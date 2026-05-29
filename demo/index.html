@@ -135,7 +135,7 @@
                                         <div class="gdrive-modal-content">
                                             <div class="gdrive-modal-header">
                                                 <h4>Browse Google Drive</h4>
-                                                <button type="button" id="gdrive-close-modal">✖</button>
+                                                <button type="button" id="gdrive-close-modal" aria-label="Close folder dialog">✖</button>
                                             </div>
                                             <div class="gdrive-folder-path">
                                                 <span>📂 root / Clients / <span id="gdrive-current-folder">Active Clients</span></span>
@@ -151,7 +151,7 @@
                                     <div id="gdrive-attached-badge" class="gdrive-attached-badge" style="display: none;">
                                         <span>📄</span>
                                         <span id="gdrive-attached-name">Meridian_Logistics_SOW_2025.pdf</span>
-                                        <button type="button" id="gdrive-attached-remove">❌</button>
+                                        <button type="button" id="gdrive-attached-remove" aria-label="Remove attached file">❌</button>
                                     </div>
                                 </div>
                                 <!-- Moved to top of Step 1 -->
@@ -168,7 +168,7 @@
                                     <button type="submit" class="btn btn-primary" id="prep-submit-btn">⚡ Generate Prep Briefing</button>
                                 </div>
                                 <div class="action-row footer-row end">
-                                    <button type="button" class="btn btn-primary hidden" id="step-1-next-btn">Next: Start Call ➡</button>
+                                    <button type="button" class="btn btn-primary hidden" id="step-1-next-btn">🚀 Launch Session (Bring Dossier) ➡</button>
                                 </div>
                             </form>
                         </div>
@@ -192,18 +192,6 @@
                                             <button type="button" class="outcome-btn" data-outcome="no-answer">📵 No Answer</button>
                                             <button type="button" class="outcome-btn" data-outcome="rescheduled">🔄 Rescheduled</button>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <!-- Collapsible Rapport Guide Panel -->
-                                <div class="rapport-guide-panel" id="rapport-guide-panel">
-                                    <div class="rapport-guide-header" id="rapport-guide-header">
-                                        <span>💡 Pre-Screen Call Rapport Guide</span>
-                                        <span id="rapport-guide-toggle-icon">▶ Expand</span>
-                                    </div>
-                                    <div class="rapport-guide-body" id="rapport-guide-body">
-                                        <!-- Loaded dynamically after dossier generation -->
-                                        <div class="italic muted">Generate a prep dossier first to view talking points.</div>
                                     </div>
                                 </div>
 
@@ -238,6 +226,27 @@
                                 <div class="add-question-wrapper mt-1">
                                     <button type="button" class="btn btn-secondary btn-dashed-primary w-100" id="battlecard-add-btn">➕ Add Custom Question</button>
                                 </div>
+                                        <div class="upload-recording-panel" id="upload-recording-panel">
+                                            <div class="upload-recording-header">
+                                                <span>🎙️ Upload Call Recording</span>
+                                                <span class="upload-format-hint">MP3, MP4, M4A, WAV</span>
+                                            </div>
+                                            <div class="upload-recording-body">
+                                                <div class="upload-dropzone" id="upload-dropzone">
+                                                    <input type="file" id="recording-file-input" accept=".mp3,.mp4,.m4a,.wav" hidden>
+                                                    <div class="upload-dropzone-content" id="upload-dropzone-content">
+                                                        <span class="upload-icon">📁</span>
+                                                        <span class="upload-text">Drag & drop a recording file here, or <button type="button" class="upload-browse-btn" id="upload-browse-btn">browse</button></span>
+                                                        <span class="upload-size-hint">Maximum file size: 500MB</span>
+                                                    </div>
+                                                    <div class="upload-progress hidden" id="upload-progress">
+                                                        <div class="upload-progress-bar" id="upload-progress-bar"></div>
+                                                        <span class="upload-status" id="upload-status">Uploading...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                 <div class="action-row footer-row wrap">
                                     <button type="button" class="btn btn-secondary" id="step-2-back-btn">⬅ Back to Prep</button>
                                     <button type="button" class="btn btn-secondary primary-outline" id="step-2-save-btn">💾 Save Questions</button>
@@ -301,9 +310,21 @@
             <div class="panel">
                 <div class="panel-header">
                     <span class="panel-title">AI Coprocessor Console</span>
+                    <button type="button" class="btn-console-maximize" id="console-maximize-btn" title="Toggle Widescreen Console" aria-label="Maximize Console">⛶</button>
                 </div>
                 
                 <div class="panel-body no-pad relative">
+                    <!-- Collapsible Rapport Guide Panel (Relocated to Right Column) -->
+                    <div class="rapport-guide-panel" id="rapport-guide-panel">
+                        <div class="rapport-guide-header" id="rapport-guide-header">
+                            <span>💡 Pre-Screen Call Rapport Guide</span>
+                            <span id="rapport-guide-toggle-icon">▶ Expand</span>
+                        </div>
+                        <div class="rapport-guide-body" id="rapport-guide-body">
+                            <!-- Loaded dynamically after dossier generation -->
+                            <div class="italic muted">Generate a prep dossier first to view talking points.</div>
+                        </div>
+                    </div>
                     
                     <div class="output-console" id="output-console">
                         
@@ -338,6 +359,30 @@
                                 <button class="doc-tab-btn" data-doc="proposal" onclick="setDocTab('proposal')">Proposal</button>
                                 <button class="doc-tab-btn" data-doc="actionItems" onclick="setDocTab('actionItems')">Action Items</button>
                                 <button class="doc-tab-btn" data-doc="transcript" onclick="setDocTab('transcript')">Transcript</button>
+                            </div>
+
+                            <!-- Lead Classification Panel -->
+                            <div class="lead-classification-panel hidden" id="lead-classification-panel">
+                                <div class="lead-classification-header">
+                                    <span class="lead-classification-title">📊 Lead Classification</span>
+                                    <span class="lead-confidence" id="lead-confidence">Confidence: --/10</span>
+                                </div>
+                                <div class="lead-classification-body">
+                                    <div class="lead-temperature" id="lead-temperature">
+                                        <span class="temperature-badge temperature-badge--pending" id="temperature-badge">⏳ Pending</span>
+                                        <span class="funnel-stage" id="funnel-stage">Stage: --</span>
+                                    </div>
+                                    <div class="lead-evidence" id="lead-evidence">
+                                        <div class="evidence-label">Transcript Evidence:</div>
+                                        <ul class="evidence-list" id="evidence-list">
+                                            <li class="evidence-placeholder">Generate reports to classify this lead.</li>
+                                        </ul>
+                                    </div>
+                                    <div class="lead-next-action" id="lead-next-action">
+                                        <span class="next-action-label">Recommended Action:</span>
+                                        <span class="next-action-text" id="next-action-text">--</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Document Content Panel -->
@@ -393,6 +438,7 @@
                     const btn = document.querySelector('.chatButton');
                     if (btn) {
                         clearInterval(interval);
+                        btn.setAttribute('aria-label', 'Open chatbot');
                         
                         // Show popover shortly after load
                         setTimeout(() => {

@@ -56,7 +56,7 @@
     <!-- ====== Top Navigation Header ====== -->
     <header class="booking-header">
         <div class="container" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-            <a href="/" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #FFFFFF; font-weight: 700; font-size: 1.1rem;">
+            <a href="/" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #1A1D20; font-weight: 700; font-size: 1.1rem;">
                 <img src="tiny.png" alt="Tiny AI Assistant Logo" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid #4daeeb;">
                 <span>Octane Booking</span>
             </a>
@@ -102,10 +102,10 @@
                     <div class="hosts-display" id="hosts-display-panel">
                         <div class="hosts-avatars" id="hosts-avatars-container">
                             <div class="host-avatar-circle" id="host-avatar-1">
-                                <img src="/demo/albert.png" alt="Albert" class="host-img">
+                                <img src="/albert.png" alt="Albert" class="host-img">
                             </div>
                             <div class="host-avatar-circle host-avatar-circle--overlap" id="host-avatar-2">
-                                <img src="/demo/isha.png" alt="Isha" class="host-img host-img--tall">
+                                <img src="/isha.png" alt="Isha" class="host-img host-img--tall">
                             </div>
                         </div>
                         <div class="hosts-text">
@@ -159,7 +159,7 @@
                         </div>
                     </div>
 
-                    <!-- STEP 2: Calendar Embed -->
+                    <!-- STEP 2: Calendar Selection -->
                     <div id="booking-step-calendar" class="booking-step" style="display: none;">
                         <div class="hero__calendar-header hero__calendar-header--with-back">
                             <button type="button" id="btn-back-step" class="btn-back" title="Change reason" aria-label="Go back">←</button>
@@ -169,34 +169,44 @@
                             </div>
                         </div>
                         <div class="hero__calendar-body">
-                            <!--
-                                =======================================================
-                                HUBSPOT CALENDAR WIDGET EMBED INSTRUCTIONS
-                                =======================================================
-                                Replace everything inside this <div> with the actual
-                                HubSpot meeting embed code:
+                            <div class="selected-meeting-info-card">
+                                <div class="selected-meeting-title" id="selected-meeting-title">Pre-Screen Discovery Call</div>
+                                <div class="selected-meeting-desc" id="selected-meeting-desc">30-minute introductory call to discuss your business challenges.</div>
+                            </div>
 
-                                OPTION A -- HubSpot Embed Script (Recommended):
-                                <script type="text/javascript"
-                                  src="https://static.hsappstatic.net/MeetingsEmbed/ex/MeetingsEmbedCode.js">
-                                </script>
-                                <div class="meetings-iframe-container"
-                                  data-src="https://meetings.hubspot.com/YOUR-LINK?embed=true">
+                            <div class="scheduler-container">
+                                <div class="calendar-mock-iframe">
+                                    <div class="calendar-mock-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                        <button type="button" id="btn-prev-month" class="btn-month-nav" title="Previous Month" style="background: none; border: none; color: inherit; cursor: pointer; font-size: 1rem; opacity: 0.6; transition: opacity 0.2s;">◀</button>
+                                        <div class="calendar-mock-header" style="font-size: 0.95rem; font-weight: 700; color: var(--text-white); margin-bottom: 0;">
+                                            <span id="calendar-month-display">May 2026</span>
+                                        </div>
+                                        <button type="button" id="btn-next-month" class="btn-month-nav" title="Next Month" style="background: none; border: none; color: inherit; cursor: pointer; font-size: 1rem; opacity: 0.6; transition: opacity 0.2s;">▶</button>
+                                    </div>
+                                    <div class="calendar-weekdays" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase;">
+                                        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                                    </div>
+                                    <div class="calendar-mock-grid" id="calendar-days-grid">
+                                        <!-- Days are rendered dynamically by JS -->
+                                    </div>
                                 </div>
 
-                                OPTION B -- Direct iFrame:
-                                <iframe
-                                  src="https://meetings.hubspot.com/YOUR-LINK?embed=true"
-                                  style="width:100%;height:100%;min-height:450px;border:none;"
-                                  title="Book a call with Octane">
-                                </iframe>
+                                <div class="time-slots-container">
+                                    <div class="time-slots-header" id="time-slots-header">Select a time</div>
+                                    <div class="time-slots-grid" id="time-slots-grid">
+                                        <!-- Time slots are rendered dynamically by JS -->
+                                    </div>
+                                </div>
+                            </div>
 
-                                Replace YOUR-LINK with the round-robin meeting link
-                                configured for Albert + Isha.
-                                =======================================================
-                            -->
-                            <script type="text/javascript" src="https://static.hsappstatic.net/MeetingsEmbed/ex/MeetingsEmbedCode.js"></script>
-                            <div class="meetings-iframe-container" data-src="https://meetings.hubspot.com/amendra-pratap?embed=true"></div>
+                            <div class="booking-confirmation-details" id="booking-confirmation-details" style="display: none;">
+                                <div class="confirmation-summary-text">
+                                    You selected <strong id="summary-date-time">May 26 @ 10:30 AM</strong>.
+                                </div>
+                                <button type="button" id="btn-confirm-booking" class="booking-btn booking-btn--primary">
+                                    Next: Enter Your Details <span>→</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -439,10 +449,10 @@
                 subtitle: 'You will be matched with Albert or Isha based on availability.',
                 html: `
                     <div class="host-avatar-circle" id="host-avatar-1">
-                        <img src="/demo/albert.png" alt="Albert" class="host-img">
+                        <img src="/albert.png" alt="Albert" class="host-img">
                     </div>
                     <div class="host-avatar-circle host-avatar-circle--overlap" id="host-avatar-2">
-                        <img src="/demo/isha.png" alt="Isha" class="host-img host-img--tall">
+                        <img src="/isha.png" alt="Isha" class="host-img host-img--tall">
                     </div>
                 `
             },
@@ -588,35 +598,67 @@
             const isKevin = (host === 'Kevin');
             calendarGrid.innerHTML = '';
             
-            let days = [];
+            let availableDays = [];
+            let monthIndex = 4; // May (0-indexed)
             let monthName = 'May 2026';
             if (isKevin) {
-                // Kevin gets next week (1-week buffer)
-                days = ['01', '02', '03', '04', '05'];
+                // Kevin gets next week (1-week buffer) in June
+                availableDays = ['01', '02', '03', '04', '05'];
+                monthIndex = 5; // June
                 monthName = 'June 2026';
             } else {
-                // Others get this week
-                days = ['25', '26', '27', '28', '29'];
+                // Others get this week in May
+                availableDays = ['25', '26', '27', '28', '29'];
+                monthIndex = 4; // May
                 monthName = 'May 2026';
             }
             
             // Update calendar header month
-            const monthHeader = document.querySelector('.calendar-mock-header span');
+            const monthHeader = document.getElementById('calendar-month-display');
             if (monthHeader) {
                 monthHeader.textContent = monthName;
             }
             
-            // Create day buttons
-            days.forEach((day, index) => {
+            // May 2026 starts on Friday (offset 5)
+            // June 2026 starts on Monday (offset 1)
+            const startDayOffset = (monthIndex === 4) ? 5 : 1;
+            const daysInMonth = (monthIndex === 4) ? 31 : 30;
+            
+            // Render empty cells for start offset
+            for (let i = 0; i < startDayOffset; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day--empty';
+                calendarGrid.appendChild(cell);
+            }
+            
+            // Render all days in the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayStr = day < 10 ? `0${day}` : `${day}`;
+                const isAvailable = availableDays.includes(dayStr);
+                
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'calendar-day' + (index === 1 ? ' calendar-day--active' : '');
-                btn.setAttribute('data-day', day);
-                btn.textContent = day;
+                
+                if (isAvailable) {
+                    btn.className = 'calendar-day';
+                    // May: default to 26, June: default to 02
+                    const defaultSelectedDay = availableDays[1];
+                    if (dayStr === defaultSelectedDay) {
+                        btn.classList.add('calendar-day--active');
+                        selectedDay = dayStr;
+                    }
+                    
+                    btn.setAttribute('data-day', dayStr);
+                    btn.textContent = day;
+                } else {
+                    btn.className = 'calendar-day calendar-day--disabled';
+                    btn.textContent = day;
+                    btn.disabled = true;
+                }
+                
                 calendarGrid.appendChild(btn);
-            });
+            }
             
-            selectedDay = days[1];
             renderTimeSlots(selectedDay, isKevin);
         }
 

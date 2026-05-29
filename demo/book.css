@@ -209,10 +209,10 @@ a:hover {
   left: 0;
   width: 100%;
   height: 68px;
-  background: rgba(8, 12, 20, 0.75);
+  background: #ffffff;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -670,8 +670,26 @@ a:hover {
 
 .calendar-mock-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.calendar-day--empty {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.calendar-day--disabled {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: rgba(15, 23, 42, 0.22) !important;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .calendar-day--disabled {
+  color: rgba(255, 255, 255, 0.22) !important;
 }
 
 .calendar-day {

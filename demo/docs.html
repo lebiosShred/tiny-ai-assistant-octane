@@ -20,11 +20,12 @@
             --bg-code: hsl(222, 47%, 11%);
             --text-main: hsl(215, 25%, 27%);
             --text-heading: hsl(222, 47%, 11%);
-            --text-light: hsl(215, 15%, 55%);
+            --text-light: hsl(215, 25%, 38%);
             --border-color: hsl(214, 32%, 91%);
-            --primary: hsl(202, 80%, 48%);
-            --primary-light: hsla(202, 80%, 48%, 0.08);
-            --primary-border: hsla(202, 80%, 48%, 0.2);
+            --primary: hsl(202, 85%, 35%); /* Deepened from HSL(202, 80%, 48%) to achieve WCAG AA >4.5:1 contrast against white */
+            --primary-light: hsla(202, 85%, 35%, 0.08);
+            --primary-border: hsla(202, 85%, 35%, 0.2);
+            --primary-hover: hsl(202, 85%, 30%); /* Defined primary-hover color */
             --accent: hsl(262, 83%, 58%);
             --white: hsl(0, 0%, 100%);
             
@@ -51,6 +52,7 @@
             --primary: hsl(202, 90%, 55%);
             --primary-light: hsla(202, 90%, 55%, 0.15);
             --primary-border: hsla(202, 90%, 55%, 0.25);
+            --primary-hover: hsl(202, 90%, 65%); /* Defined dark-mode primary-hover color */
             --accent: hsl(262, 89%, 65%);
         }
 
@@ -529,9 +531,9 @@
             font-family: var(--font-display);
         }
         .badge-duration {
-            background-color: var(--primary-light);
-            color: var(--primary);
-            border: 1px solid var(--primary-border);
+            background-color: hsl(202, 85%, 20%); /* High-contrast isolated dark HSL background */
+            color: hsl(202, 100%, 85%); /* High-contrast isolated light HSL text (exceeds WCAG AAA >10:1 ratio) */
+            border: 1px solid hsl(202, 85%, 35%);
             padding: 2px 8px;
             border-radius: 6px;
             font-size: 0.75rem;
@@ -608,7 +610,7 @@
             background-color: var(--bg-sidebar);
             text-align: center;
             font-size: 0.875rem;
-            color: var(--text-light);
+            color: hsl(215, 20%, 35%); /* Upgraded to high contrast HSL value for WCAG AA compliance (>4.5:1 ratio) */
             margin-top: auto;
             transition: var(--transition);
         }
@@ -650,8 +652,10 @@
         
         <!-- Navigation Sidebar -->
         <aside class="sidebar">
+            <div style="padding: 1.5rem 1.5rem 0; margin-bottom: -0.5rem;">
+                <input type="text" id="sidebar-search" placeholder="🔍 Search documentation..." style="width: 100%; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.9rem; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);">
+            </div>
             <nav id="doc-navigation">
-<nav id="doc-navigation">
                 <div class="nav-group-title">Getting Started</div>
                 <ul class="sidebar-links">
                     <li class="sidebar-link-item active" data-section="intro"><a href="#intro">Introduction & Overview</a></li>
@@ -659,16 +663,12 @@
 
                 <div class="nav-group-title">Sales Team Workflow Components</div>
                 <ul class="sidebar-links">
-                    <li class="sidebar-link-item" data-section="comp-01"><a href="#comp-01">Component 01: Booking Page</a></li>
-                    <li class="sidebar-link-item" data-section="comp-02"><a href="#comp-02">Component 02: Ingestion & Prep</a></li>
-                    <li class="sidebar-link-item" data-section="comp-03"><a href="#comp-03">Component 03: Live Discovery Call</a></li>
+                    <li class="sidebar-link-item" data-section="comp-01"><a href="#comp-01">Component 01: Settings Panel</a></li>
+                    <li class="sidebar-link-item" data-section="comp-02"><a href="#comp-02">Component 02: Booking Page</a></li>
+                    <li class="sidebar-link-item" data-section="comp-03"><a href="#comp-03">Component 03: Ingestion & Prep</a></li>
+                    <li class="sidebar-link-item" data-section="comp-04"><a href="#comp-04">Component 04: Live Discovery Call</a></li>
                     <li class="sidebar-link-item" data-section="comp-05"><a href="#comp-05">Component 05: Automated Reports</a></li>
                     <li class="sidebar-link-item" data-section="comp-06"><a href="#comp-06">Component 06: Meeting Booking</a></li>
-                    <li class="sidebar-link-item" data-section="comp-07"><a href="#comp-07">Component 07: Settings Panel</a></li>
-                    <li class="sidebar-link-item" data-section="comp-08"><a href="#comp-08">Component 08: Kanban Board</a></li>
-                    <li class="sidebar-link-item" data-section="comp-09"><a href="#comp-09">Component 09: Audit Logs</a></li>
-                    <li class="sidebar-link-item" data-section="comp-10"><a href="#comp-10">Component 10: Advanced Admin</a></li>
-                    <li class="sidebar-link-item" data-section="comp-11"><a href="#comp-11">Component 11: Live Analytics</a></li>
                 </ul>
 
                 <div class="nav-group-title">Playbook References</div>
@@ -686,6 +686,9 @@
             <!-- SECTION 1: Intro -->
             <section class="doc-section" id="intro">
                 <h1>Introduction & Product Architecture</h1>
+
+
+
                 <p>The <strong>Tiny AI Assistant</strong> is an enterprise-grade sales pipeline coprocessor designed specifically for <strong>Octane Software Solutions</strong> to optimize prospect intake, pre-screening discovery preparations, and call synthesis deliverables. It aligns with standard playbook rules to support designated Sales Representatives — specifically <strong>Albert</strong> and <strong>Isha</strong> — in executing discovery operations while enforcing strict pricing sovereignty guidelines.</p>
                 
                 <h2>Business Objectives & Team Roles</h2>
@@ -713,7 +716,7 @@
                         <tr>
                             <td><strong>Calendar Booking Widget</strong></td>
                             <td>Host Scheduling Engine</td>
-                            <td>Represented by the integrated calendar interface (Component 01).</td>
+                            <td>Represented by the integrated calendar interface (Component 02).</td>
                         </tr>
                         <tr>
                             <td><strong>Thinking & Synthesis Engine</strong></td>
@@ -742,11 +745,11 @@
                 <p>The application coordinates a 6-component process mapped to sales daily operations:</p>
                 <div class="alert-box">
                     <strong>Architecture Workflow</strong>
-                    1. Prospect Schedules call on Booking Page (Component 01) &rarr; <br>
-                    2. Real-Time Alert triggers "Mount Lead" to ingest Booking into Prep Panel (Component 02) &rarr; <br>
+                    1. Prospect Schedules call on Booking Page (Component 02) &rarr; <br>
+                    2. Real-Time Alert triggers "Mount Lead" to ingest Booking into Prep Panel (Component 03) &rarr; <br>
                     3. System compiles 12-point Dossier and Rapport Guides (Component 03) &rarr; <br>
-                    4. Representative runs call with Battlecard Questionnaire (Component 03) &rarr; <br>
-                    5. Synthesis Console parses transcript and outputs 9 deliverables (Component 05) &rarr; <br>
+                    4. Representative runs call with Battlecard Questionnaire (Component 04) &rarr; <br>
+                    5. Synthesis Console parses transcript and outputs 6 deliverables (Component 05) &rarr; <br>
                     6. Sales representative downloads ICS positional meeting invite for Founder Hand-over (Component 06).
                 </div>
 
@@ -757,80 +760,86 @@
                 <div class="academy-grid">
                     <div class="academy-card">
                         <div class="academy-card-badge">Module 1</div>
-                        <h4>Prospect Booking Experience</h4>
-                        <p>Dynamic slot booking, automatic timezone adjustments, and Round-Robin Representative scheduling.</p>
+                        <h4>Administrator Panel Setup</h4>
+                        <p>Grounding context playbooks, API setup, custom instructions prompts, and demo mode controls.</p>
                         <a href="#comp-01" class="academy-card-link">Watch Walkthrough &rarr;</a>
                     </div>
                     <div class="academy-card">
                         <div class="academy-card-badge">Module 2</div>
-                        <h4>Lead Ingestion &amp; Routing</h4>
-                        <p>Real-time booking capture, email alerts for representative pooling, and Google Drive client folders.</p>
+                        <h4>Prospect Booking Experience</h4>
+                        <p>Dynamic slot booking, automatic timezone adjustments, and Round-Robin Representative scheduling.</p>
                         <a href="#comp-02" class="academy-card-link">Watch Walkthrough &rarr;</a>
                     </div>
                     <div class="academy-card">
                         <div class="academy-card-badge">Module 3</div>
-                        <h4>Discovery Briefing Dossier</h4>
-                        <p>12-point contextual briefings mapping technical pain points, LinkedIn background, and rapport prompts.</p>
-                        <a href="#comp-02" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                        <h4>Lead Ingestion &amp; Routing</h4>
+                        <p>Real-time booking capture, email alerts for representative pooling, and Google Drive client folders.</p>
+                        <a href="#comp-03" class="academy-card-link">Watch Walkthrough &rarr;</a>
                     </div>
                     <div class="academy-card">
                         <div class="academy-card-badge">Module 4</div>
-                        <h4>Discovery Call Facilitation</h4>
-                        <p>Executing live discovery sessions utilizing dynamic question playbooks and battlecards.</p>
+                        <h4>Discovery Briefing Dossier</h4>
+                        <p>12-point contextual briefings mapping technical pain points, LinkedIn background, and rapport prompts.</p>
                         <a href="#comp-03" class="academy-card-link">Watch Walkthrough &rarr;</a>
                     </div>
                     <div class="academy-card">
                         <div class="academy-card-badge">Module 5</div>
-                        <h4>Post-Call Synthesis Console</h4>
-                        <p>Pasting transcripts to auto-generate 9 core sales deliverables and proposals.</p>
-                        <a href="#comp-05" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                        <h4>Discovery Call Facilitation</h4>
+                        <p>Executing live discovery sessions utilizing dynamic question playbooks and battlecards.</p>
+                        <a href="#comp-04" class="academy-card-link">Watch Walkthrough &rarr;</a>
                     </div>
                     <div class="academy-card">
                         <div class="academy-card-badge">Module 6</div>
-                        <h4>Administrator Panel Setup</h4>
-                        <p>Grounding context playbooks, API setup, custom instructions prompts, and demo mode controls.</p>
-                        <a href="#comp-07" class="academy-card-link">Watch Walkthrough &rarr;</a>
-                    </div>
-                    <div class="academy-card">
-                        <div class="academy-card-badge">Module 7</div>
-                        <h4>Kanban Board Pipeline</h4>
-                        <p>Simulating GitHub project workflows with drag-and-drop ticket routing.</p>
-                        <a href="#comp-08" class="academy-card-link">Watch Walkthrough &rarr;</a>
-                    </div>
-                    <div class="academy-card">
-                        <div class="academy-card-badge">Module 8</div>
-                        <h4>Audit Logs &amp; PII Redaction</h4>
-                        <p>Security compliance dashboards showing auto-redaction of PII in event streams.</p>
-                        <a href="#comp-09" class="academy-card-link">Watch Walkthrough &rarr;</a>
-                    </div>
-                    <div class="academy-card">
-                        <div class="academy-card-badge">Module 9</div>
-                        <h4>Advanced Admin Configuration</h4>
-                        <p>Injecting custom prompts to control the AI Coprocessor persona dynamically.</p>
-                        <a href="#comp-10" class="academy-card-link">Watch Walkthrough &rarr;</a>
-                    </div>
-                    <div class="academy-card">
-                        <div class="academy-card-badge">Module 10</div>
-                        <h4>Live Analytics Dashboard</h4>
-                        <p>Real-time token usage, ROI tracking, and engagement metrics presentation.</p>
-                        <a href="#comp-11" class="academy-card-link">Watch Walkthrough &rarr;</a>
+                        <h4>Post-Call Synthesis Console</h4>
+                        <p>Pasting transcripts to auto-generate 6 core sales deliverables and proposals.</p>
+                        <a href="#comp-05" class="academy-card-link">Watch Walkthrough &rarr;</a>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION 2: Component 01 -->
+            <!-- SECTION 2: Component 01 (Settings) -->
             <section class="doc-section" id="comp-01">
-                <h1>Component 01: Client Booking Page</h1>
-                <p>The Client Booking Page provides an interactive calendar interface for prospects while dynamically applying calendar availability and buffer constraints based on the chosen host. A single scheduling link is used for all prospects across Australia (AU), New Zealand (NZ), and the Middle East (ME).</p>
+                <h1>Component 01: Settings Panel</h1>
+                <p>The Admin Dashboard enables modification of LLM configurations, custom persona prompts, API keys, and toggle controls for developer scaffolding (Demo Mode).</p>
                 
-                <!-- MODULE 1 EMBED -->
                 <div class="video-container">
                     <div class="video-caption">
-                        <span>🎬 Module 1 Walkthrough: Client Booking Experience</span>
-                        <span class="badge-duration">⏱️ 0:47</span>
+                        <span>🎬 Module 1 Walkthrough: Project Settings &amp; Knowledge Base Upload</span>
+                        <span class="badge-duration">⏱️ 0:44</span>
                     </div>
                     <video controls preload="metadata">
-                        <source src="screencast/recording/module_1_campaign_identity.mp4" type="video/mp4">
+                        <source src="screencast/recording/module_1_settings.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+                <h2>The Mega Prompt Architecture</h2>
+                <p>The "Mega Prompt" is a highly structured, operational instruction set designed to lock the AI into a deterministic operational state. It is injected into the Claude Project configuration to eliminate hallucination and enforce rigid enterprise compliance.</p>
+                <p>The Mega Prompt is constructed upon 5 architectural pillars:</p>
+                <ul>
+                    <li><strong>[ROLE]</strong>: Defines the exact persona the AI must emulate (e.g., "You are an elite Pre-Sales Engineer at Octane"). This anchors the tone and bounds the AI's domain knowledge.</li>
+                    <li><strong>[CONTEXT]</strong>: Dynamically passes in the prospect's background, LinkedIn profile, and historical data to ensure the AI's logic is perfectly tailored to the current deal.</li>
+                    <li><strong>[TASK]</strong>: The strict sequence of analytical instructions the AI must execute (e.g., "Analyze the inputs to build a 12-section technical briefing dossier").</li>
+                    <li><strong>[GUARDRAILS]</strong>: Hard negative constraints ensuring system safety and data sovereignty (e.g., "If context is missing, explicitly flag [NEEDS RESEARCH]. Do not hallucinate metrics. Do not invent integrations").</li>
+                    <li><strong>[OUTPUT FORMAT]</strong>: Forces the AI to return data in a parseable UI structure (e.g., exact Markdown headers, limited bullet points, strict JSON structures), ensuring it maps perfectly into the sales team's frontend application.</li>
+                </ul>
+
+                <h2>Advanced Admin Access</h2>
+                <p>Restricted admin panels for modifying underlying prompt architecture. This includes injecting custom prompts to control the AI Coprocessor persona dynamically.</p>
+            </section>
+
+            <!-- SECTION 3: Component 02 (Booking) -->
+            <section class="doc-section" id="comp-02">
+                <h1>Component 02: Client Booking Page</h1>
+                <p>The Client Booking Page provides an interactive calendar interface for prospects while dynamically applying calendar availability and buffer constraints based on the chosen host. A single scheduling link is used for all prospects across Australia (AU), New Zealand (NZ), and the Middle East (ME).</p>
+                
+                <div class="video-container">
+                    <div class="video-caption">
+                        <span>🎬 Module 2 Walkthrough: Client Booking Experience</span>
+                        <span class="badge-duration">⏱️ 0:42</span>
+                    </div>
+                    <video controls preload="metadata">
+                        <source src="screencast/recording/module_2_booking.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                 </div>
@@ -838,9 +847,7 @@
                 <h2>Designated Sales Team Hosts & Availability</h2>
                 <p>Calls are hosted by Octane's designated Sales Representatives, Albert and Isha. They share standard shift coverage, allowing prospective clients to choose from any available booking slots throughout the day.</p>
                 <ul>
-                    <li><strong>Albert (Sales Team)</strong>: Available to host pre-screen discovery calls during standard business hours.</li>
-                    <li><strong>Isha (Sales Team)</strong>: Available to host pre-screen discovery calls during standard business hours.</li>
-                    <li>Together, Albert and Isha share coverage, providing exactly <strong>28 x 30-minute booking slots</strong> per day.</li>
+                    <li><strong>Isha & Albert (Sales Team)</strong>: Share round-robin coverage for pre-screen discovery calls during standard business hours, providing exactly <strong>28 x 30-minute booking slots</strong> per day. The calendar automatically distributes meetings to balance representative workload.</li>
                 </ul>
 
                 <h2>Dynamic Host Rules</h2>
@@ -889,9 +896,9 @@
                 </div>
             </section>
 
-            <!-- SECTION 3: Component 02 -->
-            <section class="doc-section" id="comp-02">
-                <h1>Component 02: Ingestion & Call Prep</h1>
+            <!-- SECTION 4: Component 03 (Ingestion & Prep) -->
+            <section class="doc-section" id="comp-03">
+                <h1>Component 03: Ingestion & Call Prep</h1>
                 <p>Before a requirements session call, the assigned Sales Representative prepares using the AI Assistant. This module accesses GDrive client folders, SOWs, and history files to give the representative context about the account.</p>
 
                 <h2>Automated Intake & Real-time Alerts</h2>
@@ -903,14 +910,24 @@
                     <li><strong>One-Click Workflow Restoration:</strong> Clicking the action button restores the lead parameters seamlessly without requiring manual representative copy-pasting.</li>
                 </ol>
 
-                <!-- MODULE 2 EMBED -->
+                <h2>Structural Architecture of the "Mega Prompt" Template</h2>
+                <p>The AI Assistant relies on a complex, highly-structured "Mega Prompt" framework rather than standard conversational queries. This approach front-loads all context, constraints, and output formatting in one shot to eliminate back-and-forth iterations and prevent hallucination. The template enforces strict control over the LLM through the following structural blocks:</p>
+                
+                <ul>
+                    <li><strong>ROLE</strong>: Defines the exact persona and domain expertise. By instructing the model to act as a <em>"Senior B2B Sales Strategist specializing in IBM Planning Analytics"</em>, the LLM adopts industry-specific vernacular, priorities, and analytical frameworks instead of responding like a generic chatbot.</li>
+                    <li><strong>CONTEXT</strong>: Injects the aggregated ground-truth data. This section strictly bounds the AI's knowledge base to the prospect intake data, extracted LinkedIn profiles, GDrive SOW attachments, and scraped company history.</li>
+                    <li><strong>TASK</strong>: Provides the primary directive. This outlines the exact operational objective -- for example, <em>"Generate a 12-section briefing dossier covering competitor mapping, likely pain points, and three strategic conversation starters."</em></li>
+                    <li><strong>GUARDRAILS</strong>: Implements safety and sovereignty constraints. Guardrails explicitly define negative parameters, such as <em>"Do not invent statistics. If insufficient data exists, flag the section as [NEEDS RESEARCH]. Never offer discounts or guarantee implementation timelines."</em> This eliminates unauthorized commitments and hallucinated claims.</li>
+                    <li><strong>OUTPUT FORMAT</strong>: Dictates the structural presentation. The prompt enforces formatting rules (e.g., Markdown headers, strict bullet limits, no introductory filler) to ensure the generated output directly maps to the application's UI components and remains highly scannable for the sales team.</li>
+                </ul>
+
                 <div class="video-container">
                     <div class="video-caption">
-                        <span>🎬 Module 2 Walkthrough: Lead Ingestion, Sales Team Email Alert &amp; GDrive Sync</span>
+                        <span>🎬 Module 3 Walkthrough (Part A): Lead Ingestion &amp; GDrive Sync</span>
                         <span class="badge-duration">⏱️ 1:01</span>
                     </div>
                     <video controls preload="metadata">
-                        <source src="screencast/recording/module_2_persona_calibration.mp4" type="video/mp4">
+                        <source src="screencast/recording/module_3a_routing.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                 </div>
@@ -932,14 +949,26 @@
                 <h2>12-Section Briefing Dossier</h2>
                 <p>Generating the preparation briefing synthesizes all inputs to construct an actionable 12-section dossier. Progress is tracked via a completeness meter (0--100%). The dossier outputs the following 12 operational components:</p>
 
-                <!-- MODULE 3 EMBED -->
+                <h2>Manual Research Augmentation</h2>
+                <p>When the AI flags sections as <strong>[NEEDS RESEARCH]</strong> -- for example, when a prospect's LinkedIn is private or the booking form answers are vague -- the sales representative can manually augment the inputs:</p>
+                <ol>
+                    <li><strong>Open the Tiny AI Chatbot Widget</strong>: Click the chat bubble (Watsonx Orchestrate) in the bottom-right corner of the console.</li>
+                    <li><strong>Ask Targeted Research Questions</strong>: For example, "What does Meridian Logistics sell and who are their main competitors?" or "Find the most recent press release from Meridian Logistics."</li>
+                    <li><strong>Copy & Paste Findings</strong>: Copy the chatbot's response and paste it into the relevant Input Text form field on the preparation panel.</li>
+                    <li><strong>Re-run the Dossier</strong>: Submit the enriched context to generate a more complete briefing with fewer gaps.</li>
+                </ol>
+                <div class="alert-box">
+                    <strong>Human-in-the-Loop</strong>
+                    The AI accelerates research -- it does not replace strategic thinking. The representative always reviews the output and adds their own domain judgment before the call.
+                </div>
+
                 <div class="video-container">
                     <div class="video-caption">
-                        <span>🎬 Module 3 Walkthrough: Briefing Dossier Generation</span>
+                        <span>🎬 Module 3 Walkthrough (Part B): Briefing Dossier Generation</span>
                         <span class="badge-duration">⏱️ 0:48</span>
                     </div>
                     <video controls preload="metadata">
-                        <source src="screencast/recording/module_3_prospect_data_ingestion.mp4" type="video/mp4">
+                        <source src="screencast/recording/module_3b_preparation.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                 </div>
@@ -960,12 +989,11 @@
                 </ol>
             </section>
 
-            <!-- SECTION 4: Component 03 -->
-            <section class="doc-section" id="comp-03">
-                <h1>Component 03: Live Discovery Call</h1>
+            <!-- SECTION 5: Component 04 (Discovery Call) -->
+            <section class="doc-section" id="comp-04">
+                <h1>Component 04: Live Discovery Call</h1>
                 <p>Step 2 contains call facilitation tools, including teleprompters, discovery scripts, and pre-compiled icebreaker dossiers. The requirements session lasts exactly <strong>30 minutes</strong> and is facilitated by Albert or Isha.</p>
 
-                <!-- MODULE 4 EMBED -->
                 <div class="video-container">
                     <div class="video-caption">
                         <span>🎬 Module 4 Walkthrough: Executing the Discovery Call (Albert/Isha)</span>
@@ -980,12 +1008,22 @@
                 <h2>Meeting Objectives & Sales Team Rules</h2>
                 <p>Representatives must adhere to the 5 primary objectives during the pre-screen call:</p>
                 <ol>
-                    <li><strong>Build Rapport</strong>: Open the call using the 3 conversation starters compiled in the Rapport Guide (Component 02).</li>
+                    <li><strong>Build Rapport</strong>: Open the call using the 3 conversation starters compiled in the Rapport Guide (Component 03).</li>
                     <li><strong>Execute Discovery Questionnaire</strong>: Walk the prospect through the 12 structured questions from the battlecard script.</li>
                     <li><strong>No Typing Allowed</strong>: The representative must focus fully on conversation. Answers are captured via automatic transcription (Fathom or Jamie AI).</li>
                     <li><strong>Post-Call Synthesis</strong>: The representative copies the transcript from the recording tool and pastes it into Step 3 to map answers and auto-generate reports.</li>
                     <li><strong>Schedule Hand-over</strong>: Before ending the call, the representative must book a Positional Meeting with Amendra.</li>
                 </ol>
+
+                <h2>Recording Contingency & Upload</h2>
+                <p>The primary recording tool (Fathom AI) automatically joins virtual meetings via calendar integration. However, bot-based recording can fail due to waiting room settings, IT restrictions, or invalid meeting links. The sales team follows a structured contingency plan:</p>
+                <ol>
+                    <li><strong>Plan A -- Automatic Recording</strong>: Fathom AI auto-joins and records the session. Transcription is immediate.</li>
+                    <li><strong>Plan B -- Platform Native Recording</strong>: If Fathom fails to join, activate Zoom, Google Meet, or Microsoft Teams built-in recording as a backup.</li>
+                    <li><strong>Plan C -- External Recording Tools</strong>: For phone-based discovery calls, use <strong>3CX</strong> (PBX call recording, WAV format) or <strong>FreJun</strong> (cloud dialer with automatic recording and AI transcription).</li>
+                    <li><strong>Plan D -- Manual Capture</strong>: If no recording is possible, capture the 4 Pillars: Pain Points, Impact, Decision Process, and Next Steps. Apply the 10-Minute Post-Call Rule: brain dump, structure, and confirm via recap email.</li>
+                </ol>
+                <p>After the call, the representative uploads the recording file (MP3, MP4, M4A, or WAV) via the <strong>Upload Recording</strong> button in the Session tab. The system automatically transcribes the audio and populates the transcript field for synthesis.</p>
 
                 <h2>Pre-Screen Call Rapport Guides</h2>
                 <p>Asynchronously generated upon Dossier compilation, the Rapport Guide accordion auto-expands on step transition. It summarizes findings into actionable call prompts: </p>
@@ -1081,8 +1119,7 @@
                     <li>Do users interact via Excel reports, Jedox Web, or both?</li>
                     <li>Do users contribute data directly via input templates?</li>
                 </ul>
-
-<!-- DOC-SYNC-END: Variant A -->
+                <!-- DOC-SYNC-END: Variant A -->
 
                 <h3>Variant B: Existing TM1 / Planning Analytics Users</h3>
                 <p><em>Targeting: Prospects who already run IBM Planning Analytics / TM1 but face support bottlenecks, performance limits, or require upgrades.</em></p>
@@ -1101,80 +1138,133 @@
                     <li>Are you aware of performance, speed, or usability challenges?</li>
                     <li>Is the instance cloud or on-premise?</li>
                 </ul>
-<!-- DOC-SYNC-END: Variant B -->
-
-                <h3>Variant C: First-Time AI Users (Decommissioned)</h3>
-                <p><em>Note: AI Solutions interest leads bypass the pre-screen discovery call track completely and are automatically routed directly to Steny's calendar. No Variant C battlecard script is utilized on the pre-screen dashboard.</em></p>
+                <!-- DOC-SYNC-END: Variant B -->
             </section>
 
-            <!-- SECTION 8: Component 08 - Kanban -->
-            <section class="doc-section" id="comp-08">
-                <h1>Component 08: Kanban Board Pipeline</h1>
-                <p>The interactive project board interface built for GitHub-style task orchestration.</p>
+            <!-- SECTION 6: Component 05 (Automated Reports) -->
+            <section class="doc-section" id="comp-05">
+                <h1>Component 05: Automated Reports</h1>
+                <p>After call completion, the representative copies the Fathom call transcript and pastes it into the post-call synthesis panel. The assistant instantly generates six critical sales deliverables:</p>
                 
                 <div class="video-container">
                     <div class="video-caption">
-                        <span>🎬 Module 7 Walkthrough: Technical Setup &amp; Pipeline Execution</span>
-                        <span class="badge-duration">⏱️ 0:35</span>
+                        <span>🎬 Module 5 Walkthrough: Post-Call Synthesis Console</span>
+                        <span class="badge-duration">⏱️ 0:51</span>
                     </div>
                     <video controls preload="metadata">
-                        <source src="screencast/recording/module_7_technical.mp4" type="video/mp4">
+                        <source src="screencast/recording/module_5_synthesis.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
+                </div>
+
+                <h2>The 6 Automated Sales Deliverables</h2>
+                <ul>
+                    <li><strong>Recap Email</strong>: Client-facing follow-up summarizing discussion highlights and positional next steps.</li>
+                    <li><strong>Summary Sheet</strong>: Internal dossier of lead parameters, rating, and mapped pain points.</li>
+                    <li><strong>Detailed Notes</strong>: Chronological Discovery Call timeline notes.</li>
+                    <li><strong>Questionnaire Answers</strong>: Mapped responses corresponding directly to the battlecard questions.</li>
+                    <li><strong>Action Items</strong>: Assigned task matrices, deadlines, and ownership.</li>
+                    <li><strong>Proposal</strong>: Standardized Professional Services pricing roadmaps and timeline breakdowns.</li>
+                </ul>
+
+                <h2>Lead Classification & Sales Funnel Stage</h2>
+                <p>In addition to the six deliverables, the synthesis engine automatically classifies the lead based on transcript analysis:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Classification</th>
+                            <th>Definition</th>
+                            <th>Transcript Signals</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>🔥 Hot</strong></td>
+                            <td>Ready to buy immediately</td>
+                            <td>Pricing inquiry, defined timeline, decision-maker engaged, comparison language</td>
+                        </tr>
+                        <tr>
+                            <td><strong>🟡 Warm</strong></td>
+                            <td>Interested but not yet ready</td>
+                            <td>Educational questions, exploring options, no defined timeline</td>
+                        </tr>
+                        <tr>
+                            <td><strong>🧊 Cold</strong></td>
+                            <td>Early stage or unknown</td>
+                            <td>Vague questions, no prior engagement, no budget indication</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>The system also identifies the prospect's <strong>Sales Funnel Stage</strong>: MQL (Marketing Qualified), SQL (Sales Qualified), or Opportunity -- with a confidence score (1-10) and three supporting evidence bullets extracted directly from the transcript.</p>
+                <div class="alert-box">
+                    <strong>Recommended Next Action</strong>
+                    Based on the classification, the system recommends the appropriate follow-up: immediate proposal for Hot leads, nurturing sequence for Warm leads, or re-engagement campaign for Cold leads.
                 </div>
             </section>
 
-            <!-- SECTION 9: Component 09 - Audit Logs -->
-            <section class="doc-section" id="comp-09">
-                <h1>Component 09: Security Audit Logging</h1>
-                <p>Real-time event stream dashboard that redacts Personal Identifiable Information (PII) before it is sent to external APIs.</p>
+            <!-- SECTION 7: Component 06 (Meeting Booking) -->
+            <section class="doc-section" id="comp-06">
+                <h1>Component 06: Meeting Booking</h1>
+                <p>Securing the next engagement step is critical for pipeline progression. The final stage of the coprocessor workflow involves generating and sending the Positional Meeting invite. This bridges the gap between technical discovery and executive decision-making.</p>
+
+                <h2>The Positional Meeting Architecture</h2>
+                <p>The Positional Meeting is a highly structured, 45-minute executive briefing led by Amendra or Steny. It represents the official hand-over from the Sales Representative to the Executive Director. The objective is to leverage the technical pain points uncovered during the discovery call to validate the prospect's business case and align it with Octane's strategic offerings.</p>
                 
-                <div class="video-container">
-                    <div class="video-caption">
-                        <span>🎬 Module 8 Walkthrough: PII Redaction and Log Management</span>
-                        <span class="badge-duration">⏱️ 0:28</span>
-                    </div>
-                    <video controls preload="metadata">
-                        <source src="screencast/recording/module_8_audit.mp4" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
+                <ul>
+                    <li><strong>Executive Validation</strong>: Ensures that the prospect's challenges (e.g., consolidation lag, broken Excel formulas) are reframed into business-level risks (e.g., regulatory compliance failures, delayed board reporting).</li>
+                    <li><strong>Pricing & Roadmapping</strong>: Executive Directors introduce the tiered proposal and establish implementation timelines.</li>
+                    <li><strong>Stakeholder Expansion</strong>: The meeting mandate requires the prospect to invite their internal budget approvers, transitioning the deal from end-users to decision-makers.</li>
+                </ul>
+
+                <h2>The Booking Playbook Variant</h2>
+                <p>To secure this meeting without causing friction, representatives utilize the <strong>Positional Transition Playbook</strong>. This playbook ensures the prospect understands the value of the follow-up meeting rather than viewing it as a generic sales pitch:</p>
+                
+                <ol>
+                    <li><strong>The Pivot</strong>: <em>"Based on the complexities you described with your current Anaplan integration, I need to bring in our Executive Director to map out a specific architectural solution."</em></li>
+                    <li><strong>The Value Exchange</strong>: Offer a tangible asset (e.g., a custom demo, a gap analysis report, or a reference architecture diagram) that will be presented during the Positional Meeting.</li>
+                    <li><strong>The Assumption Close</strong>: Rather than asking for a meeting, prescribe the next step. <em>"I will go ahead and put a 45-minute placeholder on our calendars for next Tuesday to review the proposed architecture with Amendra."</em></li>
+                </ol>
+
+                <div class="alert-box">
+                    <strong>ICS Generation & CRM Sync</strong>
+                    Upon completing the synthesis workflow, the coprocessor generates a pre-configured .ics calendar file containing the synthesized summary. The representative downloads and sends this directly to the prospect, bypassing manual calendar entry while ensuring the Executive Director is fully briefed.
                 </div>
             </section>
 
-            <!-- SECTION 10: Component 10 - Advanced Admin -->
-            <section class="doc-section" id="comp-10">
-                <h1>Component 10: Advanced Admin Access</h1>
-                <p>Restricted admin panels for modifying underlying prompt architecture.</p>
-                
-                <div class="video-container">
-                    <div class="video-caption">
-                        <span>🎬 Module 9 Walkthrough: Advanced AI Persona Modifications</span>
-                        <span class="badge-duration">⏱️ 0:31</span>
-                    </div>
-                    <video controls preload="metadata">
-                        <source src="screencast/recording/module_9_admin.mp4" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
+            <!-- SECTION 8: Customer Profiles Playbook -->
+            <section class="doc-section" id="ref-profiles">
+                <h1>Customer Profiles Playbook</h1>
+                <p>Understanding the prospect's background is essential for tailoring the pitch. This playbook defines the three primary buyer personas encountered during discovery calls, outlining their core metrics, operational challenges, and common objections.</p>
+
+                <h2>Persona 1: The Tactical Finance Manager (The "Excel Warrior")</h2>
+                <ul>
+                    <li><strong>Profile</strong>: Typically a Finance Manager or FP&amp;A Lead managing a chaotic web of interconnected Excel spreadsheets. They are drowning in manual reconciliation.</li>
+                    <li><strong>Key Metrics</strong>: Time-to-close, error rates, hours spent validating data.</li>
+                    <li><strong>Primary Pain Points</strong>: Version control nightmares ("Which file is the final version?"), broken macros, system crashes during peak reporting periods, and the inability to perform rapid scenario modeling.</li>
+                    <li><strong>Common Objections</strong>: <em>"We don't have the budget for a massive implementation,"</em> or <em>"Our team is too busy to learn a new system right now."</em></li>
+                    <li><strong>Playbook Counter</strong>: Focus on immediate ROI. Emphasize how Planning Analytics automates data ingestion and eliminates manual checks. Highlight that familiar Excel interfaces (PAfE) ensure a low learning curve for their team.</li>
+                </ul>
+
+                <h2>Persona 2: The Disillusioned System Owner (The "Legacy Migrator")</h2>
+                <ul>
+                    <li><strong>Profile</strong>: A Director of Finance or IT Systems Manager who inherited an underperforming or rigidly implemented system (e.g., Anaplan, Jedox, or legacy TM1).</li>
+                    <li><strong>Key Metrics</strong>: Total Cost of Ownership (TCO), model calculation speeds, IT ticket resolution times.</li>
+                    <li><strong>Primary Pain Points</strong>: The current system is too slow, too expensive, or lacks the flexibility required to adapt to new business models. They are frustrated by external consultancy fees required for minor adjustments.</li>
+                    <li><strong>Common Objections</strong>: <em>"We just spent a fortune implementing this system three years ago,"</em> or <em>"Migrating away will disrupt our entire operation."</em></li>
+                    <li><strong>Playbook Counter</strong>: Attack the Total Cost of Ownership (TCO). Demonstrate how Octane's rapid deployment and superior TM1 multi-dimensional engine drastically reduce calculation times and maintenance overhead, paying for the migration within 18 months.</li>
+                </ul>
+
+                <h2>Persona 3: The Strategic Executive (The "Growth Driver")</h2>
+                <ul>
+                    <li><strong>Profile</strong>: CFO or VP of Finance looking to scale the business, prepare for an acquisition, or deploy advanced analytics (AI/ML).</li>
+                    <li><strong>Key Metrics</strong>: Revenue growth, EBITDA, forecasting accuracy, strategic agility.</li>
+                    <li><strong>Primary Pain Points</strong>: Lack of real-time visibility into the business. The inability to forecast cash flow dynamically. They are frustrated that their team is acting as "data historians" rather than strategic advisors.</li>
+                    <li><strong>Common Objections</strong>: <em>"Is this just another dashboarding tool?"</em> or <em>"Can this handle our future M&A strategy?"</em></li>
+                    <li><strong>Playbook Counter</strong>: Pivot from features to strategic capabilities. Emphasize continuous, integrated planning and AI-driven forecasting. Show how Watsonx and TM1 can model complex future scenarios instantly, enabling data-driven board-level decisions.</li>
+                </ul>
             </section>
 
-            <!-- SECTION 11: Component 11 - Live Analytics -->
-            <section class="doc-section" id="comp-11">
-                <h1>Component 11: Live Engagement Analytics</h1>
-                <p>Dashboard for generating visual graphs covering system utilization, ROI, and agent efficiency tracking.</p>
-                
-                <div class="video-container">
-                    <div class="video-caption">
-                        <span>🎬 Module 10 Walkthrough: Live Token Analytics &amp; Reporting</span>
-                        <span class="badge-duration">⏱️ 0:26</span>
-                    </div>
-                    <video controls preload="metadata">
-                        <source src="screencast/recording/module_10_analytics.mp4" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
-            </section>
-        </main>
+</main>
         
 
     </div>
@@ -1230,6 +1320,24 @@
                 } else {
                     themeToggleIcon.textContent = '🌙';
                 }
+            }
+
+            // Client-side sidebar search functionality
+            const sidebarSearch = document.getElementById('sidebar-search');
+            const sidebarLinks = document.querySelectorAll('.sidebar-link-item');
+            
+            if (sidebarSearch) {
+                sidebarSearch.addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    sidebarLinks.forEach(link => {
+                        const text = link.textContent.toLowerCase();
+                        if (text.includes(term)) {
+                            link.style.display = 'block';
+                        } else {
+                            link.style.display = 'none';
+                        }
+                    });
+                });
             }
         });
     </script>

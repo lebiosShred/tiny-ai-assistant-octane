@@ -414,7 +414,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 rapportGuideBody.innerHTML = '<div style="font-style: italic; color: rgba(0,0,0,0.4); text-align: center; padding: 0.5rem 0;">💡 Loading Rapport Guide talking points...</div>';
                 TinyAI.generateRapportGuide(item.content, getApiConfig())
                     .then(guideHtml => {
-                        rapportGuideBody.innerHTML = guideHtml;
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = guideHtml;
+                        // Strip the Key Context & Facts card completely from the Rapport Guide
+                        const contextCard = tempDiv.querySelector('.card-context');
+                        if (contextCard) {
+                            contextCard.remove();
+                        }
+                        rapportGuideBody.innerHTML = tempDiv.innerHTML;
                         // Auto-expand Rapport Guide
                         rapportGuideBody.style.display = 'block';
                         if (rapportGuideToggleIcon) rapportGuideToggleIcon.innerText = '▲ Collapse';
@@ -428,6 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             goToStep(1);
+            step1NextBtn.classList.remove('hidden');
             step1NextBtn.style.display = 'inline-flex';
             switchView('pipeline');
             showToast(`Restored Call Prep Briefing for ${item.company}`);
@@ -1295,7 +1303,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Toggle layout classes on dashboard grid
         const dashboardGrid = document.querySelector('.dashboard-grid');
         if (dashboardGrid) {
-            dashboardGrid.classList.remove('layout-split', 'layout-focus-left', 'layout-focus-right');
+            dashboardGrid.classList.remove('layout-split', 'layout-focus-left', 'layout-focus-right', 'layout-fullscreen-console');
+            
+            // Sync console maximize icon status
+            const consoleMaximizeBtn = document.getElementById('console-maximize-btn');
+            
             if (stepNum === 1) {
                 dashboardGrid.classList.add('layout-split');
                 const savedSplit = localStorage.getItem('tiny_workspace_split');
@@ -1306,12 +1318,33 @@ document.addEventListener('DOMContentLoaded', () => {
                         dashboardGrid.style.setProperty('--right-panel-width', `calc(${100 - percentage}% - 12px)`);
                     }
                 }
+                if (consoleMaximizeBtn) {
+                    consoleMaximizeBtn.innerText = '⛶';
+                    consoleMaximizeBtn.title = 'Maximize Console';
+                }
             } else if (stepNum === 2) {
-                dashboardGrid.classList.add('layout-focus-left');
+                dashboardGrid.classList.add('layout-fullscreen-console');
                 dashboardGrid.style.removeProperty('--left-panel-width');
                 dashboardGrid.style.removeProperty('--right-panel-width');
+                if (consoleMaximizeBtn) {
+                    consoleMaximizeBtn.innerText = '📥';
+                    consoleMaximizeBtn.title = 'Restore Split View';
+                }
             } else if (stepNum === 3) {
-                dashboardGrid.classList.add('layout-focus-right');
+                // If reports are already generated, auto-maximize the console. Otherwise, split-pane.
+                if (currentDocs) {
+                    dashboardGrid.classList.add('layout-fullscreen-console');
+                    if (consoleMaximizeBtn) {
+                        consoleMaximizeBtn.innerText = '📥';
+                        consoleMaximizeBtn.title = 'Restore Split View';
+                    }
+                } else {
+                    dashboardGrid.classList.add('layout-focus-right');
+                    if (consoleMaximizeBtn) {
+                        consoleMaximizeBtn.innerText = '⛶';
+                        consoleMaximizeBtn.title = 'Maximize Console';
+                    }
+                }
                 dashboardGrid.style.removeProperty('--left-panel-width');
                 dashboardGrid.style.removeProperty('--right-panel-width');
             }
@@ -1908,6 +1941,7 @@ Target SOW: Migrate current managed support to Octane Black to include full proa
             linkedinDropText.innerHTML = '📁 Drop LinkedIn PDF/TXT here, or click to upload';
         }
         syncServiceTrackToVariant();
+        step1NextBtn.classList.remove('hidden');
         step1NextBtn.style.display = 'inline-flex';
         showToast("Prefilled Sarah Chen Dossier template!");
     });
@@ -2110,6 +2144,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
             const resultHtml = await TinyAI.generateProspectDossier(params, apiConfig);
             currentDossierText = resultHtml;
             renderDossierHtml(resultHtml);
+            step1NextBtn.classList.remove('hidden');
             step1NextBtn.style.display = 'inline-flex';
 
             // Trigger Rapport Guide generation asynchronously
@@ -2118,7 +2153,14 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
                 rapportGuideBody.innerHTML = '<div style="font-style: italic; color: rgba(0,0,0,0.4); text-align: center; padding: 0.5rem 0;">💡 Loading Rapport Guide talking points...</div>';
                 TinyAI.generateRapportGuide(resultHtml, apiConfig)
                     .then(guideHtml => {
-                        rapportGuideBody.innerHTML = guideHtml;
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = guideHtml;
+                        // Strip the Key Context & Facts card completely from the Rapport Guide
+                        const contextCard = tempDiv.querySelector('.card-context');
+                        if (contextCard) {
+                            contextCard.remove();
+                        }
+                        rapportGuideBody.innerHTML = tempDiv.innerHTML;
                         // Auto-expand Rapport Guide
                         rapportGuideBody.style.display = 'block';
                         if (rapportGuideToggleIcon) rapportGuideToggleIcon.innerText = '▲ Collapse';
@@ -2308,7 +2350,12 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
 
     // --- Document Tab Navigation ---
     window.setDocTab = (tabName) => {
-        if (!currentDocs) return;
+        console.log("setDocTab called with tabName:", tabName);
+        if (!currentDocs) {
+            console.warn("setDocTab aborted because currentDocs is null or undefined");
+            return;
+        }
+        console.log("currentDocs keys:", Object.keys(currentDocs));
         activeDocTab = tabName;
         
         // Update tab styling
@@ -2379,6 +2426,54 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
                 <div class="doc-body-pane">${sanitizedContent}</div>
             </div>
         `;
+    }
+
+    // --- Widescreen Console Maximize Toggle ---
+    const consoleMaximizeBtn = document.getElementById('console-maximize-btn');
+    if (consoleMaximizeBtn && dashboardGrid) {
+        consoleMaximizeBtn.addEventListener('click', () => {
+            const isFullscreen = dashboardGrid.classList.contains('layout-fullscreen-console');
+            
+            // Remove any other focus classes to prevent interference
+            dashboardGrid.classList.remove('layout-split', 'layout-focus-left', 'layout-focus-right', 'layout-fullscreen-console');
+            
+            if (isFullscreen) {
+                // Restore split layout class based on current step
+                if (currentStep === 1) {
+                    dashboardGrid.classList.add('layout-split');
+                    const savedSplit = localStorage.getItem('tiny_workspace_split');
+                    if (savedSplit) {
+                        const percentage = parseFloat(savedSplit);
+                        if (!isNaN(percentage)) {
+                            dashboardGrid.style.setProperty('--left-panel-width', `${percentage}%`);
+                            dashboardGrid.style.setProperty('--right-panel-width', `calc(${100 - percentage}% - 12px)`);
+                        }
+                    }
+                } else if (currentStep === 2) {
+                    dashboardGrid.classList.add('layout-focus-left');
+                    dashboardGrid.style.removeProperty('--left-panel-width');
+                    dashboardGrid.style.removeProperty('--right-panel-width');
+                } else if (currentStep === 3) {
+                    if (currentDocs) {
+                        // Keep reports full screen if they are generated
+                        dashboardGrid.classList.add('layout-fullscreen-console');
+                    } else {
+                        dashboardGrid.classList.add('layout-focus-right');
+                        dashboardGrid.style.removeProperty('--left-panel-width');
+                        dashboardGrid.style.removeProperty('--right-panel-width');
+                    }
+                }
+                consoleMaximizeBtn.innerText = '⛶';
+                consoleMaximizeBtn.title = 'Maximize Console';
+            } else {
+                // Maximize
+                dashboardGrid.classList.add('layout-fullscreen-console');
+                dashboardGrid.style.removeProperty('--left-panel-width');
+                dashboardGrid.style.removeProperty('--right-panel-width');
+                consoleMaximizeBtn.innerText = '📥';
+                consoleMaximizeBtn.title = 'Restore Split View';
+            }
+        });
     }
 
     // --- Action Button Handlers ---
