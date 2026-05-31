@@ -1323,12 +1323,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     consoleMaximizeBtn.title = 'Maximize Console';
                 }
             } else if (stepNum === 2) {
-                dashboardGrid.classList.add('layout-fullscreen-console');
+                dashboardGrid.classList.add('layout-focus-left');
                 dashboardGrid.style.removeProperty('--left-panel-width');
                 dashboardGrid.style.removeProperty('--right-panel-width');
                 if (consoleMaximizeBtn) {
-                    consoleMaximizeBtn.innerText = '📥';
-                    consoleMaximizeBtn.title = 'Restore Split View';
+                    consoleMaximizeBtn.innerText = '⛶';
+                    consoleMaximizeBtn.title = 'Maximize Console';
                 }
             } else if (stepNum === 3) {
                 // If reports are already generated, auto-maximize the console. Otherwise, split-pane.

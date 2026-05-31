@@ -9,6 +9,8 @@ test.describe('Aegis Synthesis E2E Suite', () => {
 
     test('Step 3: End-to-End Report Generation Pipeline, Tab Navigation, and UI Integrity', async ({ page }) => {
         await page.goto('/');
+        page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+        page.on('pageerror', err => console.error('PAGE ERROR:', err.message));
         await page.locator('body').waitFor({ state: 'attached' });
 
         // Step 1: Route interceptor mapping mock API responses to Mistral choices format
@@ -151,44 +153,44 @@ test.describe('Aegis Synthesis E2E Suite', () => {
         const outputDocContent = page.locator('#output-doc-content');
 
         // Tab 1: Questionnaire Answers
-        await page.click('button[data-doc="questionnaireAnswers"]');
-        await expect(page.locator('button[data-doc="questionnaireAnswers"]')).toHaveClass(/active/);
+        await page.click('#output-doc-nav button[data-doc="questionnaireAnswers"]', { force: true });
+        await expect(page.locator('#output-doc-nav button[data-doc="questionnaireAnswers"]')).toHaveClass(/active/);
         await expect(outputDocContent).toContainText('Prospect verified manual spreadsheets');
         await expect(outputDocContent).toContainText('Active TM1 databases: 4');
 
         // Tab 2: Migration Report
-        await page.click('button[data-doc="migrationReport"]');
-        await expect(page.locator('button[data-doc="migrationReport"]')).toHaveClass(/active/);
+        await page.click('#output-doc-nav button[data-doc="migrationReport"]', { force: true });
+        await expect(page.locator('#output-doc-nav button[data-doc="migrationReport"]')).toHaveClass(/active/);
         await expect(outputDocContent).toContainText('Direct migration pathway determined');
 
         // Tab 3: Recap Email
-        await page.click('button[data-doc="recapEmail"]');
-        await expect(page.locator('button[data-doc="recapEmail"]')).toHaveClass(/active/);
+        await page.click('#output-doc-nav button[data-doc="recapEmail"]', { force: true });
+        await expect(page.locator('#output-doc-nav button[data-doc="recapEmail"]')).toHaveClass(/active/);
         await expect(outputDocContent).toContainText('Dear Sarah, thank you for outlining');
 
         // Tab 4: Summary Sheet
-        await page.click('button[data-doc="summarySheet"]');
-        await expect(page.locator('button[data-doc="summarySheet"]')).toHaveClass(/active/);
+        await page.click('#output-doc-nav button[data-doc="summarySheet"]', { force: true });
+        await expect(page.locator('#output-doc-nav button[data-doc="summarySheet"]')).toHaveClass(/active/);
         await expect(outputDocContent).toContainText('Enterprise data transition project metrics');
 
         // Tab 5: Notes
-        await page.click('button[data-doc="notes"]');
-        await expect(page.locator('button[data-doc="notes"]')).toHaveClass(/active/);
+        await page.click('#output-doc-nav button[data-doc="notes"]', { force: true });
+        await expect(page.locator('#output-doc-nav button[data-doc="notes"]')).toHaveClass(/active/);
         await expect(outputDocContent).toContainText('very receptive to Steny AI capabilities');
 
         // Tab 6: Proposal
-        await page.click('button[data-doc="proposal"]');
-        await expect(page.locator('button[data-doc="proposal"]')).toHaveClass(/active/);
+        await page.click('#output-doc-nav button[data-doc="proposal"]', { force: true });
+        await expect(page.locator('#output-doc-nav button[data-doc="proposal"]')).toHaveClass(/active/);
         await expect(outputDocContent).toContainText('proposed migration plan and commercial options');
 
         // Tab 7: Action Items
-        await page.click('button[data-doc="actionItems"]');
-        await expect(page.locator('button[data-doc="actionItems"]')).toHaveClass(/active/);
+        await page.click('#output-doc-nav button[data-doc="actionItems"]', { force: true });
+        await expect(page.locator('#output-doc-nav button[data-doc="actionItems"]')).toHaveClass(/active/);
         await expect(outputDocContent).toContainText('Send calendar invite for next session');
 
         // Tab 8: Transcript
-        await page.click('button[data-doc="transcript"]');
-        await expect(page.locator('button[data-doc="transcript"]')).toHaveClass(/active/);
+        await page.click('#output-doc-nav button[data-doc="transcript"]', { force: true });
+        await expect(page.locator('#output-doc-nav button[data-doc="transcript"]')).toHaveClass(/active/);
         await expect(outputDocContent).toContainText('using 4 legacy TM1 databases');
 
         // 7. Verify UI styling indicators match generated state

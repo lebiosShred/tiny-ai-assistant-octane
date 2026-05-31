@@ -32,7 +32,7 @@ class IndexPage {
    * Navigate to the index page and wait for the body to render.
    */
   async goto() {
-    await this.page.goto('/');
+    await this.page.goto('/?demo=true');
     await this.page.locator('body').waitFor({ state: 'attached' });
   }
 
@@ -79,7 +79,13 @@ class IndexPage {
    * Advance to the Playbook step by clicking the next button.
    */
   async goToPlaybook() {
-    await this.nextBtn.click();
+    const isStep2Active = await this.page.evaluate(() => {
+      const el = document.querySelector('#step-2-content');
+      return el && el.classList.contains('active');
+    });
+    if (!isStep2Active) {
+      await this.nextBtn.click();
+    }
   }
 
   /**

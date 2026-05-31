@@ -1889,7 +1889,7 @@ const server = http.createServer(async (req, res) => {
     } else if (pathname === '/projects') {
         relativePath = '/demo/github_projects.html';
     } else if (pathname === '/admin') {
-        relativePath = '/demo/claude_admin_advanced.html';
+        relativePath = '/demo/admin_setup.html';
     } else if (pathname === '/audit') {
         relativePath = '/demo/audit_log.html';
     } else if (pathname === '/analytics') {
