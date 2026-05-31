@@ -397,6 +397,8 @@ async function handleCallPrep(contactId) {
             params.track = 'TM1 Support & Managed Support';
         } else if (intake.includes('datafusion') || intake.includes('connector') || intake.includes('power bi')) {
             params.track = 'DataFusion & Analytics Stack';
+        } else if (intake.includes('no intake') || intake === 'none provided') {
+            params.track = 'N/A';
         }
         
         const systemPrompt = "You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler.";
@@ -536,6 +538,9 @@ async function handleCallSynthesis(callId) {
                         variant = 'Variant B';
                     } else if (intake.includes('datafusion') || intake.includes('connector') || intake.includes('power bi')) {
                         track = 'DataFusion & Analytics Stack';
+                        variant = 'Variant A';
+                    } else if (intake.includes('no intake') || intake === 'none provided' || intake === 'n/a') {
+                        track = 'N/A';
                         variant = 'Variant A';
                     }
                 }
