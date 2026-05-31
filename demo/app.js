@@ -1285,7 +1285,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getApiConfig() {
         return {
             provider: localStorage.getItem('tiny_api_provider') || TinyAI.DEFAULT_CONFIG.provider || 'mistral',
-            apiKey: "",
+            apiKey: localStorage.getItem('tiny_api_key') || "",
             apiUrl: localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl,
             model: localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model,
             prepSystemPrompt: localStorage.getItem('tiny_prep_system_prompt') || TONE_PRESETS.professional.prep,

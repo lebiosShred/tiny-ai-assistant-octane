@@ -175,6 +175,100 @@ function searchWeb(query) {
     });
 }
 
+function executeGeminiFailover(payload) {
+    return new Promise((resolve, reject) => {
+        const geminiKeys = (process.env.GOOGLE_API_KEYS || "").split(",");
+        const activeKeys = geminiKeys.map(k => k.trim()).filter(k => k.length > 0);
+
+        if (activeKeys.length === 0) {
+            reject(new Error("GOOGLE_API_KEYS is not configured or empty."));
+            return;
+        }
+
+        let systemPrompt = '';
+        const geminiMessages = [];
+        if (Array.isArray(payload.messages)) {
+            for (const msg of payload.messages) {
+                if (msg.role === 'system') {
+                    systemPrompt += msg.content + '\n';
+                } else {
+                    geminiMessages.push({
+                        role: msg.role === 'assistant' ? 'model' : 'user',
+                        parts: [{ text: msg.content }]
+                    });
+                }
+            }
+        }
+
+        const geminiPayload = JSON.stringify({
+            contents: geminiMessages,
+            systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt.trim() }] } : undefined,
+            generationConfig: {
+                temperature: payload.temperature !== undefined ? payload.temperature : 0.2
+            }
+        });
+
+        let keyIndex = 0;
+
+        function tryNextKey() {
+            if (keyIndex >= activeKeys.length) {
+                reject(new Error("All Gemini failover keys exhausted or failed."));
+                return;
+            }
+
+            const apiKey = activeKeys[keyIndex];
+            keyIndex++;
+
+            const options = {
+                hostname: 'generativelanguage.googleapis.com',
+                port: 443,
+                path: `/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(geminiPayload)
+                }
+            };
+
+            const req = https.request(options, (res) => {
+                let resBody = '';
+                res.on('data', chunk => resBody += chunk);
+                res.on('end', () => {
+                    if (res.statusCode !== 200) {
+                        console.warn(`⚠️ Gemini API with key index ${keyIndex - 1} returned status ${res.statusCode}. Trying next key...`);
+                        tryNextKey();
+                        return;
+                    }
+                    try {
+                        const data = JSON.parse(resBody);
+                        const textContent = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] ? data.candidates[0].content.parts[0].text : '';
+                        if (!textContent) {
+                            console.warn(`⚠️ Gemini API with key index ${keyIndex - 1} returned empty content. Trying next key...`);
+                            tryNextKey();
+                            return;
+                        }
+                        console.log(`✅ Gemini failover succeeded using key index ${keyIndex - 1}.`);
+                        resolve(textContent);
+                    } catch (e) {
+                        console.error(`⚠️ Failed to parse Gemini API response with key index ${keyIndex - 1}:`, e);
+                        tryNextKey();
+                    }
+                });
+            });
+
+            req.on('error', (err) => {
+                console.error(`⚠️ Gemini request error with key index ${keyIndex - 1}:`, err);
+                tryNextKey();
+            });
+
+            req.write(geminiPayload);
+            req.end();
+        }
+
+        tryNextKey();
+    });
+}
+
 function logAuditEvent(req, action, details = {}) {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     const userAgent = req.headers['user-agent'] || 'unknown';
@@ -1181,10 +1275,28 @@ const server = http.createServer(async (req, res) => {
                 const proxyReq = https.request(anthropicOptions, (proxyRes) => {
                     let resBody = '';
                     proxyRes.on('data', chunk => resBody += chunk);
-                    proxyRes.on('end', () => {
+                    proxyRes.on('end', async () => {
                         if (proxyRes.statusCode !== 200) {
-                            res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
-                            res.end(resBody);
+                            console.warn(`⚠️ Primary Anthropic API returned status ${proxyRes.statusCode}. Attempting Gemini failover...`);
+                            try {
+                                const text = await executeGeminiFailover(payload);
+                                const mistralData = {
+                                    choices: [
+                                        {
+                                            message: {
+                                                role: 'assistant',
+                                                content: text
+                                            }
+                                        }
+                                    ]
+                                };
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify(mistralData));
+                            } catch (geminiError) {
+                                console.error("❌ Gemini failover failed:", geminiError.message);
+                                res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
+                                res.end(resBody);
+                            }
                             return;
                         }
                         try {
@@ -1209,9 +1321,27 @@ const server = http.createServer(async (req, res) => {
                     });
                 });
 
-                proxyReq.on('error', (err) => {
-                    res.writeHead(502, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: `Anthropic connection error: ${err.message}` }));
+                proxyReq.on('error', async (err) => {
+                    console.warn(`⚠️ Anthropic connection error: ${err.message}. Attempting Gemini failover...`);
+                    try {
+                        const text = await executeGeminiFailover(payload);
+                        const mistralData = {
+                            choices: [
+                                {
+                                    message: {
+                                        role: 'assistant',
+                                        content: text
+                                    }
+                                }
+                            ]
+                        };
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify(mistralData));
+                    } catch (geminiError) {
+                        console.error("❌ Gemini failover failed:", geminiError.message);
+                        res.writeHead(502, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: `Anthropic connection failed: ${err.message}. Failover also failed: ${geminiError.message}` }));
+                    }
                 });
 
                 proxyReq.write(anthropicPayload);
@@ -1234,13 +1364,59 @@ const server = http.createServer(async (req, res) => {
             };
 
             const proxyReq = https.request(options, (proxyRes) => {
-                res.writeHead(proxyRes.statusCode, proxyRes.headers);
-                proxyRes.pipe(res);
+                let resBody = '';
+                proxyRes.on('data', chunk => resBody += chunk);
+                proxyRes.on('end', async () => {
+                    if (proxyRes.statusCode === 200) {
+                        res.writeHead(200, proxyRes.headers);
+                        res.end(resBody);
+                        return;
+                    }
+
+                    console.warn(`⚠️ Primary Mistral API returned status ${proxyRes.statusCode}. Attempting Gemini failover...`);
+                    try {
+                        const text = await executeGeminiFailover(payload);
+                        const mistralData = {
+                            choices: [
+                                {
+                                    message: {
+                                        role: 'assistant',
+                                        content: text
+                                    }
+                                }
+                            ]
+                        };
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify(mistralData));
+                    } catch (geminiError) {
+                        console.error("❌ Gemini failover failed:", geminiError.message);
+                        res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
+                        res.end(resBody);
+                    }
+                });
             });
 
-            proxyReq.on('error', (err) => {
-                res.writeHead(502, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: `Proxy connection error: ${err.message}` }));
+            proxyReq.on('error', async (err) => {
+                console.warn(`⚠️ Mistral connection error: ${err.message}. Attempting Gemini failover...`);
+                try {
+                    const text = await executeGeminiFailover(payload);
+                    const mistralData = {
+                        choices: [
+                            {
+                                message: {
+                                    role: 'assistant',
+                                    content: text
+                                }
+                            }
+                        ]
+                    };
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(mistralData));
+                } catch (geminiError) {
+                    console.error("❌ Gemini failover failed:", geminiError.message);
+                    res.writeHead(502, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: `Mistral connection failed: ${err.message}. Failover also failed: ${geminiError.message}` }));
+                }
             });
 
             proxyReq.write(jsonPayload);

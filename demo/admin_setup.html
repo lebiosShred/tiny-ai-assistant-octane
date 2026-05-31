@@ -824,6 +824,10 @@
                                 <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Anthropic)</option>
                             </select>
                         </div>
+                        <div class="form-group" style="flex: 1.5;">
+                            <label class="form-label">Custom API Key (Client Override)</label>
+                            <input type="password" class="form-input" id="cfg-api-key" placeholder="Enter custom key to override server credentials..." style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -970,6 +974,7 @@
         const cfgApiProvider = document.getElementById('cfg-api-provider');
         const cfgApiUrl = document.getElementById('cfg-api-url');
         const cfgApiModel = document.getElementById('cfg-api-model');
+        const cfgApiKey = document.getElementById('cfg-api-key');
         const cfgTonePreset = document.getElementById('cfg-tone-preset');
         const cfgPrepPrompt = document.getElementById('cfg-prep-prompt');
         const cfgSynthPrompt = document.getElementById('cfg-synth-prompt');
@@ -1038,6 +1043,7 @@
             cfgApiProvider.value = localStorage.getItem('tiny_api_provider') || 'mistral';
             cfgApiUrl.value = localStorage.getItem('tiny_api_url') || '/api/chat';
             cfgApiModel.value = localStorage.getItem('tiny_api_model') || 'mistral-large-latest';
+            cfgApiKey.value = localStorage.getItem('tiny_api_key') || '';
 
             const savedTone = localStorage.getItem('tiny_tone') || 'professional';
             cfgTonePreset.value = savedTone;
@@ -1053,6 +1059,7 @@
             localStorage.setItem('tiny_api_provider', cfgApiProvider.value);
             localStorage.setItem('tiny_api_url', cfgApiUrl.value.trim());
             localStorage.setItem('tiny_api_model', cfgApiModel.value);
+            localStorage.setItem('tiny_api_key', cfgApiKey.value.trim());
             localStorage.setItem('tiny_tone', cfgTonePreset.value);
             localStorage.setItem('tiny_prep_system_prompt', cfgPrepPrompt.value.trim());
             localStorage.setItem('tiny_synth_system_prompt', cfgSynthPrompt.value.trim());
@@ -1076,7 +1083,7 @@
             if (!confirm('Reset all settings to defaults? This will clear all saved configurations.')) return;
 
             const keys = [
-                'tiny_api_provider', 'tiny_api_url', 'tiny_api_model',
+                'tiny_api_provider', 'tiny_api_url', 'tiny_api_model', 'tiny_api_key',
                 'tiny_tone', 'tiny_prep_system_prompt', 'tiny_synth_system_prompt'
             ];
             keys.forEach(k => localStorage.removeItem(k));
