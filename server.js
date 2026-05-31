@@ -533,6 +533,81 @@ async function fetchTavilyRAGContext(name, company) {
     });
 }
 
+async function fetchTavilyCompanyNews(company, website) {
+    const apiKey = (process.env.TAVILY_API_KEY || '').trim();
+    if (!apiKey) {
+        console.warn("⚠️ TAVILY_API_KEY is not configured on the server. Skipping company updates search.");
+        return "No real-time company search context available (Tavily API key missing).";
+    }
+
+    let query = `"${company}" company recent news updates press releases 2025 2026`;
+    if (website && website !== 'Unknown URL' && website.trim() !== '') {
+        const domain = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+        query = `site:${domain}/press OR site:${domain}/news OR "${company}" recent news updates OR "product launch" OR "acquisitions" 2025 2026`;
+    }
+
+    const payload = JSON.stringify({
+        api_key: apiKey,
+        query: query,
+        search_depth: "advanced",
+        topic: "news",
+        max_results: 4
+    });
+
+    return new Promise((resolve) => {
+        const options = {
+            hostname: 'api.tavily.com',
+            port: 443,
+            path: '/search',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (parsed.results && parsed.results.length > 0) {
+                            const formatted = parsed.results.map(item => 
+                                `Title: ${item.title}\nURL: ${item.url}\nContent: ${item.content}`
+                            ).join('\n\n');
+                            resolve(formatted);
+                        } else {
+                            resolve(`No recent news or press updates returned for ${company}.`);
+                        }
+                    } catch (e) {
+                        console.error("⚠️ Failed to parse Tavily company search response:", e.message);
+                        resolve("Failed to parse company search results.");
+                    }
+                } else {
+                    console.error(`⚠️ Tavily company search returned status ${res.statusCode}: ${data}`);
+                    resolve("Tavily RAG company search service unavailable.");
+                }
+            });
+        });
+
+        req.on('error', (err) => {
+            console.error("❌ Tavily company search request failed:", err.message);
+            resolve("Failed to fetch company search context due to network error.");
+        });
+
+        req.setTimeout(4000, () => {
+            console.warn("⚠️ Tavily company search request timed out.");
+            req.destroy();
+            resolve("Tavily company search request timed out.");
+        });
+
+        req.write(payload);
+        req.end();
+    });
+}
+
 async function fetchGithubTechnographics(companyName) {
     if (!companyName || companyName.toLowerCase().includes('unknown') || companyName.trim() === '') {
         return "No company name available for GitHub technographic mapping.";
@@ -615,8 +690,10 @@ async function handleCallPrep(contactId) {
         const company = contact.properties.company || 'Unknown Company';
         
         console.log(`🔍 Webhook Triggered. Initiating parallel data enrichment for: ${name} at ${company}`);
-        const [ragContext, githubContext] = await Promise.all([
+        const websiteUrl = contact.properties.website || '';
+        const [ragContext, companyNewsContext, githubContext] = await Promise.all([
             fetchTavilyRAGContext(name, company),
+            fetchTavilyCompanyNews(company, websiteUrl),
             fetchGithubTechnographics(company)
         ]);
 
@@ -624,11 +701,12 @@ async function handleCallPrep(contactId) {
             name: name,
             title: contact.properties.jobtitle || 'Unknown Title',
             company: company,
-            url: contact.properties.website || 'Unknown URL',
+            url: websiteUrl || 'Unknown URL',
             email: contact.properties.email || 'Unknown Email',
             track: 'TM1 & AI',
             intakeAnswers: contact.properties.hubspot_booking_intake || 'None provided',
             linkedinInfo: ragContext,
+            companyUpdatesInfo: companyNewsContext,
             githubInfo: githubContext
         };
         
@@ -661,17 +739,19 @@ I am about to have a 30-minute pre-screen call with a prospect. Using the inputs
 ${params.intakeAnswers}
 6. LinkedIn Profile / Experience (from Web RAG):
 ${params.linkedinInfo}
-7. Company GitHub Technographics:
+7. Company Recent News & Updates (from Web RAG):
+${params.companyUpdatesInfo}
+8. Company GitHub Technographics:
 ${params.githubInfo}
 
 --- PRODUCE THESE 10 POINTS ---
 1. LinkedIn profile analysis — role history, tenure, seniority, network signals. (Do NOT invent details. If no LinkedIn data is provided in input 6, write "N/A - No profile data found. Requires manual discovery").
 2. Recent social media activity — posts, articles, comments (if visible/inferred from input 6, otherwise write "N/A").
-3. Company overview — products, services, industry context. (Incorporate tech stack details from input 7 if available).
-4. Octane services relevant to this prospect — customize based on track, company size, and technographics.
+3. Company overview — products, services, industry context. (Incorporate recent corporate news, product announcements, and press releases from input 7 to make this highly current and specific. Incorporate technographics from input 8).
+4. Octane services relevant to this prospect — customize based on track, company size, news inputs, and technographics.
 5. Key competitors this prospect may be evaluating.
 6. Competing applications they may already use (e.g. Anaplan, Workday Adaptive, manual Excel. Do NOT assume they use manual Excel unless supported or custom workflows are common in their industry/role).
-7. Complementary applications in their stack (e.g. NetSuite, SAP, Power BI. Incorporate facts from inputs 6 and 7, otherwise write "Requires manual verification").
+7. Complementary applications in their stack (e.g. NetSuite, SAP, Power BI. Incorporate facts from inputs 6, 7, and 8, otherwise write "Requires manual verification").
 8. TM1 or AI applications relevant to their industry/role.
 9. Likely pain points — based on role, company size, and service interest.
 10. Conversation starters — 3 specific openers that demonstrate relevance from the first sentence (do NOT use generic discovery questions. If no LinkedIn/technographic data is provided, base openers strictly on the booking intake answers or their actual company domain; do not make up fake personal connection hooks).
