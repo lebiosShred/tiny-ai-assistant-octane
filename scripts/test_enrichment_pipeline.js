@@ -158,71 +158,6 @@ async function testFetchExaRAGContext(name, company, apiKeyOverride) {
     }
 }
 
-async function testFetchPerplexityBrief(name, company, apiKeyOverride) {
-    const apiKey = apiKeyOverride !== undefined ? apiKeyOverride : (process.env.PERPLEXITY_API_KEY || '').trim();
-    if (!apiKey) {
-        return "No real-time Perplexity search context available (Perplexity API key missing).";
-    }
-
-    const query = `Provide a professional summary of "${name}" at "${company}". Focus on their role, professional background, recent developments, and their company's core updates. Output in factual bullet points, no fluff.`;
-    const payload = JSON.stringify({
-        model: "sonar",
-        messages: [
-            { role: "system", content: "You are a precise B2B intelligence analyst." },
-            { role: "user", content: query }
-        ],
-        temperature: 0.2,
-        max_tokens: 400
-    });
-
-    return new Promise((resolve) => {
-        const options = {
-            hostname: 'api.perplexity.ai',
-            port: 443,
-            path: '/chat/completions',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Length': Buffer.byteLength(payload)
-            }
-        };
-
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    try {
-                        const parsed = JSON.parse(data);
-                        if (parsed.choices && parsed.choices.length > 0) {
-                            resolve(parsed.choices[0].message.content);
-                        } else {
-                            resolve("No summary returned from Perplexity.");
-                        }
-                    } catch (e) {
-                        resolve("Failed to parse Perplexity results.");
-                    }
-                } else {
-                    resolve("Perplexity research service unavailable.");
-                }
-            });
-        });
-
-        req.on('error', () => {
-            resolve("Failed to fetch Perplexity context due to network error.");
-        });
-
-        req.setTimeout(5000, () => {
-            req.destroy();
-            resolve("Perplexity research request timed out.");
-        });
-
-        req.write(payload);
-        req.end();
-    });
-}
-
 async function runTests() {
     console.log("🚀 Starting Unit Tests for Data Enrichment Helpers...\n");
 
@@ -270,16 +205,7 @@ async function runTests() {
     }
     console.log();
 
-    // Test Case 5: Perplexity handles missing API key gracefully
-    console.log("--- Test Case 5: Perplexity handles missing API key ---");
-    const result5 = await testFetchPerplexityBrief("Sarah", "Meridian", "");
-    console.log(`Result: "${result5}"`);
-    if (result5.includes("Perplexity API key missing")) {
-        console.log("✅ PASSED: Handled missing Perplexity API key correctly.");
-    } else {
-        console.error("❌ FAILED: Unexpected output for missing Perplexity API key.");
-    }
-    console.log();
+
 
     console.log("🌟 ALL ENRICHMENT PIPELINE UNIT TESTS PASSED! 🌟");
 }
