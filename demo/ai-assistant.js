@@ -365,7 +365,7 @@ Do not write markdown backticks or conversational prefixes. Return only the HTML
                 <div class="rapport-card card-avoid">
                     <h4 class="rapport-card-title">⚠️ Phrases to Avoid / Competitor Flags</h4>
                     <ul class="rapport-card-list">
-                        <li>Avoid hardcoding assumptions about their software stack (e.g., NetSuite) unless verified by active RAG search.</li>
+                        <li>Avoid hardcoding assumptions about their software stack unless verified by active RAG search.</li>
                         <li>Do not mention specific pricing rates before verifying standard packaging matching their business scale.</li>
                     </ul>
                 </div>
@@ -798,11 +798,19 @@ Format: HTML email from the Sales Representative to the prospect. Include key po
             const responseText = await callMistralAPI(messages, customConfig);
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
+            let erpName = "ERP/financial systems";
+            const intakeText = (prospectData.intake || "").toLowerCase();
+            if (intakeText.includes("netsuite")) erpName = "NetSuite ERP";
+            else if (intakeText.includes("sap")) erpName = "SAP ERP";
+            else if (intakeText.includes("dynamics")) erpName = "Microsoft Dynamics";
+            else if (intakeText.includes("xero")) erpName = "Xero";
+            else if (intakeText.includes("myob")) erpName = "MYOB";
+
             return `<p>Subject: Optimising ${prospectData.company}'s Financial Planning & Reporting</p>
 <p>Dear ${prospectData.name},</p>
 <p>I tried calling you today regarding your interest in our ${prospectData.track} services at Octane Software Solutions, but was unable to reach you.</p>
 <p>I put together a briefing for our call based on your role as ${prospectData.title || 'Head of Finance'} and some common challenges logistics/finance teams face, such as consolidating manual spreadsheets and version control issues.</p>
-<p>Specifically, I thought you might be interested in how we help companies automate NetSuite data loading to Planning Analytics, eliminating manual copy-paste cycles.</p>
+<p>Specifically, I thought you might be interested in how we help companies automate ${erpName} data loading to Planning Analytics, eliminating manual copy-paste cycles.</p>
 <p>Would you have 10 minutes next week for a brief online sync? You can book a time directly with our Director, System Administrator, using our scheduler.</p>
 <p>Kind regards,<br>${prospectData.rep || 'Albert'}<br>Octane Software Solutions</p>`;
         }
@@ -855,25 +863,31 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
             const responseText = await callMistralAPI(messages, customConfig);
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
+            const proposedPkg = params.track === 'Agentic AI Operations & Watsonx' 
+                ? 'DevOps Red Support & AI Pilot POC' 
+                : params.track === 'DataFusion & Analytics Stack'
+                ? 'DataFusion Integration Connector'
+                : 'DevOps Blue Support';
+                
             return `<h4>1. UNDERSTANDING OF REQUIREMENTS</h4>
-<p>Based on our pre-screen call, ${params.company} is seeking to transition their manual Excel budgeting process. They require direct ERP integration to NetSuite and automated actuals loading.</p>
+<p>Based on our pre-screen analysis, <strong>${params.company || 'Unknown Company'}</strong> is looking to streamline operational workflows under the <strong>${params.track || 'TM1 & AI'}</strong> track. The current configuration requires direct data integration and automation to eliminate manual reconciliation cycles.</p>
 <h4>2. PROPOSED SOLUTION</h4>
-<p>We propose the implementation of **Octane Blue Support** combined with a **DataFusion NetSuite Connector** to establish a single source of truth.</p>
+<p>We propose the implementation of the **${proposedPkg}** to establish a single source of truth and optimize system administration.</p>
 <ul>
-    <li><strong>DevOps Blue Support:</strong> A$4,560/month base support. Inclusions: Rollover hours, monthly health checks, certified developer access.</li>
-    <li><strong>DataFusion Connector:</strong> Setup price A$6,950. Automates NetSuite data loading to central database.</li>
+    <li><strong>System Support:</strong> Tailored support package aligned to the <strong>${params.track || 'TM1 & AI'}</strong> interest track.</li>
+    <li><strong>Data Automation:</strong> Setup of custom DataFusion connectivity if standard databases are used.</li>
 </ul>
 <h4>3. APPROACH & METHODOLOGY</h4>
-<p>We recommend a 6-week implementation project with kickoff and decision workshops.</p>
+<p>We recommend a phased implementation schedule starting with detailed architecture and validation workshops.</p>
 <h4>4. TEAM & RESOURCES</h4>
-<p>Staffing includes a dedicated onshore Lead Architect (System Administrator) supported by our certified offshore developer team.</p>
+<p>Staffing includes a dedicated Lead Architect supported by a certified development team.</p>
 <h4>5. NEXT STEPS</h4>
-<p>Book a Positional Meeting with System Administrator to confirm NetSuite API sandbox access and custom multi-currency table mapping.</p>`;
+<p>Book a Positional Meeting with the System Administrator to confirm API sandboxes and data structures.</p>`;
         }
     }
 
     /**
-     * Helper to return precompiled mock deliverables for the Sarah Chen pre-screen transcript.
+     * Helper to return precompiled mock deliverables.
      */
     function getOfflineMockSynthesis(screencastUrl, customQuestions = null) {
         if (typeof window !== 'undefined' && typeof window.getOfflineMockSynthesisOverride === 'function') {
@@ -882,6 +896,57 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
                 return overrideResult;
             }
         }
+        
+        let leadName = "Unknown Lead";
+        let leadTitle = "Unknown Title";
+        let leadCompany = "Unknown Company";
+        let leadTrack = "TM1 & AI";
+        let leadRep = "Albert";
+        let leadIntake = "";
+
+        if (typeof document !== 'undefined') {
+            const nameEl = document.getElementById('prep-name');
+            const titleEl = document.getElementById('prep-title');
+            const companyEl = document.getElementById('prep-company');
+            const trackEl = document.getElementById('prep-track');
+            const repEl = document.getElementById('prep-rep');
+            const intakeEl = document.getElementById('prep-intake');
+            
+            if (nameEl && nameEl.value) leadName = nameEl.value.trim();
+            if (titleEl && titleEl.value) leadTitle = titleEl.value.trim();
+            if (companyEl && companyEl.value) leadCompany = companyEl.value.trim();
+            if (trackEl && trackEl.value) leadTrack = trackEl.value.trim();
+            if (repEl && repEl.value) leadRep = repEl.value.trim();
+            if (intakeEl && intakeEl.value) leadIntake = intakeEl.value.trim();
+        }
+
+        let erpSystem = "ERP/financial system";
+        let sheetsCount = "manual spreadsheets";
+        let timeWasted = "manual copy-paste consolidation";
+
+        const lowerIntake = leadIntake.toLowerCase();
+        if (lowerIntake.includes("netsuite")) erpSystem = "NetSuite ERP";
+        else if (lowerIntake.includes("sap")) erpSystem = "SAP ERP";
+        else if (lowerIntake.includes("dynamics")) erpSystem = "Microsoft Dynamics";
+        else if (lowerIntake.includes("xero")) erpSystem = "Xero";
+        else if (lowerIntake.includes("myob")) erpSystem = "MYOB";
+
+        const sheetMatch = leadIntake.match(/(\d+)\s*(?:separate\s*)?spreadsheet/i) || leadIntake.match(/(\d+)\s*sheet/i);
+        if (sheetMatch) {
+            sheetsCount = `${sheetMatch[1]} separate spreadsheets`;
+        }
+
+        const timeMatch = leadIntake.match(/(\d+)\s*(?:min|minute)/i);
+        if (timeMatch) {
+            timeWasted = `${timeMatch[1]} minutes of manual copy-paste per sheet`;
+        }
+
+        const proposedPkg = leadTrack === 'Agentic AI Operations & Watsonx' 
+            ? 'DevOps Red Support & AI Pilot POC' 
+            : leadTrack === 'DataFusion & Analytics Stack'
+            ? 'DataFusion Integration Connector'
+            : 'DevOps Blue Support';
+
         const screencastSegment = screencastUrl ? `<p>I have also recorded a 2-minute video briefing summarizing our discussion, which you can review here: <a href="${screencastUrl}" target="_blank" style="color: #4daeeb;">${screencastUrl}</a></p>` : "";
         const screencastField = screencastUrl ? `<li><strong>Screencast URL:</strong> <a href="${screencastUrl}" target="_blank" style="color: #4daeeb;">${screencastUrl}</a></li>` : "<li><strong>Screencast URL:</strong> Not provided</li>";
 
@@ -892,11 +957,11 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
                 let defaultAns = "";
                 const lowerQ = qText.toLowerCase();
                 if (idx === 0 && lowerQ.includes("ledger")) {
-                    defaultAns = `Currently using NetSuite. There is no automated integration to their budgeting tools; data is exported via CSV files. <em>"Our actuals reside in NetSuite, but all our planning models are housed in Excel."</em>`;
+                    defaultAns = `Currently using ${erpSystem}. There is no automated integration to their budgeting tools; data is exported via CSV files. <em>"Our actuals reside in ${erpSystem}, but all our planning models are housed in Excel."</em>`;
                 } else if (idx === 1 && lowerQ.includes("spreadsheet")) {
-                    defaultAns = `35 separate spreadsheets are sent out to department heads and manually consolidated. Version control issues are frequent. <em>"We have about 35 separate spreadsheets... incredibly prone to formula errors."</em>`;
+                    defaultAns = `${sheetsCount} are sent out to department heads and manually consolidated. Version control issues are frequent. <em>"We have about ${sheetsCount}... incredibly prone to formula errors."</em>`;
                 } else if (idx === 2 && lowerQ.includes("workflow")) {
-                    defaultAns = `Monthly forecasting and actuals consolidation. 45 minutes of manual copy-paste is required per sheet. <em>"Consolidating the NetSuite actuals with our Excel model templates takes us 45 minutes per worksheet."</em>`;
+                    defaultAns = `Monthly forecasting and actuals consolidation. ${timeWasted} is required per sheet. <em>"Consolidating actuals with our Excel model templates takes us ${timeWasted}."</em>`;
                 } else {
                     defaultAns = `Captured details matching custom query. <em>"Response verified during Discovery Call."</em>`;
                 }
@@ -905,14 +970,14 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
             }).join('');
         } else {
             questionnaireHtml = `
-<p><strong>1. What general ledger/ERP system are you using, and does it integrate with your planning tool?:</strong> Currently using NetSuite. There is no automated integration to their budgeting tools; data is exported via CSV files. <em>"Our actuals reside in NetSuite, but all our planning models are housed in Excel."</em></p>
-<p><strong>2. How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting?:</strong> 35 separate spreadsheets are sent out to department heads and manually consolidated. Version control issues are frequent. <em>"We have about 35 separate spreadsheets... incredibly prone to formula errors."</em></p>
-<p><strong>3. What specific planning workflows are you executing, and are allocations inconsistent?:</strong> Monthly actuals vs budget consolidation and forecasting. Consolidation takes 45 minutes per worksheet, taking up to several days in total close time. <em>"Consolidating the NetSuite actuals with our Excel model templates takes us 45 minutes per worksheet."</em></p>
+<p><strong>1. What general ledger/ERP system are you using, and does it integrate with your planning tool?:</strong> Currently using ${erpSystem}. There is no automated integration to their budgeting tools; data is exported via CSV files. <em>"Our actuals reside in ${erpSystem}, but all our planning models are housed in Excel."</em></p>
+<p><strong>2. How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting?:</strong> ${sheetsCount} are sent out to department heads and manually consolidated. Version control issues are frequent. <em>"We have about ${sheetsCount}... incredibly prone to formula errors."</em></p>
+<p><strong>3. What specific planning workflows are you executing, and are allocations inconsistent?:</strong> Monthly actuals vs budget consolidation and forecasting. Consolidation takes ${timeWasted}, taking up to several days in total close time. <em>"Consolidating the actuals with our Excel model templates takes us ${timeWasted}."</em></p>
 <p><strong>4. What reporting tools do you use, and do you manually export CSV files?:</strong> Power BI and PAX, both fed manually from consolidated Excel workbooks. <em>"We are using Power BI and PAX for some basic reporting, but they're fed from these manual Excel files."</em></p>
-<p><strong>5. Do users need to drill down from high-level reports to transaction-level GL data?:</strong> Yes, analysts need to drill down to verify variance, but cannot do so in the current setup. <em>"My analysts could actually focus on tracking logistics variance instead of doing data entry."</em></p>
-<p><strong>6. Do you have internal developers/admins to manage these systems?:</strong> No internal TM1 or Planning Analytics administrators; they rely entirely on the finance team. <em>"We don't have internal admins... key person risk is high."</em></p>
-<p><strong>7. How many planning contributors, read-only users, and administrators are involved?:</strong> Approximately 35 department heads contribute, with 5 finance power users and 20 management read-only consumers. <em>"35 contributors..."</em></p>
-<p><strong>8. What repetitive financial tasks feel most manual?:</strong> Exporting GL files, copying them into consolidation templates, and sending emails to follow up. <em>"Consolidating NetSuite actuals..."</em></p>
+<p><strong>5. Do users need to drill down from high-level reports to transaction-level GL data?:</strong> Yes, analysts need to drill down to verify variance, but cannot do so in the current setup. <em>"My analysts could actually focus on tracking variance instead of doing data entry."</em></p>
+<p><strong>6. Do you have internal developers/admins to manage these systems?:</strong> No internal administrators; they rely entirely on the finance team. <em>"We don't have internal admins... key person risk is high."</em></p>
+<p><strong>7. How many planning contributors, read-only users, and administrators are involved?:</strong> Approximately ${sheetsCount.match(/\d+/) ? sheetsCount.match(/\d+/)[0] : '35'} department heads contribute, with 5 finance power users and 20 management read-only consumers.</p>
+<p><strong>8. What repetitive financial tasks feel most manual?:</strong> Exporting GL files, copying them into consolidation templates, and sending emails to follow up. <em>"Consolidating actuals..."</em></p>
 <p><strong>9. What is your target timeline for going live?:</strong> Before the Q3 planning cycle, which begins in 2 months. <em>"We want this resolved before the Q3 planning cycle..."</em></p>
 <p><strong>10. Is there a budget allocated for licensing and delivery?:</strong> Up to $40,000 sign-off threshold for the current financial year. <em>"We have a sign-off threshold of up to $40,000..."</em></p>
 <p><strong>11. Have you evaluated other tools?:</strong> They have not run detailed evaluations of other tools but are familiar with TM1/Planning Analytics. <em>"Not evaluated others in depth..."</em></p>
@@ -922,29 +987,29 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
         return {
             questionnaireAnswers: questionnaireHtml,
             summary: `<h4>QUALIFICATION SCORE: HOT</h4>
-<p><strong>SCORING RATIONALE:</strong> The prospect has a clear budget ($40,000 threshold), an urgent timeline (Q3 planning starting in 2 months), and a severe operational bottleneck (3 days wasted on manual consolidation of 35 spreadsheets).</p>
-<p><strong>RECOMMENDED NEXT STEP:</strong> Book a Deep-Dive Architectural meeting with System Administrator to scoping the DataFusion NetSuite connector and DevOps Blue support.</p>
+<p><strong>SCORING RATIONALE:</strong> The prospect has a clear budget ($40,000 threshold), an urgent timeline (Q3 planning starting in 2 months), and a severe operational bottleneck (3 days wasted on manual consolidation of ${sheetsCount}).</p>
+<p><strong>RECOMMENDED NEXT STEP:</strong> Book a Deep-Dive Architectural meeting with System Administrator to scoping the ${proposedPkg} support.</p>
 <p><strong>RED FLAGS:</strong> None. Approval threshold is well-aligned with implementation costs.</p>`,
             
-            recapEmail: `<p>Hey Sarah Chen,</p>
+            recapEmail: `<p>Hey ${leadName},</p>
 <p>I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.</p>
 <ul>
-    <li>You are currently running NetSuite, but all budgeting and consolidation is done in 35 manual spreadsheets, taking 45 minutes per worksheet.</li>
-    <li>We can automate this process entirely, saving your team 3 days of manual copy-pasting every month.</li>
+    <li>You are currently running ${erpSystem}, but all budgeting and consolidation is done in ${sheetsCount}, taking ${timeWasted}.</li>
+    <li>We can automate this process entirely, saving your team days of manual copy-pasting every month.</li>
     <li>We aim to have this solved before your Q3 planning cycle kicks off in two months.</li>
 </ul>
 ${screencastSegment}
 <p>You should have received an invitation confirming our appointment together.</p>
-<p>Kind regards,<br>Anthony.</p>`,
+<p>Kind regards,<br>${leadRep}.</p>`,
 
-            summarySheet: `<p><strong>SUMMARY:</strong> Meridian Logistics — ${new Date().toLocaleDateString()}</p>
+            summarySheet: `<p><strong>SUMMARY:</strong> ${leadCompany} — ${new Date().toLocaleDateString()}</p>
 <ul>
-    <li><strong>ATTENDEES:</strong> Sarah Chen (Head of FP&A), Albert (Sales Team)</li>
-    <li><strong>SERVICE TRACK:</strong> Planning & Analytics (TM1)</li>
+    <li><strong>ATTENDEES:</strong> ${leadName} (${leadTitle}), ${leadRep} (Sales Team)</li>
+    <li><strong>SERVICE TRACK:</strong> ${leadTrack}</li>
     <li><strong>KEY DISCUSSION POINTS:</strong>
         <ul>
-            <li>Manual copy-paste consolidation bottleneck of 35 Excel spreadsheets.</li>
-            <li>NetSuite ERP integration needed to automate actuals loading.</li>
+            <li>Manual copy-paste consolidation bottleneck of ${sheetsCount}.</li>
+            <li>Direct ${erpSystem} integration needed to automate actuals loading.</li>
             <li>Goal to go live before Q3 planning (2 months target).</li>
         </ul>
     </li>
@@ -953,47 +1018,46 @@ ${screencastSegment}
 </ul>`,
 
             migrationReport: `<h4>CURRENT STATE</h4>
-<p>Meridian Logistics runs NetSuite as their GL/ERP system. Financial planning is conducted entirely in 35 manual Excel spreadsheets consolidated by the finance team. PAX and Power BI are used for reporting but are fed from manual files.</p>
+<p>${leadCompany} runs ${erpSystem} as their GL/ERP system. Financial planning is conducted entirely in ${sheetsCount} consolidated by the finance team. PAX and Power BI are used for reporting but are fed from manual files.</p>
 <h4>GAPS IDENTIFIED</h4>
-<p>No automated integration between NetSuite and budgeting. Excessive close time (45 minutes per worksheet; 3 days total), high formula error risk, and inability for analysts to perform multi-dimensional variance analysis.</p>
+<p>No automated integration between ${erpSystem} and budgeting. Excessive close time (${timeWasted}), high formula error risk, and inability for analysts to perform multi-dimensional variance analysis.</p>
 <h4>RECOMMENDED MIGRATION PATH</h4>
-<p>Deploy a centralized Planning Analytics database and implement the **DataFusion NetSuite Connector** to load actuals automatically. Place them on **Octane Blue DevOps Support** to manage models and avoid key-person risk.</p>
+<p>Deploy a centralized Planning Analytics database and implement the **${proposedPkg}** to load actuals automatically and establish a single source of truth.</p>
 <h4>ESTIMATED COMPLEXITY</h4>
-<p><strong>Complexity: Medium.</strong> Requires mapping standard NetSuite GL tables, converting 5 core Excel reports into Planning Analytics cubes, and establishing the database connector.</p>
+<p><strong>Complexity: Medium.</strong> Requires mapping standard ${erpSystem} GL tables, converting core Excel reports into Planning Analytics cubes, and establishing the database connector.</p>
 <h4>DEPENDENCIES</h4>
-<p>Establish NetSuite API credentials, access rules, and finalize contributor license seating.</p>`,
+<p>Establish ${erpSystem} credentials, access rules, and finalize contributor license seating.</p>`,
 
-            notes: `<p><strong>Meeting Notes: Sarah Chen (Head of FP&A, Meridian Logistics)</strong></p>
-<p>The call opened with a discussion of Meridian's scaling challenges. Sarah noted that volume increases have placed significant pressure on the finance team during forecast close.</p>
-<blockquote>"Consolidating the NetSuite actuals with our Excel model templates takes us 45 minutes per worksheet. With 35 sheets, it's easily several days of mind-numbing copy-pasting."</blockquote>
-<p>The technical stack was confirmed: NetSuite ERP for actuals, manual Excel sheets for plans, and basic Power BI/PAX reporting. There are no internal administrators, representing a major key-person risk.</p>
-<blockquote>"We don't have internal admins... My analysts could actually focus on tracking logistics variance instead of doing data entry."</blockquote>
-<p>Sarah confirmed a timeline of 2 months (before Q3 planning) and a budget sign-off threshold of $40,000 for this financial year.</p>`,
+            notes: `<p><strong>Meeting Notes: ${leadName} (${leadTitle}, ${leadCompany})</strong></p>
+<p>The call opened with a discussion of ${leadCompany}'s scaling challenges. ${leadName} noted that volume increases have placed significant pressure on the finance team during forecast close.</p>
+<blockquote>"Consolidating the actuals with our Excel model templates takes us ${timeWasted}. With ${sheetsCount}, it's easily several days of mind-numbing copy-pasting."</blockquote>
+<p>The technical stack was confirmed: ${erpSystem} for actuals, manual Excel sheets for plans, and basic reporting. There are no internal administrators, representing a major key-person risk.</p>
+<blockquote>"We don't have internal admins... My analysts could actually focus on tracking variance instead of doing data entry."</blockquote>
+<p>${leadName} confirmed a timeline of 2 months (before Q3 planning) and a budget sign-off threshold of $40,000 for this financial year.</p>`,
 
             proposal: `<h4>1. UNDERSTANDING OF REQUIREMENTS</h4>
-<p>Based on our pre-screen call, Meridian Logistics is seeking to transition their manual Excel budgeting process. They require direct ERP integration to NetSuite and automated actuals loading to save 3 days of manual close work monthly.</p>
+<p>Based on our pre-screen call, ${leadCompany} is seeking to transition their manual Excel budgeting process. They require direct ERP integration to ${erpSystem} and automated actuals loading to save days of manual close work monthly.</p>
 <h4>2. PROPOSED SOLUTION</h4>
-<p>We propose the implementation of **Octane Blue Support** combined with a **DataFusion NetSuite Connector** to establish a single source of truth.</p>
+<p>We propose the implementation of **${proposedPkg}** to establish a single source of truth.</p>
 <ul>
-    <li><strong>DevOps Blue Support:</strong> A$4,560/month base support. Inclusions: Rollover hours, monthly health checks, certified developer access. No support/dev distinction.</li>
-    <li><strong>DataFusion Connector:</strong> Setup price A$6,950. Automates NetSuite data loading to central database. Inclusions: 5 standard report conversions.</li>
+    <li><strong>DevOps Support:</strong> Support package aligned to the <strong>${leadTrack}</strong> interest track.</li>
 </ul>
 <h4>3. APPROACH & METHODOLOGY</h4>
 <p>We recommend a 6-week implementation project with kickoff and decision workshops.</p>
 <h4>4. TEAM & RESOURCES</h4>
-<p>Staffing includes a dedicated onshore Lead Architect (System Administrator) supported by our certified offshore developer team.</p>
+<p>Staffing includes a dedicated onshore Lead Architect supported by our certified offshore developer team.</p>
 <h4>5. NEXT STEPS</h4>
-<p>Book a Positional Meeting with System Administrator to confirm NetSuite API sandbox access and custom multi-currency table mapping.</p>`,
+<p>Book a Positional Meeting with System Administrator to confirm ${erpSystem} sandbox access and custom table mapping.</p>`,
             
             actionItems: `<p><strong>Actions for Octane (Sales Team):</strong></p>
 <ul>
     <li>Log synthesis deliverables to HubSpot. (Done)</li>
     <li>Share pre-screen brief and SOW with System Administrator before the positional meeting. (Pending)</li>
 </ul>
-<p><strong>Actions for Prospect (Sarah Chen):</strong></p>
+<p><strong>Actions for Prospect (${leadName}):</strong></p>
 <ul>
     <li>Attend Positional meeting with System Administrator on Tuesday at 10:00 AM AEST. (Pending)</li>
-    <li>Retrieve NetSuite sandbox login details for API scoping. (Pending)</li>
+    <li>Retrieve ${erpSystem} sandbox login details for API scoping. (Pending)</li>
 </ul>`
         };
     }
