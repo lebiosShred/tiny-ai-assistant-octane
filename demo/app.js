@@ -1412,21 +1412,77 @@ document.addEventListener('DOMContentLoaded', () => {
         const painPoints = parsed['PAIN POINTS'] || 'Not available';
         const starters = parsed['CONVERSATION STARTERS'] || 'Not available';
         
-        const html = `
-            <div class="dossier-quick-ref">
+        let html = `
+            <div class="dossier-quick-ref" style="margin-bottom: 1.5rem;">
                 <h3 class="quick-ref-header" style="margin-top: 0; margin-bottom: 1rem; color: var(--primary); font-size: 1rem; grid-column: 1 / -1;">🎯 Dossier Quick Reference</h3>
-                <div class="quick-ref-card" style="margin-bottom: 0;">
+                <div class="quick-ref-card" style="margin-bottom: 0.75rem;">
                     <div class="quick-ref-title">🎯 Likely Pain Points</div>
                     <div class="quick-ref-content">${formatMarkdown(painPoints)}</div>
                 </div>
-                <div class="quick-ref-card">
+                <div class="quick-ref-card" style="margin-bottom: 0.75rem;">
                     <div class="quick-ref-title">💬 Conversation Starters</div>
                     <div class="quick-ref-content">${formatMarkdown(starters)}</div>
+                </div>
+            </div>
+            
+            <div class="full-dossier-section" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary); font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                    📋 Full Briefing Dossier 
+                    <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-main); margin-left: auto; opacity: 0.7;">(All 12 Research Sections)</span>
+                </h3>
+                <div class="dossier-accordion-container">
+        `;
+        
+        const emojiMap = {
+            'LINKEDIN ANALYSIS': '🔗',
+            'COMPANY OVERVIEW': '🏢',
+            'OCTANE SERVICES': '🛠️',
+            'OCTANE COMPETITORS': '⚔️',
+            'COMPETING APPLICATIONS': '💻',
+            'COMPLEMENTARY APPLICATIONS': '🔌',
+            'TM1 AND AI APPLICATIONS': '🧠',
+            'RELEVANCE ASSESSMENT': '📊',
+            'PAIN POINTS': '🎯',
+            'CONVERSATION STARTERS': '💬',
+            'CUSTOMER PROFILES': '👥',
+            'TRAVEL DISTANCE': '🚗'
+        };
+        
+        Object.entries(parsed).forEach(([title, content]) => {
+            const emoji = emojiMap[title] || '📄';
+            const formattedContent = formatMarkdown(content);
+            const isActive = ''; 
+            
+            html += `
+                <div class="dossier-accordion-item ${isActive}">
+                    <div class="dossier-accordion-header">
+                        <span>${emoji} ${title}</span>
+                        <span class="dossier-accordion-arrow"></span>
+                    </div>
+                    <div class="dossier-accordion-content">
+                        ${formattedContent}
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
                 </div>
             </div>
         `;
         
         showResults(html, false);
+        
+        // Bind accordion toggles
+        const container = outputDocContent.querySelector('.dossier-accordion-container');
+        if (container) {
+            container.querySelectorAll('.dossier-accordion-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const item = header.closest('.dossier-accordion-item');
+                    item.classList.toggle('active');
+                });
+            });
+        }
     }
 
     // Step Navigation Event Listeners
