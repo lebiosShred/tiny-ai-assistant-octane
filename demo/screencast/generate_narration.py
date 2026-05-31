@@ -28,24 +28,40 @@ DICT_PATH = Path(__file__).parent / "pronunciation_dict.json"
 # ── Narration Script ──
 SCRIPT_SECTIONS = [
     {
-        "name": "module_1_capture",
+        "name": "module_1_settings",
         "text": (
-            "Welcome to the Early Game Pipeline operational training. In Module 1, we cover the prospect experience. "
-            "When a prospect like Kevin Smith visits the Octane booking page, he is presented with clear expectations of the thirty-minute pre-screen format before booking. "
-            "Kevin selects a reason to meet us from the dropdown, then Kevin selects a time slot. The calendar automatically routes the meeting to the active representative. "
-            "Kevin completes the seven-point intake form, providing his role at Meridian Logistics, his service track interest, and his direct contact details, before submitting the request."
+            "Welcome to the Early Game Pipeline operational training. In Module 1, we cover the administrator setup of the Tiny AI Assistant itself. "
+            "Tiny is powered by a dedicated Claude Project workspace. To build this capability, an administrator first creates a new project and uploads the static Octane knowledge base. This includes our proprietary Service Catalog, key Competitor Profiles, Case Studies, and Pricing Frameworks. "
+            "Once the context files are uploaded, the administrator configures the custom instructions, embedding the 'Mega-Prompt' logic. This forces the AI to output the strict ten-point prep dossier and the six standardized sales reports, ensuring consistent, enterprise-grade output from the sales team on every single deal."
         ),
         "triggers": {
-            "select_reason": "Kevin selects a reason",
-            "click_calendar": "Kevin selects a time slot",
-            "fill_form": "completes the seven point",
-            "submit_booking": "before submitting the request"
+            "create_project": "creates a new project",
+            "upload_files": "uploads the static",
+            "paste_prompt": "configures the custom instructions",
+            "save_project": "ensuring consistent"
         }
     },
     {
-        "name": "module_2_routing",
+        "name": "module_2_booking",
         "text": (
-            "Module 2 focuses on payload routing. "
+            "In Module 2, we cover the prospect experience. "
+            "When a prospect like Kevin Smith visits the Octane booking page, he sees a professional calendar with clear expectations of the thirty-minute pre-screen format. "
+            "Kevin selects a reason to meet from the dropdown... then selects a date from the calendar. Meetings are automatically assigned to an available representative -- the prospect never has to choose a host. "
+            "Kevin picks an available time slot... and completes the intake form, providing his role at Meridian Logistics, his service track interest, and contact details. "
+            "The system confirms the booking and assigns the representative automatically."
+        ),
+        "triggers": {
+            "select_reason": "Kevin selects a reason",
+            "click_calendar": "then selects a date",
+            "select_timeslot": "Kevin picks an available time",
+            "fill_form": "and completes the intake form",
+            "submit_booking": "The system confirms the booking"
+        }
+    },
+    {
+        "name": "module_3a_routing",
+        "text": (
+            "Module 3 focuses on lead ingestion and payload routing. "
             "Once Kevin hits submit, the system triggers two automated actions simultaneously. "
             "First, both Isha and Albert receive an instant email notification containing Kevin's booking details: his name, company, service interest, and the scheduled meeting time. This ensures the assigned representative can begin preparation immediately. "
             "Second, Kevin's full intake data, including his contact details, discussion topics, and any uploaded files, is automatically organized and stored in a dedicated client folder inside our Google Drive repository. "
@@ -59,32 +75,53 @@ SCRIPT_SECTIONS = [
         }
     },
     {
-        "name": "module_3_preparation",
+        "name": "module_3b_preparation",
         "text": (
-            "Module 3 covers Pre-Screen Preparation. Our sales team never goes into a call blind. "
-            "Before the meeting, the representative opens 'Tiny', our custom Claude AI Project. They paste the Mega-Prompt template and provide the required inputs: Kevin's intake form, his exported LinkedIn profile PDF, and the historical Statement of Work pulled from the Google Drive repository. "
-            "Within sixty seconds, Tiny digests these inputs and generates a structured ten-point briefing. This dossier highlights Meridian's likely technical pain points, maps the competitors they are evaluating, and provides three tailored conversation starters to use immediately when the call connects."
+            "Continuing in Module 3, we cover Pre-Screen Preparation. Our sales team never goes into a call blind. "
+            "Before the meeting, the representative opens Tiny -- our custom AI project -- and pastes the Mega Prompt template. "
+            "A mega prompt is a comprehensive, structured instruction set that tells the AI exactly how to analyze the prospect. It defines the role, injects all context, specifies the twelve output sections, and sets guardrails -- like flagging insufficient data instead of hallucinating. "
+            "The representative feeds in five data sources: Kevin's booking form answers, his LinkedIn profile, and the historical Statement of Work from Google Drive. "
+            "Within sixty seconds, Tiny digests these inputs and generates a structured twelve-section briefing. "
+            "This dossier highlights Meridian's likely technical pain points, maps the competitors they are evaluating, and provides three tailored conversation starters. "
+            "But what happens when the prospect's LinkedIn is sparse or the booking form answers are vague? The AI flags gaps as 'Needs Research'. "
+            "This is where the Tiny AI Chatbot Widget comes in. The representative clicks the chat bubble and asks targeted questions. "
+            "For example: 'What does Meridian Logistics sell and who are their main competitors?' "
+            "The representative copies the response and pastes it directly into the input form, enriching the context before re-running the dossier generation for a more complete briefing."
         ),
         "triggers": {
             "paste_linkedin": "exported LinkedIn profile",
-            "attach_sow": "Statement of Work pulled",
-            "click_generate_briefing": "generates a structured",
-            "view_dossier": "provides three tailored conversation"
+            "attach_sow": "Statement of Work from Google Drive",
+            "click_generate_briefing": "generates a structured twelve-section",
+            "view_dossier": "provides three tailored conversation",
+            "show_gap": "The AI flags gaps as 'Needs Research'",
+            "open_chatbot": "The representative clicks the chat bubble",
+            "chatbot_query": "For example: 'What does",
+            "copy_paste_response": "The representative copies the response"
         }
     },
     {
         "name": "module_4_execution",
         "text": (
             "In Module 4, we execute the Discovery Call. "
-            "When the Teams meeting begins, the Fathom bot automatically joins to record and transcribe the session. The sales team navigates to the Session tab to view the twelve-question qualification battlecard. Depending on whether Kevin is a first-time user or an existing user, the sales team references Playbook Variant A, B, or C. "
-            "The sales team asks these questions conversationally, letting Fathom capture the responses without manual typing. Before ending the call, the sales team secures the next step by booking a Positional Meeting with Steny, Kevin, or Amendra directly on the calendar. "
-            "Finally, the sales team documents their gut feel on the deal, capturing the unspoken signals and lead temperature before handing the account over."
+            "When the Teams meeting begins, the Fathom bot automatically joins to record and transcribe the session. "
+            "The sales team navigates to the Session tab to view the qualification battlecard. "
+            "In cases where the recording bot fails to connect -- due to waiting room settings or IT restrictions -- the team has backups. They can use the platform's built-in recording, or tools like 3CX for phone-based calls. "
+            "After the call, the representative uploads the recording directly via the Upload Recording button. The system accepts MP3, MP4, M4A, and WAV files and automatically transcribes the audio. "
+            "The sales team references Playbook Variant A or B depending on the prospect's experience. They ask these questions conversationally, letting the recording tool capture the responses. "
+            "Before ending the call, the sales team secures the next step by booking a Positional Meeting with the directors. "
+            "The sales team documents their gut feel on the deal, capturing the unspoken signals and lead temperature. "
+            "The AI validates this assessment against the transcript, classifying the lead as Hot with an eight-out-of-ten confidence score, and identifying their position in the sales funnel as a Sales Qualified Lead. "
+            "Based on the classification, the system recommends the appropriate follow-up -- in this case, an immediate positional meeting with the technical director."
         ),
         "triggers": {
-            "click_session_tab": "navigates to the Session",
-            "view_docs": "references Playbook Variant",
+            "show_recording_active": "navigates to the Session",
+            "show_contingency": "recording bot fails to connect",
+            "show_upload": "uploads the recording directly",
+            "view_battlecard": "references Playbook Variant A or B",
             "confirm_booking": "booking a Positional Meeting",
-            "click_completed": "handing the account over"
+            "click_completed": "documents their gut feel on the deal",
+            "show_classification": "classifying the lead as Hot",
+            "show_next_action": "recommends the appropriate follow-up"
         }
     },
     {
@@ -102,64 +139,6 @@ SCRIPT_SECTIONS = [
             "view_docs": "official Services Catalog",
             "view_proposal": "strictly matches our standard",
             "click_copy": "are copied out"
-        }
-    },
-    {
-        "name": "module_6_admin",
-        "text": (
-            "Finally, in Module 6, we cover the administrator setup of the Tiny AI Assistant itself. "
-            "Tiny is powered by a dedicated Claude Project workspace. To build this capability, an administrator first creates a new project and uploads the static Octane knowledge base. This includes our proprietary Service Catalog, key Competitor Profiles, Case Studies, and Pricing Frameworks. "
-            "Once the context files are uploaded, the administrator configures the custom instructions, embedding the 'Mega-Prompt' logic. This forces the AI to output the strict ten-point prep dossier and the six standardized sales reports, ensuring consistent, enterprise-grade output from the sales team on every single deal."
-        ),
-        "triggers": {
-            "create_project": "creates a new project",
-            "upload_files": "uploads the static",
-            "paste_prompt": "configures the custom instructions",
-            "save_project": "ensuring consistent"
-        }
-    },
-    {
-        "name": "module_7_technical",
-        "text": (
-            "In Module 7, we handle Technical Project Initialization. When an enterprise engagement kicks off, an automated GitHub repository is provisioned. "
-            "The repository includes an interactive Kanban board directly connected to the deployment pipeline. Engineers can drag tickets across statuses, triggering backend deployments and infrastructure checks."
-        ),
-        "triggers": {
-            "view_board": "an automated GitHub repository",
-            "drag_ticket": "drag tickets across statuses"
-        }
-    },
-    {
-        "name": "module_8_audit",
-        "text": (
-            "Module 8 explores Audit and Compliance. Enterprise customers require full visibility into platform actions. "
-            "The Audit Log dashboard captures all system events, including AI queries, file uploads, and configuration changes. Administrators can instantly identify anomalies, ensuring complete compliance with internal security mandates."
-        ),
-        "triggers": {
-            "view_logs": "Audit Log dashboard captures",
-            "expand_log": "instantly identify anomalies"
-        }
-    },
-    {
-        "name": "module_9_admin",
-        "text": (
-            "In Module 9, we review Advanced AI Parameters. Administrators need precise control over the model's behavior. "
-            "The Advanced Admin panel exposes system prompts, safety filters, and context window sizes. This guarantees the AI agent strictly follows corporate guidelines, mitigating the risk of hallucination or unauthorized data exposure."
-        ),
-        "triggers": {
-            "view_admin": "Advanced Admin panel exposes",
-            "edit_prompt": "mitigating the risk of hallucination"
-        }
-    },
-    {
-        "name": "module_10_analytics",
-        "text": (
-            "Finally, Module 10 covers Live Analytics. Demonstrating ROI is critical for enterprise renewal. "
-            "The Analytics Dashboard aggregates real-time token usage, cost estimations, and user engagement metrics across all deployed agents. Stakeholders can immediately verify value generation and pinpoint areas for optimization."
-        ),
-        "triggers": {
-            "view_dashboard": "Analytics Dashboard aggregates",
-            "hover_chart": "pinpoint areas for optimization"
         }
     }
 ]

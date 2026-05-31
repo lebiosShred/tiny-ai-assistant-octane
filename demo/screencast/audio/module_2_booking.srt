@@ -1,0 +1,24 @@
+1
+00:00:00,050 --> 00:00:04,058
+In Module 2, we cover the prospect experience.
+
+2
+00:00:04,058 --> 00:00:14,838
+When a prospect like Kevin Smith visits the Octane booking page, he sees a professional calendar with clear expectations of the thirty-minute pre-screen format.
+
+3
+00:00:14,838 --> 00:00:20,911
+Kevin selects a reason to meet from the dropdown... then selects a date from the calendar.
+
+4
+00:00:20,911 --> 00:00:28,191
+Meetings are automatically assigned to an available representative -- the prospect never has to choose a host.
+
+5
+00:00:28,191 --> 00:00:39,573
+Kevin picks an available time slot... and completes the intake form, providing his role at Meridian Logistics, his service track interest, and contact details.
+
+6
+00:00:39,573 --> 00:00:44,588
+The system confirms the booking and assigns the representative automatically.
+

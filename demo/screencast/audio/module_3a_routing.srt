@@ -1,0 +1,28 @@
+1
+00:00:00,050 --> 00:00:04,426
+Module 3 focuses on lead ingestion and payload routing.
+
+2
+00:00:04,426 --> 00:00:10,500
+Once Kevin hits submit, the system triggers two automated actions simultaneously.
+
+3
+00:00:10,500 --> 00:00:23,073
+First, both Isha and Albert receive an instant email notification containing Kevin's booking details: his name, company, service interest, and the scheduled meeting time.
+
+4
+00:00:23,073 --> 00:00:28,338
+This ensures the assigned representative can begin preparation immediately.
+
+5
+00:00:28,338 --> 00:00:44,176
+Second, Kevin's full intake data, including his contact details, discussion topics, and any uploaded files, is automatically organized and stored in a dedicated client folder inside our Google Drive repository.
+
+6
+00:00:44,176 --> 00:00:52,926
+Here you can see the folder structure, containing Kevin's intake form, the historical Statement of Work, and the calendar invite.
+
+7
+00:00:52,926 --> 00:01:02,617
+This creates a single source of truth that the representative, the technical team, and the administrator can all reference throughout the engagement.
+

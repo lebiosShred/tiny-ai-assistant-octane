@@ -16,16 +16,12 @@ def main():
     ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     
     modules = [
-        "module_1_capture",
-        "module_2_routing",
-        "module_3_preparation",
+        "module_1_settings",
+        "module_2_booking",
+        "module_3a_routing",
+        "module_3b_preparation",
         "module_4_execution",
-        "module_5_synthesis",
-        "module_6_admin",
-        "module_7_technical",
-        "module_8_audit",
-        "module_9_admin",
-        "module_10_analytics"
+        "module_5_synthesis"
     ]
     
     for mod in modules:
@@ -63,7 +59,6 @@ def main():
             "-i", str(audio_path)
         ] + vf_args + cv_args + [
             "-c:a", "aac", "-b:a", "192k",
-            "-shortest",
             str(temp_voiced_path)
         ]
         

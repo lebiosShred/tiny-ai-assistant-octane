@@ -518,6 +518,7 @@ body.resizing * {
     border-color: var(--border-glass);
     justify-content: flex-start;
     align-items: stretch;
+    padding: var(--space-md);
 }
 
 .empty-state {
@@ -1878,9 +1879,10 @@ body.resizing * {
 
 /* Compact Dossier Quick Reference Cards (Step 2 Companion) */
 .dossier-quick-ref {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    padding: var(--space-md) 0;
 }
 .quick-ref-card {
     background: #ffffff;

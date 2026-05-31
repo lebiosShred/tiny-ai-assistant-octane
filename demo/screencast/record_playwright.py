@@ -249,10 +249,18 @@ def inject_mock_output(page, html_content, is_collection=False):
             const outputEmpty = document.querySelector('#output-empty-state');
             const outputDocNav = document.querySelector('#output-doc-nav');
             const outputDocContent = document.querySelector('#output-doc-content');
-            if (outputLoading) outputLoading.style.display = 'none';
-            if (outputEmpty) outputEmpty.style.display = 'none';
+            if (outputLoading) {{
+                outputLoading.style.display = 'none';
+                outputLoading.classList.add('hidden');
+            }}
+            if (outputEmpty) {{
+                outputEmpty.style.display = 'none';
+                outputEmpty.classList.add('hidden');
+            }}
             outputConsole.classList.add('has-content');
+            outputResults.classList.remove('hidden');
             outputResults.style.display = 'flex';
+            outputDocNav.classList.remove('hidden');
             outputDocNav.style.display = 'flex';
             // Show first report
             const firstKey = Object.keys(window._mockReports)[0];
@@ -274,10 +282,18 @@ def inject_mock_output(page, html_content, is_collection=False):
             const outputEmpty = document.querySelector('#output-empty-state');
             const outputDocNav = document.querySelector('#output-doc-nav');
             const outputDocContent = document.querySelector('#output-doc-content');
-            if (outputLoading) outputLoading.style.display = 'none';
-            if (outputEmpty) outputEmpty.style.display = 'none';
+            if (outputLoading) {{
+                outputLoading.style.display = 'none';
+                outputLoading.classList.add('hidden');
+            }}
+            if (outputEmpty) {{
+                outputEmpty.style.display = 'none';
+                outputEmpty.classList.add('hidden');
+            }}
             outputConsole.classList.add('has-content');
+            outputResults.classList.remove('hidden');
             outputResults.style.display = 'flex';
+            outputDocNav.classList.add('hidden');
             outputDocNav.style.display = 'none';
             outputDocContent.innerHTML = {escaped};
         }}""")
@@ -326,7 +342,7 @@ def scroll_smoothly(page, selector_or_window, pixels, steps=10, delay_ms=40):
         page.wait_for_timeout(delay_ms)
     page.wait_for_timeout(200)
 
-def scene_module_1_capture(page, scene_id):
+def scene_module_2_booking(page, scene_id):
     page.goto(BOOK_URL)
     
     # [ENTERPRISE] Mock out HubSpot CRM Embed to avoid spamming production calendar
@@ -368,6 +384,9 @@ def scene_module_1_capture(page, scene_id):
     sync_action(page, scene_id, "click_calendar")
     click_smoothly(page, "#btn-next-step")
     page.wait_for_selector(".calendar-day")
+    # Fix: scroll back to the top seamlessly so the calendar isn't pushed down
+    scroll_smoothly(page, "window", -600, steps=10)
+    page.wait_for_timeout(500)
     
     print("    Selecting calendar date...")
     click_smoothly(page, ".calendar-day[data-day='27']")
@@ -396,7 +415,7 @@ def scene_module_1_capture(page, scene_id):
     page.wait_for_selector("#success-time-display")
     end_scene_sync(page, scene_id)
 
-def scene_module_2_routing(page, scene_id):
+def scene_module_3a_routing(page, scene_id):
     page.goto(BOOK_URL)
     page.wait_for_selector("#booking-step-success", state="attached")
     # Show the success confirmation first (as if Kevin just submitted)
@@ -542,6 +561,18 @@ def scene_module_2_routing(page, scene_id):
 
     print("    Highlighting individual files...")
     sync_action(page, scene_id, "view_gdrive_files")
+    
+    # Cinematic zoom on the Google Drive browser
+    page.evaluate("""() => {
+        const browser = document.getElementById('gdrive-browser');
+        if (browser) {
+            browser.style.transformOrigin = 'top left';
+            browser.style.transition = 'transform 3.5s ease-in-out';
+            browser.style.transform = 'scale(1.05)';
+        }
+    }""")
+    page.wait_for_timeout(500)
+    
     # Hover over each file for visual emphasis
     page.mouse.move(500, 450, steps=10)
     page.wait_for_timeout(1500)
@@ -552,7 +583,7 @@ def scene_module_2_routing(page, scene_id):
 
     end_scene_sync(page, scene_id)
 
-def scene_module_3_preparation(page, scene_id):
+def scene_module_3b_preparation(page, scene_id):
     page.goto(DASH_URL)
     page.reload()
     page.wait_for_selector("#prep-name")
@@ -594,6 +625,102 @@ def scene_module_3_preparation(page, scene_id):
     smooth_move(page, "#output-results")
     scroll_smoothly(page, "#output-doc-content", 600, steps=10)
     page.wait_for_timeout(1000)
+
+    print("    Highlighting gap...")
+    sync_action(page, scene_id, "show_gap")
+    page.evaluate("""() => {
+        const doc = document.querySelector('#output-doc-content');
+        if (doc && !doc.innerHTML.includes('NEEDS RESEARCH')) {
+            const h4 = Array.from(doc.querySelectorAll('h4')).find(el => el.textContent.includes('Competitor Mapping'));
+            if (h4 && h4.nextElementSibling) {
+                h4.nextElementSibling.innerHTML += ' <span id="needs-research-flag" style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:0.75rem;">[NEEDS RESEARCH]</span>';
+            }
+        }
+    }""")
+    page.wait_for_timeout(500)
+    smooth_move(page, "#needs-research-flag")
+    page.wait_for_timeout(2000)
+    
+    print("    Opening chatbot...")
+    sync_action(page, scene_id, "open_chatbot")
+    # Make sure button exists or inject mock
+    page.evaluate("""() => {
+        if (!document.querySelector('.chatButton')) {
+            const btn = document.createElement('button');
+            btn.className = 'chatButton';
+            btn.style.cssText = 'position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;background:#0f62fe;z-index:9999;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+            btn.innerHTML = '<span style="color:white;font-size:24px;">💬</span>';
+            document.body.appendChild(btn);
+            
+            btn.addEventListener('click', () => {
+                let win = document.querySelector('.mock-chat-window');
+                if (!win) {
+                    win = document.createElement('div');
+                    win.className = 'mock-chat-window';
+                    win.style.cssText = 'position:fixed;bottom:90px;right:20px;width:350px;height:500px;background:#fff;z-index:9999;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden;border:1px solid #e0e0e0;font-family:sans-serif;';
+                    win.innerHTML = '<div style="background:#0f62fe;color:#fff;padding:16px;font-weight:600;display:flex;align-items:center;gap:8px;"><span>🤖</span> watsonx Orchestrate</div><div style="flex:1;padding:16px;background:#f4f4f4;overflow-y:auto;display:flex;flex-direction:column;gap:12px;" id="mock-chat-history"></div><div style="padding:12px;background:#fff;border-top:1px solid #e0e0e0;"><input type="text" id="mock-chat-input" placeholder="Type something..." style="width:100%;padding:10px 16px;border:1px solid #ccc;border-radius:20px;outline:none;font-size:0.9rem;"></div>';
+                    document.body.appendChild(win);
+                } else {
+                    win.style.display = win.style.display === 'none' ? 'flex' : 'none';
+                }
+            });
+        }
+    }""")
+    click_smoothly(page, ".chatButton")
+    page.wait_for_timeout(1000)
+
+    print("    Querying chatbot...")
+    sync_action(page, scene_id, "chatbot_query")
+    page.evaluate("""() => {
+        const win = document.querySelector('.mock-chat-window');
+        if (win) win.style.display = 'flex';
+    }""")
+    page.wait_for_timeout(500)
+    
+    try:
+        if page.locator("#mock-chat-input").is_visible():
+            type_smoothly(page, "#mock-chat-input", "What does Meridian Logistics sell and who are their main competitors?", delay=30)
+            page.keyboard.press("Enter")
+        else:
+            page.evaluate("""() => {
+                let win = document.querySelector('.mock-chat-window');
+                if (!win) {
+                    win = document.createElement('div');
+                    win.className = 'mock-chat-window';
+                    win.style.cssText = 'position:fixed;bottom:90px;right:20px;width:350px;height:500px;background:#fff;z-index:9999;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden;border:1px solid #e0e0e0;font-family:sans-serif;';
+                    win.innerHTML = '<div style="background:#0f62fe;color:#fff;padding:16px;font-weight:600;display:flex;align-items:center;gap:8px;"><span>🤖</span> watsonx Orchestrate</div><div style="flex:1;padding:16px;background:#f4f4f4;overflow-y:auto;display:flex;flex-direction:column;gap:12px;" id="mock-chat-history"></div><div style="padding:12px;background:#fff;border-top:1px solid #e0e0e0;"><input type="text" id="mock-chat-input" placeholder="Type something..." style="width:100%;padding:10px 16px;border:1px solid #ccc;border-radius:20px;outline:none;font-size:0.9rem;"></div>';
+                    document.body.appendChild(win);
+                }
+                win.style.display = 'flex';
+            }""")
+            page.wait_for_timeout(500)
+            type_smoothly(page, "#mock-chat-input", "What does Meridian Logistics sell and who are their main competitors?", delay=30)
+            page.keyboard.press("Enter")
+    except Exception as e:
+        print(f"    [WARN] Failed to type in chatbot: {e}")
+
+    page.wait_for_timeout(1000)
+    page.evaluate("""() => {
+        const hist = document.querySelector('#mock-chat-history');
+        if (hist) {
+            hist.innerHTML += '<div style="align-self:flex-end;max-width:85%;"><span style="background:#0f62fe;color:#fff;padding:10px 14px;border-radius:16px 16px 0 16px;display:inline-block;font-size:0.85rem;line-height:1.4;">What does Meridian Logistics sell and who are their main competitors?</span></div>';
+            setTimeout(() => {
+                hist.innerHTML += '<div style="align-self:flex-start;max-width:85%;"><span id="chat-response-text" style="background:#fff;color:#333;padding:10px 14px;border-radius:16px 16px 16px 0;border:1px solid #e0e0e0;display:inline-block;font-size:0.85rem;line-height:1.4;box-shadow:0 2px 6px rgba(0,0,0,0.04);">Meridian Logistics provides supply chain solutions, freight forwarding, and contract logistics. Main competitors include Linfox, Toll Group, and DB Schenker.</span></div>';
+                hist.scrollTop = hist.scrollHeight;
+            }, 800);
+        }
+    }""")
+    page.wait_for_timeout(2500)
+
+    print("    Copying and pasting response...")
+    sync_action(page, scene_id, "copy_paste_response")
+    smooth_move(page, "#chat-response-text")
+    page.wait_for_timeout(500)
+    
+    scroll_smoothly(page, "window", -500, steps=10)
+    page.wait_for_timeout(500)
+    type_smoothly(page, "#prep-linkedin", "\\n\\nChatbot Research:\\nMeridian Logistics provides supply chain solutions, freight forwarding, and contract logistics. Main competitors include Linfox, Toll Group, and DB Schenker.", paste=True)
+
     scroll_smoothly(page, "#output-doc-content", 400, steps=8)
     page.wait_for_timeout(500)
     end_scene_sync(page, scene_id)
@@ -612,6 +739,7 @@ def scene_module_4_execution(page, scene_id):
     
     # Inject "Live Session Active" banner for enterprise visual
     print("    Injecting Live Session banner...")
+    sync_action(page, scene_id, "show_recording_active")
     page.evaluate("""() => {
         const banner = document.createElement('div');
         banner.id = 'live-session-banner';
@@ -622,7 +750,49 @@ def scene_module_4_execution(page, scene_id):
     }""")
     page.wait_for_timeout(1000)
 
+    print("    Simulating Contingency...")
+    sync_action(page, scene_id, "show_contingency")
+    page.evaluate("""() => {
+        const banner = document.getElementById('live-session-banner');
+        if (banner) {
+            banner.style.background = 'linear-gradient(90deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04))';
+            banner.style.borderColor = 'rgba(245,158,11,0.3)';
+            banner.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,0.6);"></span><span style="font-size:0.8rem;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.8px;">⚠️ Recording Bot Failed to Join</span><span style="font-size:0.75rem;color:rgba(0,0,0,0.5);margin-left:auto;">Waiting Room Blocked</span>';
+        }
+    }""")
+    page.wait_for_timeout(3000)
+
+    print("    Uploading Recording...")
+    sync_action(page, scene_id, "show_upload")
+    smooth_move(page, "#upload-recording-panel")
+    scroll_smoothly(page, "window", 400, steps=8)
+    click_smoothly(page, "#upload-browse-btn")
+    page.evaluate("""() => {
+        const prog = document.getElementById('upload-progress');
+        const bar = document.getElementById('upload-progress-bar');
+        const stat = document.getElementById('upload-status');
+        if (prog && bar && stat) {
+            prog.classList.remove('hidden');
+            let w = 0;
+            const int = setInterval(() => {
+                w += 10;
+                bar.style.width = w + '%';
+                if (w >= 100) {
+                    clearInterval(int);
+                    stat.textContent = 'Upload Complete';
+                    stat.style.color = '#10b981';
+                }
+            }, 150);
+        }
+    }""")
+    page.wait_for_timeout(2000)
+
+    # Scroll back up to the battlecard selector
+    scroll_smoothly(page, "window", -500, steps=10)
+    page.wait_for_timeout(500)
+
     print("    Selecting Variant B from battlecard selector...")
+    sync_action(page, scene_id, "view_battlecard")
     page.select_option("#battlecard-selector", value="B")
     page.wait_for_timeout(1000)
 
@@ -633,11 +803,26 @@ def scene_module_4_execution(page, scene_id):
         if (panel) panel.style.display = 'block';
         if (body) {
             body.innerHTML = `
-                <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.5; color: #333;">
-                    <li style="margin-bottom: 4px;"><strong>Linfox Alignment:</strong> Acknowledge his fleet analytics background at Linfox Logistics.</li>
-                    <li style="margin-bottom: 4px;"><strong>Consolidation Pain:</strong> Empathize with the manual workload of managing 35 planning spreadsheets.</li>
-                    <li style="margin-bottom: 0;"><strong>Executive Context:</strong> Pre-qualify the Q3 decision deadline and present TM1 as the standard list-rate solution.</li>
-                </ul>
+                <div class="rapport-card card-openers">
+                    <h4 class="rapport-card-title">💬 Conversation Openers</h4>
+                    <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.5; color: #333;">
+                        <li style="margin-bottom: 4px;"><strong>Linfox Alignment:</strong> Acknowledge his fleet analytics background at Linfox Logistics.</li>
+                        <li style="margin-bottom: 4px;"><strong>Consolidation Pain:</strong> Empathize with the manual workload of managing 35 planning spreadsheets.</li>
+                    </ul>
+                </div>
+            `;
+        }
+        
+        const dossierBody = document.getElementById('dossier-quick-ref-body');
+        if (dossierBody) {
+            dossierBody.innerHTML = `
+                <div class="rapport-card card-context" style="border: none;">
+                    <h4 class="rapport-card-title">📋 Key Context & Facts</h4>
+                    <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.5; color: #333;">
+                        <li style="margin-bottom: 4px;"><strong>Target Deadline:</strong> Pre-qualify the Q3 decision deadline.</li>
+                        <li style="margin-bottom: 0;"><strong>Current Stack:</strong> Oracle ERP, NetSuite, Excel 2016.</li>
+                    </ul>
+                </div>
             `;
         }
     }""")
@@ -645,6 +830,11 @@ def scene_module_4_execution(page, scene_id):
 
     print("    Expanding Rapport Guide...")
     click_smoothly(page, "#rapport-guide-header")
+    page.wait_for_timeout(1000)
+    
+    print("    Panning to Dossier Quick Reference...")
+    # Move mouse to the right column to draw attention to it
+    page.mouse.move(900, 400, steps=15)
     page.wait_for_timeout(1000)
     
     print("    Navigating to Documentation for Question Playbook...")
@@ -682,6 +872,61 @@ def scene_module_4_execution(page, scene_id):
     sync_action(page, scene_id, "click_completed")
     scroll_smoothly(page, "window", -500, steps=8)
     click_smoothly(page, ".outcome-btn[data-outcome='completed']")
+
+    print("    Switching to Synthesis tab for classification...")
+    page.wait_for_function("typeof window.goToStep === 'function'")
+    page.evaluate("window.goToStep(3)")
+    page.wait_for_timeout(1000)
+    
+    print("    Showing Lead Classification...")
+    sync_action(page, scene_id, "show_classification")
+    page.evaluate("""() => {
+        const emptyState = document.querySelector('#output-empty-state');
+        if (emptyState) {
+            emptyState.style.display = 'none';
+            emptyState.classList.add('hidden');
+        }
+        const outputResults = document.querySelector('#output-results');
+        if (outputResults) {
+            outputResults.classList.remove('hidden');
+            outputResults.style.display = 'flex';
+        }
+        const panel = document.querySelector('.lead-classification-panel');
+        if (panel) panel.classList.remove('hidden');
+        
+        const conf = document.getElementById('lead-confidence');
+        if (conf) conf.textContent = 'Confidence: 8/10';
+        
+        const badge = document.getElementById('temperature-badge');
+        if (badge) {
+            badge.className = 'temperature-badge temperature-badge--hot';
+            badge.textContent = '🔥 HOT';
+            badge.style.background = '#ef4444';
+            badge.style.color = '#fff';
+            badge.style.padding = '2px 8px';
+            badge.style.borderRadius = '4px';
+            badge.style.fontWeight = 'bold';
+        }
+        
+        const stage = document.getElementById('funnel-stage');
+        if (stage) stage.textContent = 'Stage: SQL';
+        
+        const evidence = document.getElementById('evidence-list');
+        if (evidence) {
+            evidence.innerHTML = '<li>Decision deadline Q3 verified</li><li>Budget acknowledged (~A$120k)</li><li>Current pain is severe (3-week close)</li>';
+        }
+        
+        const nextAction = document.getElementById('next-action-text');
+        if (nextAction) nextAction.textContent = 'Immediate Technical Deep-Dive & ROI Pitch';
+    }""")
+    page.wait_for_timeout(1000)
+    smooth_move(page, ".lead-classification-panel")
+
+    print("    Highlighting next action...")
+    sync_action(page, scene_id, "show_next_action")
+    smooth_move(page, "#lead-next-action")
+    page.wait_for_timeout(1000)
+    
     end_scene_sync(page, scene_id)
 
 def scene_module_5_synthesis(page, scene_id):
@@ -737,22 +982,24 @@ def scene_module_5_synthesis(page, scene_id):
     click_smoothly(page, "#copy-content-btn")
     end_scene_sync(page, scene_id)
 
-def scene_module_6_admin(page, scene_id):
+def scene_module_1_settings(page, scene_id):
     page.goto(ADMIN_URL)
-    page.wait_for_selector("#project-name")
+    page.wait_for_selector("#cfg-project-name")
     page.wait_for_timeout(1500)
     
     # Step 1: Name the project
     print("    Typing project name...")
     sync_action(page, scene_id, "create_project")
-    page.evaluate("window.setProjectName('Tiny -- Pre-Screen Prep Engine')")
+    type_smoothly(page, "#cfg-project-name", "Tiny -- Pre-Screen Prep Engine")
     page.wait_for_timeout(2000)
     
     # Step 2: Upload knowledge base files
     print("    Uploading knowledge base files...")
     sync_action(page, scene_id, "upload_files")
+    click_smoothly(page, '.sidebar-item[data-section="knowledge-base"]')
+    page.wait_for_timeout(1500)
     scroll_smoothly(page, "window", 350, steps=8)
-    click_smoothly(page, "#upload-zone")
+    click_smoothly(page, "#kb-upload-zone")
     # Wait for all 5 files to upload and be indexed
     page.wait_for_timeout(5000)
     scroll_smoothly(page, "window", 300, steps=8)
@@ -761,8 +1008,10 @@ def scene_module_6_admin(page, scene_id):
     # Step 3: Paste the Mega-Prompt system instructions
     print("    Pasting Mega-Prompt system instructions...")
     sync_action(page, scene_id, "paste_prompt")
+    click_smoothly(page, '.sidebar-item[data-section="persona-prompts"]')
+    page.wait_for_timeout(1500)
     scroll_smoothly(page, "window", 400, steps=8)
-    page.evaluate("window.pasteSystemPrompt()")
+    type_smoothly(page, "#cfg-prep-prompt", "You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff.", paste=True)
     page.wait_for_timeout(1500)
     # Slowly scroll through the prompt to show it
     scroll_smoothly(page, "window", 300, steps=10)
@@ -773,7 +1022,7 @@ def scene_module_6_admin(page, scene_id):
     sync_action(page, scene_id, "save_project")
     scroll_smoothly(page, "window", -800, steps=12)
     page.wait_for_timeout(500)
-    click_smoothly(page, "#btn-save-project")
+    click_smoothly(page, "#btn-save-all")
     page.wait_for_timeout(2000)
     end_scene_sync(page, scene_id)
 
@@ -812,13 +1061,17 @@ def scene_module_9_admin(page, scene_id):
     
     print("    Viewing advanced admin...")
     sync_action(page, scene_id, "view_admin")
+    click_smoothly(page, '.sidebar-item[data-section="persona-prompts"]')
+    page.wait_for_timeout(1500)
     scroll_smoothly(page, "window", 200, steps=8)
     page.wait_for_timeout(2000)
     
     print("    Editing system prompt...")
     sync_action(page, scene_id, "edit_prompt")
-    type_smoothly(page, "#prompt", "\\n\\n- Strictly enforce corporate guidelines.", paste=True)
+    type_smoothly(page, "#cfg-prep-prompt", "\\n\\n- Strictly enforce corporate guidelines.", paste=True)
     page.wait_for_timeout(1500)
+    click_smoothly(page, "#btn-save-all")
+    page.wait_for_timeout(2000)
     end_scene_sync(page, scene_id)
 
 def scene_module_10_analytics(page, scene_id):
@@ -838,16 +1091,12 @@ def scene_module_10_analytics(page, scene_id):
 
 
 SCENES = {
-    "1": ("module_1_capture", scene_module_1_capture),
-    "2": ("module_2_routing", scene_module_2_routing),
-    "3": ("module_3_preparation", scene_module_3_preparation),
+    "1": ("module_1_settings", scene_module_1_settings),
+    "2": ("module_2_booking", scene_module_2_booking),
+    "3a": ("module_3a_routing", scene_module_3a_routing),
+    "3b": ("module_3b_preparation", scene_module_3b_preparation),
     "4": ("module_4_execution", scene_module_4_execution),
     "5": ("module_5_synthesis", scene_module_5_synthesis),
-    "6": ("module_6_admin", scene_module_6_admin),
-    "7": ("module_7_technical", scene_module_7_technical),
-    "8": ("module_8_audit", scene_module_8_audit),
-    "9": ("module_9_admin", scene_module_9_admin),
-    "10": ("module_10_analytics", scene_module_10_analytics),
 }
 
 def convert_webm_to_mp4(webm_path, target_mp4_path):

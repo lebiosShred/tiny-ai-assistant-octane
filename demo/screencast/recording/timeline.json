@@ -1,6 +1,26 @@
 [
   {
-    "scene": "module_7_technical",
-    "duration_s": 25.593
+    "scene": "module_1_settings",
+    "duration_s": 54.914
+  },
+  {
+    "scene": "module_2_booking",
+    "duration_s": 44.662
+  },
+  {
+    "scene": "module_3a_routing",
+    "duration_s": 62.693
+  },
+  {
+    "scene": "module_3b_preparation",
+    "duration_s": 102.892
+  },
+  {
+    "scene": "module_4_execution",
+    "duration_s": 99.968
+  },
+  {
+    "scene": "module_5_synthesis",
+    "duration_s": 51.128
   }
 ]

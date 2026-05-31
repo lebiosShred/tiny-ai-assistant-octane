@@ -1413,9 +1413,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const starters = parsed['CONVERSATION STARTERS'] || 'Not available';
         
         const html = `
-            <div class="dossier-quick-ref" style="padding: 1.25rem;">
-                <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary); font-size: 1rem;">🎯 Dossier Quick Reference</h3>
-                <div class="quick-ref-card" style="margin-bottom: 0.75rem;">
+            <div class="dossier-quick-ref">
+                <h3 class="quick-ref-header" style="margin-top: 0; margin-bottom: 1rem; color: var(--primary); font-size: 1rem; grid-column: 1 / -1;">🎯 Dossier Quick Reference</h3>
+                <div class="quick-ref-card" style="margin-bottom: 0;">
                     <div class="quick-ref-title">🎯 Likely Pain Points</div>
                     <div class="quick-ref-content">${formatMarkdown(painPoints)}</div>
                 </div>

@@ -1,0 +1,28 @@
+1
+00:00:00,050 --> 00:00:04,132
+Welcome to the Early Game Pipeline operational training.
+
+2
+00:00:04,132 --> 00:00:10,661
+In Module 1, we cover the administrator setup of the Tiny A I Assistant itself.
+
+3
+00:00:10,661 --> 00:00:15,029
+Tiny is powered by a dedicated Claude Project workspace.
+
+4
+00:00:15,029 --> 00:00:23,529
+To build this capability, an administrator first creates a new project and uploads the static Octane knowledge base.
+
+5
+00:00:23,529 --> 00:00:31,911
+This includes our proprietary Service Catalog, key Competitor Profiles, Case Studies, and Pricing Frameworks.
+
+6
+00:00:31,911 --> 00:00:40,661
+Once the context files are uploaded, the administrator configures the custom instructions, embedding the 'Mega-Prompt' logic.
+
+7
+00:00:40,661 --> 00:00:54,838
+This forces the A I to output the strict ten-point prep dossier and the six standardized sales reports, ensuring consistent, enterprise-grade output from the sales team on every single deal.
+
