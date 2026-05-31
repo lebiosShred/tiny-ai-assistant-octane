@@ -231,7 +231,8 @@ Estimate the travel distance/time for an in-person meeting. The travel origin is
 <p><strong>Octane Customer Profile:</strong> Rationale requires live API analysis. The lead's title (<em>${targetTitle}</em>) suggests alignment with finance operational playbooks, pending corporate revenue and system scale metrics.</p>
 
 === TRAVEL DISTANCE ===
-~45 min from System Administrator's location (Richmond, Melbourne, VIC 3121) or Online/Phone`;
+~45 min from System Administrator's location (Richmond, Melbourne, VIC 3121) or Online/Phone
+<!-- METADATA: {"name": "${targetName.replace(/"/g, '\\"')}", "company": "${targetCompany.replace(/"/g, '\\"')}", "title": "${targetTitle.replace(/"/g, '\\"')}", "track": "${targetTrack.replace(/"/g, '\\"')}", "intake": "${targetIntake.replace(/"/g, '\\"')}"} -->`;
         }
     }
 
@@ -295,35 +296,47 @@ Do not write markdown backticks or conversational prefixes. Return only the HTML
         } catch (err) {
             console.error("Error generating rapport guide:", err);
             
-            // Extract name, title, company, and track dynamically to ensure tailor-fitting in fallback mode
             let leadName = "Unknown Lead";
             let leadCompany = "Unknown Company";
             let leadTitle = "Unknown Title";
             let leadTrack = "TM1 & AI";
 
-            // Extract from standard "Lead: Name, Title at Company" pattern
-            const leadMatch = dossierContent.match(/Lead:\s*([^,]+),\s*([^at\n]+)\s*at\s*([^)<]+)/i);
-            if (leadMatch) {
-                leadName = leadMatch[1].trim();
-                leadTitle = leadMatch[2].trim();
-                leadCompany = leadMatch[3].trim();
+            // Decode structured comment metadata block - 100% reliable
+            const metaMatch = dossierContent.match(/<!-- METADATA: (\{[^}]+\}) -->/);
+            if (metaMatch) {
+                try {
+                    const meta = JSON.parse(metaMatch[1]);
+                    leadName = meta.name || leadName;
+                    leadCompany = meta.company || leadCompany;
+                    leadTitle = meta.title || leadTitle;
+                    leadTrack = meta.track || leadTrack;
+                } catch (e) {
+                    console.error("Failed to parse metadata block:", e);
+                }
             } else {
-                // Secondary regex sweeps
-                const companyMatch = dossierContent.match(/Overview for\s*([^<]+)/i) || 
-                                     dossierContent.match(/background for\s*([^<]+)/i) ||
-                                     dossierContent.match(/Overview:\s*([^<]+)/i);
-                if (companyMatch) leadCompany = companyMatch[1].trim();
+                // Corrected regex fallback if comment metadata is not found
+                const leadMatch = dossierContent.match(/Lead:\s*([^,]+),\s*([^,]+)\s*at\s*([^)<]+)/i);
+                if (leadMatch) {
+                    leadName = leadMatch[1].trim();
+                    leadTitle = leadMatch[2].trim();
+                    leadCompany = leadMatch[3].trim();
+                } else {
+                    const companyMatch = dossierContent.match(/Overview for\s*([^<]+)/i) || 
+                                         dossierContent.match(/background for\s*([^<]+)/i) ||
+                                         dossierContent.match(/Overview:\s*([^<]+)/i);
+                    if (companyMatch) leadCompany = companyMatch[1].trim();
 
-                const titleMatch = dossierContent.match(/profile as a\s*([^<]+)/i) ||
-                                   dossierContent.match(/job title\s*<strong>([^<]+)<\/strong>/i) ||
-                                   dossierContent.match(/role as\s*([^<]+)/i);
-                if (titleMatch) leadTitle = titleMatch[1].trim();
+                    const titleMatch = dossierContent.match(/profile as a\s*([^<]+)/i) ||
+                                       dossierContent.match(/job title\s*<strong>([^<]+)<\/strong>/i) ||
+                                       dossierContent.match(/role as\s*([^<]+)/i);
+                    if (titleMatch) leadTitle = titleMatch[1].trim();
+                }
+
+                const trackMatch = dossierContent.match(/track\s*(?:\(|:)\s*<strong>([^<]+)<\/strong>/i) ||
+                                   dossierContent.match(/track\s*interest:\s*<em>([^<]+)<\/em>/i) ||
+                                   dossierContent.match(/track\s*\(<strong>([^<]+)<\/strong>\)/i);
+                if (trackMatch) leadTrack = trackMatch[1].trim();
             }
-
-            const trackMatch = dossierContent.match(/track\s*(?:\(|:)\s*<strong>([^<]+)<\/strong>/i) ||
-                               dossierContent.match(/track\s*interest:\s*<em>([^<]+)<\/em>/i) ||
-                               dossierContent.match(/track\s*\(<strong>([^<]+)<\/strong>\)/i);
-            if (trackMatch) leadTrack = trackMatch[1].trim();
 
             return `
                 <div class="rapport-card card-openers">
