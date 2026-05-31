@@ -187,46 +187,51 @@ Estimate the travel distance/time for an in-person meeting. The travel origin is
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
             console.log("Mistral API failed:", err.message);
-            console.warn("⚠️ live API call failed, activating offline demo mock fallback. Reason:", err.message);
-            const targetName = params.name || "Sarah Chen";
-            const targetCompany = params.company || "Meridian Logistics";
-            const targetTitle = params.title || "Head of FP&A";
+            console.warn("⚠️ live API call failed, activating offline demo mock fallback.");
+            const targetName = params.name || "Unknown Lead";
+            const targetCompany = params.company || "Unknown Company";
+            const targetTitle = params.title || "Unknown Title";
+            const targetTrack = params.track || "TM1 & AI";
+            const targetIntake = params.intakeAnswers || "None provided";
             
             return `=== LINKEDIN ANALYSIS ===
-<p><strong>LinkedIn Profile Analysis:</strong> ${targetName} has been the ${targetTitle} at ${targetCompany} for 3 years, managing a team of 4 financial analysts. Prior to this, she was a Senior Financial Analyst at Linfox Logistics for 4 years, showcasing strong tenure and deep domain expertise in transport and supply chain planning workflows.</p>
+<p><strong>LinkedIn Profile Analysis:</strong> N/A - Offline Demo Mode. Real-time LinkedIn RAG search is unavailable when the live API is bypassed or disconnected. <em>(Lead: ${targetName}, ${targetTitle} at ${targetCompany})</em></p>
 
 === COMPANY OVERVIEW ===
-<p><strong>Company Overview:</strong> ${targetCompany} is a leading third-party logistics provider in APAC, operating complex supply chain networks. They are experiencing rapid scaling, which places significant transaction volume demands on their internal corporate reporting systems.</p>
+<p><strong>Company Overview:</strong> Factual background for ${targetCompany} requires an active server-side search connection. In offline/mock mode, this section degrades gracefully to protect data integrity.</p>
 
 === OCTANE SERVICES ===
-<p><strong>Relevant Octane Services:</strong> Octane's TM1 managed support services can optimize their existing models, while the <strong>DataFusion Connector</strong> can directly link their NetSuite actuals to a central Planning Analytics database.</p>
+<p><strong>Relevant Octane Services:</strong> Based on the identified track (<strong>${targetTrack}</strong>), Octane would focus on aligning their services with ${targetCompany}. Typical tracks include IBM Planning Analytics / TM1 Managed support for finance departments or Watsonx agentic automations.</p>
 
 === OCTANE COMPETITORS ===
-<p><strong>Key Competitors:</strong> They may be evaluating other enterprise performance management (EPM) systems such as Workday Adaptive Planning or Anaplan.</p>
+<p><strong>Key Competitors:</strong> Competitor analysis requires live context. (Standard industry-specific competitors would be mapped in live mode).</p>
 
 === COMPETING APPLICATIONS ===
-<p><strong>Competing Applications:</strong> Their current planning workflow relies on 35 manual Excel spreadsheets consolidated across departmental managers, creating substantial version control risks.</p>
+<p><strong>Competing Applications:</strong> Excel spreadsheets remain the primary competing manual planning interface. Mid-to-enterprise scale systems typically run Anaplan, Workday Adaptive, or legacy Planning Analytics models.</p>
 
 === COMPLEMENTARY APPLICATIONS ===
-<p><strong>Complementary Applications:</strong> They currently run NetSuite as their primary ERP system and use Power BI and Excel PAX for corporate executive management reporting.</p>
+<p><strong>Complementary Applications:</strong> Common enterprise systems found in similar stacks include typical ERPs (SAP, NetSuite, Microsoft Dynamics) and BI tools (Power BI, Tableau).</p>
 
 === TM1 AND AI APPLICATIONS ===
-<p><strong>Planning Applications:</strong> Logistics planning models require multi-dimensional cost allocations by business units, routes, and payroll groups, making IBM TM1 a perfect fit.</p>
+<p><strong>Planning Applications:</strong> Standard multi-dimensional planning models mapping to the prospect's profile as a ${targetTitle} in corporate planning cycles.</p>
 
 === RELEVANCE ASSESSMENT ===
-<p><strong>Relevance Assessment:</strong> High. Meridian Logistics matches the profile of a Mid-Size TM1 Shop (100M+ AUD revenue, 20 in finance), making them ideal for <strong>Octane Blue Support</strong>.</p>
+<p><strong>Relevance Assessment:</strong> Pending live tech stack mapping. The lead represents a ${targetTitle} at ${targetCompany}, which requires validation of their user scale and revenue markers.</p>
 
 === PAIN POINTS ===
-<p><strong>Likely Pain Points:</strong> Manual data transfers from NetSuite to Excel take 45 minutes per sheet (exceeding several days in total close time), leading to formula errors and delayed reporting cycles.</p>
+<p><strong>Likely Pain Points:</strong> Based on the job title <strong>${targetTitle}</strong>, standard pain points center around manual reporting cycles, spreadsheet sprawl, data consolidation latency, and high resource costs for system support.</p>
 
 === CONVERSATION STARTERS ===
-<p><strong>Conversation Starters:</strong> Introduce Octane's NetSuite DataFusion connector that automates actuals loading, ask how the 35 Excel spreadsheets affect their forecasting cycles, or suggest a 60-day trial to eliminate their 45-minute manual sheet reconciliation bottleneck.</p>
+<p><strong>Conversation Starters:</strong>
+1. Address the service track interest: <em>"${targetTrack}"</em>.<br>
+2. Reference booking intake answers: <em>"${targetIntake}"</em>.<br>
+3. Ask how ${targetCompany} currently handles manual consolidation bottlenecks across their department.</p>
 
 === CUSTOMER PROFILES ===
-<p><strong>Octane Customer Profile:</strong> Matches <strong>Mid Size TM1 Shops</strong> / <strong>MidMarket AI in Finance</strong>. The prospect has $100M+ revenue, 20 finance users, and significant spreadsheet dependency (35 spreadsheets), but wants to modernise their FP&A processes with automation, aligning with Octane's core mid-market support and AI options.</p>
+<p><strong>Octane Customer Profile:</strong> Rationale requires live API analysis. The lead's title (<em>${targetTitle}</em>) suggests alignment with finance operational playbooks, pending corporate revenue and system scale metrics.</p>
 
 === TRAVEL DISTANCE ===
-~45 min from System Administrator's location (Richmond, Melbourne, VIC 3121)`;
+~45 min from System Administrator's location (Richmond, Melbourne, VIC 3121) or Online/Phone`;
         }
     }
 
@@ -289,36 +294,66 @@ Do not write markdown backticks or conversational prefixes. Return only the HTML
             return await callMistralAPI(messages, config);
         } catch (err) {
             console.error("Error generating rapport guide:", err);
-            // Fallback parsing if LLM call fails
+            
+            // Extract name, title, company, and track dynamically to ensure tailor-fitting in fallback mode
+            let leadName = "Unknown Lead";
+            let leadCompany = "Unknown Company";
+            let leadTitle = "Unknown Title";
+            let leadTrack = "TM1 & AI";
+
+            // Extract from standard "Lead: Name, Title at Company" pattern
+            const leadMatch = dossierContent.match(/Lead:\s*([^,]+),\s*([^at\n]+)\s*at\s*([^)<]+)/i);
+            if (leadMatch) {
+                leadName = leadMatch[1].trim();
+                leadTitle = leadMatch[2].trim();
+                leadCompany = leadMatch[3].trim();
+            } else {
+                // Secondary regex sweeps
+                const companyMatch = dossierContent.match(/Overview for\s*([^<]+)/i) || 
+                                     dossierContent.match(/background for\s*([^<]+)/i) ||
+                                     dossierContent.match(/Overview:\s*([^<]+)/i);
+                if (companyMatch) leadCompany = companyMatch[1].trim();
+
+                const titleMatch = dossierContent.match(/profile as a\s*([^<]+)/i) ||
+                                   dossierContent.match(/job title\s*<strong>([^<]+)<\/strong>/i) ||
+                                   dossierContent.match(/role as\s*([^<]+)/i);
+                if (titleMatch) leadTitle = titleMatch[1].trim();
+            }
+
+            const trackMatch = dossierContent.match(/track\s*(?:\(|:)\s*<strong>([^<]+)<\/strong>/i) ||
+                               dossierContent.match(/track\s*interest:\s*<em>([^<]+)<\/em>/i) ||
+                               dossierContent.match(/track\s*\(<strong>([^<]+)<\/strong>\)/i);
+            if (trackMatch) leadTrack = trackMatch[1].trim();
+
             return `
                 <div class="rapport-card card-openers">
                     <h4 class="rapport-card-title">💬 Conversation Openers</h4>
                     <ul class="rapport-card-list">
-                        <li>"Hi, thank you for booking some time with us. I saw you mentioned a bottleneck regarding NetSuite data consolidation in Excel. Can you tell me a bit more about how that consolidation is currently handled?"</li>
-                        <li>"I noticed your role is leading the FP&A team. Normally, we see finance leaders spending 80% of their time on manual copy-pasting rather than analysis. Is that what you are experiencing?"</li>
-                        <li>"I saw your company URL. How does your team currently manage planning data flows across NetSuite and other systems?"</li>
+                        <li>"Hi ${leadName}, thank you for booking some time with us. I saw you're currently leading efforts at ${leadCompany} as ${leadTitle}. Can you tell me a bit about your current planning priorities?"</li>
+                        <li>"I noticed your role is ${leadTitle}. Normally, systems managers and finance leaders spending significant time on manual data verification are looking for automation. Is that something you are focused on at ${leadCompany}?"</li>
+                        <li>"I was looking at your company site. How is your team currently managing integrations and data workflows for your key applications?"</li>
                     </ul>
                 </div>
                 <div class="rapport-card card-context">
                     <h4 class="rapport-card-title">📋 Key Context & Facts</h4>
                     <ul class="rapport-card-list">
-                        <li>Interest track: IBM Planning Analytics (TM1) or AI custom integrations.</li>
-                        <li>Target Representative assignment: Sydney time slot matched round-robin reps.</li>
-                        <li>Role: High priority mapping for System Administrator, FP&A Leads, and finance directors.</li>
+                        <li>Lead: <strong>${leadName}</strong>, ${leadTitle} at <strong>${leadCompany}</strong>.</li>
+                        <li>Interest track: <strong>${leadTrack}</strong>.</li>
+                        <li>Mode: Offline/Mock Fallback (API Connection Bypass).</li>
                     </ul>
                 </div>
                 <div class="rapport-card card-pain">
                     <h4 class="rapport-card-title">🎯 Pain Points to Target</h4>
                     <ul class="rapport-card-list">
-                        <li>Manual budgeting operations and spreadsheet formula errors in key sheets.</li>
-                        <li>Data fragmentation across NetSuite, operational logs, and legacy Excel interfaces.</li>
+                        <li>Consolidation bottlenecks and operational spreadsheet management typical for ${leadTitle} roles.</li>
+                        <li>Integration fragmentation across transactional databases and planning spreadsheets at ${leadCompany}.</li>
                     </ul>
                 </div>
                 <div class="rapport-card card-avoid">
                     <h4 class="rapport-card-title">⚠️ Phrases to Avoid / Competitor Flags</h4>
                     <ul class="rapport-card-list">
-                        <li>Do not mention other customer names or specific data files without proper security clearance.</li>
-                        <li>Be highly cautious if they mention evaluating competitors like Anaplan, Workday Adaptive Planning, or Jedox.</li>
+                        <li>Avoid hardcoding assumptions about their software stack (e.g., NetSuite) unless verified by active RAG search.</li>
+                        <li>Do not mention specific pricing rates before verifying standard packaging matching their business scale.</li>
                     </ul>
                 </div>
             `;

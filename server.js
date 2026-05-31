@@ -370,6 +370,144 @@ async function generateAICompletion(systemPrompt, userPrompt) {
     });
 }
 
+async function fetchTavilyRAGContext(name, company) {
+    const apiKey = (process.env.TAVILY_API_KEY || '').trim();
+    if (!apiKey) {
+        console.warn("⚠️ TAVILY_API_KEY is not configured on the server. Skipping RAG search.");
+        return "No real-time search context available (Tavily API key missing).";
+    }
+
+    const query = `"${name}" "${company}" LinkedIn profile background history`;
+    const payload = JSON.stringify({
+        api_key: apiKey,
+        query: query,
+        search_depth: "basic",
+        max_results: 3
+    });
+
+    return new Promise((resolve) => {
+        const options = {
+            hostname: 'api.tavily.com',
+            port: 443,
+            path: '/search',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (parsed.results && parsed.results.length > 0) {
+                            const formatted = parsed.results.map(item => 
+                                `Title: ${item.title}\nURL: ${item.url}\nContent: ${item.content}`
+                            ).join('\n\n');
+                            resolve(formatted);
+                        } else {
+                            resolve("No search results returned for this lead.");
+                        }
+                    } catch (e) {
+                        console.error("⚠️ Failed to parse Tavily API response:", e.message);
+                        resolve("Failed to parse search results.");
+                    }
+                } else {
+                    console.error(`⚠️ Tavily API returned status ${res.statusCode}: ${data}`);
+                    resolve("Tavily RAG search service unavailable.");
+                }
+            });
+        });
+
+        req.on('error', (err) => {
+            console.error("❌ Tavily request failed:", err.message);
+            resolve("Failed to fetch search context due to network error.");
+        });
+
+        req.setTimeout(4000, () => {
+            console.warn("⚠️ Tavily request timed out.");
+            req.destroy();
+            resolve("Tavily search request timed out.");
+        });
+
+        req.write(payload);
+        req.end();
+    });
+}
+
+async function fetchGithubTechnographics(companyName) {
+    if (!companyName || companyName.toLowerCase().includes('unknown') || companyName.trim() === '') {
+        return "No company name available for GitHub technographic mapping.";
+    }
+
+    const formattedOrg = companyName.toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+        
+    if (!formattedOrg) {
+        return "Invalid company name for GitHub organization mapping.";
+    }
+
+    const githubPat = (process.env.GITHUB_PAT || '').trim();
+
+    return new Promise((resolve) => {
+        const options = {
+            hostname: 'api.github.com',
+            port: 443,
+            path: `/orgs/${formattedOrg}/repos?sort=updated&per_page=5`,
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Octane-Sales-Assistant-Backend',
+                ...(githubPat && { 'Authorization': `token ${githubPat}` })
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                if (res.statusCode === 200) {
+                    try {
+                        const repos = JSON.parse(data);
+                        if (Array.isArray(repos) && repos.length > 0) {
+                            const repoDetails = repos.map(r => 
+                                `- Repo: ${r.name} | Primary Language: ${r.language || 'Unspecified'} | Description: ${r.description || 'None provided'}`
+                            ).join('\n');
+                            resolve(`Public GitHub Organization Found [${formattedOrg}]:\n${repoDetails}`);
+                        } else {
+                            resolve("GitHub organization exists but has no public repositories.");
+                        }
+                    } catch (e) {
+                        console.error("⚠️ Failed to parse GitHub API response:", e.message);
+                        resolve("Failed to parse GitHub technographics.");
+                    }
+                } else if (res.statusCode === 404) {
+                    resolve("No public GitHub organization found for this company.");
+                } else {
+                    console.error(`⚠️ GitHub API returned status ${res.statusCode}: ${data}`);
+                    resolve("GitHub API rate-limited or temporarily unavailable.");
+                }
+            });
+        });
+
+        req.on('error', (err) => {
+            console.error("❌ GitHub request failed:", err.message);
+            resolve("Failed to fetch GitHub technographics due to network error.");
+        });
+
+        req.setTimeout(3000, () => {
+            console.warn("⚠️ GitHub request timed out.");
+            req.destroy();
+            resolve("GitHub request timed out.");
+        });
+
+        req.end();
+    });
+}
+
 async function handleCallPrep(contactId) {
     console.log(`🤖 Running Pre-Screen Call Prep for Contact ID: ${contactId}`);
     try {
@@ -379,15 +517,25 @@ async function handleCallPrep(contactId) {
             return;
         }
         
+        const name = `${contact.properties.firstname || ''} ${contact.properties.lastname || ''}`.trim() || 'Unknown Name';
+        const company = contact.properties.company || 'Unknown Company';
+        
+        console.log(`🔍 Webhook Triggered. Initiating parallel data enrichment for: ${name} at ${company}`);
+        const [ragContext, githubContext] = await Promise.all([
+            fetchTavilyRAGContext(name, company),
+            fetchGithubTechnographics(company)
+        ]);
+
         const params = {
-            name: `${contact.properties.firstname || ''} ${contact.properties.lastname || ''}`.trim() || 'Unknown Name',
+            name: name,
             title: contact.properties.jobtitle || 'Unknown Title',
-            company: contact.properties.company || 'Unknown Company',
+            company: company,
             url: contact.properties.website || 'Unknown URL',
             email: contact.properties.email || 'Unknown Email',
             track: 'TM1 & AI',
             intakeAnswers: contact.properties.hubspot_booking_intake || 'None provided',
-            linkedinInfo: 'None provided'
+            linkedinInfo: ragContext,
+            githubInfo: githubContext
         };
         
         const intake = params.intakeAnswers.toLowerCase();
@@ -401,7 +549,12 @@ async function handleCallPrep(contactId) {
             params.track = 'N/A';
         }
         
-        const systemPrompt = "You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler.";
+        const systemPrompt = `You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler.
+You must adhere to strict negative grounding:
+- Use ONLY the provided search snippet and technographic context for Points 1, 2, and 3. Do not invent or assume details.
+- If 'LinkedIn Profile / Experience' states 'No real-time search context available' or 'No search results returned', output 'LinkedIn Analysis: N/A - No profile data found. Requires manual discovery' for Point 1 and Point 2. Do not invent a career history or network signals.
+- If 'Company GitHub Technographics' states 'No public organization found', output 'Technographics: Unknown (Requires manual discovery)' for Point 3. Do not assume they use NetSuite or any specific software stack.`;
+
         const userPrompt = `You are a sales preparation assistant for Octane Software Solutions.
 I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services (IBM TM1/Planning Analytics managed support, Watsonx Orchestrate agentic AI integrations, and DataFusion connectors), produce a 10-POINT BRIEFING.
 
@@ -412,20 +565,22 @@ I am about to have a 30-minute pre-screen call with a prospect. Using the inputs
 4. Service Track Interest: ${params.track}
 5. Booking Intake Answers:
 ${params.intakeAnswers}
-6. LinkedIn Profile / Experience:
+6. LinkedIn Profile / Experience (from Web RAG):
 ${params.linkedinInfo}
+7. Company GitHub Technographics:
+${params.githubInfo}
 
 --- PRODUCE THESE 10 POINTS ---
-1. LinkedIn profile analysis — role history, tenure, seniority, network signals.
-2. Recent social media activity — posts, articles, comments (if visible/inferred).
-3. Company overview — products, services, revenue signals, industry.
-4. Octane services relevant to this prospect — customize based on track and company.
+1. LinkedIn profile analysis — role history, tenure, seniority, network signals. (Do NOT invent details. If no LinkedIn data is provided in input 6, write "N/A - No profile data found. Requires manual discovery").
+2. Recent social media activity — posts, articles, comments (if visible/inferred from input 6, otherwise write "N/A").
+3. Company overview — products, services, industry context. (Incorporate tech stack details from input 7 if available).
+4. Octane services relevant to this prospect — customize based on track, company size, and technographics.
 5. Key competitors this prospect may be evaluating.
-6. Competing applications they may already use (e.g. Anaplan, Workday Adaptive, manual Excel).
-7. Complementary applications in their stack (e.g. NetSuite, SAP, Power BI).
+6. Competing applications they may already use (e.g. Anaplan, Workday Adaptive, manual Excel. Do NOT assume they use manual Excel unless supported or custom workflows are common in their industry/role).
+7. Complementary applications in their stack (e.g. NetSuite, SAP, Power BI. Incorporate facts from inputs 6 and 7, otherwise write "Requires manual verification").
 8. TM1 or AI applications relevant to their industry/role.
 9. Likely pain points — based on role, company size, and service interest.
-10. Conversation starters — 3 specific openers that demonstrate relevance from the first sentence (do NOT use generic discovery questions).
+10. Conversation starters — 3 specific openers that demonstrate relevance from the first sentence (do NOT use generic discovery questions. If no LinkedIn/technographic data is provided, base openers strictly on the booking intake answers or their actual company domain; do not make up fake personal connection hooks).
 
 Format: Generate clean HTML. Format the title as <h3>[PRE-SCREEN BRIEFING: ${params.name} — ${params.company}]</h3>. 
 Use a numbered list (<ol>) for the 10 points. Inside each point, use <strong> tags for headers and bold keywords. Keep each point specific, concise (2-4 sentences), and tailored to the actual company and role context.`;
@@ -465,6 +620,7 @@ Use a numbered list (<ol>) for the 10 points. Inside each point, use <strong> ta
             url: params.url,
             intakeAnswers: params.intakeAnswers,
             linkedinInfo: params.linkedinInfo,
+            githubInfo: params.githubInfo,
             content: briefing
         });
 
