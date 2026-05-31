@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const gdriveService = require('./gdrive-service');
 const emailService = require('./email-service');
+const Exa = require('exa-js').default;
 
 
 const PORT = process.env.PORT || 8080;
@@ -677,6 +678,113 @@ async function fetchGithubTechnographics(companyName) {
     });
 }
 
+async function fetchExaRAGContext(name, company) {
+    const apiKey = (process.env.EXA_API_KEY || '').trim();
+    if (!apiKey) {
+        console.warn("⚠️ EXA_API_KEY is not configured on the server. Skipping Exa RAG search.");
+        return "No real-time Exa search context available (Exa API key missing).";
+    }
+
+    const query = `"${name}" "${company}" LinkedIn profile background history`;
+    try {
+        const exa = new Exa(apiKey);
+        console.log(`🌐 Performing Exa semantic search for: ${query}`);
+        const response = await Promise.race([
+            exa.searchAndContents(query, {
+                type: "neural",
+                numResults: 3,
+                highlights: true
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 4000))
+        ]);
+
+        if (response.results && response.results.length > 0) {
+            const formatted = response.results.map(item => {
+                const text = (item.highlights && item.highlights.length > 0)
+                    ? item.highlights.join(' ... ')
+                    : (item.text ? item.text.substring(0, 300) : 'No snippet');
+                return `Title: ${item.title}\nURL: ${item.url}\nContent: ${text}`;
+            }).join('\n\n');
+            return formatted;
+        } else {
+            return "No search results returned for this lead from Exa.";
+        }
+    } catch (error) {
+        console.error("❌ Exa RAG search failed:", error.message);
+        return `Failed to fetch Exa search context: ${error.message}`;
+    }
+}
+
+async function fetchPerplexityBrief(name, company) {
+    const apiKey = (process.env.PERPLEXITY_API_KEY || '').trim();
+    if (!apiKey) {
+        console.warn("⚠️ PERPLEXITY_API_KEY is not configured on the server. Skipping Perplexity research.");
+        return "No real-time Perplexity search context available (Perplexity API key missing).";
+    }
+
+    const query = `Provide a professional summary of "${name}" at "${company}". Focus on their role, professional background, recent developments, and their company's core updates. Output in factual bullet points, no fluff.`;
+    const payload = JSON.stringify({
+        model: "sonar",
+        messages: [
+            { role: "system", content: "You are a precise B2B intelligence analyst." },
+            { role: "user", content: query }
+        ],
+        temperature: 0.2,
+        max_tokens: 400
+    });
+
+    return new Promise((resolve) => {
+        const options = {
+            hostname: 'api.perplexity.ai',
+            port: 443,
+            path: '/chat/completions',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (parsed.choices && parsed.choices.length > 0) {
+                            resolve(parsed.choices[0].message.content);
+                        } else {
+                            resolve("No summary returned from Perplexity.");
+                        }
+                    } catch (e) {
+                        console.error("⚠️ Failed to parse Perplexity API response:", e.message);
+                        resolve("Failed to parse Perplexity results.");
+                    }
+                } else {
+                    console.error(`⚠️ Perplexity API returned status ${res.statusCode}: ${data}`);
+                    resolve("Perplexity research service unavailable.");
+                }
+            });
+        });
+
+        req.on('error', (err) => {
+            console.error("❌ Perplexity request failed:", err.message);
+            resolve("Failed to fetch Perplexity context due to network error.");
+        });
+
+        req.setTimeout(5000, () => {
+            console.warn("⚠️ Perplexity request timed out.");
+            req.destroy();
+            resolve("Perplexity research request timed out.");
+        });
+
+        req.write(payload);
+        req.end();
+    });
+}
+
 async function handleCallPrep(contactId) {
     console.log(`🤖 Running Pre-Screen Call Prep for Contact ID: ${contactId}`);
     try {
@@ -691,10 +799,12 @@ async function handleCallPrep(contactId) {
         
         console.log(`🔍 Webhook Triggered. Initiating parallel data enrichment for: ${name} at ${company}`);
         const websiteUrl = contact.properties.website || '';
-        const [ragContext, companyNewsContext, githubContext] = await Promise.all([
+        const [ragContext, companyNewsContext, githubContext, exaContext, perplexityContext] = await Promise.all([
             fetchTavilyRAGContext(name, company),
             fetchTavilyCompanyNews(company, websiteUrl),
-            fetchGithubTechnographics(company)
+            fetchGithubTechnographics(company),
+            fetchExaRAGContext(name, company),
+            fetchPerplexityBrief(name, company)
         ]);
 
         const params = {
@@ -707,7 +817,9 @@ async function handleCallPrep(contactId) {
             intakeAnswers: contact.properties.hubspot_booking_intake || 'None provided',
             linkedinInfo: ragContext,
             companyUpdatesInfo: companyNewsContext,
-            githubInfo: githubContext
+            githubInfo: githubContext,
+            exaInfo: exaContext,
+            perplexityInfo: perplexityContext
         };
         
         const intake = params.intakeAnswers.toLowerCase();
@@ -724,7 +836,7 @@ async function handleCallPrep(contactId) {
         const systemPrompt = `You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler.
 You must adhere to strict negative grounding:
 - Use ONLY the provided search snippet and technographic context for Points 1, 2, and 3. Do not invent or assume details.
-- If 'LinkedIn Profile / Experience' states 'No real-time search context available' or 'No search results returned', output 'LinkedIn Analysis: N/A - No profile data found. Requires manual discovery' for Point 1 and Point 2. Do not invent a career history or network signals.
+- If 'LinkedIn Profile / Experience' states 'No real-time search context available' or 'No search results returned', and 'Exa Semantic Search' states 'No real-time Exa search context available' or 'No search results returned', output 'LinkedIn Analysis: N/A - No profile data found. Requires manual discovery' for Point 1 and Point 2. Do not invent a career history or network signals.
 - If 'Company GitHub Technographics' states 'No public organization found', output 'Technographics: Unknown (Requires manual discovery)' for Point 3. Do not assume they use NetSuite or any specific software stack.`;
 
         const userPrompt = `You are a sales preparation assistant for Octane Software Solutions.
@@ -743,18 +855,22 @@ ${params.linkedinInfo}
 ${params.companyUpdatesInfo}
 8. Company GitHub Technographics:
 ${params.githubInfo}
+9. Exa Semantic Search & Technographic Insights:
+${params.exaInfo}
+10. Perplexity Deep Research Summary:
+${params.perplexityInfo}
 
 --- PRODUCE THESE 10 POINTS ---
-1. LinkedIn profile analysis — role history, tenure, seniority, network signals. (Do NOT invent details. If no LinkedIn data is provided in input 6, write "N/A - No profile data found. Requires manual discovery").
-2. Recent social media activity — posts, articles, comments (if visible/inferred from input 6, otherwise write "N/A").
-3. Company overview — products, services, industry context. (Incorporate recent corporate news, product announcements, and press releases from input 7 to make this highly current and specific. Incorporate technographics from input 8).
+1. LinkedIn profile analysis — role history, tenure, seniority, network signals. (Do NOT invent details. Ground this on Inputs 6 and 9. If no LinkedIn data is provided, write "N/A - No profile data found. Requires manual discovery").
+2. Recent social media activity — posts, articles, comments (grounded on Inputs 6 and 9, otherwise write "N/A").
+3. Company overview — products, services, industry context. (Incorporate recent corporate news, product announcements, press releases, and deep research summaries from Inputs 7 and 10 to make this highly current and specific. Incorporate technographics from Inputs 8 and 9).
 4. Octane services relevant to this prospect — customize based on track, company size, news inputs, and technographics.
 5. Key competitors this prospect may be evaluating.
 6. Competing applications they may already use (e.g. Anaplan, Workday Adaptive, manual Excel. Do NOT assume they use manual Excel unless supported or custom workflows are common in their industry/role).
-7. Complementary applications in their stack (e.g. NetSuite, SAP, Power BI. Incorporate facts from inputs 6, 7, and 8, otherwise write "Requires manual verification").
+7. Complementary applications in their stack (e.g. NetSuite, SAP, Power BI. Incorporate facts from Inputs 6, 7, 8, 9, and 10, otherwise write "Requires manual verification").
 8. TM1 or AI applications relevant to their industry/role.
 9. Likely pain points — based on role, company size, and service interest.
-10. Conversation starters — 3 specific openers that demonstrate relevance from the first sentence (do NOT use generic discovery questions. If no LinkedIn/technographic data is provided, base openers strictly on the booking intake answers or their actual company domain; do not make up fake personal connection hooks).
+10. Conversation starters — 3 specific openers that demonstrate relevance from the first sentence (do NOT use generic discovery questions. Ground openers on Inputs 5, 6, 9, and 10; do not make up fake personal connection hooks).
 
 Format: Generate clean HTML. Format the title as <h3>[PRE-SCREEN BRIEFING: ${params.name} — ${params.company}]</h3>. 
 Use a numbered list (<ol>) for the 10 points. Inside each point, use <strong> tags for headers and bold keywords. Keep each point specific, concise (2-4 sentences), and tailored to the actual company and role context.`;
@@ -795,6 +911,8 @@ Use a numbered list (<ol>) for the 10 points. Inside each point, use <strong> ta
             intakeAnswers: params.intakeAnswers,
             linkedinInfo: params.linkedinInfo,
             githubInfo: params.githubInfo,
+            exaInfo: params.exaInfo,
+            perplexityInfo: params.perplexityInfo,
             content: briefing
         });
 
