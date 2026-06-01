@@ -28,19 +28,22 @@ module.exports = defineConfig({
     },
 
     use: {
-        baseURL: 'http://localhost:8080',
+        baseURL: process.env.TEST_URL || 'http://localhost:8080',
         trace: 'on-first-retry',
         video: 'retain-on-failure',
         screenshot: 'only-on-failure',
     },
 
-    webServer: {
-        command: 'node server.js',
-        port: 8080,
-        reuseExistingServer: !process.env.CI,
-        cwd: __dirname,
-        timeout: 15000,
-    },
+    // Only boot local webServer if not testing a live URL
+    ...(process.env.TEST_URL ? {} : {
+        webServer: {
+            command: 'node server.js',
+            port: 8080,
+            reuseExistingServer: !process.env.CI,
+            cwd: __dirname,
+            timeout: 15000,
+        }
+    }),
 
     projects: [
         {

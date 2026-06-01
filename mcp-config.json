@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "node",
+      "args": [
+        "node_modules/@modelcontextprotocol/server-postgres/dist/index.js",
+        "postgresql://mcp_user:mcp_password@localhost:5432/mcp_db"
+      ]
+    },
+    "redis": {
+      "command": "node",
+      "args": [
+        "node_modules/mcp-redis/dist/index.js",
+        "redis://localhost:6379"
+      ]
+    },
+    "prometheus": {
+      "command": "mcp-prometheus",
+      "args": [
+        "--url",
+        "http://localhost:9090"
+      ]
+    }
+  }
+}

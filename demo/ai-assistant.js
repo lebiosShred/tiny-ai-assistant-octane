@@ -33,12 +33,12 @@ async function loadPricingCatalog() {
     }
     // Static fallback in case backend is down or disconnected
     pricingCatalogString = [
-        "- DevOps Blue Support: A$4,560/month base support. Rollover hours, monthly health checks, free professional training library. 24/7 SLA-based ticketing. No distinction between support and development.",
-        "- DevOps Red Support: Advanced tier for larger instances or high deployment cadence.",
-        "- TM1 Flight Check: Fixed A$5,800. A 6-day complete analysis of system health (RAM, disk, feeders).",
-        "- DataFusion Connector: Setup price A$6,950. Automates data transfer from source ERPs (like NetSuite, SAP) to a central database. Inclusions: 5 standard report conversions.",
-        "- Custom training: Standard custom training rate is A$1,850/day.",
-        "- AI Pilots / watsonx POCs: Indicative SaaS pricing starting at $160,000/yr for licensing and $125,000 for implementation. Includes 2-to-6 week co-creation phase."
+        "- DevOps Blue Support: [PRICING_TBD_BY_DISCOVERY]",
+        "- DevOps Red Support: Advanced tier for larger instances or high deployment cadence. [PRICING_TBD_BY_DISCOVERY]",
+        "- TM1 Flight Check: [PRICING_TBD_BY_DISCOVERY]",
+        "- Data Integration Connector: [PRICING_TBD_BY_DISCOVERY]. Automates data transfer from source ERPs to a central database.",
+        "- Custom training: [PRICING_TBD_BY_DISCOVERY]",
+        "- AI Pilots / watsonx POCs: [PRICING_TBD_BY_DISCOVERY]"
     ].join('\n');
     return pricingCatalogString;
 }
@@ -117,7 +117,7 @@ async function loadPricingCatalog() {
             params.transitDistance = "Online/Phone call only (API Error)";
         }
         const prompt = `You are a sales preparation assistant for Octane Software Solutions.
-I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services (IBM TM1/Planning Analytics managed support, Watsonx Orchestrate agentic AI integrations, and DataFusion connectors), produce a 12-POINT BRIEFING.
+I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services (IBM TM1/Planning Analytics managed support, Watsonx Orchestrate agentic AI integrations, and data integration connectors), produce a 12-POINT BRIEFING.
 
 --- INPUTS ---
 1. Client: ${params.name || "Unknown Name"}, ${params.title || "Unknown Title"} at ${params.company || "Unknown Company"}
@@ -148,7 +148,7 @@ Refer to these standard target customer profiles for Octane to classify the pros
 Use these real examples for peer credibility stories:
 - Steric (Life Sciences): Olivia McKellar / Vicki Carline. Deanna Chapman. Product in Use: Octane Blue Support. Limited TM1 bandwidth.
 - GreyOrange (Supply Chain Automation): Nageswara Reddy Kondreddy. Product in Use: Octane Blue. APAC operations support.
-- Iqony / STEAG (Energy): Carola Jochheim. Product in Use: DataFusion. SAP to PA integration.
+- Iqony / STEAG (Energy): Carola Jochheim. Product in Use: Data Integration. SAP to PA integration.
 - Shift (FinTech / Auto Finance): Alvin Ah-Chok. Product in Use: Octane Blue & IBM Planning Analytics. Slow cycles, spreadsheet sprawl.
 - mycar (Retail / Automotive): Olivia McKellar. Product in Use: Additional RAM & IBM Planning Analytics Upgrade. Legacy TM1 memory bottleneck.
 - McPherson’s (Consumer Goods): Will Clemente. Product in Use: IBM Planning Analytics. Large analytics transformation.
@@ -176,7 +176,7 @@ Classify the prospect into:
 Provide 4-5 specific open-ended discovery questions. DO NOT use generic questions. Map the questions explicitly to their exact job title and their specific industry.
 
 === RELEVANT OCTANE SERVICES & PRICING ===
-Specify the exact recommended package with pricing (e.g. DevOps Blue Support at A$4,560/mo flat-rate, TM1 Flight Check fixed audit at A$5,800, or DataFusion Setup at A$6,950, or watsonx AI Pilots starting at $125,000).
+Specify the exact recommended package with pricing (if available in RAG context). If pricing is not explicitly provided, output '[PRICING_TBD_BY_DISCOVERY]'.
 
 === PEER CREDIBILITY STORY ===
 Map this prospect's exact sector and stack to 1-2 relevant Octane historical clients (Steric, GreyOrange, mycar, Iqony, Shift, News Corp, McPherson's). Explain how Octane resolved a similar pain point.
@@ -185,7 +185,7 @@ Map this prospect's exact sector and stack to 1-2 relevant Octane historical cli
 Detail competing systems they are evaluating. Only list systems explicitly mentioned in the RAG or highly specific to their exact niche. If unknown, output 'UNKNOWN'. Do not guess.
 
 === COMPLEMENTARY STACK APPLICATIONS ===
-Detail ERP systems (SAP, NetSuite, Dynamics) and BI tools (Power BI, Tableau) present in their RAG technographics. If unknown, output 'UNKNOWN'. Do not guess.
+Detail ERP systems and BI tools present in their RAG technographics. If unknown, output 'UNKNOWN'. Do not guess.
 
 === RELEVANCE ASSESSMENT ===
 Qualify their business size and revenue markers against Octane's core products.
@@ -216,58 +216,8 @@ Output exactly this string: "${params.transitDistance || "Online/Phone call only
             console.log("Mistral API returned successfully!");
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
-            console.log("Mistral API failed:", err.message);
-            console.warn("⚠️ live API call failed, activating offline demo mock fallback.");
-            const targetName = params.name || "Unknown Lead";
-            const targetCompany = params.company || "Unknown Company";
-            const targetTitle = params.title || "Unknown Title";
-            const targetTrack = params.track || "TM1 & AI";
-            const targetIntake = params.intakeAnswers || "None provided";
-            
-            return `=== LINKEDIN ANALYSIS ===
-<p><strong>LinkedIn Profile Analysis:</strong> Reviewing profile history and recent posts for ${targetName} prior to the call to establish rapport.</p>
-
-=== COMPANY OVERVIEW ===
-<p><strong>Company Overview:</strong> Pending live discovery to identify the specific operational model and recent corporate triggers at ${targetCompany}.</p>
-
-=== DISCOVERY TRACK CLASS ===
-<p><strong>Discovery Track:</strong> ${targetTrack} (Deterministic Local Analysis)</p>
-
-=== TAILORED PLAYBOOK QUESTIONS ===
-<p><strong>Tailored Playbook Questions:</strong></p>
-<ul>
-    <li>What specific planning workflows and consolidation bottlenecks are present at ${targetCompany}?</li>
-    <li>How many separate manual spreadsheets are currently involved in your budgeting process?</li>
-    <li>As the ${targetTitle}, what are the primary analytical challenges your team faces month-over-month?</li>
-</ul>
-
-=== RELEVANT OCTANE SERVICES & PRICING ===
-<p><strong>Recommended Octane Services & Pricing:</strong> Determine applicability for Octane Support (starting at standard rates) or DataFusion connectors during qualification.</p>
-
-=== PEER CREDIBILITY STORY ===
-<p><strong>Peer Credibility Story:</strong> Prepare to reference relevant historical clients in the ${targetTrack} track once industry specifics are confirmed.</p>
-
-=== COMPETING APPLICATIONS ===
-<p><strong>Competing Applications:</strong> Probe for incumbent vendors during the discovery phase.</p>
-
-=== COMPLEMENTARY STACK APPLICATIONS ===
-<p><strong>Complementary Applications:</strong> Verify ${targetCompany}'s actual ERP systems and primary BI visualization tools during the pre-screen.</p>
-
-=== RELEVANCE ASSESSMENT ===
-<p><strong>Relevance Assessment:</strong> Initial evaluation pending. Lead is a ${targetTitle} at ${targetCompany}.</p>
-
-=== LIKELY PAIN POINTS ===
-<p><strong>Likely Pain Points:</strong> Based on the job title <strong>${targetTitle}</strong>, standard pain points typically involve manual data wrangling, slow reporting cycles, and disconnected planning spreadsheets.</p>
-
-=== HIGH-IMPACT OPENERS ===
-<p><strong>Conversation Starters:</strong>
-1. Focus on their interest in ${targetTrack} and how it aligns with Octane's core offerings.
-2. Reference intake details: <em>"${targetIntake}"</em>.
-3. Ask about their current tech stack integration maturity at ${targetCompany}.</p>
-
-=== TRAVEL DISTANCE ===
-Online/Phone call only (Distance unavailable)
-<!-- METADATA: {"name": "${targetName.replace(/"/g, '\\"')}", "company": "${targetCompany.replace(/"/g, '\\"')}", "title": "${targetTitle.replace(/"/g, '\\"')}", "track": "${targetTrack.replace(/"/g, '\\"')}", "intake": "${targetIntake.replace(/"/g, '\\"')}"} -->`;
+            console.error("Mistral API failed:", err.message);
+            throw new Error(`Dossier generation failed: ${err.message}`);
         }
     }
 
@@ -615,8 +565,8 @@ Format exactly as:
             const responseText = await callMistralAPI(messages, customConfig);
             return parseSynthesisResponse(responseText);
         } catch (err) {
-            console.warn("⚠️ live API call failed, activating offline demo mock fallback. Reason:", err.message);
-            return getOfflineMockSynthesis(screencastUrl, customQuestions);
+            console.error("Call Synthesis failed:", err.message);
+            throw new Error(`Transcript Synthesis failed: ${err.message}`);
         }
     }
 
@@ -648,7 +598,8 @@ Format: Generate clean HTML. Format each question and answer exactly as: <p><str
             const responseText = await callMistralAPI(messages, customConfig);
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
-            return getOfflineMockSynthesis("", customQuestions).questionnaireAnswers;
+            console.error("Failed to generate Questionnaire Answers:", err.message);
+            throw err;
         }
     }
 
@@ -677,7 +628,8 @@ Format: HTML with <h4> section headers, <p> paragraphs, and <ul>/<li> lists. Ens
             const responseText = await callMistralAPI(messages, customConfig);
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
-            return getOfflineMockSynthesis("").migrationReport;
+            console.error("Failed to generate Migration Report:", err.message);
+            throw err;
         }
     }
 
@@ -719,7 +671,8 @@ ${screencastUrl ? `<p>I have also recorded a video briefing summarizing our disc
             const responseText = await callMistralAPI(messages, customConfig);
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
-            return getOfflineMockSynthesis(screencastUrl).recapEmail;
+            console.error("Failed to generate Recap Email:", err.message);
+            throw err;
         }
     }
 
@@ -755,7 +708,8 @@ Screencast URL: ${screencastUrl || "Not provided"}`;
             const responseText = await callMistralAPI(messages, customConfig);
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
-            return getOfflineMockSynthesis(screencastUrl).summarySheet;
+            console.error("Failed to generate Summary Sheet:", err.message);
+            throw err;
         }
     }
 
@@ -777,7 +731,8 @@ Format: HTML using <p> paragraphs, <ul>/<li> lists, and <blockquote> tags for qu
             const responseText = await callMistralAPI(messages, customConfig);
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
-            return getOfflineMockSynthesis("").notes;
+            console.error("Failed to generate Meeting Notes:", err.message);
+            throw err;
         }
     }
 
@@ -804,7 +759,8 @@ Format exactly as:
             const responseText = await callMistralAPI(messages, customConfig);
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
-            return getOfflineMockSynthesis("").actionItems;
+            console.error("Failed to generate Action Items:", err.message);
+            throw err;
         }
     }
 
@@ -833,21 +789,8 @@ Format: HTML email from the Sales Representative to the prospect. Include key po
             const responseText = await callMistralAPI(messages, customConfig);
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
-            let erpName = "ERP/financial systems";
-            const intakeText = (prospectData.intake || "").toLowerCase();
-            if (intakeText.includes("netsuite")) erpName = "NetSuite ERP";
-            else if (intakeText.includes("sap")) erpName = "SAP ERP";
-            else if (intakeText.includes("dynamics")) erpName = "Microsoft Dynamics";
-            else if (intakeText.includes("xero")) erpName = "Xero";
-            else if (intakeText.includes("myob")) erpName = "MYOB";
-
-            return `<p>Subject: Optimising ${prospectData.company}'s Financial Planning & Reporting</p>
-<p>Dear ${prospectData.name},</p>
-<p>I tried calling you today regarding your interest in our ${prospectData.track} services at Octane Software Solutions, but was unable to reach you.</p>
-<p>I put together a briefing for our call based on your role as ${prospectData.title || 'Head of Finance'} and some common challenges logistics/finance teams face, such as consolidating manual spreadsheets and version control issues.</p>
-<p>Specifically, I thought you might be interested in how we help companies automate ${erpName} data loading to Planning Analytics, eliminating manual copy-paste cycles.</p>
-<p>Would you have 10 minutes next week for a brief online sync? You can book a time directly with our Director, System Administrator, using our scheduler.</p>
-<p>Kind regards,<br>${prospectData.rep || 'Albert'}<br>Octane Software Solutions</p>`;
+            console.error("Failed to generate Requirement Email:", err.message);
+            throw err;
         }
     }
 
@@ -898,26 +841,8 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
             const responseText = await callMistralAPI(messages, customConfig);
             return responseText.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         } catch (err) {
-            const proposedPkg = params.track === 'Agentic AI Operations & Watsonx' 
-                ? 'DevOps Red Support & AI Pilot POC' 
-                : params.track === 'DataFusion & Analytics Stack'
-                ? 'DataFusion Integration Connector'
-                : 'DevOps Blue Support';
-                
-            return `<h4>1. UNDERSTANDING OF REQUIREMENTS</h4>
-<p>Based on our pre-screen analysis, <strong>${params.company || 'Unknown Company'}</strong> is looking to streamline operational workflows under the <strong>${params.track || 'TM1 & AI'}</strong> track. The current configuration requires direct data integration and automation to eliminate manual reconciliation cycles.</p>
-<h4>2. PROPOSED SOLUTION</h4>
-<p>We propose the implementation of the **${proposedPkg}** to establish a single source of truth and optimize system administration.</p>
-<ul>
-    <li><strong>System Support:</strong> Tailored support package aligned to the <strong>${params.track || 'TM1 & AI'}</strong> interest track.</li>
-    <li><strong>Data Automation:</strong> Setup of custom DataFusion connectivity if standard databases are used.</li>
-</ul>
-<h4>3. APPROACH & METHODOLOGY</h4>
-<p>We recommend a phased implementation schedule starting with detailed architecture and validation workshops.</p>
-<h4>4. TEAM & RESOURCES</h4>
-<p>Staffing includes a dedicated Lead Architect supported by a certified development team.</p>
-<h4>5. NEXT STEPS</h4>
-<p>Book a Positional Meeting with the System Administrator to confirm API sandboxes and data structures.</p>`;
+            console.error("Failed to generate Proposal:", err.message);
+            throw err;
         }
     }
 
@@ -978,9 +903,9 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
 
         const proposedPkg = leadTrack === 'Agentic AI Operations & Watsonx' 
             ? 'DevOps Red Support & AI Pilot POC' 
-            : leadTrack === 'DataFusion & Analytics Stack'
-            ? 'DataFusion Integration Connector'
-            : 'DevOps Blue Support';
+            : leadTrack === 'Data Integration & Analytics Stack'
+            ? 'Data Integration Connector'
+            : 'Custom Integration';
 
         const screencastSegment = screencastUrl ? `<p>I have also recorded a 2-minute video briefing summarizing our discussion, which you can review here: <a href="${screencastUrl}" target="_blank" class="util-42b725">${screencastUrl}</a></p>` : "";
         const screencastField = screencastUrl ? `<li><strong>Screencast URL:</strong> <a href="${screencastUrl}" target="_blank" class="util-42b725">${screencastUrl}</a></li>` : "<li><strong>Screencast URL:</strong> Not provided</li>";

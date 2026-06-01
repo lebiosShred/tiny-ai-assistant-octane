@@ -147,7 +147,7 @@ In Phase 1, Tiny is configured as a Claude Project. The sales representatives (A
 
 - Create a Claude Project named **"Tiny - Pre-Screen Prep"**
 - Upload the following as permanent Project Knowledge:
-  - Octane service catalog (TM1 Support, AI/Agentic, DataFusion)
+  - Octane service catalog (TM1 Support, AI/Agentic, Data Integration)
   - Competitor profiles (key competitors in TM1/Planning Analytics space)
   - Case studies and client examples
   - Product sheets and pricing frameworks
@@ -222,7 +222,7 @@ Use the prospect's actual company and role context, not generic advice.
 The rep receives a structured document they can review in 3-5 minutes before the call. Example output structure:
 
 ```
-PRE-SCREEN BRIEFING: Sarah Chen -- Meridian Logistics
+PRE-SCREEN BRIEFING: Jane Doe -- Acme Corp
 ═══════════════════════════════════════════════════
 
 1. LINKEDIN ANALYSIS
@@ -585,7 +585,7 @@ Using the call transcript and the collected answers to the 12 questions, draft a
 
 2. PROPOSED SOLUTION
 - Pitch the corresponding Octane service package(s) based on the collected variables:
-  - First-Time TM1: Pitch TM1 Projects (Phase 1, 2, or 3) and/or DataFusion (if using Power BI/Qlik/Tableau).
+  - First-Time TM1: Pitch TM1 Projects (Phase 1, 2, or 3) and/or Data Integration (if using Power BI/Qlik/Tableau).
   - Existing TM1: Pitch Octane Blue / Red DevOps Support (starting with 40-hour DevOps Blue, transitioning to Red,
       highlighting no distinction between support and dev, rollover hours, rotation of consultants), TM1 Upgrade
       Services (if legacy/unlicensed version), or a TM1 Flight Check (if experiencing RAM/HDD/log file/performance
@@ -598,7 +598,7 @@ Using the call transcript and the collected answers to the 12 questions, draft a
   - Octane Blue: Include 24/7 SLA-based ticketing (Urgent <1hr, High 4hr, Medium 8hr, Low 24hr), rollover hours,
       monthly health checks, free training library.
   - TM1 Flight Check: Include 6-day analysis, user interviews, RAM/HDD assessment.
-  - DataFusion: Include 60-day free trial, setup + email support, low-code interface.
+  - Data Integration: Include 60-day free trial, setup + email support, low-code interface.
   - watsonx Orchestrate POC: Include co-creation, working demo, client resources.
 
 3. APPROACH & METHODOLOGY
@@ -614,7 +614,7 @@ Using the call transcript and the collected answers to the 12 questions, draft a
     specified) as "Discovery Open Items" for the upcoming Positional Meeting.
 - Outline the kickoff steps (e.g., booking the decision workshop or setup call).
 
-Do NOT include custom pricing amounts. Only state standard list-price frameworks (e.g., Octane Blue support is A$4,560/month, DataFusion is A$6,950 setup, Training is A$1,850/day).
+Do NOT include custom pricing amounts. Only state standard list-price frameworks (e.g., Octane Blue support is A$4,560/month, Training is A$1,850/day).
 Tone: consultative, professional, and specific to the prospect's inputs.
 
 --- TRANSCRIPT(S) ---

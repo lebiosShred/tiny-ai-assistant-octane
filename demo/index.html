@@ -65,7 +65,7 @@
                         <div class="step-content active" id="step-1-content">
                             <h3 class="step-section-title">Preparation for Requirement Session</h3>
                             <div class="action-row mt-1 w-100" style="margin-bottom: 15px;">
-                                <button type="button" class="btn btn-secondary btn-dashed-primary w-100" id="btn-sample-loadout" style="background: rgba(0, 120, 212, 0.1); border: 2px dashed #0078d4; color: #0078d4; font-weight: 600; padding: 12px; font-size: 1.05rem;">⚡ DEMO: Simulate Full AI Sales Call Loadout</button>
+                                <button type="button" class="btn btn-secondary btn-dashed-primary w-100" id="btn-sample-loadout" style="background: rgba(0, 90, 158, 0.1); border: 2px dashed #005a9e; color: #005a9e; font-weight: 600; padding: 12px; font-size: 1.05rem;">⚡ DEMO: Simulate Full AI Sales Call Loadout</button>
                             </div>
                             <form id="prep-form" class="flex-form-col">
 
@@ -82,15 +82,15 @@
                                 <div class="form-row-wrap">
                                     <div class="form-group min-200">
                                         <label for="prep-company">Company Name *</label>
-                                        <input type="text" id="prep-company" class="form-input" placeholder="e.g. Meridian Logistics" required>
+                                        <input type="text" id="prep-company" class="form-input" placeholder="e.g. Acme Corp" required>
                                     </div>
                                     <div class="form-group min-200">
                                         <label for="prep-url">Company Website URL</label>
-                                        <input type="text" id="prep-url" class="form-input" placeholder="e.g. meridianlogistics.com.au">
+                                        <input type="text" id="prep-url" class="form-input" placeholder="e.g. acme.com">
                                     </div>
                                     <div class="form-group min-200">
                                         <label for="prep-email">Company Email *</label>
-                                        <input type="email" id="prep-email" class="form-input" placeholder="e.g. sarah.chen@meridianlogistics.com.au" required>
+                                        <input type="email" id="prep-email" class="form-input" placeholder="e.g. jane.doe@acme.com" required>
                                     </div>
                                 </div>
                                 <div class="form-row-wrap">
@@ -155,7 +155,7 @@
                                     <!-- Attached Google Drive SOW badge -->
                                     <div id="gdrive-attached-badge" class="gdrive-attached-badge" style="display: none;">
                                         <span>📄</span>
-                                        <span id="gdrive-attached-name">Meridian_Logistics_SOW_2025.pdf</span>
+                                        <span id="gdrive-attached-name">Statement_Of_Work_2025.pdf</span>
                                         <button type="button" id="gdrive-attached-remove" aria-label="Remove attached file">❌</button>
                                     </div>
                                 </div>
@@ -279,6 +279,18 @@
                                 </div>
                                 <div class="form-group flex-col-1">
                                     <label for="synth-transcript">Call Transcript *</label>
+                                    
+                                    <!-- Mock Audio Sample Player (Hidden by default) -->
+                                    <div id="mock-audio-container" class="mock-audio-container hidden" style="margin-bottom: 0.75rem; padding: 0.5rem; background: rgba(0, 90, 158, 0.05); border: 1px solid #cce3f5; border-radius: 6px;">
+                                        <div style="font-size: 0.85rem; font-weight: 600; color: #005a9e; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 6px;">
+                                            <span>🔊 Playable Sales Call Sample</span>
+                                        </div>
+                                        <audio id="mock-audio-player" controls style="width: 100%; height: 36px;">
+                                            <source id="mock-audio-source" src="" type="audio/wav">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </div>
+
                                     <textarea id="synth-transcript" class="form-input textarea-input textarea-transcript flex-1" placeholder="Paste verbatim call transcript here..." required></textarea>
                                 </div>
                                 <div class="action-row footer-row flex-col stretch">

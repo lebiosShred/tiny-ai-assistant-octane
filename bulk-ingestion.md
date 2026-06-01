@@ -75,7 +75,7 @@ function createContact(contact) {
 async function runImport() {
     // Array derived from CSV parser in production
     const eventLeads = [
-        { email: 'jane.doe@meridian.com', firstname: 'Jane', lastname: 'Doe', company: 'Meridian Logistics', jobtitle: 'VP Supply Chain' },
+        { email: 'jane.doe@acme.com', firstname: 'Jane', lastname: 'Doe', company: 'Acme Corp', jobtitle: 'VP Supply Chain' },
         { email: 'john.smith@acme.org', firstname: 'John', lastname: 'Smith', company: 'Acme Corp', jobtitle: 'CFO' }
     ];
 

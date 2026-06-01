@@ -12,6 +12,7 @@
     "test:prompts": "promptfoo eval",
     "test:prompts:view": "promptfoo view",
     "test:aegis": "npx playwright test",
+    "test:aegis:prod": "npx playwright test",
     "test:aegis:ui": "npx playwright test --ui",
     "test:aegis:report": "npx playwright show-report",
     "test:aegis:update-snapshots": "npx playwright test --update-snapshots",
@@ -28,6 +29,8 @@
     "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.60.0",
     "playwright": "^1.60.0",
-    "promptfoo": "^0.60.0"
+    "promptfoo": "^0.60.0",
+    "@ast-grep/cli": "^0.30.0",
+    "@modelcontextprotocol/server-postgres": "latest"
   }
 }

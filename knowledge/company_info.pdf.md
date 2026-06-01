@@ -10,8 +10,8 @@ Octane Software Solutions is an APAC-focused consultancy specializing in financi
 ## 2. Customer Case Studies
 
 ### Case Study: Meridian Logistics (Transport & Distribution)
-*   **Challenge:** Manual Excel budgeting and forecasting close took 4-5 days of manual effort. The FP&A team had to consolidate 35 separate departmental spreadsheets and reconcile them with NetSuite ERP actuals.
-*   **Solution:** Implemented IBM Planning Analytics (TM1) and deployed the Octane **DataFusion NetSuite Connector** to automate transaction loadings. Deployed Power BI dashboards fed from the TM1 central repository.
+*   **Challenge:** Manual Excel budgeting and forecasting close took 4-5 days of manual effort. The FP&A team had to consolidate 35 separate departmental spreadsheets and reconcile them with legacy ERP actuals.
+*   **Solution:** Implemented IBM Planning Analytics (TM1) and deployed the Octane **Data Integration Connector** to automate transaction loadings. Deployed Power BI dashboards fed from the TM1 central repository.
 *   **Results:**
     *   Saved 3 full days of manual close time per month.
     *   Eliminated version control errors and manual spreadsheet copy-pasting.
@@ -29,6 +29,6 @@ Octane Software Solutions is an APAC-focused consultancy specializing in financi
 
 ## 3. Technology Integrations
 Octane maintains pre-built connector libraries and deployment profiles for:
-*   **ERP/GL Source Systems:** SAP, NetSuite, Microsoft Dynamics 365, SunSystems.
+*   **ERP/GL Source Systems:** SAP, Oracle, Microsoft Dynamics 365, SunSystems.
 *   **BI & Analytics Tooling:** Power BI, Tableau, Qlik, Excel PAX (Planning Analytics for Excel).
 *   **AI Infrastructure:** IBM watsonx Orchestrate, watsonx.ai, Google BigQuery, Google Cloud Platform (GCP).

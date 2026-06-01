@@ -19,10 +19,10 @@
       "description": "A 6-day complete analysis of system health (RAM, disk, log file rotation, model efficiency, user interviews)."
     },
     {
-      "id": "datafusion_connector",
-      "name": "DataFusion Connector",
-      "price": "Setup price A$6,950",
-      "description": "Automates data transfer from source ERPs (like NetSuite, SAP) to a central database. Inclusions: 5 standard report conversions, 1 instance per environment (Dev/Test/Prod). Exclusions: DB service account creation."
+      "id": "data_integration_connector",
+      "name": "Data Integration Connector",
+      "price": "[PRICING_TBD_BY_DISCOVERY]",
+      "description": "Automates data transfer from source ERPs (like Oracle, SAP) to a central database. Inclusions: 5 standard report conversions, 1 instance per environment (Dev/Test/Prod). Exclusions: DB service account creation."
     },
     {
       "id": "custom_training",

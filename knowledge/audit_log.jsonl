@@ -2,3 +2,5 @@
 {"timestamp":"2026-05-31T09:11:36.547Z","ip":"::1","userAgent":"unknown","action":"CHAT_COMPLETION","details":{"provider":"mistral","model":"mistral-large-latest"}}
 {"timestamp":"2026-05-31T09:21:33.415Z","ip":"::1","userAgent":"unknown","action":"CHAT_COMPLETION","details":{"provider":"mistral","model":"mistral-large-latest"}}
 {"timestamp":"2026-05-31T09:54:13.080Z","ip":"::1","userAgent":"unknown","action":"CHAT_COMPLETION","details":{"provider":"mistral","model":"mistral-large-latest"}}
+{"timestamp":"2026-06-01T14:28:05.730Z","ip":"::1","userAgent":"node-fetch/1.0 (+https://github.com/bitinn/node-fetch)","action":"CHAT_COMPLETION","details":{"provider":"deepseek","model":"mistral-large-latest"}}
+{"timestamp":"2026-06-01T14:29:40.917Z","ip":"::1","userAgent":"node-fetch/1.0 (+https://github.com/bitinn/node-fetch)","action":"CHAT_COMPLETION","details":{"provider":"deepseek","model":"mistral-large-latest"}}

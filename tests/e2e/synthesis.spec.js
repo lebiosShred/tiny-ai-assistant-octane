@@ -13,36 +13,35 @@ test.describe('Aegis Synthesis E2E Suite', () => {
         page.on('pageerror', err => console.error('PAGE ERROR:', err.message));
         await page.locator('body').waitFor({ state: 'attached' });
 
-        // Step 1: Route interceptor mapping mock API responses to Mistral choices format
-        await page.route('**/api/chat', async route => {
-            const request = route.request();
-            const postData = JSON.parse(request.postData() || '{}');
-            const messages = postData.messages || [];
-            const systemMessage = messages.find(m => m.role === 'system')?.content || '';
-            
-            if (systemMessage.includes('research') || systemMessage.includes('brief') || systemMessage.includes('dossier')) {
-                await route.fulfill({
-                    status: 200,
-                    contentType: 'application/json',
-                    body: JSON.stringify({
-                        choices: [{
-                            message: {
-                                role: 'assistant',
-                                content: `
+        if (!process.env.TEST_URL) {
+            await page.route('**/api/chat', async route => {
+                const request = route.request();
+                const postData = JSON.parse(request.postData() || '{}');
+                const messages = postData.messages || [];
+                const systemMessage = messages.find(m => m.role === 'system')?.content || '';
+                
+                if (systemMessage.includes('research') || systemMessage.includes('brief') || systemMessage.includes('dossier')) {
+                    await route.fulfill({
+                        status: 200,
+                        contentType: 'application/json',
+                        body: JSON.stringify({
+                            choices: [{
+                                message: {
+                                    role: 'assistant',
+                                    content: `
 === LIKELY PAIN POINTS ===
 - Highly manual workflow processes
 - Scalability bottlenecks in existing TM1 instances
 === HIGH-IMPACT OPENERS ===
 - "How do you currently handle manual syncs?"
 - "What issues are you seeing with TM1 sizing limits?"
-                                `
-                            }
-                        }]
-                    })
-                });
-            } else if (systemMessage.includes('Synthesizer') || systemMessage.includes('operations') || systemMessage.includes('synth')) {
-                // Return a raw delimited string of documents exactly matching parseSynthesisResponse expectations
-                const mockOutputText = `
+                                    `
+                                }
+                            }]
+                        })
+                    });
+                } else if (systemMessage.includes('Synthesizer') || systemMessage.includes('operations') || systemMessage.includes('synth')) {
+                    const mockOutputText = `
 [DOCUMENT: QUESTIONNAIRE_ANSWERS]
 <h3>1. Questionnaire Answers</h3><p>Prospect verified manual spreadsheets are a major bottleneck.</p><ul><li>Active TM1 databases: 4</li><li>Users affected: 15</li></ul>
 
@@ -69,24 +68,25 @@ test.describe('Aegis Synthesis E2E Suite', () => {
 
 [DOCUMENT: ACTION_ITEMS]
 <h3>8. Action Items</h3><p>Send calendar invite for next session.</p>
-                `;
+                    `;
 
-                await route.fulfill({
-                    status: 200,
-                    contentType: 'application/json',
-                    body: JSON.stringify({
-                        choices: [{
-                            message: {
-                                role: 'assistant',
-                                content: mockOutputText
-                            }
-                        }]
-                    })
-                });
-            } else {
-                await route.continue();
-            }
-        });
+                    await route.fulfill({
+                        status: 200,
+                        contentType: 'application/json',
+                        body: JSON.stringify({
+                            choices: [{
+                                message: {
+                                    role: 'assistant',
+                                    content: mockOutputText
+                                }
+                            }]
+                        })
+                    });
+                } else {
+                    await route.continue();
+                }
+            });
+        }
 
         // 1. Advance through Step 1 (Dossier Generation)
         await page.evaluate(() => {

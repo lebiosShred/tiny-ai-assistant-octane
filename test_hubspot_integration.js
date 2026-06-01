@@ -61,9 +61,9 @@ https.request = function (options, callback) {
                 properties: {
                     firstname: 'Sarah',
                     lastname: 'Chen',
-                    email: 'sarah.chen@meridianlogistics.com.au',
-                    website: 'meridianlogistics.com.au',
-                    company: 'Meridian Logistics',
+                    email: 'jane.doe@acme.com',
+                    website: 'acme.com',
+                    company: 'Acme Corp',
                     jobtitle: 'Head of FP&A',
                     hubspot_booking_intake: 'Need watsonx AI orchestration and generative AI tool workflows.'
                 }
@@ -76,7 +76,7 @@ https.request = function (options, callback) {
             return createMockRequest(200, {
                 id: '456',
                 properties: {
-                    hs_call_body: 'Albert: Hi Sarah, tell me about your systems. Sarah Chen: We use NetSuite and copy-paste 35 sheets. I want generative AI and watsonx integration.',
+                    hs_call_body: 'Albert: Hi Jane, tell me about your systems. Jane Doe: We use Oracle and copy-paste 35 sheets. I want generative AI and watsonx integration.',
                     hs_call_recording_url: 'https://teams.microsoft.com/l/meetup-join/mock'
                 }
             });
@@ -128,15 +128,15 @@ https.request = function (options, callback) {
             const res = mockResponse(200, {
                 choices: [{
                     message: {
-                        content: `<h3>[PRE-SCREEN BRIEFING: Sarah Chen — Meridian Logistics]</h3>
-<ol>
-    <li><strong>LinkedIn Analysis:</strong> 3 years tenure as Head of FP&A at Meridian.</li>
-    <li><strong>Social Media:</strong> Active posts regarding Excel frustration.</li>
-    <li><strong>Company Overview:</strong> Third-party logistics provider in APAC.</li>
-    <li><strong>Relevant Services:</strong> Watsonx Orchestrate and DataFusion.</li>
-    <li><strong>Key Competitors:</strong> Anaplan, Workday.</li>
-    <li><strong>Competing Apps:</strong> 35 manual Excel sheets.</li>
-    <li><strong>Complementary Apps:</strong> NetSuite, Power BI.</li>
+                        content: `<h3>[PRE-SCREEN BRIEFING: Jane Doe — Acme Corp]</h3>
+    <ul>
+    <li><strong>LinkedIn Analysis:</strong> 3 years tenure as Head of FP&A at Acme.</li>
+    <li><strong>Meeting Context:</strong> Exploring AI and automation for FP&A close processes.</li>
+    <li><strong>Pain Points:</strong> Manual copy-pasting of 35 sheets.</li>
+    <li><strong>Relevant Services:</strong> Watsonx Orchestrate and Data Integration.</li>
+    <li><strong>Competitors:</strong> None identified.</li>
+    <li><strong>Competing Apps:</strong> Anaplan, Workday.</li>
+    <li><strong>Complementary Apps:</strong> Oracle, Power BI.</li>
     <li><strong>Planning Apps:</strong> Logistics allocation models.</li>
     <li><strong>Likely Pain Points:</strong> 45 min manual copy-paste per sheet.</li>
     <li><strong>Conversation Starters:</strong> Introduce the watsonx agentic automation pilot.</li>

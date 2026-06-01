@@ -9,7 +9,7 @@ All discovery calls are 30 minutes in length and aim to qualify prospects across
 Targeting prospects who consolidate financial data manually in Excel spreadsheets and do not have a dedicated multi-dimensional database.
 
 ### Questions & Guidance:
-1.  **ERP Integration:** What general ledger/ERP system (e.g., SAP, MS Business Central, NetSuite) are you using, and does it currently integrate with your planning tool?
+1.  **ERP Integration:** What general ledger/ERP system (e.g., SAP, MS Business Central, Oracle) are you using, and does it currently integrate with your planning tool?
 2.  **Spreadsheets Count:** How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting, and are there issues with version control?
 3.  **Planning Workflows:** What specific planning workflows (e.g., actuals, payroll allocations, cost analysis, budgeting, forecasting) are you executing, and are allocations inconsistent or time-consuming?
 4.  **Reporting Stack:** What reporting tools (e.g., Power BI, Qlik, Tableau, Excel PAX/PAW) do you use for management reporting, and do you manually export CSV files to reconcile data?
@@ -20,7 +20,7 @@ Targeting prospects who consolidate financial data manually in Excel spreadsheet
 9.  **Timeline:** What is your target timeline for going live, and do you need a parallel run (e.g., completing by a specific month like June)?
 10. **Budget Framework:** Is there a budget allocated for licensing and delivery, and what is your internal approval/purchase order process?
 11. **Tool Evaluation:** Have you evaluated other tools (e.g. Workday, Anaplan, TM1), and who else is involved in the final decision?
-12. **Success Criteria:** What does success look like, and would a 60-day trial of connectors (like DataFusion) or a free Proof of Concept (POC) help validate the solution?
+12. **Success Criteria:** What does success look like, and would a 60-day trial of data connectors or a free Proof of Concept (POC) help validate the solution?
 
 ---
 

@@ -2018,22 +2018,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     synthLoadSampleBtn.addEventListener('click', () => {
         synthVariantSelect.value = "Variant A";
-        synthTranscriptText.value = `Albert (Sales Team): Hi Sarah, thank you for booking some time with us. I saw on the discovery form that you're currently leading the FP&A team at Meridian Logistics.
-Sarah Chen: Yes, that's correct. We've been experiencing quite a bit of scale lately, and it's putting a lot of pressure on our finance team, especially during our monthly forecast close.
-Albert (Sales Team): I saw you mentioned a bottleneck regarding NetSuite data consolidation in Excel. Can you elaborate on that?
-Sarah Chen: Sure. Our actuals reside in NetSuite, but all our planning models are housed in Excel. We have about 35 separate spreadsheets that get sent out to different department heads. When they come back, we have to manually extract the data and update our consolidation worksheets. It takes about 45 minutes per sheet, and with 35 sheets, it's easily several days of mind-numbing copy-pasting. It's incredibly prone to formula errors.
-Albert (Sales Team): That's a classic bottleneck. It sounds like you're spending 80% of your time just moving data instead of analyzing it.
-Sarah Chen: Exactly. We are using Power BI and PAX for some basic reporting, but they're fed from these manual Excel files.
-Albert (Sales Team): If we could integrate your NetSuite actuals directly with a central IBM Planning Analytics database, and push that clean data straight to your Power BI reports in real time, what would that mean for your team?
-Sarah Chen: It would save us at least 3 days every month. My analysts could actually focus on tracking logistics variance instead of doing data entry.
-Albert (Sales Team): Wonderful. Now, in terms of timeline, when are you hoping to have a solution in place?
-Sarah Chen: We want this resolved before the Q3 planning cycle, which starts in about two months.
-Albert (Sales Team): And is there a budget allocated specifically for this integration project?
-Sarah Chen: We have a sign-off threshold of up to $40,000 for this financial year if we can show a clear return on investment.
-Albert (Sales Team): Excellent. I want to book a deep dive meeting for you with System Administrator, our TM1 Practice Lead. He can walk you through the architecture of our DataFusion connector to NetSuite. Let me pull up his calendar. How does next Tuesday at 10:00 AM AEST look for you?
-Sarah Chen: That works perfectly for me. Let's schedule it.
-Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation. I look forward to working with you, Sarah.`;
-        showToast("Prefilled Call Transcript template!");
+        synthTranscriptText.value = `[AWAITING_CLIENT_TRANSCRIPT]
+
+Please upload or paste a raw transcription of your requirement session here. 
+The system will dynamically parse the text, identify the prospect's actual ERP system (e.g., SAP, Dynamics, Workday), and query the active Knowledge Base to formulate the correct integration connector proposal.`;
+        
+        // Hide Mock Audio Call UI Binding to enforce Zero-Mock Architecture
+        const audioContainer = document.getElementById('mock-audio-container');
+        if (audioContainer) {
+            audioContainer.classList.add('hidden');
+        }
+
+        showToast("Prefilled Structural Empty State Template!");
     });
 
     const sampleLoadoutBtn = document.getElementById('btn-sample-loadout');
@@ -2712,7 +2708,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
     // --- SDR Battlecards Reference Datasets ---
     const BATTLECARDS = {
         A: [
-            {q: "What general ledger/ERP system (e.g., SAP, MS Business Central, NetSuite) are you using, and does it currently integrate with your planning tool?", tip: "Identify GL/ERP baseline."},
+            {q: "What general ledger/ERP system (e.g., SAP, MS Business Central, Oracle) are you using, and does it currently integrate with your planning tool?", tip: "Identify GL/ERP baseline."},
             {q: "How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting, and are there issues with version control?", tip: "Gauge manual consolidation scale & errors."},
             {q: "What specific planning workflows (e.g., actuals, payroll allocations, cost analysis, budgeting, forecasting) are you executing, and are allocations inconsistent or time-consuming?", tip: "Pinpoint active processes & bottlenecks."},
             {q: "What reporting tools (e.g., Power BI, Qlik, Tableau, Excel PAX/PAW) do you use for management reporting, and do you manually export CSV files to reconcile data?", tip: "Map reporting stack & export overhead."},
@@ -2723,7 +2719,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
             {q: "What is your target timeline for going live, and do you need a parallel run (e.g., completing by a specific month like June)?", tip: "Qualify live targets & parallel run needs."},
             {q: "Is there a budget allocated for licensing and delivery, and what is your internal approval/purchase order process?", tip: "Validate budget range & approval path."},
             {q: "Have you evaluated other tools (e.g. Workday, Anaplan, TM1), and who else is involved in the final decision?", tip: "Identify competitors & key decision makers."},
-            {q: "What does success look like, and would a 60-day trial of connectors (like DataFusion) or a free Proof of Concept (POC) help validate the solution?", tip: "Lock in success metrics & position POC/trial."}
+            {q: "What does success look like, and would a 60-day trial of data connectors or a free Proof of Concept (POC) help validate the solution?", tip: "Lock in success metrics & position POC/trial."}
         ],
         B: [
             {q: "Why did you contact us? What do you hope to achieve?", tip: "Understand primary goals & outcomes."},
@@ -2932,12 +2928,9 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
             linkedinDropZone.style.pointerEvents = 'none';
             
             setTimeout(() => {
-                prepLinkedinText.value = `Experience:\n- Head of FP&A at Meridian Logistics (3 years - Present)\n` +
-                    `  * Leading financial planning, forecasting, and consolidation processes\n` +
-                    `  * Managing a team of 4 financial analysts\n` +
-                    `- Senior Financial Analyst at Linfox Logistics (4 years)\n` +
+                prepLinkedinText.value = `Experience:\n- [Enter Experience Here]\n` +
                     `Education:\n` +
-                    `- Master of Applied Finance, University of Melbourne`;
+                    `- [Enter Education Here]`;
                 
                 if (linkedinDropText) {
                     linkedinDropText.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong> (Click to change)`;

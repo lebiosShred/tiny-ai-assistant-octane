@@ -37,10 +37,10 @@
 
 ## 3. Integration & Connector Packages
 
-### DataFusion Connector Setup
+### Data Integration Connector Setup
 *   **Pricing:** Fixed setup price of A$6,950.
 *   **Features:**
-    *   Automates data transfer from source ERPs (such as NetSuite or SAP) directly into a central IBM Planning Analytics database.
+    *   Automates data transfer from source ERPs (such as Oracle or SAP) directly into a central IBM Planning Analytics database.
 *   **Inclusions:**
     *   Up to 5 standard report conversions.
     *   Configuring 1 instance per environment (Dev, Test, Prod).

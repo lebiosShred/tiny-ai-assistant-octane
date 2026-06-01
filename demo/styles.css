@@ -120,9 +120,9 @@ body {
 }
 
 .brand-badge {
-    background: transparent;
-    border: 1px solid var(--primary);
-    color: var(--primary);
+    background: #005a9e;
+    border: 1px solid #005a9e;
+    color: #ffffff;
     font-size: 0.7rem;
     font-weight: 600;
     padding: 0.15rem 0.5rem;
@@ -165,14 +165,14 @@ body {
 }
 
 .btn-primary {
-    background: var(--primary);
+    background: #005a9e;
     color: #ffffff;
     font-weight: 600;
-    box-shadow: 0 2px 8px var(--primary-glow);
+    box-shadow: 0 2px 8px rgba(0, 90, 158, 0.2);
 }
 .btn-primary:hover {
-    background: var(--primary-hover);
-    box-shadow: 0 4px 12px var(--primary-glow);
+    background: #004b87;
+    box-shadow: 0 4px 12px rgba(0, 90, 158, 0.25);
 }
 
 /* API Settings Panel */
@@ -486,7 +486,7 @@ body.resizing * {
 
 .template-loader {
     font-size: 0.75rem;
-    color: var(--primary);
+    color: #005a9e;
     text-decoration: underline;
     background: transparent;
     border: none;
@@ -1728,9 +1728,9 @@ body.resizing * {
 }
 .app-nav .nav-btn.active {
     color: #ffffff;
-    background: var(--primary);
-    box-shadow: 0 2px 8px var(--primary-glow);
-    border-color: var(--primary);
+    background: #005a9e;
+    box-shadow: 0 2px 8px rgba(0, 90, 158, 0.2);
+    border-color: #005a9e;
 }
 
 /* Layout Modifiers for Dashboard Grid */

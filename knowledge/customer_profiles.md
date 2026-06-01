@@ -1,6 +1,6 @@
 # Octane Software Solutions - Target Customer Profiles & Segment Playbook
 
-This playbook contains the official list of target customer profiles and historical clients that Octane Software Solutions serves, mapped to their respective industries, pain points, and products in use. Use this data to qualify prospects and determine the most relevant services (Octane Black, Octane Blue, DataFusion, watsonx AI Pilots) to recommend.
+This playbook contains the official list of target customer profiles and historical clients that Octane Software Solutions serves, mapped to their respective industries, pain points, and products in use. Use this data to qualify prospects and determine the most relevant services (Octane Black, Octane Blue, Data Integration, watsonx AI Pilots) to recommend.
 
 ---
 
@@ -41,9 +41,9 @@ Use these real-world examples to build credibility and reference relevant storie
 ### 2.3 Iqony / STEAG
 * **Sector / Industry:** Energy & Utilities / Renewable Energy & Industrial Services
 * **Key Contact:** Carola Jochheim
-* **Data Points:** Existing DataFusion customer renewing annual subscription (Germany / APAC).
+* **Data Points:** Existing Data Integration customer renewing annual subscription (Germany / APAC).
 * **Pain Points:** Data integration complexity, maintaining seamless connectivity between source ERP systems and Planning Analytics.
-* **Product in Use:** **DataFusion**
+* **Product in Use:** **Data Integration**
 
 ### 2.4 Shift
 * **Sector / Industry:** Financial Services / Automotive Finance & FinTech
