@@ -1962,44 +1962,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Templates Loader ---
-    prepLoadSampleBtn.addEventListener('click', () => {
-        prepNameInput.value = "Sarah Chen";
-        prepTitleInput.value = "Head of FP&A";
-        prepCompanyInput.value = "Meridian Logistics";
-        prepUrlInput.value = "meridianlogistics.com.au";
-        prepEmailInput.value = "sarah.chen@meridianlogistics.com.au";
-        if (document.getElementById('prep-phone')) {
-            document.getElementById('prep-phone').value = "+61 2 9876 5432";
-        }
-        if (document.getElementById('prep-rep')) {
-            document.getElementById('prep-rep').value = "Albert";
-        }
+    prepLoadSampleBtn.addEventListener('click', async () => {
+        const originalText = prepLoadSampleBtn.innerText;
+        prepLoadSampleBtn.innerText = "Generating Prospect...";
+        prepLoadSampleBtn.disabled = true;
         
-        // Auto-attach sample Google Drive SOW
-        attachedGDriveFile = "Meridian_Logistics_SOW_2025.pdf";
-        attachedGDriveFileId = "sample-meridian-sow";
-        attachedGDriveFileContent = `MERIDIAN LOGISTICS -- STATEMENT OF WORK (SOW) 2025
-Services: Managed services for Planning Analytics / TM1
-Users: 150 Planning Analytics users
-Current bottlenecks: Department heads submit 35 Excel sheets. Consolidation requires manual verification and entry to central PAX model. Takes 45 minutes per sheet.
-System details: NetSuite ERP data exported manually to CSV, then loaded into Planning Analytics.
-Target SOW: Migrate current managed support to Octane Black to include full proactive DevOps, offshore development resource, and DataFusion setup to automate NetSuite database ingestion.`;
-        const badgeName = document.getElementById('gdrive-attached-name');
-        if (gdriveBadge && badgeName) {
-            badgeName.innerText = attachedGDriveFile;
-            gdriveBadge.style.display = 'flex';
-        }
+        try {
+            const res = await fetch('/api/prep-sample-loadout');
+            const data = await res.json();
+            
+            prepNameInput.value = data.name;
+            prepTitleInput.value = data.title;
+            prepCompanyInput.value = data.company;
+            prepUrlInput.value = data.url;
+            prepEmailInput.value = data.email;
+            if (document.getElementById('prep-phone')) {
+                document.getElementById('prep-phone').value = data.phone;
+            }
+            if (document.getElementById('prep-rep')) {
+                document.getElementById('prep-rep').value = data.rep;
+            }
+            
+            // Auto-attach sample Google Drive SOW
+            attachedGDriveFile = data.gDriveFile;
+            attachedGDriveFileId = data.gDriveFileId;
+            attachedGDriveFileContent = data.gDriveFileContent;
+            
+            const badgeName = document.getElementById('gdrive-attached-name');
+            if (gdriveBadge && badgeName) {
+                badgeName.innerText = attachedGDriveFile;
+                gdriveBadge.style.display = 'flex';
+            }
 
-        if(prepTrackSelect) prepTrackSelect.value = "Planning & Analytics (TM1)";
-        if(prepIntakeText) prepIntakeText.value = "Service track interest: IBM Planning Analytics / TM1 support\nExcel spreadsheets consolidated: 35 sheets currently consolidated manually\nWorkflow description: Monthly actuals vs budget consolidation and reporting\nGL/ERP system: NetSuite ERP\nReporting tools: Power BI, Excel (PAX)\nDiscuss details: We have a major bottleneck during monthly forecasting. Consolidating the NetSuite actuals with our Excel model templates takes us 45 minutes per worksheet. We want to automate this data transfer and move to a unified database.";
-        if(prepLinkedinText) prepLinkedinText.value = "Experience:\n- Head of FP&A at Meridian Logistics (3 years - Present)\n  * Leading financial planning, forecasting, and consolidation processes\n  * Managing a team of 4 financial analysts\n- Senior Financial Analyst at Linfox Logistics (4 years)\nEducation:\n- Master of Applied Finance, University of Melbourne";
-        if (linkedinDropText) {
-            linkedinDropText.innerHTML = '📁 Drop LinkedIn PDF/TXT here, or click to upload';
+            if(prepTrackSelect) prepTrackSelect.value = data.track;
+            if(prepIntakeText) prepIntakeText.value = data.intake;
+            if(prepLinkedinText) prepLinkedinText.value = data.linkedin;
+            
+            if (linkedinDropText) {
+                linkedinDropText.innerHTML = '📁 Drop LinkedIn PDF/TXT here, or click to upload';
+            }
+            
+            await syncServiceTrackToVariant();
+            step1NextBtn.classList.remove('hidden');
+            step1NextBtn.style.display = 'inline-flex';
+            showToast(`Prefilled dynamic dossier for ${data.name}!`);
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to load dynamic prospect.");
+        } finally {
+            prepLoadSampleBtn.innerText = originalText;
+            prepLoadSampleBtn.disabled = false;
         }
-        syncServiceTrackToVariant();
-        step1NextBtn.classList.remove('hidden');
-        step1NextBtn.style.display = 'inline-flex';
-        showToast("Prefilled Sarah Chen Dossier template!");
     });
 
     synthLoadSampleBtn.addEventListener('click', () => {
