@@ -722,7 +722,8 @@ body.resizing * {
 .toast {
     position: fixed;
     bottom: 2rem;
-    right: 2rem;
+    left: 2rem;
+    right: auto;
     background: #000000;
     border: 1px solid var(--primary);
     color: #ffffff;
@@ -1294,13 +1295,6 @@ body.resizing * {
     border: 2px solid var(--primary) !important;
     box-shadow: 0 0 15px var(--primary-glow) !important;
     transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-    left: 30px !important;
-    right: auto !important;
-}
-
-.wxo-float-main {
-    left: 30px !important;
-    right: auto !important;
 }
 
 .chatButton:hover {
@@ -1315,7 +1309,7 @@ body.resizing * {
 /* Custom Tooltip Speech Bubble */
 .tiny-popover {
     position: fixed;
-    left: 105px;
+    right: 105px;
     bottom: 40px;
     background: #ffffff;
     border: 1px solid var(--primary);
@@ -1329,7 +1323,7 @@ body.resizing * {
     font-weight: 700;
     pointer-events: none;
     opacity: 0;
-    transform: translateX(-10px);
+    transform: translateX(10px);
     transition: opacity 0.3s ease, transform 0.3s ease;
     display: flex;
     align-items: center;
@@ -1343,14 +1337,14 @@ body.resizing * {
 
 .tiny-popover-arrow {
     position: absolute;
-    left: -6px;
+    right: -6px;
     top: 50%;
     transform: translateY(-50%) rotate(45deg);
     width: 10px;
     height: 10px;
     background: #ffffff;
-    border-left: 1px solid var(--primary);
-    border-bottom: 1px solid var(--primary);
+    border-right: 1px solid var(--primary);
+    border-top: 1px solid var(--primary);
 }
 
 /* Left Panel Tabs */
