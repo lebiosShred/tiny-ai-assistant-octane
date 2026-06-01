@@ -3423,27 +3423,44 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
         pdfModal.classList.remove('modal-hidden');
 
         if (attachedGDriveFileId && attachedGDriveFileId.startsWith('mock-')) {
-            pdfRenderTarget.style.display = 'none';
-            let mockPre = document.getElementById('mock-pdf-text-target');
-            if (!mockPre) {
-                mockPre = document.createElement('pre');
-                mockPre.id = 'mock-pdf-text-target';
-                mockPre.className = 'mock-document-preview';
-                mockPre.style.whiteSpace = 'pre-wrap';
-                mockPre.style.padding = '40px';
-                mockPre.style.color = '#333';
-                mockPre.style.fontFamily = 'Inter, sans-serif';
-                mockPre.style.fontSize = '14px';
-                mockPre.style.lineHeight = '1.6';
-                mockPre.style.background = '#f9f9f9';
-                mockPre.style.width = '100%';
-                mockPre.style.height = '100%';
-                mockPre.style.overflowY = 'auto';
-                mockPre.style.boxSizing = 'border-box';
-                pdfRenderTarget.parentNode.appendChild(mockPre);
-            }
-            mockPre.style.display = 'block';
-            mockPre.innerText = attachedGDriveFileContent || 'No mock content provided.';
+            pdfRenderTarget.style.display = 'block';
+            const mockPre = document.getElementById('mock-pdf-text-target');
+            if (mockPre) mockPre.style.display = 'none';
+
+            // Generate physical PDF in-memory via pdfMake
+            const docDefinition = {
+                content: [
+                    { text: attachedGDriveFileContent || 'No mock content provided.', fontSize: 12, lineHeight: 1.5 }
+                ],
+                defaultStyle: {
+                    font: 'Roboto'
+                }
+            };
+            
+            const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+            pdfDocGenerator.getDataUrl((dataUrl) => {
+                const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+                if (lib) {
+                    lib.getDocument(dataUrl).promise.then(pdf => {
+                        return pdf.getPage(1);
+                    }).then(page => {
+                        const scale = 1.25;
+                        const viewport = page.getViewport({ scale: scale });
+                        
+                        pdfRenderTarget.height = viewport.height;
+                        pdfRenderTarget.width = viewport.width;
+                        
+                        const renderContext = {
+                            canvasContext: ctx,
+                            viewport: viewport
+                        };
+                        page.render(renderContext);
+                    }).catch(err => {
+                        console.error('Error rendering dynamic PDF preview:', err);
+                        showToast('Failed to render mock PDF.', 'error');
+                    });
+                }
+            });
             return;
         }
 
