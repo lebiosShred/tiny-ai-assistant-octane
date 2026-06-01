@@ -1678,6 +1678,138 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 return;
             }
 
+            if (payload.provider === 'watsonx') {
+                const watsonxApiKey = (process.env.WATSONX_API_KEY || '').trim();
+                const watsonxProjectId = (process.env.WATSONX_PROJECT_ID || '').trim();
+                const watsonxUrl = (process.env.WATSONX_URL || 'https://us-south.ml.cloud.ibm.com').trim();
+
+                if (!watsonxApiKey || !watsonxProjectId) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'WatsonX credentials missing. Configure WATSONX_API_KEY and WATSONX_PROJECT_ID environment variables.' }));
+                    return;
+                }
+
+                // 1. Get IAM Token
+                const getToken = () => {
+                    return new Promise((resolve, reject) => {
+                        const postData = `grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey=${watsonxApiKey}`;
+                        const tokenReq = https.request({
+                            hostname: 'iam.cloud.ibm.com',
+                            port: 443,
+                            path: '/identity/token',
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'Content-Length': Buffer.byteLength(postData)
+                            }
+                        }, (tokenRes) => {
+                            let body = '';
+                            tokenRes.on('data', chunk => body += chunk);
+                            tokenRes.on('end', () => {
+                                if (tokenRes.statusCode === 200) {
+                                    resolve(JSON.parse(body).access_token);
+                                } else {
+                                    reject(new Error(`IAM Token failed: ${body}`));
+                                }
+                            });
+                        });
+                        tokenReq.on('error', reject);
+                        tokenReq.write(postData);
+                        tokenReq.end();
+                    });
+                };
+
+                try {
+                    const token = await getToken();
+                    
+                    let systemPrompt = '';
+                    let combinedPrompt = '';
+                    if (Array.isArray(payload.messages)) {
+                        for (const msg of payload.messages) {
+                            if (msg.role === 'system') {
+                                systemPrompt += msg.content + '\n';
+                            } else {
+                                combinedPrompt += `<|${msg.role}|>\n${msg.content}\n`;
+                            }
+                        }
+                    }
+
+                    // Format as LLaMA-3 instruct or generic chat depending on model
+                    let watsonxModel = payload.model || 'meta-llama/llama-3-70b-instruct';
+                    const promptText = `<|system|>\n${systemPrompt}\n${combinedPrompt}<|assistant|>\n`;
+
+                    const watsonxPayload = JSON.stringify({
+                        model_id: watsonxModel,
+                        input: promptText,
+                        parameters: {
+                            max_new_tokens: 4000,
+                            temperature: payload.temperature !== undefined ? payload.temperature : 0.2
+                        },
+                        project_id: watsonxProjectId
+                    });
+
+                    const watsonxOptions = {
+                        hostname: watsonxUrl.replace('https://', ''),
+                        port: 443,
+                        path: '/ml/v1/text/generation?version=2023-05-29',
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Content-Length': Buffer.byteLength(watsonxPayload)
+                        }
+                    };
+
+                    const proxyReq = https.request(watsonxOptions, (proxyRes) => {
+                        let resBody = '';
+                        proxyRes.on('data', chunk => resBody += chunk);
+                        proxyRes.on('end', async () => {
+                            if (proxyRes.statusCode !== 200) {
+                                console.warn(`⚠️ Watsonx API returned status ${proxyRes.statusCode}. Attempting Gemini failover...`);
+                                try {
+                                    const text = await executeGeminiFailover(payload);
+                                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                                    res.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content: text } }] }));
+                                } catch (geminiError) {
+                                    res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
+                                    res.end(resBody);
+                                }
+                                return;
+                            }
+                            try {
+                                const wxData = JSON.parse(resBody);
+                                const textContent = wxData.results && wxData.results[0] ? wxData.results[0].generated_text : '';
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content: textContent } }] }));
+                            } catch (e) {
+                                res.writeHead(500, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ error: `Failed to parse Watsonx response: ${e.message}`, raw: resBody }));
+                            }
+                        });
+                    });
+
+                    proxyReq.on('error', async (err) => {
+                        console.warn(`⚠️ Watsonx connection error: ${err.message}. Attempting Gemini failover...`);
+                        try {
+                            const text = await executeGeminiFailover(payload);
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content: text } }] }));
+                        } catch (geminiError) {
+                            res.writeHead(502, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: `Watsonx connection failed: ${err.message}. Failover also failed: ${geminiError.message}` }));
+                        }
+                    });
+
+                    proxyReq.write(watsonxPayload);
+                    proxyReq.end();
+                } catch (err) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: `Watsonx IAM Authentication failed: ${err.message}` }));
+                }
+                return;
+            }
+
             const jsonPayload = JSON.stringify(payload);
 
             const options = {

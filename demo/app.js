@@ -1284,10 +1284,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Local Storage API Settings Load ---
     function getApiConfig() {
         return {
-            provider: localStorage.getItem('tiny_api_provider') || TinyAI.DEFAULT_CONFIG.provider || 'mistral',
+            provider: localStorage.getItem('tiny_api_provider') || TinyAI.DEFAULT_CONFIG.provider || 'watsonx',
             apiKey: localStorage.getItem('tiny_api_key') || "",
             apiUrl: localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl,
-            model: localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model,
+            model: localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model || 'meta-llama/llama-3-70b-instruct',
             prepSystemPrompt: localStorage.getItem('tiny_prep_system_prompt') || TONE_PRESETS.professional.prep,
             synthSystemPrompt: localStorage.getItem('tiny_synth_system_prompt') || TONE_PRESETS.professional.synth
         };

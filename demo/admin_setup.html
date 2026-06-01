@@ -804,6 +804,7 @@
                         <div class="form-group">
                             <label class="form-label">LLM Provider</label>
                             <select class="form-input" id="cfg-api-provider">
+                                <option value="watsonx">IBM watsonx.ai</option>
                                 <option value="mistral">Mistral AI</option>
                                 <option value="anthropic">Anthropic (Claude)</option>
                                 <option value="openai" disabled>OpenAI (Coming Soon)</option>
@@ -818,6 +819,8 @@
                         <div class="form-group">
                             <label class="form-label">LLM Model / Engine</label>
                             <select class="form-input" id="cfg-api-model">
+                                <option value="meta-llama/llama-3-70b-instruct">LLaMA-3 70B Instruct (watsonx)</option>
+                                <option value="ibm/granite-13b-chat-v2">Granite 13B Chat (watsonx)</option>
                                 <option value="mistral-large-latest">Mistral Large (Mistral AI)</option>
                                 <option value="mistral-small-latest">Mistral Small (Mistral AI)</option>
                                 <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
@@ -1040,9 +1043,9 @@
 
         // ── Load Config from localStorage ──
         function loadConfig() {
-            cfgApiProvider.value = localStorage.getItem('tiny_api_provider') || 'mistral';
+            cfgApiProvider.value = localStorage.getItem('tiny_api_provider') || 'watsonx';
             cfgApiUrl.value = localStorage.getItem('tiny_api_url') || '/api/chat';
-            cfgApiModel.value = localStorage.getItem('tiny_api_model') || 'mistral-large-latest';
+            cfgApiModel.value = localStorage.getItem('tiny_api_model') || 'meta-llama/llama-3-70b-instruct';
             cfgApiKey.value = localStorage.getItem('tiny_api_key') || '';
 
             const savedTone = localStorage.getItem('tiny_tone') || 'professional';

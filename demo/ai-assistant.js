@@ -10,8 +10,8 @@
 const DEFAULT_CONFIG = {
     apiKey: "",
     apiUrl: "/api/chat",
-    model: "mistral-large-latest",
-    provider: "mistral",
+    model: "meta-llama/llama-3-70b-instruct",
+    provider: "watsonx",
     prepSystemPrompt: "You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler.",
     synthSystemPrompt: "You are a professional B2B sales operations assistant. You analyze call transcripts and produce clean, formatted HTML documents separated by delimiters."
 };
