@@ -2271,12 +2271,12 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
         if (isAI) {
             gDriveFile = `${company.replace(/\s+/g, '_')}_AI_Strategy_2026.pdf`;
             gDriveFileId = `mock-ai-${Date.now()}`;
-            gDriveFileContent = intake;
         } else {
             gDriveFile = `${company.replace(/\s+/g, '_')}_TM1_Migration_SOW.pdf`;
             gDriveFileId = `mock-tm1-${Date.now()}`;
-            gDriveFileContent = intake;
         }
+        
+        gDriveFileContent = `Name: ${name}\nEmail: ${email}\nPhone number: ${phone}\nCompany: ${company}\nPosition: ${title}\nService Interest: ${track}`;
         
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
