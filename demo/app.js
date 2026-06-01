@@ -3399,10 +3399,7 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
         });
     }
 
-});
-
-// --- PDF.js Modal Preview Integration ---
-document.addEventListener('DOMContentLoaded', () => {
+    // --- PDF.js Modal Preview Integration ---
     const pdfModal = document.getElementById('pdf-preview-modal');
     const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
     const pdfRenderTarget = document.getElementById('pdf-render-target');
