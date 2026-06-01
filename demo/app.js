@@ -2071,10 +2071,6 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
         showToast("Prefilled Structural Empty State Template!");
     });
 
-            }
-        });
-    }
-
     // --- Dossier Parsing & Rendering Helper Functions ---
     function parseDossierResponse(text) {
         try {
