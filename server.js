@@ -2117,26 +2117,46 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     throw new Error("Missing audio_base64 parameter");
                 }
                 
-                // 1. Transcribe Audio via Gemini 1.5 Flash
-                const geminiKeys = (process.env.GOOGLE_API_KEYS || '').split(',');
-                const geminiKey = geminiKeys[0].trim();
+                // 1. Transcribe Audio via Gemini 2.0 Flash (with Resiliency Key Failover)
+                const geminiKeys = (process.env.GOOGLE_API_KEYS || '').split(',').map(k => k.trim()).filter(k => k.length > 0);
+                if (geminiKeys.length === 0) {
+                    throw new Error("No Gemini API keys configured in GOOGLE_API_KEYS");
+                }
                 
-                const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: "Transcribe the following audio recording exactly. Provide only the raw transcript text with speaker labels if discernible. Do not add any conversational filler or formatting outside of the transcript." },
-                                { inlineData: { mimeType: mimeType, data: base64Audio } }
-                            ]
-                        }]
-                    })
-                });
+                let geminiData = null;
+                let geminiResponse = null;
+                let lastError = null;
                 
-                const geminiData = await geminiResponse.json();
-                if (!geminiResponse.ok) {
-                    throw new Error("Gemini API Error: " + JSON.stringify(geminiData));
+                for (let i = 0; i < geminiKeys.length; i++) {
+                    const geminiKey = geminiKeys[i];
+                    try {
+                        geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{
+                                    parts: [
+                                        { text: "Transcribe the following audio recording exactly. Provide only the raw transcript text with speaker labels if discernible. Do not add any conversational filler or formatting outside of the transcript." },
+                                        { inlineData: { mimeType: mimeType, data: base64Audio } }
+                                    ]
+                                }]
+                            })
+                        });
+                        
+                        geminiData = await geminiResponse.json();
+                        if (geminiResponse.ok) {
+                            lastError = null;
+                            break;
+                        } else {
+                            lastError = new Error(`Key index ${i} failed: ${JSON.stringify(geminiData)}`);
+                        }
+                    } catch (err) {
+                        lastError = err;
+                    }
+                }
+                
+                if (lastError) {
+                    throw new Error("Gemini API Error (All keys exhausted): " + lastError.message);
                 }
                 
                 let transcript = "";
