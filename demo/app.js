@@ -1288,6 +1288,7 @@ document.addEventListener('DOMContentLoaded', () => {
             apiKey: localStorage.getItem('tiny_api_key') || "",
             apiUrl: localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl,
             model: localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model || 'meta-llama/llama-3-70b-instruct',
+            agentId: localStorage.getItem('tiny_agent_id') || TinyAI.DEFAULT_CONFIG.agentId || 'bba19eb6-8038-4f06-8afe-20d4198c7121',
             prepSystemPrompt: localStorage.getItem('tiny_prep_system_prompt') || TONE_PRESETS.professional.prep,
             synthSystemPrompt: localStorage.getItem('tiny_synth_system_prompt') || TONE_PRESETS.professional.synth
         };

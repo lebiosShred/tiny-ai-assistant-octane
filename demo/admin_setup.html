@@ -804,7 +804,7 @@
                         <div class="form-group">
                             <label class="form-label">LLM Provider</label>
                             <select class="form-input" id="cfg-api-provider">
-                                <option value="watsonx">IBM watsonx.ai</option>
+                                <option value="watsonx">IBM watsonx Orchestrate</option>
                                 <option value="mistral">Mistral AI</option>
                                 <option value="anthropic">Anthropic (Claude)</option>
                                 <option value="openai" disabled>OpenAI (Coming Soon)</option>
@@ -830,6 +830,12 @@
                         <div class="form-group util-flex-77d8b2">
                             <label class="form-label">Custom API Key (Client Override)</label>
                             <input type="password" class="form-input" id="cfg-api-key" placeholder="Enter custom key to override server credentials... util-text-sm-3f1d7f">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group util-flex-77d8b2">
+                            <label class="form-label">Orchestrate Agent ID</label>
+                            <input type="text" class="form-input" id="cfg-agent-id" placeholder="e.g. agent_12345...">
                         </div>
                     </div>
                 </div>
@@ -978,6 +984,7 @@
         const cfgApiUrl = document.getElementById('cfg-api-url');
         const cfgApiModel = document.getElementById('cfg-api-model');
         const cfgApiKey = document.getElementById('cfg-api-key');
+        const cfgAgentId = document.getElementById('cfg-agent-id');
         const cfgTonePreset = document.getElementById('cfg-tone-preset');
         const cfgPrepPrompt = document.getElementById('cfg-prep-prompt');
         const cfgSynthPrompt = document.getElementById('cfg-synth-prompt');
@@ -1047,6 +1054,7 @@
             cfgApiUrl.value = localStorage.getItem('tiny_api_url') || '/api/chat';
             cfgApiModel.value = localStorage.getItem('tiny_api_model') || 'meta-llama/llama-3-70b-instruct';
             cfgApiKey.value = localStorage.getItem('tiny_api_key') || '';
+            cfgAgentId.value = localStorage.getItem('tiny_agent_id') || 'bba19eb6-8038-4f06-8afe-20d4198c7121';
 
             const savedTone = localStorage.getItem('tiny_tone') || 'professional';
             cfgTonePreset.value = savedTone;
@@ -1063,6 +1071,7 @@
             localStorage.setItem('tiny_api_url', cfgApiUrl.value.trim());
             localStorage.setItem('tiny_api_model', cfgApiModel.value);
             localStorage.setItem('tiny_api_key', cfgApiKey.value.trim());
+            localStorage.setItem('tiny_agent_id', cfgAgentId.value.trim());
             localStorage.setItem('tiny_tone', cfgTonePreset.value);
             localStorage.setItem('tiny_prep_system_prompt', cfgPrepPrompt.value.trim());
             localStorage.setItem('tiny_synth_system_prompt', cfgSynthPrompt.value.trim());
@@ -1086,7 +1095,7 @@
             if (!confirm('Reset all settings to defaults? This will clear all saved configurations.')) return;
 
             const keys = [
-                'tiny_api_provider', 'tiny_api_url', 'tiny_api_model', 'tiny_api_key',
+                'tiny_api_provider', 'tiny_api_url', 'tiny_api_model', 'tiny_api_key', 'tiny_agent_id',
                 'tiny_tone', 'tiny_prep_system_prompt', 'tiny_synth_system_prompt'
             ];
             keys.forEach(k => localStorage.removeItem(k));
