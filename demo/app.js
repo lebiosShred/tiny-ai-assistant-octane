@@ -1967,8 +1967,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const originalText = prepLoadSampleBtn.innerText;
         prepLoadSampleBtn.innerText = "Generating Prospect...";
         prepLoadSampleBtn.disabled = true;
+        showLoading("Generating Dynamic Prospect Profile...");
         
         try {
+            // 1. Load dynamic prospect profile fields and Drive SOW metadata
             const res = await fetch('/api/prep-sample-loadout');
             const data = await res.json();
             
@@ -1984,7 +1986,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('prep-rep').value = data.rep;
             }
             
-            // Auto-attach sample Google Drive SOW
+            // Auto-attach sample Google Drive SOW PDF
             attachedGDriveFile = data.gDriveFile;
             attachedGDriveFileId = data.gDriveFileId;
             attachedGDriveFileContent = data.gDriveFileContent;
@@ -1995,9 +1997,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 gdriveBadge.style.display = 'flex';
             }
 
-            if(prepTrackSelect) prepTrackSelect.value = data.track;
-            if(prepIntakeText) prepIntakeText.value = data.intake;
-            if(prepLinkedinText) prepLinkedinText.value = data.linkedin;
+            if (prepTrackSelect) prepTrackSelect.value = data.track;
+            if (prepIntakeText) prepIntakeText.value = data.intake;
+            if (prepLinkedinText) prepLinkedinText.value = data.linkedin;
             
             if (linkedinDropText) {
                 linkedinDropText.innerHTML = '📁 Drop LinkedIn PDF/TXT here, or click to upload';
@@ -2006,11 +2008,48 @@ document.addEventListener('DOMContentLoaded', () => {
             await syncServiceTrackToVariant();
             step1NextBtn.classList.remove('hidden');
             step1NextBtn.style.display = 'inline-flex';
-            showToast(`Prefilled dynamic dossier for ${data.name}!`);
+            
+            // 2. Trigger automated AI Sales Call transcription and dossier compilation
+            showLoading("Transcribing Simulated Sales Call Audio & Prompting LLM...");
+            const audioRes = await fetch('/sample_call.mp3');
+            if (!audioRes.ok) throw new Error("Could not load sample_call.mp3");
+            const blob = await audioRes.blob();
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = async function() {
+                try {
+                    const base64data = reader.result.split(',')[1];
+                    const loadoutRes = await fetch('/api/sample-loadout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ audio_base64: base64data, mime_type: 'audio/mp3' })
+                    });
+                    const loadoutData = await loadoutRes.json();
+                    if (loadoutData.error) throw new Error(loadoutData.error);
+                    
+                    synthTranscriptText.value = loadoutData.transcript;
+                    synthVariantSelect.value = "Variant A";
+                    
+                    prepLinkedinText.value = loadoutData.linkedIn;
+                    prepIntakeText.value = loadoutData.drive;
+                    
+                    renderDossierHtml(loadoutData.result);
+                    goToStep(3);
+                    switchView('pipeline');
+                    showToast(`Successfully simulated full sales companion loadout for ${data.company}!`);
+                } catch (innerErr) {
+                    showToast("Error: " + innerErr.message);
+                    resetOutput();
+                } finally {
+                    prepLoadSampleBtn.innerText = originalText;
+                    prepLoadSampleBtn.disabled = false;
+                }
+            };
         } catch (err) {
             console.error(err);
-            showToast("Failed to load dynamic prospect.");
-        } finally {
+            showToast("Failed to load dynamic prospect: " + err.message);
+            resetOutput();
             prepLoadSampleBtn.innerText = originalText;
             prepLoadSampleBtn.disabled = false;
         }
@@ -2032,49 +2071,6 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
         showToast("Prefilled Structural Empty State Template!");
     });
 
-    const sampleLoadoutBtn = document.getElementById('btn-sample-loadout');
-    if (sampleLoadoutBtn) {
-        sampleLoadoutBtn.addEventListener('click', async () => {
-            showToast("Simulating AI Sales Call Loadout...");
-            showLoading("Transcribing Sample Audio & Prompting LLM...");
-            sampleLoadoutBtn.disabled = true;
-            try {
-                const audioRes = await fetch('/sample_call.mp3');
-                if (!audioRes.ok) throw new Error("Could not load sample_call.mp3");
-                const blob = await audioRes.blob();
-                const reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = async function() {
-                    try {
-                        const base64data = reader.result.split(',')[1];
-                        const res = await fetch('/api/sample-loadout', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ audio_base64: base64data, mime_type: 'audio/mp3' })
-                        });
-                        const data = await res.json();
-                        if (data.error) throw new Error(data.error);
-                        
-                        synthTranscriptText.value = data.transcript;
-                        synthVariantSelect.value = "Variant A";
-                        
-                        prepLinkedinText.value = data.linkedIn;
-                        prepIntakeText.value = data.drive;
-                        
-                        renderDossierHtml(data.result);
-                        goToStep(3);
-                        showToast("Dynamic Sample Loadout Successful!");
-                    } catch (innerErr) {
-                        showToast("Error: " + innerErr.message);
-                        resetOutput();
-                    } finally {
-                        sampleLoadoutBtn.disabled = false;
-                    }
-                };
-            } catch (e) {
-                showToast("Error: " + e.message);
-                resetOutput();
-                sampleLoadoutBtn.disabled = false;
             }
         });
     }
