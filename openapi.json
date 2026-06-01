@@ -7,62 +7,10 @@
   },
   "servers": [
     {
-      "url": "https://tiny-ai-assistant-351972137415.us-central1.run.app"
+      "url": "https://octane-tiny-assistant.vercel.app"
     }
   ],
   "paths": {
-    "/api/chat": {
-      "post": {
-        "summary": "Run Chat Completions",
-        "description": "Sends messages to Mistral or Anthropic models for sales prep or transcript synthesis.",
-        "operationId": "runChat",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "provider": {
-                    "type": "string",
-                    "enum": ["mistral", "anthropic"],
-                    "default": "mistral"
-                  },
-                  "model": {
-                    "type": "string",
-                    "default": "mistral-large-latest"
-                  },
-                  "messages": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "role": { "type": "string" },
-                        "content": { "type": "string" }
-                      },
-                      "required": ["role", "content"]
-                    }
-                  }
-                },
-                "required": ["messages"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful completion response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/search": {
       "get": {
         "summary": "Search the Web",
