@@ -921,7 +921,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Demo Mode state
     const settingsDemoModeInit = document.getElementById('settings-demo-mode');
     if (settingsDemoModeInit) {
-        const isDemo = localStorage.getItem('tiny_demo_mode') === 'true';
+        const isDemo = localStorage.getItem('tiny_demo_mode') !== 'false';
         settingsDemoModeInit.checked = isDemo;
         toggleDemoButtons(isDemo);
     }
@@ -3341,7 +3341,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
         directoryFilterRep.value = savedSdr;
     }
 
-    const isDemo = localStorage.getItem('tiny_demo_mode') === 'true';
+    const isDemo = localStorage.getItem('tiny_demo_mode') !== 'false';
     toggleDemoButtons(isDemo);
 
     // Run sync initially after all functions and datasets are defined
