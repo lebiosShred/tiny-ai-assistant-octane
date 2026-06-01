@@ -2271,11 +2271,11 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
         if (isAI) {
             gDriveFile = `${company.replace(/\s+/g, '_')}_AI_Strategy_2026.pdf`;
             gDriveFileId = `mock-ai-${Date.now()}`;
-            gDriveFileContent = `${company.toUpperCase()} -- AI STRATEGY & REQUIREMENTS 2026\nObjective: Deploy generative AI solutions to reduce OPEX by 15%.\nKey Areas: Customer Support automation, Sales Knowledge Base (RAG).\nTimeline: Q2 POC deployment, Q4 full rollout.\nBudget limit: $50,000 for phase 1.\n\nNotes from booking:\n${intake}`;
+            gDriveFileContent = intake;
         } else {
             gDriveFile = `${company.replace(/\s+/g, '_')}_TM1_Migration_SOW.pdf`;
             gDriveFileId = `mock-tm1-${Date.now()}`;
-            gDriveFileContent = `${company.toUpperCase()} -- STATEMENT OF WORK (SOW) TM1 MIGRATION\nServices: Managed services for Planning Analytics / TM1\nUsers: 200 PAX users globally\nCurrent bottlenecks: SAP extraction is entirely manual. Month-end close takes 8 days.\nTarget SOW: Migrate current managed support to Octane Black. Implement Data Integration for automated SAP ingestion.\n\nNotes from booking:\n${intake}`;
+            gDriveFileContent = intake;
         }
         
         res.writeHead(200, { 'Content-Type': 'application/json' });
