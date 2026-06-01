@@ -809,9 +809,9 @@
                                 <option value="openai" disabled>OpenAI (Coming Soon)</option>
                             </select>
                         </div>
-                        <div class="form-group" style="flex: 1.5;">
+                        <div class="form-group util-flex-77d8b2">
                             <label class="form-label">API Base URL</label>
-                            <input type="text" class="form-input" id="cfg-api-url" placeholder="e.g. /api/chat" style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">
+                            <input type="text" class="form-input" id="cfg-api-url" placeholder="e.g. /api/chat util-text-sm-3f1d7f">
                         </div>
                     </div>
                     <div class="form-row">
@@ -824,9 +824,9 @@
                                 <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Anthropic)</option>
                             </select>
                         </div>
-                        <div class="form-group" style="flex: 1.5;">
+                        <div class="form-group util-flex-77d8b2">
                             <label class="form-label">Custom API Key (Client Override)</label>
-                            <input type="password" class="form-input" id="cfg-api-key" placeholder="Enter custom key to override server credentials..." style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">
+                            <input type="password" class="form-input" id="cfg-api-key" placeholder="Enter custom key to override server credentials... util-text-sm-3f1d7f">
                         </div>
                     </div>
                 </div>
@@ -888,7 +888,7 @@
                             <span class="token-stat-value" id="stat-total-tokens">0</span>
                         </div>
                         <div class="token-bar">
-                            <div class="token-bar-fill" id="token-bar-fill" style="width: 0%;"></div>
+                            <div class="token-bar-fill" id="token-bar-fill util-1f28c3"></div>
                         </div>
                         <div class="token-stat">
                             <span class="token-stat-label">Context</span>
@@ -907,7 +907,7 @@
                     <button class="btn-restore" id="btn-restore-defaults">🔄 Restore Defaults</button>
                 </div>
                 <div class="config-section-body">
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+                    <p class="util-text-sm-0d436d">
                         Upload training documents (PDF, Word, Markdown, or Text) to expand the assistant's knowledge base. Max 2MB per file, 100K characters. Core system files cannot be deleted.
                     </p>
 
@@ -916,15 +916,15 @@
                         <div class="upload-title">Drag & drop files here, or click to browse</div>
                         <div class="upload-subtitle">Supported: PDF, DOCX, TXT, MD</div>
                         <div class="upload-status" id="kb-upload-status"></div>
-                        <input type="file" id="kb-file-input" accept=".pdf,.docx,.txt,.md" style="display: none;">
+                        <input type="file" id="kb-file-input" accept=".pdf,.docx,.txt,.md" class="util-224b51">
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; margin-bottom: 0.35rem;">
-                        <label class="form-label" style="margin-bottom: 0;">Stored Playbooks & Files</label>
-                        <span style="font-size: 0.7rem; color: var(--text-dark);" id="kb-file-count">0 files</span>
+                    <div class="util-flex-4f2ab5">
+                        <label class="form-label util-c42e0e">Stored Playbooks & Files</label>
+                        <span class="util-text-sm-bf8fad" id="kb-file-count">0 files</span>
                     </div>
                     <div class="knowledge-file-list" id="kb-file-list">
-                        <div style="font-size: 0.8rem; color: var(--text-dark); text-align: center; margin-top: 2rem;">Loading files...</div>
+                        <div class="util-text-center-text-sm-8bf3fb">Loading files...</div>
                     </div>
                 </div>
             </div>
@@ -1165,7 +1165,7 @@
         }
 
         async function loadKnowledgeFiles() {
-            kbFileList.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-dark); text-align: center; margin-top: 2rem;">Loading files...</div>';
+            kbFileList.innerHTML = '<div class="util-text-center-text-sm-8bf3fb">Loading files...</div>';
             try {
                 const response = await fetch('/api/knowledge');
                 if (!response.ok) throw new Error('Failed to fetch knowledge list');
@@ -1174,7 +1174,7 @@
                 kbFileList.innerHTML = '';
 
                 if (files.length === 0) {
-                    kbFileList.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-dark); text-align: center; margin-top: 2rem;">No documents loaded.</div>';
+                    kbFileList.innerHTML = '<div class="util-text-center-text-sm-8bf3fb">No documents loaded.</div>';
                     return;
                 }
 
@@ -1217,7 +1217,7 @@
                 });
             } catch (error) {
                 console.error('Error loading knowledge files:', error);
-                kbFileList.innerHTML = '<div style="font-size: 0.8rem; color: rgba(255,99,71,0.8); text-align: center; margin-top: 2rem;">Failed to load files list.</div>';
+                kbFileList.innerHTML = '<div class="util-text-center-text-sm-text-error-2c9bb6">Failed to load files list.</div>';
             }
         }
 

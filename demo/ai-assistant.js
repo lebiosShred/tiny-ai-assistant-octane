@@ -981,8 +981,8 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
             ? 'DataFusion Integration Connector'
             : 'DevOps Blue Support';
 
-        const screencastSegment = screencastUrl ? `<p>I have also recorded a 2-minute video briefing summarizing our discussion, which you can review here: <a href="${screencastUrl}" target="_blank" style="color: #4daeeb;">${screencastUrl}</a></p>` : "";
-        const screencastField = screencastUrl ? `<li><strong>Screencast URL:</strong> <a href="${screencastUrl}" target="_blank" style="color: #4daeeb;">${screencastUrl}</a></li>` : "<li><strong>Screencast URL:</strong> Not provided</li>";
+        const screencastSegment = screencastUrl ? `<p>I have also recorded a 2-minute video briefing summarizing our discussion, which you can review here: <a href="${screencastUrl}" target="_blank" class="util-42b725">${screencastUrl}</a></p>` : "";
+        const screencastField = screencastUrl ? `<li><strong>Screencast URL:</strong> <a href="${screencastUrl}" target="_blank" class="util-42b725">${screencastUrl}</a></li>` : "<li><strong>Screencast URL:</strong> Not provided</li>";
 
         let questionnaireHtml = "";
         if (Array.isArray(customQuestions) && customQuestions.length > 0) {

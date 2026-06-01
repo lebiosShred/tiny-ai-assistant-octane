@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDirectoryList() {
         const listContainer = document.getElementById('directory-list-container');
         if (!listContainer) return;
-        listContainer.innerHTML = '<div style="font-size: 0.85rem; color: rgba(0,0,0,0.4); text-align: center; margin-top: 3rem;">Loading call directory...</div>';
+        listContainer.innerHTML = '<div class="util-text-center-text-sm-text-muted-a50403">Loading call directory...</div>';
         try {
             const response = await fetch('/api/history');
             if (!response.ok) {
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDirectoryList();
         } catch (error) {
             console.error('Error loading history list:', error);
-            listContainer.innerHTML = `<div style="font-size: 0.85rem; color: #ff4d4d; text-align: center; margin-top: 3rem;">Failed to load call directory: ${error.message}</div>`;
+            listContainer.innerHTML = `<div class="util-text-center-text-sm-text-error-098613">Failed to load call directory: ${error.message}</div>`;
         }
     }
 
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (filtered.length === 0) {
-            listContainer.innerHTML = '<div style="font-size: 0.85rem; color: rgba(0,0,0,0.4); text-align: center; margin-top: 3rem;">No call records found.</div>';
+            listContainer.innerHTML = '<div class="util-text-center-text-sm-text-muted-a50403">No call records found.</div>';
             return;
         }
 
@@ -137,10 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const badgeTypeClass = item.type === 'synthesis' ? 'synthesis' : 'dossier';
             const badgeTypeLabel = item.type === 'synthesis' ? 'Synthesis' : 'Dossier';
             
-            const repBadge = item.rep ? `<span class="directory-badge-rep" style="background: rgba(0, 120, 215, 0.08); color: #0078d4; font-size: 0.65rem; font-weight: bold; padding: 1px 6px; border-radius: 4px; text-transform: uppercase;">Sales Rep: ${escapeHTML(item.rep)}</span>` : '';
+            const repBadge = item.rep ? `<span class="directory-badge-rep util-text-sm-cae50a">Sales Rep: ${escapeHTML(item.rep)}</span>` : '';
             const stageId = item.stage || 'prep';
             const stageConfig = PIPELINE_STAGES.find(s => s.id === stageId) || PIPELINE_STAGES[0];
-            const stageBadge = `<span class="directory-badge-stage" style="background: ${stageConfig.color}; color: #fff; font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 4px;">${stageConfig.label}</span>`;
+            const stageBadge = `<span class="directory-badge-stage util-text-sm-5b4ebe">${stageConfig.label}</span>`;
 
             let scoreBadge = '';
             if (item.score) {
@@ -148,18 +148,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 scoreBadge = `<span class="badge-score ${scoreLower}">${item.score}</span>`;
             }
 
-            const fileAttachedSegment = item.gDriveFile ? `<div style="font-size: 0.7rem; color: rgba(26, 115, 232, 0.85); display: flex; align-items: center; gap: 4px; margin-top: 0.25rem; margin-bottom: 0.25rem;">📁 GDrive SOW: <strong>${escapeHTML(item.gDriveFile)}</strong></div>` : '';
+            const fileAttachedSegment = item.gDriveFile ? `<div class="util-flex-text-sm-a08470">📁 GDrive SOW: <strong>${escapeHTML(item.gDriveFile)}</strong></div>` : '';
 
             let audioPlayerHtml = '';
             if (item.type === 'synthesis') {
                 audioPlayerHtml = `
-                    <div class="directory-audio-player" data-id="${item.id}" style="margin: 0.5rem 0;">
-                        <button type="button" class="audio-play-btn" title="Play call recording" style="background: var(--primary); color: #000; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.7rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;">▶</button>
-                        <div class="audio-track" style="flex: 1; height: 4px; background: rgba(0,0,0,0.1); border-radius: 2px; position: relative;">
-                            <div class="audio-progress" style="height: 100%; background: var(--primary); width: 0%; border-radius: 2px;"></div>
+                    <div class="directory-audio-player" data-id="${item.id} util-51b059">
+                        <button type="button" class="audio-play-btn" title="Play call recording util-flex-text-sm-9c6473">▶</button>
+                        <div class="audio-track util-flex-e5ab15">
+                            <div class="audio-progress util-1d9aee"></div>
                         </div>
-                        <span class="audio-time" style="font-size: 0.65rem; color: rgba(0,0,0,0.55); font-family: monospace;">0:00 / 2:30</span>
-                        <span class="audio-volume-icon" style="font-size: 0.75rem; color: rgba(0,0,0,0.4); cursor: pointer; margin-left: 0.25rem;">🔊</span>
+                        <span class="audio-time util-text-sm-a40804">0:00 / 2:30</span>
+                        <span class="audio-volume-icon util-text-sm-text-muted-5e21e6">🔊</span>
                     </div>
                 `;
             }
@@ -170,9 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="directory-card-title">${escapeHTML(item.company)}</div>
                         <div class="directory-card-subtitle">${escapeHTML(item.name)} ${item.title ? `— ${escapeHTML(item.title)}` : ''}</div>
                     </div>
-                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                    <div class="util-flex-4e01a4">
                         <span class="directory-badge-type ${badgeTypeClass}">${badgeTypeLabel}</span>
-                        <div style="display: flex; gap: 4px; align-items: center;">
+                        <div class="util-flex-b92b0d">
                             ${repBadge}
                             ${stageBadge}
                         </div>
@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Restore Rapport Guide
             if (rapportGuidePanel && rapportGuideBody && item.content) {
                 rapportGuidePanel.style.display = 'block';
-                rapportGuideBody.innerHTML = '<div style="font-style: italic; color: rgba(0,0,0,0.4); text-align: center; padding: 0.5rem 0;">💡 Loading Rapport Guide talking points...</div>';
+                rapportGuideBody.innerHTML = '<div class="util-text-center-text-muted-3d46bd">💡 Loading Rapport Guide talking points...</div>';
                 TinyAI.generateRapportGuide(item.content, getApiConfig())
                     .then(guideHtml => {
                         const tempDiv = document.createElement('div');
@@ -428,7 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                     .catch(err => {
                         console.warn("Failed to generate rapport guide:", err);
-                        rapportGuideBody.innerHTML = '<div style="color: #ff4d4d; padding: 0.5rem 0; text-align: center;">Failed to generate talking points.</div>';
+                        rapportGuideBody.innerHTML = '<div class="util-text-center-text-error-12ba4c">Failed to generate talking points.</div>';
                     });
             } else if (rapportGuidePanel) {
                 rapportGuidePanel.style.display = 'none';
@@ -490,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     docsCopy[key] = formatMarkdown(docsCopy[key]);
                 }
                 if (item.transcript) {
-                    docsCopy.transcript = `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #000000; font-size: 0.85rem; background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid rgba(0,0,0,0.06); border-radius: 6px;">${escapeHTML(item.transcript)}</pre>`;
+                    docsCopy.transcript = `<pre class="util-text-sm-61a6d2">${escapeHTML(item.transcript)}</pre>`;
                 }
                 currentDocs = docsCopy;
                 activeDocTab = 'questionnaireAnswers';
@@ -729,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const docs = selectedHistoryItem.content || {};
         if (activeDetailDocTab === 'transcript') {
             const transcript = selectedHistoryItem.transcript || "";
-            content = `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #fff; font-size: 0.85rem; background: rgba(255,255,255,0.02); padding: 1rem; border: 1px solid rgba(255,255,255,0.06); border-radius: 6px;">${escapeHTML(transcript)}</pre>`;
+            content = `<pre class="util-text-sm-3f1c47">${escapeHTML(transcript)}</pre>`;
         } else {
             content = docs[activeDetailDocTab] || "<p>This section was not generated or is empty.</p>";
             if (content && !content.includes('<p>') && !content.includes('<ul>')) {
@@ -941,7 +941,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadKnowledgeFilesList() {
         if (!knowledgeFileList) return;
-        knowledgeFileList.innerHTML = '<div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); text-align: center; margin-top: 2rem;">Loading files...</div>';
+        knowledgeFileList.innerHTML = '<div class="util-text-center-text-sm-176e43">Loading files...</div>';
         try {
             const response = await fetch('/api/knowledge');
             if (!response.ok) {
@@ -951,7 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
             knowledgeFileList.innerHTML = '';
             
             if (files.length === 0) {
-                knowledgeFileList.innerHTML = '<div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); text-align: center; margin-top: 2rem;">No documents loaded.</div>';
+                knowledgeFileList.innerHTML = '<div class="util-text-center-text-sm-176e43">No documents loaded.</div>';
                 return;
             }
 
@@ -994,7 +994,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (error) {
             console.error('Error loading knowledge files:', error);
-            knowledgeFileList.innerHTML = `<div style="font-size: 0.8rem; color: rgba(255,99,71,0.8); text-align: center; margin-top: 2rem;">Failed to load files list.</div>`;
+            knowledgeFileList.innerHTML = `<div class="util-text-center-text-sm-text-error-2c9bb6">Failed to load files list.</div>`;
         }
     }
 
@@ -1403,7 +1403,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentDossierText) {
             const docContent = document.getElementById('output-doc-content');
             if (docContent) {
-                docContent.innerHTML = `<div style="padding: 1.25rem; color: rgba(255,255,255,0.4); text-align: center;">No active dossier loaded. Complete Step 1 first.</div>`;
+                docContent.innerHTML = `<div class="util-text-center-7067f5">No active dossier loaded. Complete Step 1 first.</div>`;
             }
             return;
         }
@@ -1413,22 +1413,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const starters = parsed['HIGH-IMPACT OPENERS'] || 'Not available';
         
         let html = `
-            <div class="dossier-quick-ref" style="margin-bottom: 1.5rem;">
-                <h3 class="quick-ref-header" style="margin-top: 0; margin-bottom: 1rem; color: var(--primary); font-size: 1rem; grid-column: 1 / -1;">🎯 Dossier Quick Reference</h3>
-                <div class="quick-ref-card" style="margin-bottom: 0.75rem;">
+            <div class="dossier-quick-ref util-d3297f">
+                <h3 class="quick-ref-header util-text-sm-f197af">🎯 Dossier Quick Reference</h3>
+                <div class="quick-ref-card util-77a3ec">
                     <div class="quick-ref-title">🎯 Likely Pain Points</div>
                     <div class="quick-ref-content">${formatMarkdown(painPoints)}</div>
                 </div>
-                <div class="quick-ref-card" style="margin-bottom: 0.75rem;">
+                <div class="quick-ref-card util-77a3ec">
                     <div class="quick-ref-title">🔥 High-Impact Openers</div>
                     <div class="quick-ref-content">${formatMarkdown(starters)}</div>
                 </div>
             </div>
             
-            <div class="full-dossier-section" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
-                <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary); font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+            <div class="full-dossier-section util-995f86">
+                <h3 class="util-flex-text-sm-f9ccdc">
                     📋 Full Briefing Dossier 
-                    <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-main); margin-left: auto; opacity: 0.7;">(All 12 Research Sections)</span>
+                    <span class="util-text-sm-7ce1f1">(All 12 Research Sections)</span>
                 </h3>
                 <div class="dossier-accordion-container">
         `;
@@ -1564,11 +1564,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (bodyEl) {
                     const directorName = directorSelect === 'steny' ? 'Steny' : 'Amendra Pratap';
                     bodyEl.innerHTML = `
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%; padding: 0.25rem 0;">
-                            <div style="display: flex; align-items: center; gap: 6px; color: #00c853; font-weight: 700; font-size: 0.8rem;">
+                        <div class="util-flex-cd6c8a">
+                            <div class="util-flex-text-sm-2ab44f">
                                 <span>✔️ Redirected to HubSpot Calendar.</span>
                             </div>
-                            <p style="font-size: 0.75rem; color: rgba(0,0,0,0.6); margin: 0; line-height: 1.3;">
+                            <p class="util-text-sm-f2c890">
                                 Calendar booking opened in a new tab. Please complete the booking for <strong>${clientName}</strong> with <strong>${directorName}</strong> directly in HubSpot.
                             </p>
                         </div>
@@ -1790,19 +1790,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = (gdriveSearchInput?.value || '').trim();
         
         if (query) {
-            listEl.innerHTML = '<div style="font-size: 0.75rem; text-align: center; padding: 0.5rem 0; color: #1a73e8;">🔍 Searching Drive...</div>';
+            listEl.innerHTML = '<div class="util-text-center-text-sm-66c57a">🔍 Searching Drive...</div>';
             try {
                 const res = await fetch(`/api/gdrive/search?q=${encodeURIComponent(query)}`);
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
                 renderItems(data.items || [], listEl);
             } catch (err) {
-                listEl.innerHTML = `<div style="font-size: 0.7rem; color: #ff4d4d; text-align: center; padding: 0.5rem 0;">Search failed: ${escapeHTML(err.message)}</div>`;
+                listEl.innerHTML = `<div class="util-text-center-text-sm-text-error-31f7b0">Search failed: ${escapeHTML(err.message)}</div>`;
             }
             return;
         }
 
-        listEl.innerHTML = '<div style="font-size: 0.75rem; text-align: center; padding: 0.5rem 0; color: #1a73e8;">📂 Loading items...</div>';
+        listEl.innerHTML = '<div class="util-text-center-text-sm-66c57a">📂 Loading items...</div>';
         try {
             const url = gdriveCurrentFolderId ? `/api/gdrive/list?folderId=${encodeURIComponent(gdriveCurrentFolderId)}` : '/api/gdrive/list';
             const res = await fetch(url);
@@ -1810,13 +1810,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.error) throw new Error(data.error);
             renderItems(data.items || [], listEl);
         } catch (err) {
-            listEl.innerHTML = `<div style="font-size: 0.7rem; color: #ff4d4d; text-align: center; padding: 0.5rem 0;">Load failed: ${escapeHTML(err.message)}</div>`;
+            listEl.innerHTML = `<div class="util-text-center-text-sm-text-error-31f7b0">Load failed: ${escapeHTML(err.message)}</div>`;
         }
     }
 
     function renderItems(items, listEl) {
         if (items.length === 0) {
-            listEl.innerHTML = '<div style="font-size: 0.7rem; color: rgba(0,0,0,0.4); text-align: center; padding: 1rem 0;">No items found</div>';
+            listEl.innerHTML = '<div class="util-text-center-text-sm-text-muted-3fa3a5">No items found</div>';
             return;
         }
         
@@ -1831,7 +1831,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemDiv.innerHTML = `
                 <div class="gdrive-item-info">
                     <span>${icon}</span>
-                    <span class="gdrive-item-name" style="cursor: ${item.isFolder ? 'pointer' : 'default'}; font-weight: ${item.isFolder ? 'bold' : 'normal'}; color: ${item.isFolder ? '#1a73e8' : 'inherit'};">${escapeHTML(item.name)}</span>
+                    <span class="gdrive-item-name util-5849ae">${escapeHTML(item.name)}</span>
                     <span class="gdrive-item-size">${sizeText}</span>
                 </div>
                 ${item.isFolder ? '' : `<button type="button" class="gdrive-btn-attach" data-id="${item.id}" data-name="${escapeHTML(item.name)}">Attach</button>`}
@@ -2163,7 +2163,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
                     <span>${completedCount}/${coreSections.length} Sections (${percent}%)</span>
                 </div>
                 <div class="dossier-completeness-bar">
-                    <div class="dossier-completeness-fill" style="width: ${percent}%;"></div>
+                    <div class="dossier-completeness-fill util-5a8608"></div>
                 </div>
             </div>
             <div class="dossier-accordion-container">
@@ -2266,7 +2266,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
             // Trigger Rapport Guide generation asynchronously
             if (rapportGuidePanel && rapportGuideBody) {
                 rapportGuidePanel.style.display = 'block';
-                rapportGuideBody.innerHTML = '<div style="font-style: italic; color: rgba(0,0,0,0.4); text-align: center; padding: 0.5rem 0;">💡 Loading Rapport Guide talking points...</div>';
+                rapportGuideBody.innerHTML = '<div class="util-text-center-text-muted-3d46bd">💡 Loading Rapport Guide talking points...</div>';
                 TinyAI.generateRapportGuide(resultHtml, apiConfig)
                     .then(guideHtml => {
                         const tempDiv = document.createElement('div');
@@ -2283,7 +2283,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
                     })
                     .catch(err => {
                         console.warn("Failed to generate rapport guide:", err);
-                        rapportGuideBody.innerHTML = '<div style="color: #ff4d4d; padding: 0.5rem 0; text-align: center;">Failed to generate talking points.</div>';
+                        rapportGuideBody.innerHTML = '<div class="util-text-center-text-error-12ba4c">Failed to generate talking points.</div>';
                     });
             }
             
@@ -2440,7 +2440,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
             }
             
             // Inject Call Transcript
-            docs.transcript = `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #000000; font-size: 0.85rem; background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid rgba(0,0,0,0.06); border-radius: 6px;">${escapeHTML(transcript)}</pre>`;
+            docs.transcript = `<pre class="util-text-sm-61a6d2">${escapeHTML(transcript)}</pre>`;
 
             currentDocs = docs;
             activeDocTab = 'questionnaireAnswers'; // default tab to show
@@ -2519,15 +2519,15 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
                                   currentScreencastUrl.toLowerCase().endsWith('.ogv');
             if (isDirectVideo) {
                 videoPreviewHtml = `
-                    <div style="margin-bottom: 1rem; background: #000; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); aspect-ratio: 16/9; max-width: 480px; margin-left: auto; margin-right: auto;">
-                        <video src="${currentScreencastUrl}" controls style="width: 100%; height: 100%; object-fit: contain;"></video>
+                    <div class="util-b52793">
+                        <video src="${currentScreencastUrl}" controls class="util-8e7f25"></video>
                     </div>
                 `;
             } else {
                 videoPreviewHtml = `
-                    <div style="margin-bottom: 1rem; background: rgba(77, 174, 235, 0.05); border: 1px solid rgba(77, 174, 235, 0.15); border-radius: 6px; padding: 0.6rem 0.85rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem;">
-                        <span style="color: var(--primary); font-weight: 500;">📺 Attached Screencast Video: <span style="font-family: monospace; opacity: 0.8;">${currentScreencastUrl.substring(0, 40) + (currentScreencastUrl.length > 40 ? '...' : '')}</span></span>
-                        <a href="${currentScreencastUrl}" target="_blank" class="btn btn-secondary" style="height: 22px; padding: 0 6px; font-size: 0.65rem; display: inline-flex; align-items: center; text-decoration: none; border-color: rgba(77, 174, 235, 0.2); color: var(--primary); background: transparent;">Open Link ↗</a>
+                    <div class="util-flex-text-sm-f16285">
+                        <span class="util-315a7a">📺 Attached Screencast Video: <span class="util-f52ea2">${currentScreencastUrl.substring(0, 40) + (currentScreencastUrl.length > 40 ? '...' : '')}</span></span>
+                        <a href="${currentScreencastUrl}" target="_blank" class="btn btn-secondary util-flex-text-sm-7c705a">Open Link ↗</a>
                     </div>
                 `;
             }
@@ -3196,7 +3196,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
                         notes: "",
                         proposal: "",
                         actionItems: "",
-                        transcript: `<pre style="white-space: pre-wrap; font-family: inherit; line-height: 1.5; color: #000000; font-size: 0.85rem; background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid rgba(0,0,0,0.06); border-radius: 6px;">${escapeHTML(transcript)}</pre>`
+                        transcript: `<pre class="util-text-sm-61a6d2">${escapeHTML(transcript)}</pre>`
                     };
                 }
                 currentDocs[reportType] = generatedContent;
