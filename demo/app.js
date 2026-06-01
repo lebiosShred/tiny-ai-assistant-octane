@@ -2099,7 +2099,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
             'TRAVEL DISTANCE': ''
         };
         
-        const pattern = /===\s*([A-Z0-9\s&]+?)\s*===/gi;
+        const pattern = /===\s*([A-Z0-9\s&\-]+?)\s*===/gi;
         let match;
         const matches = [];
         
