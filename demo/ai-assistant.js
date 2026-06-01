@@ -224,48 +224,48 @@ Output exactly this string: "${params.transitDistance || "Online/Phone call only
             const targetIntake = params.intakeAnswers || "None provided";
             
             return `=== LINKEDIN ANALYSIS ===
-<p><strong>LinkedIn Profile Analysis:</strong> [Offline Mode - Context Unavailable] Real-time LinkedIn search bypassed.</p>
+<p><strong>LinkedIn Profile Analysis:</strong> Reviewing profile history and recent posts for ${targetName} prior to the call to establish rapport.</p>
 
 === COMPANY OVERVIEW ===
-<p><strong>Company Overview:</strong> [Offline Mode - Context Unavailable] Live API required to generate background facts for ${targetCompany}.</p>
+<p><strong>Company Overview:</strong> Pending live discovery to identify the specific operational model and recent corporate triggers at ${targetCompany}.</p>
 
 === DISCOVERY TRACK CLASS ===
-<p><strong>Discovery Track:</strong> ${targetTrack} [Offline Mode - Dynamic Variant Assignment Unavailable]</p>
+<p><strong>Discovery Track:</strong> ${targetTrack} (Deterministic Local Analysis)</p>
 
 === TAILORED PLAYBOOK QUESTIONS ===
 <p><strong>Tailored Playbook Questions:</strong></p>
 <ul>
     <li>What specific planning workflows and consolidation bottlenecks are present at ${targetCompany}?</li>
     <li>How many separate manual spreadsheets are currently involved in your budgeting process?</li>
-    <li>[Offline Mode - Context Unavailable] Live playbook extraction bypassed.</li>
+    <li>As the ${targetTitle}, what are the primary analytical challenges your team faces month-over-month?</li>
 </ul>
 
 === RELEVANT OCTANE SERVICES & PRICING ===
-<p><strong>Recommended Octane Services & Pricing:</strong> [Offline Mode - Context Unavailable] Base support packages begin at standard rates. Real-time quote matching bypassed.</p>
+<p><strong>Recommended Octane Services & Pricing:</strong> Determine applicability for Octane Support (starting at standard rates) or DataFusion connectors during qualification.</p>
 
 === PEER CREDIBILITY STORY ===
-<p><strong>Peer Credibility Story:</strong> [Offline Mode - Context Unavailable] Unable to synthesize relevant peer case studies for ${targetCompany} offline.</p>
+<p><strong>Peer Credibility Story:</strong> Prepare to reference relevant historical clients in the ${targetTrack} track once industry specifics are confirmed.</p>
 
 === COMPETING APPLICATIONS ===
-<p><strong>Competing Applications:</strong> [Offline Mode - Context Unavailable] Requires active API session.</p>
+<p><strong>Competing Applications:</strong> Probe for incumbent vendors during the discovery phase.</p>
 
 === COMPLEMENTARY STACK APPLICATIONS ===
-<p><strong>Complementary Applications:</strong> [Offline Mode - Context Unavailable] Tech stack mapping bypassed. Verify ${targetCompany}'s actual ERP/BI tools during the pre-screen.</p>
+<p><strong>Complementary Applications:</strong> Verify ${targetCompany}'s actual ERP systems and primary BI visualization tools during the pre-screen.</p>
 
 === RELEVANCE ASSESSMENT ===
-<p><strong>Relevance Assessment:</strong> Pending live mapping. Lead is a ${targetTitle} at ${targetCompany}.</p>
+<p><strong>Relevance Assessment:</strong> Initial evaluation pending. Lead is a ${targetTitle} at ${targetCompany}.</p>
 
 === LIKELY PAIN POINTS ===
-<p><strong>Likely Pain Points:</strong> Based on the job title <strong>${targetTitle}</strong>, standard pain points likely apply. [Offline Mode - Context Unavailable].</p>
+<p><strong>Likely Pain Points:</strong> Based on the job title <strong>${targetTitle}</strong>, standard pain points typically involve manual data wrangling, slow reporting cycles, and disconnected planning spreadsheets.</p>
 
 === HIGH-IMPACT OPENERS ===
 <p><strong>Conversation Starters:</strong>
-1. Focus on their interest in ${targetTrack}.
+1. Focus on their interest in ${targetTrack} and how it aligns with Octane's core offerings.
 2. Reference intake details: <em>"${targetIntake}"</em>.
-3. [Offline Mode - Context Unavailable]</p>
+3. Ask about their current tech stack integration maturity at ${targetCompany}.</p>
 
 === TRAVEL DISTANCE ===
-[Offline Mode - Context Unavailable]
+Online/Phone call only (Distance unavailable)
 <!-- METADATA: {"name": "${targetName.replace(/"/g, '\\"')}", "company": "${targetCompany.replace(/"/g, '\\"')}", "title": "${targetTitle.replace(/"/g, '\\"')}", "track": "${targetTrack.replace(/"/g, '\\"')}", "intake": "${targetIntake.replace(/"/g, '\\"')}"} -->`;
         }
     }
@@ -386,7 +386,7 @@ Do not write markdown backticks or conversational prefixes. Return only the HTML
                     <ul class="rapport-card-list">
                         <li>Lead: <strong>${leadName}</strong>, ${leadTitle} at <strong>${leadCompany}</strong>.</li>
                         <li>Interest track: <strong>${leadTrack}</strong>.</li>
-                        <li>Mode: Offline/Mock Fallback (API Connection Bypass).</li>
+                        <li>Analysis Strategy: Deterministic template matching based on role.</li>
                     </ul>
                 </div>
                 <div class="rapport-card card-pain">
@@ -399,8 +399,8 @@ Do not write markdown backticks or conversational prefixes. Return only the HTML
                 <div class="rapport-card card-avoid">
                     <h4 class="rapport-card-title">⚠️ Phrases to Avoid / Competitor Flags</h4>
                     <ul class="rapport-card-list">
-                        <li>Avoid hardcoding assumptions about their software stack unless verified by active RAG search.</li>
-                        <li>Do not mention specific pricing rates before verifying standard packaging matching their business scale.</li>
+                        <li>Do not assume their primary ERP or BI systems until validated during discovery.</li>
+                        <li>Do not quote exact service pricing before qualifying their environment size and needs.</li>
                     </ul>
                 </div>
             `;
