@@ -805,9 +805,10 @@
                             <label class="form-label">LLM Provider</label>
                             <select class="form-input" id="cfg-api-provider">
                                 <option value="watsonx">IBM watsonx Orchestrate</option>
+                                <option value="deepseek">DeepSeek API</option>
+                                <option value="gemini">Google Gemini API</option>
                                 <option value="mistral">Mistral AI</option>
                                 <option value="anthropic">Anthropic (Claude)</option>
-                                <option value="openai" disabled>OpenAI (Coming Soon)</option>
                             </select>
                         </div>
                         <div class="form-group util-flex-77d8b2">
@@ -819,12 +820,15 @@
                         <div class="form-group">
                             <label class="form-label">LLM Model / Engine</label>
                             <select class="form-input" id="cfg-api-model">
-                                <option value="meta-llama/llama-3-70b-instruct">LLaMA-3 70B Instruct (watsonx)</option>
-                                <option value="ibm/granite-13b-chat-v2">Granite 13B Chat (watsonx)</option>
+                                <option value="deepseek-v4-flash">DeepSeek-V4 Flash (DeepSeek)</option>
+                                <option value="deepseek-v4-pro">DeepSeek-V4 Pro (DeepSeek)</option>
+                                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Google)</option>
+                                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Google)</option>
                                 <option value="mistral-large-latest">Mistral Large (Mistral AI)</option>
                                 <option value="mistral-small-latest">Mistral Small (Mistral AI)</option>
                                 <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
-                                <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Anthropic)</option>
+                                <option value="meta-llama/llama-3-70b-instruct">LLaMA-3 70B Instruct (watsonx)</option>
+                                <option value="ibm/granite-13b-chat-v2">Granite 13B Chat (watsonx)</option>
                             </select>
                         </div>
                         <div class="form-group util-flex-77d8b2">
