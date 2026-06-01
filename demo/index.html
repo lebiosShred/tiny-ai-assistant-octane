@@ -525,8 +525,10 @@
     <!-- Load PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-        const pdfjsLib = window['pdfjs-dist/build/pdf'];
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const pdfjsLibObj = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+        if (pdfjsLibObj) {
+            pdfjsLibObj.GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.js';
+        }
     </script>
 </body>
 </html>

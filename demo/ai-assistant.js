@@ -116,8 +116,8 @@ async function loadPricingCatalog() {
         } catch (e) {
             params.transitDistance = "Online/Phone call only (API Error)";
         }
-        const prompt = `You are a sales preparation assistant for Octane Software Solutions.
-I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services (IBM TM1/Planning Analytics managed support, Watsonx Orchestrate agentic AI integrations, and data integration connectors), produce a 12-POINT BRIEFING.
+        const prompt = `--- GENERATE JSON DOSSIER ---
+I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services, produce a 12-POINT BRIEFING.
 
 --- INPUTS ---
 1. Client: ${params.name || "Unknown Name"}, ${params.title || "Unknown Title"} at ${params.company || "Unknown Company"}
@@ -131,73 +131,9 @@ ${params.linkedinInfo || "None provided"}
 7. Attached Google Drive Document Name: ${params.gDriveFile || "None"}
 8. Attached Google Drive Document Content:
 ${params.gDriveFileContent || "No document content attached."}
-
---- OCTANE TARGET CUSTOMER PROFILES PLAYBOOK ---
-Refer to these standard target customer profiles for Octane to classify the prospect:
-- Large TM1 Shops: System Owner or IT. Pain: Cost of resource, Accessing quality resource, Stuck with inflexible vendors, Internal resources are not that skilled, Support and Development maturity, growing pains. Product: Octane Black (Full support, onshore/offshore, for 200+ user scales).
-- Mid Size TM1 Shops: CFO or Head of FP&A. Pain: High cost of support, backlog of projects, Support is ad hoc, In-house resource drives the agenda, not modern setup. Product: Octane Blue (DevOps Support) with roadmap to expand to licenses.
-- Small TM1 Shops: CFO or Head of FP&A. Pain: High cost of support, backlog of projects, Support is ad hoc, In-house resource drives the agenda. Product: Octane Blue (DevOps Support).
-- TM1 Shops still On-Premise: CFO or Head of FP&A. Pain: Legacy Perspectives/Excel dependencies, migration risk, outdated infrastructure. Product: TM1 Modernisation Play (Cloud/PA migration).
-- New TM1 Supply Chain Prospects: CFO or Head of Supply Chain. Pain: Manual Excel demand planning, inventory planning, disconnected supply & demand, unable to scale, reconciliation issues. Product: Custom Supply Chain Model (Accelerated development using Octane's template).
-- New TM1 FP&A Prospects: CFO or Head of FP&A. Pain: Manual budgeting/forecasting, slow insights, looking to move to FP&A platform, turnover >$50M. Product: IBM Planning Analytics (TM1).
-- Enterprise AI in Finance (Large): CFO. Pain: Slow month-end close (5+ days), manual reporting, drowning in repetitive queries, no ROI visibility, turnover >$500M. Product: Octane Finance Agent + FastClose.
-- MidMarket AI in Finance: CFO. Pain: Month-end reporting is manual/slow, CFO chasing data, no self-serve reporting, board packs take too long, struggling to hire, turnover $100M-$500M. Product: FastClose entry point, then upsell to Finance Agent.
-- IBM PA + AI Upgrade (Existing TM1 Shops): CFO, System Owner, Head of FP&A. Pain: TM1 not delivering AI-powered insights, investment underutilized, competitor pressure, manual reporting. Product: Finance Agent on top of existing Planning Analytics.
-
---- HISTORICAL CLIENT PROFILES ---
-Use these real examples for peer credibility stories:
-- Steric (Life Sciences): Olivia McKellar / Vicki Carline. Deanna Chapman. Product in Use: Octane Blue Support. Limited TM1 bandwidth.
-- GreyOrange (Supply Chain Automation): Nageswara Reddy Kondreddy. Product in Use: Octane Blue. APAC operations support.
-- Iqony / STEAG (Energy): Carola Jochheim. Product in Use: Data Integration. SAP to PA integration.
-- Shift (FinTech / Auto Finance): Alvin Ah-Chok. Product in Use: Octane Blue & IBM Planning Analytics. Slow cycles, spreadsheet sprawl.
-- mycar (Retail / Automotive): Olivia McKellar. Product in Use: Additional RAM & IBM Planning Analytics Upgrade. Legacy TM1 memory bottleneck.
-- McPherson’s (Consumer Goods): Will Clemente. Product in Use: IBM Planning Analytics. Large analytics transformation.
-- News Corp Australia (Media): Ritwik Deo. Product in Use: TeamOne/TM1 Renewal.
-- Fintechs (AP Pain Point): raised Series C, $10M+ revenue, Scenario A (AP Volume): TM1, Scenario B (Hiring AP): AI Assistants.
-
---- OUTPUT INSTRUCTIONS ---
-You MUST separate each section with its corresponding delimiter string EXACTLY as shown below. Do not include any other markdown fences or conversations outside of these blocks. Format the content inside sections in clean HTML using standard tags like <p>, <ul>, <li>, <strong>, and <br>.
-You are strictly forbidden from using the words 'likely', 'probably', 'standard', or 'general'. If you do not have hard evidence from the RAG inputs, output 'UNKNOWN' or 'NO DATA'.
-
-Use these delimiters:
-
-=== LINKEDIN ANALYSIS ===
-Extract the exact names of the prospect's 3 most recent companies, their exact job titles, and their university/education. If none are found in the RAG context, output exactly: 'NO DATA'. Do not summarize. List the hard facts.
-
-=== COMPANY OVERVIEW ===
-Company overview: Extract specific products, services, and recent corporate news or triggers from the RAG context. If none found, output 'NO DATA'.
-
-=== DISCOVERY TRACK CLASS ===
-Classify the prospect into:
-- **Variant A (First-Time TM1 / Planning Analytics User)**: If they consolidate data manually in Excel spreadsheets.
-- **Variant B (Existing TM1 / Planning Analytics User)**: If they already run IBM Planning Analytics / TM1 but face support bottlenecks or migration requirements.
-
-=== TAILORED PLAYBOOK QUESTIONS ===
-Provide 4-5 specific open-ended discovery questions. DO NOT use generic questions. Map the questions explicitly to their exact job title and their specific industry.
-
-=== RELEVANT OCTANE SERVICES & PRICING ===
-Specify the exact recommended package with pricing (if available in RAG context). If pricing is not explicitly provided, output '[PRICING_TBD_BY_DISCOVERY]'.
-
-=== PEER CREDIBILITY STORY ===
-Map this prospect's exact sector and stack to 1-2 relevant Octane historical clients (Steric, GreyOrange, mycar, Iqony, Shift, News Corp, McPherson's). Explain how Octane resolved a similar pain point.
-
-=== COMPETING APPLICATIONS ===
-Detail competing systems they are evaluating. Only list systems explicitly mentioned in the RAG or highly specific to their exact niche. If unknown, output 'UNKNOWN'. Do not guess.
-
-=== COMPLEMENTARY STACK APPLICATIONS ===
-Detail ERP systems and BI tools present in their RAG technographics. If unknown, output 'UNKNOWN'. Do not guess.
-
-=== RELEVANCE ASSESSMENT ===
-Qualify their business size and revenue markers against Octane's core products.
-
-=== LIKELY PAIN POINTS ===
-3 specific pain points mapped explicitly to their job title. If the title is CFO, list 3 financial metrics they care about. If the title is IT, list 3 technical bottlenecks. Do not use generic spreadsheet examples unless they are Variant A.
-
-=== HIGH-IMPACT OPENERS ===
-3 concrete conversation openers. Combine a specific fact from their career history or company news with a target metric question.
-
-=== TRAVEL DISTANCE ===
-Output exactly this string: "${params.transitDistance || "Online/Phone call only (Distance unavailable)"}". Do not add any additional explanation.`;
+9. Travel Distance:
+${params.transitDistance || "Online/Phone call only (Distance unavailable)"}
+`;
 
         const messages = [
             {

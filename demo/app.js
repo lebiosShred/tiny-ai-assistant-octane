@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Configure PDF.js Worker
     if (typeof pdfjsLib !== 'undefined') {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.js';
     }
 
     if (restoreDefaultsBtn) {
@@ -2081,49 +2081,26 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
 
     // --- Dossier Parsing & Rendering Helper Functions ---
     function parseDossierResponse(text) {
-        const sections = {
-            'LINKEDIN ANALYSIS': '',
-            'COMPANY OVERVIEW': '',
-            'DISCOVERY TRACK CLASS': '',
-            'TAILORED PLAYBOOK QUESTIONS': '',
-            'RELEVANT OCTANE SERVICES & PRICING': '',
-            'PEER CREDIBILITY STORY': '',
-            'COMPETING APPLICATIONS': '',
-            'COMPLEMENTARY STACK APPLICATIONS': '',
-            'RELEVANCE ASSESSMENT': '',
-            'LIKELY PAIN POINTS': '',
-            'HIGH-IMPACT OPENERS': '',
-            'TRAVEL DISTANCE': ''
-        };
-        
-        const pattern = /===\s*([A-Z0-9\s&\-]+?)\s*===/gi;
-        let match;
-        const matches = [];
-        
-        while ((match = pattern.exec(text)) !== null) {
-            matches.push({
-                title: match[1].trim().toUpperCase(),
-                index: match.index,
-                length: match[0].length
-            });
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error("Failed to parse JSON dossier response:", e);
+            // Fallback for empty or invalid response
+            return {
+                'LINKEDIN ANALYSIS': '[UNKNOWN]',
+                'COMPANY OVERVIEW': '[UNKNOWN]',
+                'DISCOVERY TRACK CLASS': '[UNKNOWN]',
+                'TAILORED PLAYBOOK QUESTIONS': '[UNKNOWN]',
+                'RELEVANT OCTANE SERVICES & PRICING': '[UNKNOWN]',
+                'PEER CREDIBILITY STORY': '[UNKNOWN]',
+                'COMPETING APPLICATIONS': '[UNKNOWN]',
+                'COMPLEMENTARY STACK APPLICATIONS': '[UNKNOWN]',
+                'RELEVANCE ASSESSMENT': '[UNKNOWN]',
+                'LIKELY PAIN POINTS': '[UNKNOWN]',
+                'HIGH-IMPACT OPENERS': '[UNKNOWN]',
+                'TRAVEL DISTANCE': '[UNKNOWN]'
+            };
         }
-        
-        if (matches.length === 0) {
-            sections['LIKELY PAIN POINTS'] = text;
-            return sections;
-        }
-        
-        for (let i = 0; i < matches.length; i++) {
-            const current = matches[i];
-            const next = matches[i + 1];
-            const start = current.index + current.length;
-            const end = next ? next.index : text.length;
-            let content = text.substring(start, end).trim();
-            content = content.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
-            sections[current.title] = content;
-        }
-        
-        return sections;
     }
 
     function renderDossierHtml(rawText) {
@@ -3462,9 +3439,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const pdfUrl = '/assets/sample.pdf';
 
         // Render PDF
-        if (typeof window['pdfjs-dist/build/pdf'] !== 'undefined') {
-            const pdfjsLib = window['pdfjs-dist/build/pdf'];
-            pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+        const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+        if (lib) {
+            lib.getDocument(pdfUrl).promise.then(pdf => {
                 return pdf.getPage(1);
             }).then(page => {
                 const scale = 1.25;
@@ -3480,8 +3457,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 page.render(renderContext);
             }).catch(err => {
                 console.error('Error rendering PDF preview:', err);
-                showToast('Failed to render PDF preview.');
+                showToast('Failed to render PDF preview.', 'error');
             });
+        } else {
+            console.error('PDF.js library failed to load globally.');
+            showToast('Failed to load PDF viewer engine.', 'error');
         }
     });
 

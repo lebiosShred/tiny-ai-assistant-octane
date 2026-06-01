@@ -1458,7 +1458,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             if (Array.isArray(payload.messages)) {
                 const userMsg = payload.messages.find(m => m.role === 'user');
                 if (userMsg) {
-                    if (userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis')) {
+                    if (userMsg.content.includes('--- GENERATE JSON DOSSIER ---') || userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis')) {
                         chatAction = 'GENERATE_DOSSIER';
                         const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
                         const companyMatch = userMsg.content.match(/at\s+([^\n]+)/i);
@@ -1479,7 +1479,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             let webSearchResults = '';
             if (Array.isArray(payload.messages)) {
                 const userMsg = payload.messages.find(m => m.role === 'user');
-                if (userMsg && (userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis'))) {
+                if (userMsg && (userMsg.content.includes('--- GENERATE JSON DOSSIER ---') || userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis'))) {
                     // Extract client name and company name
                     const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
                     const companyMatch = userMsg.content.match(/at\s+([^\n]+)/i);
@@ -1537,12 +1537,40 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 }
 
                 const systemMsg = payload.messages.find(m => m.role === 'system');
+                
+                let jsonSchemaInstruction = '';
+                if (chatAction === 'GENERATE_DOSSIER') {
+                    // Instruct LLM to use JSON format matching 12 fields of Technical Brief, with JSON model config override
+                    payload.response_format = { type: "json_object" };
+                    jsonSchemaInstruction = `
+<json_schema_enforcement>
+You MUST return ONLY a valid, raw JSON object. Do NOT wrap it in markdown formatting (no \`\`\`json).
+The JSON object must EXACTLY match the following keys and output structure:
+{
+  "LINKEDIN ANALYSIS": "Extract exact names of prospect's 3 most recent companies, exact job titles, and university/education.",
+  "COMPANY OVERVIEW": "Extract specific products, services, and recent corporate news or triggers.",
+  "DISCOVERY TRACK CLASS": "Output exactly 'Variant A (First-Time TM1 / Planning Analytics User)' if they consolidate data manually in Excel, OR 'Variant B (Existing TM1 / Planning Analytics User)' if they already run IBM PA/TM1 but face support/migration bottlenecks.",
+  "TAILORED PLAYBOOK QUESTIONS": "Provide 4-5 specific open-ended discovery questions mapped explicitly to their exact job title and industry.",
+  "RELEVANT OCTANE SERVICES & PRICING": "Specify the exact recommended package with pricing if available. If pricing is not explicitly provided in the catalog, output '[PRICING_TBD_BY_DISCOVERY]'.",
+  "PEER CREDIBILITY STORY": "Map this prospect's sector to relevant Octane historical clients and explain how Octane resolved a similar pain point.",
+  "COMPETING APPLICATIONS": "Detail competing systems they are evaluating. Only list systems explicitly mentioned. If unknown, output '[UNKNOWN]'.",
+  "COMPLEMENTARY STACK APPLICATIONS": "Detail ERP systems and BI tools present in their technographics. If unknown, output '[UNKNOWN]'.",
+  "RELEVANCE ASSESSMENT": "Qualify their business size and revenue markers against Octane's core products.",
+  "LIKELY PAIN POINTS": "3 specific pain points mapped explicitly to their job title.",
+  "HIGH-IMPACT OPENERS": "3 concrete conversation openers combining a specific fact with a target metric question.",
+  "TRAVEL DISTANCE": "Extract from prompt or use 'Online/Phone call only (Distance unavailable)'."
+}
+If the RAG context is insufficient to confidently answer any field, you MUST output '[PROSPECT_DATA_INSUFFICIENT]' for that field. Do NOT hallucinate data or historical client references.
+</json_schema_enforcement>
+`;
+                }
+
                 if (systemMsg) {
-                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext;
+                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + jsonSchemaInstruction;
                 } else {
                     payload.messages.unshift({
                         role: 'system',
-                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}`
+                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${jsonSchemaInstruction}`
                     });
                 }
             }
