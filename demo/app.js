@@ -1967,7 +1967,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const originalText = prepLoadSampleBtn.innerText;
         prepLoadSampleBtn.innerText = "Generating Prospect...";
         prepLoadSampleBtn.disabled = true;
-        showLoading("Generating Dynamic Prospect Profile...");
         
         try {
             // 1. Load dynamic prospect profile fields and Drive SOW metadata
@@ -2006,12 +2005,10 @@ document.addEventListener('DOMContentLoaded', () => {
             step1NextBtn.style.display = 'inline-flex';
             
             showToast(`Successfully loaded dynamic prospect profile for ${data.company}!`);
-            hideLoading();
             prepLoadSampleBtn.innerText = originalText;
             prepLoadSampleBtn.disabled = false;
         } catch (err) {
             showToast("Error: " + err.message);
-            hideLoading();
             prepLoadSampleBtn.innerText = originalText;
             prepLoadSampleBtn.disabled = false;
         }
