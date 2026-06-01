@@ -2944,3 +2944,89 @@ body.resizing * {
 .util-42b725 {
     color: #4daeeb;
 }
+
+/* PDF Preview Modal Styles */
+.modal-hidden {
+    display: none !important;
+}
+
+#pdf-preview-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+.pdf-modal-content {
+    position: relative;
+    background: #fff;
+    width: 90%;
+    max-width: 1000px;
+    height: 90vh;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 10001;
+}
+
+.pdf-modal-content .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    font-weight: 600;
+    color: #333;
+}
+
+#close-pdf-modal-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #888;
+    transition: color 0.2s;
+}
+
+#close-pdf-modal-btn:hover {
+    color: #ff4d4f;
+}
+
+.canvas-wrapper {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    background: #ebecf0;
+    padding: 20px;
+}
+
+#pdf-render-target {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    border: 1px solid #ccc;
+}
+
+/* Make attachment name look clickable */
+#gdrive-attached-name {
+    cursor: pointer;
+    text-decoration: underline;
+    color: var(--primary, #007bff);
+}

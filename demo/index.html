@@ -508,5 +508,24 @@
         document.head.appendChild(script);
       }, 0);                     
     </script>
+    <!-- PDF Preview Modal -->
+    <div id="pdf-preview-modal" class="modal-hidden">
+        <div class="modal-backdrop"></div>
+        <div class="pdf-modal-content">
+            <div class="modal-header">
+                <span id="pdf-modal-title">Document Preview</span>
+                <button type="button" id="close-pdf-modal-btn" aria-label="Close Preview">❌</button>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="pdf-render-target"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
 </body>
 </html>

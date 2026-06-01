@@ -3433,3 +3433,72 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
     }
 
 });
+
+// --- PDF.js Modal Preview Integration ---
+document.addEventListener('DOMContentLoaded', () => {
+    const pdfModal = document.getElementById('pdf-preview-modal');
+    const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
+    const pdfRenderTarget = document.getElementById('pdf-render-target');
+    const gdriveAttachedName = document.getElementById('gdrive-attached-name');
+    
+    if (!pdfModal || !pdfRenderTarget || !gdriveAttachedName) return;
+
+    const ctx = pdfRenderTarget.getContext('2d');
+
+    // Open Modal and render PDF
+    gdriveAttachedName.addEventListener('click', () => {
+        // Only trigger if a PDF is attached (simple check by text extension)
+        const fileName = gdriveAttachedName.innerText;
+        if (!fileName.toLowerCase().endsWith('.pdf')) {
+            // Alternatively, show a toast for unsupported preview types
+            showToast('Preview is only supported for PDF files.', 'warning');
+            return;
+        }
+
+        // Show modal
+        pdfModal.classList.remove('modal-hidden');
+
+        // Path to the dummy PDF we downloaded (in a real app, this would stream from the backend)
+        const pdfUrl = '/assets/sample.pdf';
+
+        // Render PDF
+        if (typeof window['pdfjs-dist/build/pdf'] !== 'undefined') {
+            const pdfjsLib = window['pdfjs-dist/build/pdf'];
+            pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+                return pdf.getPage(1);
+            }).then(page => {
+                const scale = 1.25;
+                const viewport = page.getViewport({ scale: scale });
+                
+                pdfRenderTarget.height = viewport.height;
+                pdfRenderTarget.width = viewport.width;
+                
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                page.render(renderContext);
+            }).catch(err => {
+                console.error('Error rendering PDF preview:', err);
+                showToast('Failed to render PDF preview.');
+            });
+        }
+    });
+
+    // Close Modal
+    if (closePdfModalBtn) {
+        closePdfModalBtn.addEventListener('click', () => {
+            pdfModal.classList.add('modal-hidden');
+            // Clear canvas to save memory
+            ctx.clearRect(0, 0, pdfRenderTarget.width, pdfRenderTarget.height);
+        });
+    }
+
+    // Close Modal on backdrop click
+    pdfModal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-backdrop')) {
+            pdfModal.classList.add('modal-hidden');
+            ctx.clearRect(0, 0, pdfRenderTarget.width, pdfRenderTarget.height);
+        }
+    });
+});
