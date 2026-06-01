@@ -2228,7 +2228,7 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
                 files.forEach(file => {
                     try {
                         const parsed = JSON.parse(fs.readFileSync(path.join(historyDir, file), 'utf8'));
-                        if (parsed.source === 'booking') {
+                        if (parsed.type === 'dossier') {
                             items.push(parsed);
                         }
                     } catch (e) {}
@@ -2259,10 +2259,10 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
             phone = latestBooking.phone || phone;
             rep = latestBooking.rep || rep;
             track = latestBooking.track || track;
-            intake = latestBooking.content || intake;
+            intake = latestBooking.intakeAnswers || intake;
         }
         
-        const isAI = (track === 'AI');
+        const isAI = track.toLowerCase().includes('ai');
         let linkedin = `Experience:\n- ${title} at ${company} (2 years - Present)\n  * Leading division initiatives and digital transformation\n- Senior Manager at Previous Co (4 years)\nEducation:\n- Master's Degree, State University`;
         let gDriveFile = "";
         let gDriveFileId = "";
