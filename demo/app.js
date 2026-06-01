@@ -2001,53 +2001,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (prepIntakeText) prepIntakeText.value = data.intake;
             if (prepLinkedinText) prepLinkedinText.value = data.linkedin;
             
-            if (linkedinDropText) {
-                linkedinDropText.innerHTML = '📁 Drop LinkedIn PDF/TXT here, or click to upload';
-            }
-            
             await syncServiceTrackToVariant();
             step1NextBtn.classList.remove('hidden');
             step1NextBtn.style.display = 'inline-flex';
             
-            // 2. Trigger automated AI Sales Call transcription and dossier compilation
-            showLoading("Transcribing Simulated Sales Call Audio & Prompting LLM...");
-            const audioRes = await fetch('/sample_call.mp3');
-            if (!audioRes.ok) throw new Error("Could not load sample_call.mp3");
-            const blob = await audioRes.blob();
-            
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            reader.onloadend = async function() {
-                try {
-                    const base64data = reader.result.split(',')[1];
-                    const loadoutRes = await fetch('/api/sample-loadout', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ audio_base64: base64data, mime_type: 'audio/mp3' })
-                    });
-                    const loadoutData = await loadoutRes.json();
-                    if (loadoutData.error) throw new Error(loadoutData.error);
-                    
-                    synthTranscriptText.value = loadoutData.transcript;
-                    synthVariantSelect.value = "Variant A";
-                    
-                    currentDossierText = loadoutData.result;
-                    renderDossierHtml(loadoutData.result);
-                    goToStep(1);
-                    switchView('pipeline');
-                    showToast(`Successfully prefilled and generated prospect briefing for ${data.company}!`);
-                } catch (innerErr) {
-                    showToast("Error: " + innerErr.message);
-                    resetOutput();
-                } finally {
-                    prepLoadSampleBtn.innerText = originalText;
-                    prepLoadSampleBtn.disabled = false;
-                }
-            };
+            showToast(`Successfully loaded dynamic prospect profile for ${data.company}!`);
+            hideLoading();
+            prepLoadSampleBtn.innerText = originalText;
+            prepLoadSampleBtn.disabled = false;
         } catch (err) {
-            console.error(err);
-            showToast("Failed to load dynamic prospect: " + err.message);
-            resetOutput();
+            showToast("Error: " + err.message);
+            hideLoading();
             prepLoadSampleBtn.innerText = originalText;
             prepLoadSampleBtn.disabled = false;
         }

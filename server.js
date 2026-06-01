@@ -2218,49 +2218,64 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
 
     // Step 1: Prep Sample Loadout (Dynamic Mock Generator)
     if (pathname === '/api/prep-sample-loadout' && req.method === 'GET') {
-        const firstNames = ["Marcus", "Elena", "Jordan", "Priya", "David", "Aisha", "Liam", "Chen", "Sofia", "Omar"];
-        const lastNames = ["Wright", "Silva", "Brooks", "Patel", "Kim", "Okafor", "O'Connor", "Wei", "Garcia", "Al-Fayed"];
-        const titles = ["CFO", "VP of Finance", "Head of FP&A", "Finance Director", "VP of Operations", "Controller"];
-        const companies = ["Nexus Logistics", "GlobalTech Solutions", "Vertex Manufacturing", "Summit Retail", "Quantum Financial", "Aurora Health", "Horizon Group"];
-        const domains = ["nexuslogistics.com", "globaltech.io", "vertexmfg.com", "summitretail.co", "quantumfin.net", "aurorahealth.org", "horizongroup.com"];
-        const reps = ["Albert", "Isha"];
+        const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+        let latestBooking = null;
+
+        if (fs.existsSync(historyDir)) {
+            const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+            if (files.length > 0) {
+                const items = [];
+                files.forEach(file => {
+                    try {
+                        const parsed = JSON.parse(fs.readFileSync(path.join(historyDir, file), 'utf8'));
+                        if (parsed.source === 'booking') {
+                            items.push(parsed);
+                        }
+                    } catch (e) {}
+                });
+                if (items.length > 0) {
+                    items.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    latestBooking = items[0];
+                }
+            }
+        }
+
+        let name = "Sample Contact";
+        let title = "Director";
+        let company = "Acme Corp";
+        let url = "acme.com";
+        let email = "contact@acme.com";
+        let phone = "+61 2 9876 5432";
+        let rep = "Albert";
+        let track = "AI";
+        let intake = "No booking data found.";
         
-        // Randomization helpers
-        const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-        const rIndex = Math.floor(Math.random() * companies.length);
+        if (latestBooking) {
+            name = latestBooking.name || name;
+            title = latestBooking.title || title;
+            company = latestBooking.company || company;
+            url = latestBooking.url || url;
+            email = latestBooking.email || email;
+            phone = latestBooking.phone || phone;
+            rep = latestBooking.rep || rep;
+            track = latestBooking.track || track;
+            intake = latestBooking.content || intake;
+        }
         
-        const firstName = pick(firstNames);
-        const lastName = pick(lastNames);
-        const name = `${firstName} ${lastName}`;
-        const title = pick(titles);
-        const company = companies[rIndex];
-        const url = domains[rIndex];
-        const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${url}`;
-        const phone = `+1 ${Math.floor(200 + Math.random() * 800)} ${Math.floor(200 + Math.random() * 800)} ${Math.floor(1000 + Math.random() * 9000)}`;
-        const rep = pick(reps);
-        
-        // Determine correlated context (TM1 vs AI track)
-        const isAI = Math.random() > 0.5;
-        const track = isAI ? "AI" : "Planning & Analytics (TM1)";
-        
-        let intake = "";
-        let linkedin = "";
+        const isAI = (track === 'AI');
+        let linkedin = `Experience:\n- ${title} at ${company} (2 years - Present)\n  * Leading division initiatives and digital transformation\n- Senior Manager at Previous Co (4 years)\nEducation:\n- Master's Degree, State University`;
         let gDriveFile = "";
         let gDriveFileId = "";
         let gDriveFileContent = "";
-        
+
         if (isAI) {
-            intake = `Service track interest: AI\nGoal: We want to automate our customer service interactions and integrate an internal knowledge base bot for our sales team.\nCurrent bottlenecks: Support agents spend 60% of their time answering repetitive queries. Sales struggles to find technical specs during client calls.\nDiscuss details: Need a POC architecture for a RAG-based AI assistant using our existing Confluence and Zendesk data.`;
-            linkedin = `Experience:\n- ${title} at ${company} (2 years - Present)\n  * Driving digital transformation and AI adoption across enterprise divisions\n- Senior Manager at Tech Forward (4 years)\nEducation:\n- MBA, Stanford University`;
             gDriveFile = `${company.replace(/\s+/g, '_')}_AI_Strategy_2026.pdf`;
             gDriveFileId = `mock-ai-${Date.now()}`;
-            gDriveFileContent = `${company.toUpperCase()} -- AI STRATEGY & REQUIREMENTS 2026\nObjective: Deploy generative AI solutions to reduce OPEX by 15%.\nKey Areas: Customer Support automation, Sales Knowledge Base (RAG).\nTimeline: Q2 POC deployment, Q4 full rollout.\nBudget limit: $50,000 for phase 1.`;
+            gDriveFileContent = `${company.toUpperCase()} -- AI STRATEGY & REQUIREMENTS 2026\nObjective: Deploy generative AI solutions to reduce OPEX by 15%.\nKey Areas: Customer Support automation, Sales Knowledge Base (RAG).\nTimeline: Q2 POC deployment, Q4 full rollout.\nBudget limit: $50,000 for phase 1.\n\nNotes from booking:\n${intake}`;
         } else {
-            intake = `Service track interest: IBM Planning Analytics / TM1 support\nExcel spreadsheets consolidated: Currently 40+ departmental sheets consolidated manually\nWorkflow description: Monthly budgeting and variance reporting\nGL/ERP system: SAP\nReporting tools: Excel, Tableau\nDiscuss details: Experiencing severe latency during month-end close. We need to automate data flow from SAP into TM1.`;
-            linkedin = `Experience:\n- ${title} at ${company} (4 years - Present)\n  * Leading global FP&A operations and system architecture\n- Financial Analyst at Big 4 Consulting (3 years)\nEducation:\n- Master of Finance, London School of Economics`;
             gDriveFile = `${company.replace(/\s+/g, '_')}_TM1_Migration_SOW.pdf`;
             gDriveFileId = `mock-tm1-${Date.now()}`;
-            gDriveFileContent = `${company.toUpperCase()} -- STATEMENT OF WORK (SOW) TM1 MIGRATION\nServices: Managed services for Planning Analytics / TM1\nUsers: 200 PAX users globally\nCurrent bottlenecks: SAP extraction is entirely manual. Month-end close takes 8 days.\nTarget SOW: Migrate current managed support to Octane Black. Implement Data Integration for automated SAP ingestion.`;
+            gDriveFileContent = `${company.toUpperCase()} -- STATEMENT OF WORK (SOW) TM1 MIGRATION\nServices: Managed services for Planning Analytics / TM1\nUsers: 200 PAX users globally\nCurrent bottlenecks: SAP extraction is entirely manual. Month-end close takes 8 days.\nTarget SOW: Migrate current managed support to Octane Black. Implement Data Integration for automated SAP ingestion.\n\nNotes from booking:\n${intake}`;
         }
         
         res.writeHead(200, { 'Content-Type': 'application/json' });
