@@ -3425,6 +3425,36 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show modal
         pdfModal.classList.remove('modal-hidden');
 
+        if (attachedGDriveFileId && attachedGDriveFileId.startsWith('mock-')) {
+            pdfRenderTarget.style.display = 'none';
+            let mockPre = document.getElementById('mock-pdf-text-target');
+            if (!mockPre) {
+                mockPre = document.createElement('pre');
+                mockPre.id = 'mock-pdf-text-target';
+                mockPre.className = 'mock-document-preview';
+                mockPre.style.whiteSpace = 'pre-wrap';
+                mockPre.style.padding = '40px';
+                mockPre.style.color = '#333';
+                mockPre.style.fontFamily = 'Inter, sans-serif';
+                mockPre.style.fontSize = '14px';
+                mockPre.style.lineHeight = '1.6';
+                mockPre.style.background = '#f9f9f9';
+                mockPre.style.width = '100%';
+                mockPre.style.height = '100%';
+                mockPre.style.overflowY = 'auto';
+                mockPre.style.boxSizing = 'border-box';
+                pdfRenderTarget.parentNode.appendChild(mockPre);
+            }
+            mockPre.style.display = 'block';
+            mockPre.innerText = attachedGDriveFileContent || 'No mock content provided.';
+            return;
+        }
+
+        // Standard PDF.js path for real files
+        pdfRenderTarget.style.display = 'block';
+        const mockPre = document.getElementById('mock-pdf-text-target');
+        if (mockPre) mockPre.style.display = 'none';
+
         // Path to the dummy PDF we downloaded (in a real app, this would stream from the backend)
         const pdfUrl = '/assets/sample.pdf';
 

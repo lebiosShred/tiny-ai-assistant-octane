@@ -2378,21 +2378,24 @@ Historical Files Found:
                     // 4. Orchestrate LLM Proposal Generation using standard pipeline
                     const systemPrompt = `You are a Senior Solutions Architect at Octane Software Solutions.
 You have been provided with a prospect's LinkedIn profile, historical Google Drive context, and a live meeting transcript.
-Generate a strictly formatted Pre-Screen Dossier and Proposal.
-Output exactly TWO documents separated by delimiters:
-
-[DOCUMENT: DOSSIER]
-(Provide a highly concise bulleted summary of the prospect's background, inferred pain points based on the transcript and LinkedIn, and recommend an Octane Service from the catalog).
-
-[DOCUMENT: PROPOSAL]
-### I. Objective
-(Single paragraph).
-### II. Background
-(Bulleted list).
-### III. Contributor Scope of Work
-(Markdown table with 'Task' and 'Reasons').
-### IV. Client's Scope of Work
-(Bulleted list).`;
+Generate a strictly formatted Pre-Screen Dossier summarizing the background and pain points.
+You MUST output a valid JSON object. Do not include any conversational text or markdown formatting blocks like \`\`\`json outside the JSON object.
+Use exactly these 12 keys:
+{
+  "LINKEDIN ANALYSIS": "...",
+  "COMPANY OVERVIEW": "...",
+  "DISCOVERY TRACK CLASS": "...",
+  "TAILORED PLAYBOOK QUESTIONS": "...",
+  "RELEVANT OCTANE SERVICES & PRICING": "...",
+  "PEER CREDIBILITY STORY": "...",
+  "COMPETING APPLICATIONS": "...",
+  "COMPLEMENTARY STACK APPLICATIONS": "...",
+  "RELEVANCE ASSESSMENT": "...",
+  "LIKELY PAIN POINTS": "...",
+  "HIGH-IMPACT OPENERS": "...",
+  "TRAVEL DISTANCE": "..."
+}
+If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                     const userPrompt = `--- BEGIN EXTERNAL CONTEXT ---\n${simulatedLinkedIn}\n\n${simulatedDrive}\n--- END EXTERNAL CONTEXT ---\n\n--- BEGIN TRANSCRIPT ---\n${transcript}\n--- END TRANSCRIPT ---\n\nGenerate the output.`;
                     
                     generatedText = await generateAICompletion(systemPrompt, userPrompt);
