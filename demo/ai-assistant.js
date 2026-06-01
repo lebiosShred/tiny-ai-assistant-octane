@@ -224,48 +224,48 @@ Output exactly this string: "${params.transitDistance || "Online/Phone call only
             const targetIntake = params.intakeAnswers || "None provided";
             
             return `=== LINKEDIN ANALYSIS ===
-<p><strong>LinkedIn Profile Analysis:</strong> N/A - Offline Demo Mode. Real-time LinkedIn RAG search is unavailable when the live API is bypassed or disconnected. <em>(Lead: ${targetName}, ${targetTitle} at ${targetCompany})</em></p>
+<p><strong>LinkedIn Profile Analysis:</strong> [Offline Mode - Context Unavailable] Real-time LinkedIn search bypassed.</p>
 
 === COMPANY OVERVIEW ===
-<p><strong>Company Overview:</strong> Factual background for ${targetCompany} requires an active server-side search connection. In offline/mock mode, this section degrades gracefully to protect data integrity.</p>
+<p><strong>Company Overview:</strong> [Offline Mode - Context Unavailable] Live API required to generate background facts for ${targetCompany}.</p>
 
 === DISCOVERY TRACK CLASS ===
-<p><strong>Discovery Track:</strong> Variant A (First-Time TM1 / Planning Analytics User) based on offline analysis of spreadsheets usage.</p>
+<p><strong>Discovery Track:</strong> ${targetTrack} [Offline Mode - Dynamic Variant Assignment Unavailable]</p>
 
 === TAILORED PLAYBOOK QUESTIONS ===
 <p><strong>Tailored Playbook Questions:</strong></p>
 <ul>
-    <li>What general ledger/ERP system (e.g. NetSuite) are you using, and does it currently integrate with your planning tool?</li>
-    <li>How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting?</li>
-    <li>Do you manually export CSV files to reconcile data?</li>
+    <li>What specific planning workflows and consolidation bottlenecks are present at ${targetCompany}?</li>
+    <li>How many separate manual spreadsheets are currently involved in your budgeting process?</li>
+    <li>[Offline Mode - Context Unavailable] Live playbook extraction bypassed.</li>
 </ul>
 
 === RELEVANT OCTANE SERVICES & PRICING ===
-<p><strong>Recommended Octane Services & Pricing:</strong> Octane DevOps Blue Support at A$4,560/month base support flat-rate (rollover hours included).</p>
+<p><strong>Recommended Octane Services & Pricing:</strong> [Offline Mode - Context Unavailable] Base support packages begin at standard rates. Real-time quote matching bypassed.</p>
 
 === PEER CREDIBILITY STORY ===
-<p><strong>Peer Credibility Story:</strong> Similar to <strong>Meridian Logistics</strong>, who transitioned from 35 manual spreadsheets to automated NetSuite loading using DataFusion NetSuite Connector, saving 3 close days per month.</p>
+<p><strong>Peer Credibility Story:</strong> [Offline Mode - Context Unavailable] Unable to synthesize relevant peer case studies for ${targetCompany} offline.</p>
 
 === COMPETING APPLICATIONS ===
-<p><strong>Competing Applications:</strong> Excel spreadsheets remain the primary competing manual planning interface. Mid-to-enterprise scale systems typically run Anaplan, Workday Adaptive, or legacy Planning Analytics models.</p>
+<p><strong>Competing Applications:</strong> [Offline Mode - Context Unavailable] Requires active API session.</p>
 
 === COMPLEMENTARY STACK APPLICATIONS ===
-<p><strong>Complementary Applications:</strong> Common enterprise systems found in similar stacks include typical ERPs (SAP, NetSuite, Microsoft Dynamics) and BI tools (Power BI, Tableau).</p>
+<p><strong>Complementary Applications:</strong> [Offline Mode - Context Unavailable] Tech stack mapping bypassed. Verify ${targetCompany}'s actual ERP/BI tools during the pre-screen.</p>
 
 === RELEVANCE ASSESSMENT ===
-<p><strong>Relevance Assessment:</strong> Pending live tech stack mapping. The lead represents a ${targetTitle} at ${targetCompany}, which requires validation of their user scale and revenue markers.</p>
+<p><strong>Relevance Assessment:</strong> Pending live mapping. Lead is a ${targetTitle} at ${targetCompany}.</p>
 
 === LIKELY PAIN POINTS ===
-<p><strong>Likely Pain Points:</strong> Based on the job title <strong>${targetTitle}</strong>, standard pain points center around manual reporting cycles, spreadsheet sprawl, data consolidation latency, and high resource costs for system support.</p>
+<p><strong>Likely Pain Points:</strong> Based on the job title <strong>${targetTitle}</strong>, standard pain points likely apply. [Offline Mode - Context Unavailable].</p>
 
 === HIGH-IMPACT OPENERS ===
 <p><strong>Conversation Starters:</strong>
-1. Address the service track interest: <em>"${targetTrack}"</em>.<br>
-2. Reference booking intake answers: <em>"${targetIntake}"</em>.<br>
-3. Ask how ${targetCompany} currently handles manual consolidation bottlenecks across their department.</p>
+1. Focus on their interest in ${targetTrack}.
+2. Reference intake details: <em>"${targetIntake}"</em>.
+3. [Offline Mode - Context Unavailable]</p>
 
 === TRAVEL DISTANCE ===
-~45 min from Amendra's location (Richmond, Melbourne, VIC 3121) or Online/Phone
+[Offline Mode - Context Unavailable]
 <!-- METADATA: {"name": "${targetName.replace(/"/g, '\\"')}", "company": "${targetCompany.replace(/"/g, '\\"')}", "title": "${targetTitle.replace(/"/g, '\\"')}", "track": "${targetTrack.replace(/"/g, '\\"')}", "intake": "${targetIntake.replace(/"/g, '\\"')}"} -->`;
         }
     }
@@ -422,16 +422,16 @@ Do not write markdown backticks or conversational prefixes. Return only the HTML
             }).join('\n');
         } else if (variant === "Variant A" || variant === "Variant A: First-Time TM1 User") {
             return `1. What general ledger/ERP system are you using, and does it integrate with your planning tool?
-2. How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting?
+2. How many separate manual spreadsheets are you currently consolidating for budgeting and forecasting?
 3. What specific planning workflows (e.g., payroll allocations, budgeting, forecasting) are you executing?
-4. What reporting tools (e.g., Power BI, Qlik, Excel PAX) do you use for management reporting?
-5. Do users need to drill down from high-level reports to transaction-level GL data?
+4. What dynamic reporting tools do you currently use for management reporting?
+5. Do users need to drill down from high-level reports to transaction-level data?
 6. Do you have internal developers/admins to manage these systems?
 7. How many planning contributors, read-only users, and administrators are involved?
 8. What repetitive financial tasks feel most manual?
 9. What is your target timeline for going live?
 10. Is there a budget allocated for licensing and delivery?
-11. Have you evaluated other tools (e.g. Workday, Anaplan, TM1)?
+11. Have you evaluated other tools or platforms?
 12. What does success look like, and would a 60-day trial of connectors help validate the solution?`;
         } else if (variant === "Variant B" || variant === "Variant B: Existing TM1 User") {
             return `1. Why did you contact us? What do you hope to achieve?
