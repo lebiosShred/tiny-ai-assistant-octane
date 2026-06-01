@@ -2031,13 +2031,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     synthTranscriptText.value = loadoutData.transcript;
                     synthVariantSelect.value = "Variant A";
                     
-                    prepLinkedinText.value = loadoutData.linkedIn;
-                    prepIntakeText.value = loadoutData.drive;
-                    
+                    currentDossierText = loadoutData.result;
                     renderDossierHtml(loadoutData.result);
-                    goToStep(3);
+                    goToStep(1);
                     switchView('pipeline');
-                    showToast(`Successfully simulated full sales companion loadout for ${data.company}!`);
+                    showToast(`Successfully prefilled and generated prospect briefing for ${data.company}!`);
                 } catch (innerErr) {
                     showToast("Error: " + innerErr.message);
                     resetOutput();
