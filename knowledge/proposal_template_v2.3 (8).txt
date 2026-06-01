@@ -1,0 +1,1256 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+IBM gold partner TM1 services for <<client>>
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+Prepared by Anthony Coundouris and reviewed by Amendra Pratap
+
+March 2022
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+we go the extra mile so you can go       the distance
+
+
+
+
+
+
+
+
+
+
+
+
+
+octanesolutions.com.au
+
+
+
+
+
+ Objective 
+
+To reduce report load time and to improve the end user engagements. Load times for reports have been reduced from 25 to 15 seconds but the following proposals will reduce this further. Our target load time under 5 seconds. 
+
+	About the client 
+
+Ignite has been connecting people and assisting organisations with talent services for over 37 years. As one of the most established leading providers of Specialist Recruitment, On Demand IT services and Talent Solutions, we’ve gained a strong reputation as Australia’s trusted people advisor.
+
+More here https://www.igniteco.com/
+
+	About us 
+
+For the best TM1 people in the world, CFOs talk to Octane. Octane support Fortune 500 companies and are subject-matter experts in IBM Planning Analytics TM1 and other financial software. Octane is an IBM gold partner and an IBM Champion 2021. For five consecutive years, Octane has achieved less than one percent customer attrition. 
+
+More here https://www.octanesolutions.com.au/
+
+	Background 
+
+The Client manages its entire budgeting and forecasting in Excel. There are approximately 5 spreadsheets which are brought forward into a single sheet. The Client is looking for an application to replace Excel, as they are experiencing several types of problems.
+
+Version control is an issue. It is not easy to go backwards or forwards and witness the effects of a change. Further, Excel has limited access controls on who can see and who made changes.
+
+Better budgeting and forecasting of costs. The second source of revenue – co-investment income requires better budget and forecast of costs, which are largely made up of payroll.
+
+Allocations are inconsistent and time consuming. The organization has several business units - funds, corporate, investment bonds, and common investments. The finance team need to allocate expenses (particular payroll) to the various business units. The computations are duplicated and are often inconsistent.
+
+Drill-through. From the report the Client must be able to see how an individual number was derived at the GL level.
+
+Consolidating all the information. Currently the Client must manually post records from several Excel sheets into a single sheet.
+
+They are assessing a few options including Workday and TM1. Anaplan did not make the final cut.
+
+The primary use for TM1 is budgeting and forecasting. The Client has indicated they could work in several phases. Budgeting would be the first phase followed by forecasting as phase two. They are currently undergoing their budgeting process now – so first phase (budget) would ideally be a parallel run and complete by June 2022.
+
+They also require dashboarding which could be done as phase three, as dashboarding is a nice-to-have.
+
+“We need TM1 to move away from an excel environment, increase automation / efficiencies, reduce key man risk and work in a standardized budget/planning framework for the Group – headstock CNI level.” Greg Leung
+
+
+
+ Client licensing 
+
+
+
+✪
+
+Prod (64GB) 
+
+280PVU 
+
+Dev 
+
+140 PVU 
+
+Admin
+
+3 
+
+Read/write
+
+25 
+
+Read only
+
+35 
+
+TOTAL
+
+63
+
+
+
+ Client environment 
+
+⚐
+
+Software and hardware are on-premise. Pulse is used to monitor migration and the health of the server.
+
+Memory usage is 64 Gb. There is 100 Gb of C-drive. 10 Gb D drive where the data sits. 4 processes, Xeon CPU Quad Core. 
+
+The general ledger is handled by Sun. An interface between Sun and TM1 is missing. The client cannot drill down to a transaction-level in TM1.
+
+Today the customer is doing more multi-currency transactions. Multi-currency is not available at a transaction level.
+
+Two license cycles – one ending November 2021 and the other in 2022. 
+
+The client believes they require 5 days intensive training for team of developers to get better performance from TM1.
+
+
+
+
+
+	Demo requirements 
+
+Workflows. Build it to do whatever you need for your workflow, as standard you would build a cube which entails the areas for submission and allows you to track how far along the process it is. 
+
+Input templates. Web-based authoring of input templates, analysis and reports. Find out more
+
+Drill-throughs. While viewing high level data, users can drill-through to the transaction-level to see how a number was derived.
+
+Reporting. Report using either an Excel-based view called PAX or a more graphical interface called PAW.
+
+Forecasting. Out of the box, TM1 includes time-series and AI forecasting. There are a few others to choose from. 
+
+	Recommendations 
+
+
+
+✪
+
+
+
+High priority. Get more from TM1 by booking a five-day developer training now for October.
+
+
+
+Medium priority. Bolster your internal human resources with Octane’s on or off-shore dedicated developers. 
+
+
+
+Low priority. Take advantage of cheaper licensing from IBM by purchasing cloud licenses now. Cuscal’s IT department are purchasing IBM software.
+
+ TM1 cloud licenses 
+
+Bite the bullet and switch TM1 to the cloud. This article accurately sums up the difference and why the client should move BI to the cloud.
+
+☁
+
+on-premise
+
+frequent software releases1
+
+software releases need to be managed
+
+99.7% uptime
+
+expect less uptime 
+
+higher performance
+
+expect less performance
+
+superior security
+
+security needs to be managed
+
+IBM infrastructure
+
+infrastructure needs to be managed
+
+
+
+
+
+The most cost-effective way to buy TM1 licenses is in bundles of 20 or more licenses. On 20 or more we can negotiate a discount of 30% or more. 
+
+19 licenses or less
+
+🎚️
+
+⚐
+
+Admin license
+
+1
+
+A$2,681 / year
+
+User license
+
+5
+
+A$8,937 / year
+
+Explorer license
+
+5
+
+A$4,171 / year
+
+Cognos admin license 
+
+1
+
+free
+
+Cognos user license
+
+5
+
+free
+
+Cognos explorer license1
+
+5
+
+free
+
+
+
+Fee
+
+A$19,150 pa + GST  
+
+Avg cost per license A$2,735
+
+
+
+
+
+ Casual users 
+
+Concurrent users who share a single account is not permitted in TM1. All licenses are named users. A simple solution is to purchase one user license and assign it to an administrator who can carry out all tasks for casual users. This could be covered as part of shared resources offered by Octane. Or dealt with internally.
+
+Alternatively, on the TM1 Cloud the Client can purchase a monthly license for under A$300 per seat.
+
+
+
+ TM1 Perspectives to Cloud project 
+
+To spin-up IBM Planning Analytics (TM1) and all its associated applications like Workspace and the Microsoft Excel interface, Octane offer TM1 Projects. A Project team performs a migration of excel sheets and rules to TM1 Cubes as well as piping into TM1 required data sources and setting up user access. 
+
+Migration can be handled in several ways depending on the fidelity required
+
+Migrate, like for like - where we take backups, upgrade the application and start on newly upgraded platform;
+
+Migrate with optimization - where we do the above but also take the opportunity to refine and revamp the model to run better on the upgraded platform;
+
+Migrate and repurpose - where the upgrade is a step-change and we also make code changes and other optimisations to take full advantage of the upgraded platform
+
+
+
+Fee
+
+6 WEEKSA$40-60K
+
+
+
+ TM1 Projects 
+
+To spin-up IBM Planning Analytics (TM1) and all its associated applications like Workspace and the Microsoft Excel interface, Octane offer TM1 Projects. A Project team performs a migration of excel sheets and rules to TM1 Cubes as well as piping into TM1 required data sources and setting up user access. 
+
+
+
+✪
+
+⚐
+
+Phase 1 setup
+
+Actuals, GL cubes, anchor cubes and form the bases of all modelling. Integration with various applications.
+
+6 weeks $35,900
+
+Phase 2 cost analysis
+
+Cost Analysis cube will hold variable, fixed and other cost and compare against different versions and different periods. This will also include a set of standard reports.
+
+5 weeks$31,650
+
+Phase 3 budgeting and forecast
+
+Budget and forecasting model will include various calculations to formulate strategies, plan for the future and align the goals. This will also include templates for users to input the numbers and the model will consolidate and calculate the outcome.
+
+10 weeks$48,300
+
+
+
+Fee
+
+A$115K + GST
+
+
+
+ TM1 project inclusions 
+
+
+
+
+
+
+
+x 
+
+
+
+x 
+
+
+
+x 
+
+
+
+x 
+
+
+
+x 
+
+
+
+Exclusions
+
+
+
+x 
+
+
+
+X
+
+
+
+X
+
+
+
+ SAP integration 
+
+TM1 has built-in features to facilitate integration of TM1 with SAP. Administrators can choose which views and tables to sync with TM1 from SAP, and what data to write back to SAP. Data sharing between the two applications is not real-time. Instead, data can be synced using a schedule or manually pushed with a single click. 
+
+ MS Business Central integration 
+
+Out-of-the-box, TM1 has a universal connector called ODBC Connector. This connector can integrate the two applications. The data transfer is both ways. The transfer is scheduled or on-demand.
+
+In addition, there are other options
+
+Users periodically export data to a csv file
+
+Posts data to a SQL database. 
+
+A direct integration may be available. During production we will advise you the best method.
+
+ Power BI integration (DataFusion) 
+
+DataFusion is the ultimate TM1 and Power BI connector. Report TM1 data in Power Bi like a pro. DataFusion is for Power BI users who are tired using messy CSV files to manually reconcile data from TM1 to a reporting tool like Power BI. Say goodbye to data variations and hello to DataFusion. Like Power BI, DataFusion is a low-code, user-friendly application that connects Microsoft Power BI to IBM TM1. 
+
+Enjoy unlimited, everything. Unlimited users, data, links and servers. We think everyone deserves a 60-day unlimited free trial to test the application. Shift your IBM TM1 licenses to Octane and get another 30 days free.
+
+
+
+60-day free trial
+
+unlimited users
+
+unlimited data
+
+unlimited links
+
+unlimited servers
+
+Power BI, Qlik, Tableau
+
+Setup + email support
+
+
+
+Fee
+
+A$6,950 
+
+
+
+
+
+ $99 TM1 training 
+
+We include free 4 hours of user training to ensure users can play, use and properly test TM1.
+
+Join our IBM Planning Analytics with Watson (TM1) training sessions from the comfort of your home or office. The training sessions are online classroom-based, and four hours in duration. Your instructor is a Certified TM1 Developer with a minimum of 10 years commercial experience deploying TM1 and five years training TM1 users and developers.
+
+
+
+Fee
+
+A$990 A$0 INC. GST
+
+
+
+
+
+ TM1 five-day developer training 
+
+Developer Training is delivered in five-day sessions. The sessions can be delivered in five consecutive business days or delivered ad hoc over a period not exceeding 30 days.
+
+Each session can host a maximum of three Attendees.
+
+Trainers are Certified TM1 Developers with a minimum of 10 years commercial experience deploying TM1 and five years training TM1 developers.
+
+⚐
+
+✪
+
+Day 1
+
+Introduction and Creating TM1 Objects 
+
+Day 2
+
+Turbo Integrator (TI) Process
+
+Day 3
+
+Turbo Integrator (TI) Process
+
+Day 4
+
+TM1 Rules
+
+Day 5
+
+TM1 Admin Activities
+
+
+
+Fee
+
+A$1,850 per day + GST
+
+
+
+
+
+ TM1 dedicated resources 
+
+The right person at the price is a difficult balance to strike. We blend dedicated and shared resources to provide an optimal spread of people and talent. Those with 100% utilization are dedicated resource and those with less utilization are part of shared resource. When you work with us, expect less turnover. When people leave, we make it our business to ensure a smooth transition with replacement hire. 
+
+Documentation
+
+monthly cadence
+
+drive end user training
+
+drive model improvements/changes
+
+Automate tasks
+
+
+
+offsite
+
+onsite
+
+TM1 architect
+
+A$1,250 
+
+A$2,150
+
+TM1 developer
+
+A$920
+
+A$1,850
+
+TM1 devops analyst
+
+A$450
+
+A$1,250
+
+
+
+Level
+
+Resource Name
+
+Hourly Rate
+
+Utilization (%)
+
+Estimation of days (Monthly)
+
+Location
+
+Years of exp
+
+Certified? Yes or No
+
+Type of Certification
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Team Lead 
+
+Amin Mohammed
+
+41.5
+
+63%
+
+12.5
+
+Hyderabad
+
+12
+
+Yes
+
+TM1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lead 1
+
+Mohammed Abdul
+
+32.5
+
+100%
+
+20
+
+Hyderabad
+
+8
+
+Yes
+
+TM1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Support 1
+
+Name TBA 
+
+32.5
+
+100%
+
+20
+
+Hyderabad
+
+4
+
+Yes
+
+TM1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Support 2
+
+Ramesh Sindhavala
+
+23.2
+
+100%
+
+20
+
+Hyderabad
+
+5
+
+Yes
+
+TM1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Support 3
+
+Mona Prasad 
+
+23.2
+
+100%
+
+20
+
+Hyderabad
+
+4
+
+Yes
+
+TM1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Fee
+
+A$20K per month + GST
+
+
+
+ Octane Red or Blue® 
+
+We get you the best TM1 people, 24/7. To be 24/7 we need to be everywhere. We are onshore, offshore and every shore. Further we make no distinction between support and development. Under an Octane plan, support and projects are one. Order you a pizza or ticket a cube to be built. It is the same price.
+
+
+
+Octane BlueA$3,950 / mnth
+
+Octane RedA$1,950 / mnth
+
+24/7
+
+yes
+
+yes
+
+support
+
+40 hours 
+
+15 hours
+
+priority tickets
+
+<1 hour response
+
+4-hour response
+
+standard tickets
+
+4-hour response
+
+8-hour response
+
+roll forward hours
+
+yes
+
+yes
+
+reporting
+
+yes
+
+yes
+
+upstream tickets
+
+yes
+
+yes
+
+
+
+We recommend Octane Blue for the first two months post live and scale down to Octane Red in month three.
+
+
+
+Fee
+
+A$3,950 + GST
+
+
+
+
+
+ Financial transformation cost / benefit analysis
+
+Octane is well positioned to provide a cost-benefit analysis of how TM1 can transform the Client’s business. Octane has experience rolling out 100+ TM1-inspired projects and a working history of the Client’s business. 
+
+A cost-benefit analysis is a presentation that includes the costs, pay-back, length of time for the pay-back, a and a roadmap. Conduct several two-hour online workshops. There is no cap on the number of workshops or hours required to create a cost-benefit analysis. A cost-benefit analysis can be built in 2-3 sessions. 
+
+⚐
+
+✪
+
+Workshop 1
+
+Discuss what parts of finance should be transformed and roadmap before and after states
+
+Workshop 2
+
+Break down milestones to get from current to target state. Calculate the cost- benefit of finance transformation.
+
+Presentation
+
+Cost benefit analysis
+
+Input 
+
+A checklist and a list of questions will be provided a week before the first workshop begins. 
+
+Outcome 
+
+The final presentation includes: 
+
+cost-benefit in dollar terms 
+
+how different facets of the business look today and tomorrow 
+
+overview of the infrastructure changes 
+
+technical roadmap 
+
+
+
+Fee
+
+A$3,450 + GST
+
+
+
+
+
+ TM1 flight check 
+
+TM1 flight check is an independent report which details how lean TM1 is running. The leaner the application, the fewer tickets raised, and the fewer usability problems experienced by users. A Flight Check is an ideal way to measure users who require training.
+
+Conservatively, Flight Check fixes will produce 60% less ram (greater speed for users) and 70% less hard disk space requirement for developers. A flight check requires six days to complete and requires minimal time on the part of the Client.
+
+⚐
+
+✪
+
+Day 1
+
+sync dev and live boxes, and provide read-only access
+
+Day 2-3
+
+conduct user interviews
+
+Day 4-5
+
+testing and reporting
+
+Day 6
+
+recommendations
+
+
+
+Fee
+
+A$3,450
+
+ TM1 flight check 
+
+Identify user training requirements, automation opportunities and opportunities to improve the models with a TM1 Flight Check. Conservatively, Flight Check fixes will require 60% less RAM (greater speed for users) and 70% less hard disk space required for developers.
+
+
+
+✪
+
+🚥
+
+last flight check
+
+13 years 
+
+•
+
+technical notes
+
+not available
+
+•
+
+developers
+
+0
+
+•
+
+log file size
+
+9.6 GB
+
+•
+
+memory used for feeders
+
+4.5% (however for the 6 main cubes the number is 39%)
+
+•
+
+RAM usage
+
+80% consumed (orange zone)
+
+•
+
+HDD usage
+
+<50%
+
+•
+
+cubes
+
+26
+
+•
+
+users
+
+5
+
+•
+
+groups
+
+7
+
+•
+
+unlicensed users
+
+unknown
+
+•
+
+instances
+
+one instance (prod only)
+
+•
+
+
+
+Based on the above survey data we recommend a TM1 Flight Check. In some areas TM1 is performing well. For example, the memory used by feeders are far below the accepted standard of 60% 👍. 
+
+However, there are several red flags. 
+
+The RAM usage is approaching the red zone. Expect major problems with usability in 3-6 months if not addressed.
+
+The log files are well above the accepted size of 50mb.
+
+There are no technical notes and no full-time developers who can monitor the performance of TM1.
+
+There is only one instance of TM1 meaning code needs to be committed to the production server instead of a developer server before testing.
+
+
+
+A flight check requires six days to complete and requires minimal time on the part of the Client.
+
+⚐
+
+✪
+
+Day 1
+
+sync dev and live boxes, and provide read-only access
+
+Day 2-3
+
+conduct user interviews
+
+Day 4-5
+
+testing and reporting
+
+Day 6
+
+recommendations
+
+
+
+Fee
+
+A$3,450
+
+
+
+
+
+ Critical path 
+
+⚐
+
+✪
+
+Oct 31
+
+Client to provide an in-principle approval on resource plan
+
+mid-Nov
+
+contract and purchase order complete
+
+Dec 1
+
+Octane to devise a hand-over checklist, stakeholder management, user expectations, and improve documentation with senior resources
+
+Jan-Dec
+
+commence monthly cadence meetings
+
+Jan-Dec
+
+Engineering carry out recommendations
+
+
+
+
+
+By signing and returning this document and/or submitting a purchase order in writing addressed to Octane Software Solutions, I warrant that I am legally authorised to enter into this agreement on behalf of my company. I confirm that I have received and read all pages of this document. I hereby accept this Quotation and I acknowledge and accept the terms and conditions contained herein. 
+
+
+
+
+
+
+
+. . . . . . . . . . . . . . . . . 
+
+
+
+Managing Director
+
+
+
+Amendra Pratap
+
+Octane Software Solutions Pty Ltd
+
+
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Client Signature / Date
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Client name
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Position
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Full Company Name  
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+ACN/ABN Number 
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Company address  
+
+
+
+
+

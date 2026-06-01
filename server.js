@@ -763,12 +763,12 @@ async function handleCallPrep(contactId) {
         
         const systemPrompt = `You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler.
 You must adhere to strict negative grounding:
-- Use ONLY the provided search snippet and technographic context for Points 1, 2, and 3. Do not invent or assume details.
-- If 'LinkedIn Profile / Experience' states 'No real-time search context available' or 'No search results returned', and 'Exa Semantic Search' states 'No real-time Exa search context available' or 'No search results returned', output 'LinkedIn Analysis: N/A - No profile data found. Requires manual discovery' for Point 1 and Point 2. Do not invent a career history or network signals.
-- If 'Company GitHub Technographics' states 'No public organization found', output 'Technographics: Unknown (Requires manual discovery)' for Point 3. Do not assume they use NetSuite or any specific software stack.`;
+- Use ONLY the provided search snippet and technographic context. Do not invent or assume details.
+- If 'LinkedIn Profile / Experience' states 'No real-time search context available' or 'No search results returned', and 'Exa Semantic Search' states 'No real-time Exa search context available' or 'No search results returned', output 'LinkedIn Analysis: N/A - No profile data found. Requires manual discovery' for === LINKEDIN ANALYSIS ===. Do not invent a career history or network signals.
+- If 'Company GitHub Technographics' states 'No public organization found', output 'Technographics: Unknown (Requires manual discovery)' for === COMPLEMENTARY STACK APPLICATIONS ===. Do not assume they use NetSuite or any specific software stack.`;
 
         const userPrompt = `You are a sales preparation assistant for Octane Software Solutions.
-I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services (IBM TM1/Planning Analytics managed support, Watsonx Orchestrate agentic AI integrations, and DataFusion connectors), produce a 10-POINT BRIEFING.
+I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services (IBM TM1/Planning Analytics managed support, Watsonx Orchestrate agentic AI integrations, and DataFusion connectors), produce a 12-POINT BRIEFING.
 
 --- INPUTS ---
 1. Client: ${params.name}, ${params.title} at ${params.company}
@@ -786,20 +786,72 @@ ${params.githubInfo}
 9. Exa Semantic Search & Technographic Insights:
 ${params.exaInfo}
 
---- PRODUCE THESE 10 POINTS ---
-1. LinkedIn profile analysis — role history, tenure, seniority, network signals. (Do NOT invent details. Ground this on Inputs 6 and 9. If no LinkedIn data is provided, write "N/A - No profile data found. Requires manual discovery").
-2. Recent social media activity — posts, articles, comments (grounded on Inputs 6 and 9, otherwise write "N/A").
-3. Company overview — products, services, industry context. (Incorporate recent corporate news, product announcements, and press releases from Input 7 to make this highly current and specific. Incorporate technographics from Inputs 8 and 9).
-4. Octane services relevant to this prospect — customize based on track, company size, news inputs, and technographics.
-5. Key competitors this prospect may be evaluating.
-6. Competing applications they may already use (e.g. Anaplan, Workday Adaptive, manual Excel. Do NOT assume they use manual Excel unless supported or custom workflows are common in their industry/role).
-7. Complementary applications in their stack (e.g. NetSuite, SAP, Power BI. Incorporate facts from Inputs 6, 7, 8, and 9, otherwise write "Requires manual verification").
-8. TM1 or AI applications relevant to their industry/role.
-9. Likely pain points — based on role, company size, and service interest.
-10. Conversation starters — 3 specific openers that demonstrate relevance from the first sentence (do NOT use generic discovery questions. Ground openers on Inputs 5, 6, and 9; do not make up fake personal connection hooks).
+--- OCTANE TARGET CUSTOMER PROFILES PLAYBOOK ---
+Refer to these standard target customer profiles for Octane to classify the prospect:
+- Large TM1 Shops: System Owner or IT. Pain: Cost of resource, Accessing quality resource, Stuck with inflexible vendors, Internal resources are not that skilled, Support and Development maturity, growing pains. Product: Octane Black (Full support, onshore/offshore, for 200+ user scales).
+- Mid Size TM1 Shops: CFO or Head of FP&A. Pain: High cost of support, backlog of projects, Support is ad hoc, In-house resource drives the agenda, not modern setup. Product: Octane Blue (DevOps Support) with roadmap to expand to licenses.
+- Small TM1 Shops: CFO or Head of FP&A. Pain: High cost of support, backlog of projects, Support is ad hoc, In-house resource drives the agenda. Product: Octane Blue (DevOps Support).
+- TM1 Shops still On-Premise: CFO or Head of FP&A. Pain: Legacy Perspectives/Excel dependencies, migration risk, outdated infrastructure. Product: TM1 Modernisation Play (Cloud/PA migration).
+- New TM1 Supply Chain Prospects: CFO or Head of Supply Chain. Pain: Manual Excel demand planning, inventory planning, disconnected supply & demand, unable to scale, reconciliation issues. Product: Custom Supply Chain Model (Accelerated development using Octane's template).
+- New TM1 FP&A Prospects: CFO or Head of FP&A. Pain: Manual budgeting/forecasting, slow insights, looking to move to FP&A platform, turnover >$50M. Product: IBM Planning Analytics (TM1).
+- Enterprise AI in Finance (Large): CFO. Pain: Slow month-end close (5+ days), manual reporting, drowning in repetitive queries, no ROI visibility, turnover >$500M. Product: Octane Finance Agent + FastClose.
+- MidMarket AI in Finance: CFO. Pain: Month-end reporting is manual/slow, CFO chasing data, no self-serve reporting, board packs take too long, struggling to hire, turnover $100M-$500M. Product: FastClose entry point, then upsell to Finance Agent.
+- IBM PA + AI Upgrade (Existing TM1 Shops): CFO, System Owner, Head of FP&A. Pain: TM1 not delivering AI-powered insights, investment underutilized, competitor pressure, manual reporting. Product: Finance Agent on top of existing Planning Analytics.
 
-Format: Generate clean HTML. Format the title as <h3>[PRE-SCREEN BRIEFING: ${params.name} — ${params.company}]</h3>. 
-Use a numbered list (<ol>) for the 10 points. Inside each point, use <strong> tags for headers and bold keywords. Keep each point specific, concise (2-4 sentences), and tailored to the actual company and role context.`;
+--- HISTORICAL CLIENT PROFILES ---
+Use these real examples for peer credibility stories:
+- Steric (Life Sciences): Olivia McKellar / Vicki Carline. Deanna Chapman. Product in Use: Octane Blue Support. Limited TM1 bandwidth.
+- GreyOrange (Supply Chain Automation): Nageswara Reddy Kondreddy. Product in Use: Octane Blue. APAC operations support.
+- Iqony / STEAG (Energy): Carola Jochheim. Product in Use: DataFusion. SAP to PA integration.
+- Shift (FinTech / Auto Finance): Alvin Ah-Chok. Product in Use: Octane Blue & IBM Planning Analytics. Slow cycles, spreadsheet sprawl.
+- mycar (Retail / Automotive): Olivia McKellar. Product in Use: Additional RAM & IBM Planning Analytics Upgrade. Legacy TM1 memory bottleneck.
+- McPherson’s (Consumer Goods): Will Clemente. Product in Use: IBM Planning Analytics. Large analytics transformation.
+- News Corp Australia (Media): Ritwik Deo. Product in Use: TeamOne/TM1 Renewal.
+- Fintechs (AP Pain Point): raised Series C, $10M+ revenue, Scenario A (AP Volume): TM1, Scenario B (Hiring AP): AI Assistants.
+
+--- OUTPUT INSTRUCTIONS ---
+You MUST separate each section with its corresponding delimiter string EXACTLY as shown below. Do not include any other markdown fences or conversations outside of these blocks. Format the content inside sections in clean HTML using standard tags like <p>, <ul>, <li>, <strong>, and <br>.
+You are strictly forbidden from using the words 'likely', 'probably', 'standard', or 'general'. If you do not have hard evidence from the RAG inputs, output 'UNKNOWN' or 'NO DATA'.
+
+Use these delimiters:
+
+=== LINKEDIN ANALYSIS ===
+Extract the exact names of the prospect's 3 most recent companies, their exact job titles, and their university/education. If none are found in the RAG context, output exactly: 'NO DATA'. Do not summarize. List the hard facts.
+
+=== COMPANY OVERVIEW ===
+Company overview: Extract specific products, services, and recent corporate news or triggers from the RAG context. If none found, output 'NO DATA'.
+
+=== DISCOVERY TRACK CLASS ===
+Classify the prospect into:
+- **Variant A (First-Time TM1 / Planning Analytics User)**: If they consolidate data manually in Excel spreadsheets.
+- **Variant B (Existing TM1 / Planning Analytics User)**: If they already run IBM Planning Analytics / TM1 but face support bottlenecks or migration requirements.
+
+=== TAILORED PLAYBOOK QUESTIONS ===
+Provide 4-5 specific open-ended discovery questions. DO NOT use generic questions. Map the questions explicitly to their exact job title and their specific industry.
+
+=== RELEVANT OCTANE SERVICES & PRICING ===
+Specify the exact recommended package with pricing (e.g. DevOps Blue Support at A$4,560/mo flat-rate, TM1 Flight Check fixed audit at A$5,800, or DataFusion Setup at A$6,950, or watsonx AI Pilots starting at $125,000).
+
+=== PEER CREDIBILITY STORY ===
+Map this prospect's exact sector and stack to 1-2 relevant Octane historical clients (Steric, GreyOrange, mycar, Iqony, Shift, News Corp, McPherson's). Explain how Octane resolved a similar pain point.
+
+=== COMPETING APPLICATIONS ===
+Detail competing systems they are evaluating. Only list systems explicitly mentioned in the RAG or highly specific to their exact niche. If unknown, output 'UNKNOWN'. Do not guess.
+
+=== COMPLEMENTARY STACK APPLICATIONS ===
+Detail ERP systems (SAP, NetSuite, Dynamics) and BI tools (Power BI, Tableau) present in their RAG technographics. If unknown, output 'UNKNOWN'. Do not guess.
+
+=== RELEVANCE ASSESSMENT ===
+Qualify their business size and revenue markers against Octane's core products.
+
+=== LIKELY PAIN POINTS ===
+3 specific pain points mapped explicitly to their job title. If the title is CFO, list 3 financial metrics they care about. If the title is IT, list 3 technical bottlenecks. Do not use generic spreadsheet examples unless they are Variant A.
+
+=== HIGH-IMPACT OPENERS ===
+3 concrete conversation openers. Combine a specific fact from their career history or company news with a target metric question.
+
+=== TRAVEL DISTANCE ===
+Estimate the travel distance/time for an in-person meeting. The travel origin is Amendra's home address (Richmond, Melbourne, VIC 3121). Based on the prospect's company address or office location (e.g., if Australian/Melbourne, compute drive/transit time, if interstate or international, indicate 'Online/Phone only'). Output only a brief string, e.g., '~45 min from Amendra's location' or 'Online/Phone call only'.`;
 
         const briefing = await generateAICompletion(systemPrompt, userPrompt);
         
@@ -1196,6 +1248,160 @@ const server = http.createServer(async (req, res) => {
             }
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(data);
+        });
+        return;
+    }
+
+    // Fathom Webhook - Automated Proposal Generator (Component 05)
+    if (pathname === '/api/fathom/webhook' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            let payload;
+            try { payload = JSON.parse(body); } catch(e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON' }));
+                return;
+            }
+            
+            // Fathom Webhook Handshake / Event verification
+            if (payload.event !== 'meeting.finished' || !payload.recording_id) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'ignored', message: 'Not a completed meeting event.' }));
+                return;
+            }
+
+            // Immediately acknowledge webhook to prevent timeouts
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'processing' }));
+            
+            // Asynchronous Processing (Fire and Forget)
+            (async () => {
+                try {
+                    const apiKey = (process.env.FATHOM_API_KEY || '').trim();
+                    if (!apiKey) throw new Error("FATHOM_API_KEY missing");
+                    
+                    let transcriptText = payload.transcript || '';
+                    if (!transcriptText) {
+                        // Fetch transcript from Fathom API
+                        const transUrl = `https://api.fathom.video/v1/recordings/${payload.recording_id}/transcript`;
+                        const transRes = await fetch(transUrl, {
+                            headers: { 'Authorization': `Bearer ${apiKey}` }
+                        });
+                        if (!transRes.ok) throw new Error(`Fathom API error: ${transRes.status}`);
+                        const transData = await transRes.json();
+                        transcriptText = transData.transcript || JSON.stringify(transData);
+                    }
+                    
+                    const systemPrompt = `You are a Senior Solutions Architect at Octane Software Solutions.
+You will be provided with a raw meeting transcript.
+Generate a strictly formatted Proposal Document.
+Output ONLY the following 4 sections in Markdown, anchored to the Octane brand requirements:
+
+### I. Objective
+(Single, high-density paragraph defining the primary goal of the engagement).
+
+### II. Background
+(An opening statement followed by bullet points outlining empirical data, intent gaps, or pain points uncovered in the transcript).
+
+### III. Contributor Scope of Work
+(A Markdown table with column headers: "Task" | "Reasons". List tactical delivery tasks mapped to the background pain points).
+
+### IV. Client's Scope of Work
+(A bulleted list of dependencies, assets, or briefings required from the prospect).`;
+
+                    const userPrompt = `--- BEGIN TRANSCRIPT ---\n${transcriptText}\n--- END TRANSCRIPT ---\n\nGenerate the Proposal.`;
+                    
+                    const proposal = await generateAICompletion(systemPrompt, userPrompt);
+                    
+                    // In a production environment, this proposal would be saved to HubSpot, emailed, or written to a dashboard DB.
+                    // For now, we write it to the local disk as an artifact of the process.
+                    const proposalPath = path.join(__dirname, 'knowledge', `proposal_${payload.recording_id}.md`);
+                    fs.writeFileSync(proposalPath, proposal, 'utf8');
+                    console.log(`[Component 05] Proposal successfully generated and saved to ${proposalPath}`);
+                    
+                } catch (err) {
+                    console.error("[Component 05] Fathom Webhook Error:", err.message);
+                }
+            })();
+        });
+        return;
+    }
+
+    // Geolocation Routing API Route (Powered by Mapbox)
+    if (pathname === '/api/calculate-distance' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            let payload;
+            try { payload = JSON.parse(body); } catch(e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
+                return;
+            }
+            
+            const targetCompany = payload.destination || 'Unknown';
+            const apiKey = (process.env.MAPBOX_API_KEY || '').trim();
+            
+            // Anti-Hallucination Fallback
+            if (!apiKey || targetCompany === 'Unknown') {
+                console.warn("⚠️ MAPBOX_API_KEY missing or destination unknown. Falling back to deterministic Offline Mode.");
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ distanceString: `[Offline Mode - Distance Unavailable] Destination: ${targetCompany}` }));
+                return;
+            }
+
+            try {
+                // 1. Geocode Destination
+                const geoUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(targetCompany)}.json?access_token=${apiKey}&limit=1`;
+                const geoRes = await fetch(geoUrl);
+                if (!geoRes.ok) throw new Error(`Geocoding failed: ${geoRes.status}`);
+                const geoData = await geoRes.json();
+                
+                if (!geoData.features || geoData.features.length === 0) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ distanceString: `Location not found via Mapbox for: ${targetCompany}` }));
+                    return;
+                }
+                
+                const [destLon, destLat] = geoData.features[0].center;
+                const destName = geoData.features[0].place_name;
+
+                // 2. Routing from Amendra's Origin (Richmond, VIC: 145.0004, -37.8226)
+                const originLon = 145.0004;
+                const originLat = -37.8226;
+                const dirUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${originLon},${originLat};${destLon},${destLat}?access_token=${apiKey}`;
+                
+                const dirRes = await fetch(dirUrl);
+                if (!dirRes.ok) throw new Error(`Routing failed: ${dirRes.status}`);
+                const dirData = await dirRes.json();
+                
+                if (!dirData.routes || dirData.routes.length === 0) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ distanceString: `No driving route found to ${destName}` }));
+                    return;
+                }
+                
+                const durationSeconds = dirData.routes[0].duration;
+                const distanceMeters = dirData.routes[0].distance;
+                
+                const durationMinutes = Math.round(durationSeconds / 60);
+                const distanceKm = (distanceMeters / 1000).toFixed(1);
+                
+                let timeString = '';
+                if (durationMinutes > 120) {
+                    timeString = `Online/Phone call only (~${Math.round(durationMinutes/60)} hrs driving to ${distanceKm}km)`;
+                } else {
+                    timeString = `~${durationMinutes} min driving (${distanceKm}km) from Amendra's location to ${destName}`;
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ distanceString: timeString }));
+            } catch (err) {
+                console.error("Mapbox API Error:", err.message);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ distanceString: `[API Error] Distance unavailable for ${targetCompany}` }));
+            }
         });
         return;
     }
@@ -1827,6 +2033,129 @@ const server = http.createServer(async (req, res) => {
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: `Call Prep failed: ${err.message}` }));
+            }
+        });
+        return;
+    }
+
+    // Sample Loadout Dynamic Generator
+    if (pathname === '/api/sample-loadout' && req.method === 'POST') {
+        const MAX_PAYLOAD_SIZE = 50 * 1024 * 1024; // 50MB for audio base64
+        let body = '';
+        let bodyLength = 0;
+        req.on('data', chunk => {
+            bodyLength += chunk.length;
+            if (bodyLength > MAX_PAYLOAD_SIZE) {
+                res.writeHead(413, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Payload Too Large.' }));
+                req.destroy();
+            } else {
+                body += chunk;
+            }
+        });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body);
+                const base64Audio = payload.audio_base64;
+                const mimeType = payload.mime_type || 'audio/mp3';
+                
+                if (!base64Audio) {
+                    throw new Error("Missing audio_base64 parameter");
+                }
+                
+                // 1. Transcribe Audio via Gemini 1.5 Flash
+                const geminiKeys = (process.env.GOOGLE_API_KEYS || '').split(',');
+                const geminiKey = geminiKeys[0].trim();
+                
+                const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: "Transcribe the following audio recording exactly. Provide only the raw transcript text with speaker labels if discernible. Do not add any conversational filler or formatting outside of the transcript." },
+                                { inlineData: { mimeType: mimeType, data: base64Audio } }
+                            ]
+                        }]
+                    })
+                });
+                
+                const geminiData = await geminiResponse.json();
+                if (!geminiResponse.ok) {
+                    throw new Error("Gemini API Error: " + JSON.stringify(geminiData));
+                }
+                
+                let transcript = "";
+                try {
+                    transcript = geminiData.candidates[0].content.parts[0].text;
+                } catch(e) {
+                    transcript = "[Failed to extract transcript from audio]";
+                }
+                
+                // 2. Generate Simulated LinkedIn Profile (Randomized)
+                const mockTitles = ["CFO", "Head of FP&A", "Finance Director", "VP of Finance"];
+                const mockCompanies = ["Acme Corp", "TechFlow Inc", "Global Retail", "Vanguard Logistics"];
+                const mockPainPoints = ["Slow month-end close", "Manual Excel consolidation", "Inflexible legacy systems", "High support costs"];
+                
+                const randomTitle = mockTitles[Math.floor(Math.random() * mockTitles.length)];
+                const randomCompany = mockCompanies[Math.floor(Math.random() * mockCompanies.length)];
+                const randomPain = mockPainPoints[Math.floor(Math.random() * mockPainPoints.length)];
+                
+                const simulatedLinkedIn = `
+[SIMULATED LINKEDIN DATA]
+Name: Sample Prospect
+Current Role: ${randomTitle} at ${randomCompany}
+Experience: 15+ years in corporate finance.
+Recent Post: "Struggling with ${randomPain} this quarter. Looking for modern solutions to streamline our FP&A processes."
+`;
+
+                // 3. Generate Simulated Google Drive Data
+                const driveId = process.env.GDRIVE_ROOT_FOLDER_ID || 'Unknown_Folder';
+                const simulatedDrive = `
+[SIMULATED GOOGLE DRIVE CONNECTION]
+Connected Root ID: ${driveId}
+Historical Files Found:
+- ${randomCompany.replace(/\s+/g, '_')}_Q3_Financial_Review.pdf
+- Legacy_Architecture_Diagram.png
+- vendor_support_contract_2024.docx
+`;
+
+                // 4. Orchestrate LLM Proposal Generation using standard pipeline
+                const systemPrompt = `You are a Senior Solutions Architect at Octane Software Solutions.
+You have been provided with a prospect's LinkedIn profile, historical Google Drive context, and a live meeting transcript.
+Generate a strictly formatted Pre-Screen Dossier and Proposal.
+Output exactly TWO documents separated by delimiters:
+
+[DOCUMENT: DOSSIER]
+(Provide a highly concise bulleted summary of the prospect's background, inferred pain points based on the transcript and LinkedIn, and recommend an Octane Service from the catalog).
+
+[DOCUMENT: PROPOSAL]
+### I. Objective
+(Single paragraph).
+### II. Background
+(Bulleted list).
+### III. Contributor Scope of Work
+(Markdown table with 'Task' and 'Reasons').
+### IV. Client's Scope of Work
+(Bulleted list).
+`;
+                const userPrompt = `--- BEGIN EXTERNAL CONTEXT ---\n${simulatedLinkedIn}\n\n${simulatedDrive}\n--- END EXTERNAL CONTEXT ---\n\n--- BEGIN TRANSCRIPT ---\n${transcript}\n--- END TRANSCRIPT ---\n\nGenerate the output.`;
+                
+                const generatedText = await generateAICompletion(systemPrompt, userPrompt);
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ 
+                    status: 'success', 
+                    transcript: transcript,
+                    linkedIn: simulatedLinkedIn,
+                    drive: simulatedDrive,
+                    result: generatedText
+                }));
+                
+            } catch (err) {
+                console.error(err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: `Sample Loadout failed: ${err.message}` }));
             }
         });
         return;

@@ -29,10 +29,10 @@ test.describe('Aegis Synthesis E2E Suite', () => {
                             message: {
                                 role: 'assistant',
                                 content: `
-### PAIN POINTS
+=== LIKELY PAIN POINTS ===
 - Highly manual workflow processes
 - Scalability bottlenecks in existing TM1 instances
-### CONVERSATION STARTERS
+=== HIGH-IMPACT OPENERS ===
 - "How do you currently handle manual syncs?"
 - "What issues are you seeing with TM1 sizing limits?"
                                 `
@@ -105,7 +105,7 @@ test.describe('Aegis Synthesis E2E Suite', () => {
 
         // Wait for dossier to complete and render in right panel
         await page.locator('#output-doc-content').waitFor({ state: 'visible', timeout: 15000 });
-        await expect(page.locator('#output-doc-content')).toContainText('PAIN POINTS');
+        await expect(page.locator('#output-doc-content')).toContainText('LIKELY PAIN POINTS');
 
         // 2. Navigate to Step 2 (Session)
         await page.evaluate(() => {

@@ -1409,8 +1409,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const parsed = parseDossierResponse(currentDossierText);
-        const painPoints = parsed['PAIN POINTS'] || 'Not available';
-        const starters = parsed['CONVERSATION STARTERS'] || 'Not available';
+        const painPoints = parsed['LIKELY PAIN POINTS'] || 'Not available';
+        const starters = parsed['HIGH-IMPACT OPENERS'] || 'Not available';
         
         let html = `
             <div class="dossier-quick-ref" style="margin-bottom: 1.5rem;">
@@ -1420,7 +1420,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="quick-ref-content">${formatMarkdown(painPoints)}</div>
                 </div>
                 <div class="quick-ref-card" style="margin-bottom: 0.75rem;">
-                    <div class="quick-ref-title">💬 Conversation Starters</div>
+                    <div class="quick-ref-title">🔥 High-Impact Openers</div>
                     <div class="quick-ref-content">${formatMarkdown(starters)}</div>
                 </div>
             </div>
@@ -1436,15 +1436,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const emojiMap = {
             'LINKEDIN ANALYSIS': '🔗',
             'COMPANY OVERVIEW': '🏢',
-            'OCTANE SERVICES': '🛠️',
-            'OCTANE COMPETITORS': '⚔️',
+            'DISCOVERY TRACK CLASS': '📊',
+            'TAILORED PLAYBOOK QUESTIONS': '❓',
+            'RELEVANT OCTANE SERVICES & PRICING': '💰',
+            'PEER CREDIBILITY STORY': '🤝',
             'COMPETING APPLICATIONS': '💻',
-            'COMPLEMENTARY APPLICATIONS': '🔌',
-            'TM1 AND AI APPLICATIONS': '🧠',
-            'RELEVANCE ASSESSMENT': '📊',
-            'PAIN POINTS': '🎯',
-            'CONVERSATION STARTERS': '💬',
-            'CUSTOMER PROFILES': '👥',
+            'COMPLEMENTARY STACK APPLICATIONS': '🔌',
+            'RELEVANCE ASSESSMENT': '📋',
+            'LIKELY PAIN POINTS': '🎯',
+            'HIGH-IMPACT OPENERS': '🔥',
             'TRAVEL DISTANCE': '🚗'
         };
         
@@ -2022,20 +2022,67 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
         showToast("Prefilled Call Transcript template!");
     });
 
+    const sampleLoadoutBtn = document.getElementById('btn-sample-loadout');
+    if (sampleLoadoutBtn) {
+        sampleLoadoutBtn.addEventListener('click', async () => {
+            showToast("Simulating AI Sales Call Loadout...");
+            showLoading("Transcribing Sample Audio & Prompting LLM...");
+            sampleLoadoutBtn.disabled = true;
+            try {
+                const audioRes = await fetch('/sample_call.mp3');
+                if (!audioRes.ok) throw new Error("Could not load sample_call.mp3");
+                const blob = await audioRes.blob();
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = async function() {
+                    try {
+                        const base64data = reader.result.split(',')[1];
+                        const res = await fetch('/api/sample-loadout', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ audio_base64: base64data, mime_type: 'audio/mp3' })
+                        });
+                        const data = await res.json();
+                        if (data.error) throw new Error(data.error);
+                        
+                        synthTranscriptText.value = data.transcript;
+                        synthVariantSelect.value = "Variant A";
+                        
+                        prepLinkedinText.value = data.linkedIn;
+                        prepIntakeText.value = data.drive;
+                        
+                        renderDossierHtml(data.result);
+                        goToStep(3);
+                        showToast("Dynamic Sample Loadout Successful!");
+                    } catch (innerErr) {
+                        showToast("Error: " + innerErr.message);
+                        resetOutput();
+                    } finally {
+                        sampleLoadoutBtn.disabled = false;
+                    }
+                };
+            } catch (e) {
+                showToast("Error: " + e.message);
+                resetOutput();
+                sampleLoadoutBtn.disabled = false;
+            }
+        });
+    }
+
     // --- Dossier Parsing & Rendering Helper Functions ---
     function parseDossierResponse(text) {
         const sections = {
             'LINKEDIN ANALYSIS': '',
             'COMPANY OVERVIEW': '',
-            'OCTANE SERVICES': '',
-            'OCTANE COMPETITORS': '',
+            'DISCOVERY TRACK CLASS': '',
+            'TAILORED PLAYBOOK QUESTIONS': '',
+            'RELEVANT OCTANE SERVICES & PRICING': '',
+            'PEER CREDIBILITY STORY': '',
             'COMPETING APPLICATIONS': '',
-            'COMPLEMENTARY APPLICATIONS': '',
-            'TM1 AND AI APPLICATIONS': '',
+            'COMPLEMENTARY STACK APPLICATIONS': '',
             'RELEVANCE ASSESSMENT': '',
-            'PAIN POINTS': '',
-            'CONVERSATION STARTERS': '',
-            'CUSTOMER PROFILES': '',
+            'LIKELY PAIN POINTS': '',
+            'HIGH-IMPACT OPENERS': '',
             'TRAVEL DISTANCE': ''
         };
         
@@ -2052,7 +2099,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
         }
         
         if (matches.length === 0) {
-            sections['PAIN POINTS'] = text;
+            sections['LIKELY PAIN POINTS'] = text;
             return sections;
         }
         
@@ -2075,15 +2122,15 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
         const coreSections = [
             'LINKEDIN ANALYSIS',
             'COMPANY OVERVIEW',
-            'OCTANE SERVICES',
-            'OCTANE COMPETITORS',
+            'DISCOVERY TRACK CLASS',
+            'TAILORED PLAYBOOK QUESTIONS',
+            'RELEVANT OCTANE SERVICES & PRICING',
+            'PEER CREDIBILITY STORY',
             'COMPETING APPLICATIONS',
-            'COMPLEMENTARY APPLICATIONS',
-            'TM1 AND AI APPLICATIONS',
+            'COMPLEMENTARY STACK APPLICATIONS',
             'RELEVANCE ASSESSMENT',
-            'PAIN POINTS',
-            'CONVERSATION STARTERS',
-            'CUSTOMER PROFILES',
+            'LIKELY PAIN POINTS',
+            'HIGH-IMPACT OPENERS',
             'TRAVEL DISTANCE'
         ];
         
@@ -2112,15 +2159,15 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
         const emojiMap = {
             'LINKEDIN ANALYSIS': '🔗',
             'COMPANY OVERVIEW': '🏢',
-            'OCTANE SERVICES': '🛠️',
-            'OCTANE COMPETITORS': '⚔️',
+            'DISCOVERY TRACK CLASS': '📊',
+            'TAILORED PLAYBOOK QUESTIONS': '❓',
+            'RELEVANT OCTANE SERVICES & PRICING': '💰',
+            'PEER CREDIBILITY STORY': '🤝',
             'COMPETING APPLICATIONS': '💻',
-            'COMPLEMENTARY APPLICATIONS': '🔌',
-            'TM1 AND AI APPLICATIONS': '🧠',
-            'RELEVANCE ASSESSMENT': '📊',
-            'PAIN POINTS': '🎯',
-            'CONVERSATION STARTERS': '💬',
-            'CUSTOMER PROFILES': '👥',
+            'COMPLEMENTARY STACK APPLICATIONS': '🔌',
+            'RELEVANCE ASSESSMENT': '📋',
+            'LIKELY PAIN POINTS': '🎯',
+            'HIGH-IMPACT OPENERS': '🔥',
             'TRAVEL DISTANCE': '🚗'
         };
         
@@ -2135,7 +2182,7 @@ Albert (Sales Team): Fantastic, I've booked that meeting and sent the invitation
         Object.entries(parsed).forEach(([title, content]) => {
             const emoji = emojiMap[title] || '📄';
             const formattedContent = formatMarkdown(content);
-            const isActive = (title === 'PAIN POINTS' || title === 'CONVERSATION STARTERS' || title === 'LINKEDIN ANALYSIS') ? 'active' : '';
+            const isActive = (title === 'LIKELY PAIN POINTS' || title === 'HIGH-IMPACT OPENERS' || title === 'LINKEDIN ANALYSIS') ? 'active' : '';
             
             html += `
                 <div class="dossier-accordion-item ${isActive}">

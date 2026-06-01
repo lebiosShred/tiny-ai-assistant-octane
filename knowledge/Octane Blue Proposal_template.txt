@@ -1,0 +1,514 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Managed Application Support CIT
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+Prepared by Sheila Ocana and reviewed by Amendra Pratap
+
+March 2025
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+we go the extra mile so you can go       the distance
+
+
+
+
+
+
+
+
+
+
+
+
+
+octanesolutions.com.au
+
+
+
+
+
+ About the client 
+
+The ACT Government, represented by the Canberra Institute of Technology (CIT), is seeking responses for the provision of goods and services to support and maintain its two critical TM1 instances: the Budget Management System (BMS) and the Activity-Based Cost Model (ABC).
+
+Current TM1 Systems at CIT
+
+Budget Management System (BMS)
+
+Implemented in 2023 and transitioned to Business-as-Usual (BAU) in January 2024.
+
+Serves as CIT’s primary budgeting, reporting, and forecasting system.
+
+Designed around an academic year, with financial and staffing data reportable back to 2015.
+
+Currently used for internal management accounting only.
+
+Activity-Based Cost Model (ABC)
+
+Released into operation in July 2024.
+
+Designed to analyze profitability across colleges, departments, student cohorts, programs, and subjects to inform decision-making.
+
+Reports semester-by-semester results, currently containing data for the 2023 and 2024 academic years. 
+
+	About us 
+
+Octane is a premier global provider of IBM Planning Analytics software solutions. Octane specialises in delivering analytics, automation, and AI services, offering a competitive edge to businesses seeking to optimize their operations and drive strategic decision-making.
+
+With a strong focus on innovation, Octane delivers cost-effective services that deliver exceptional value to its clients. Leveraging the power of IBM Planning Analytics, Octane enables organizations to enhance their financial planning processes, streamline operations, and improve forecast accuracy.
+
+Octane stands out for its commitment to innovation and customer satisfaction. The company's team of experts collaborates closely with clients to understand their business challenges and develop solutions that address their specific needs. By leveraging the latest advancements in AI and automation, Octane empowers businesses to stay ahead in today's evolving business landscape.
+
+Embark on a transformative journey with Octane and discover how our innovative solutions can drive your business towards greater efficiency and success.
+
+More here https://www.octanesolutions.com.au/
+
+	Background 
+
+The client has reached out to Octane to get a proposal on providing Application Managed Support for its IBM Planning Analytics TM1 application. They have a on cloud version of the application with around 50 Users. 
+
+There is a steady stream of support and enhancement requirements and the client is looking for a more cost effective option to manage this increased workload o the internal TM1 specialists. 
+
+This proposal is for Octane’s Managed Service services. It is a transparent and scalable Devops Model that reflects how a modern application support is provided. We have a stable of clients using this model globally. (references available)
+
+
+
+Traditional Support Models vs Octane Blue Support
+
+Octane Blue is our TM1 support model that is used by companies to support their TM1 support, development and Training. It’s based on our years of experience in running multiple TM1 sites globally. It is a flexible and transparent model. 1 Unit of Octane blue gives you access to 40 hours of any of Octane TM1 service. You may use as many units as you like. If you don’t utilise the full 40 hours within the month you can rollover the hours o the next month. A detailed reporting at the end of each month on usage and types of ticket allows you to gain control of your support mechanism and guaranteed to reduce your cost of support and development. 
+
+Key Person Risk. Traditional vendor support (also applicable to inhouse support) typically has 1 or 2 resources looking after the models. This means that knowledge in concentrated within those people and if they are unavailable or change jobs then the knowledge is lost. 
+
+Octane Blue uses a team of consultants with regular rotations to ensure that multiple Octane staff have knowledge of your model
+
+Cost of Support traditional vendor support model can be quite expensive and most would only cover support. Monthly fixed support cost plus additional higher rate for development and enhancement work. Clients usually feel locked in the support contract.
+
+Octane Blue is designed to be a cost effective support package. Typical package starts from $ 4,350/month. This comes with 40 Hours of Octane, and we make no distinction between support and development. 
+
+Transparency & Structure Unclear priorities for support tickets. Lack of visibility on time spent on support. There is no structure around collecting and reporting on usage and system health data. These usually increase risk into clients application 
+
+Octane has transparent ticketing mechanism with SLAs that we follow to prioritise and resolve tickets. We also have a monthly report with hours consumed and state of open tickets. We also conduct health checks and monitor system usage to ensure we identify and resolve issues in a timely fashion
+
+Flexibility & Scale Most support models in the market do not allow you to scale up or down. Demand for support and projects are always varied and a fixed support package does not allow clients to have a level of flexibility. 
+
+Octane Blue comes with 40 hours of DevOps support. You may use it for development or support. You can buy additional Octane Blue to cover peak periods and you can also rollover any unused hours into the following month.
+
+
+
+Octane Blue Features & how it compares to your current Support  
+
+
+
+Features
+
+Octane Blue
+
+Others
+
+Price
+
+$ 4,560 Month
+
+Starts from 10K Month
+
+Support, Development & Training
+
+Included
+
+Extra for Development & Training
+
+24/7 Coverage
+
+Included
+
+Not available
+
+SLA Based ticketing
+
+Included 
+
+Not available
+
+Onboarding Checklist 
+
+Included
+
+Additional Charge
+
+No Lock In Contracts
+
+No Contracts 
+
+12 months or more lock in contract
+
+Monthly Report on Usage , issues & Risks
+
+Included
+
+Not Available
+
+Free Access to TM1 Training
+
+Included
+
+Not Available
+
+
+
+
+
+
+
+
+
+Benefits of Switching 
+
+Octane Blue is a frictionless way of accessing TM1 support and development services. These are some of the benefits our clients are getting by switching. 
+
+Don’t have to break-up with your existing vendor – We will complement.
+
+Transparent & Flexible Support & Development 
+
+Clear Backlog of Enhancements and Change requests.
+
+Increase End User Engagement 
+
+Monthly reporting on application health 
+
+Eliminate application related risk (Key person, data loads, peak hour support) 
+
+Reduce Cost of Ownership
+
+
+
+Some of our happy Clients 
+
+
+
+Client Case Studies 
+
+BlueScope Steel Australia 
+
+BlueScope Australia is the leading steel supplier and manufacturer for the building and construction industry in Australia. They have been using TM1 for over 10 years. BlueScope started using Octane Blue for their support and enhancements in one of their divisions. 12 months on Octane has transitioned into supporting all divisions of BlueScope TM1 models. In their quarterly TM1 User Forum the team reflected on the benefits Octane Blue has delivered for them: 
+
+Mitigate Key people Risk and get a external view on best practice processes
+
+More frequent review on Planning process and system health 
+
+Cost effective way to scale up 
+
+Create Additional Capacity to allow internal team to work on higher value critical work 
+
+
+
+GrainCorp Australia 
+
+GrainCorp is a unique mix of agribusiness and processing operations across multiple countries. They are the largest grains and oilseeds storage, handling and processing assets in eastern Australia. They offer global end to end supply chain. They have been using TM1 across the organisation for their financial reporting and Budgeting. Due to M&A activity their in-house team was at capacity and they started using Octane Blue. Initially it was for End User support but has morphed into Development, Enhancement and support streams. What they love is :
+
+24/7 Support available to their global business
+
+Allow their inhouse resources to focus on high value work
+
+Reduced Cost of Ownership for TM1
+
+They can scale up Octane Blue to do Projects when required
+
+
+
+
+
+Finer Details on how Octane Blue Works 
+
+Ticketing 
+
+The Client and Octane are mutually responsible for assessing and allocating a priority over every ticket. Both Support and development tasks can be ticketed. Tickets include but not limited to: 
+
+upload data
+
+data reconciliation
+
+change user access.
+
+security protocol
+
+perform an enhancement.
+
+solve a bug 
+
+solve an infrastructure issue
+
+Support and the Client shall discuss and agree any situations where it is agreed to be cost-effective to turn a ticket into a separate project. A separate project will have a project manager and a timeline.
+
+Minimum charge time per ticket is half an hour. 
+
+
+
+
+
+
+
+
+
+
+
+ Recurring tickets (Application Monitoring)  
+
+The Client can create set-and-forget tickets, which are carried out on a recurring basis. These can be processes which need to be carried out on a regular basis. Typically these are daily/weekly/monthly tasks that are performed by Octane consultants
+
+ Ticketing application 
+
+We will provide access to a ticketing application. There is no charge for the rental of the ticketing application. Access can be provided to as many users in the organization as the Client sees fit. Any correspondence sent outside of the ticketing application either by phone or by email will be converted to a ticket. Alternatively, the Client can elect to use a ticketing application of their choice. 
+
+ Ticket management 
+
+Timeline to investigate and resolve a ticket.
+
+Steps required resolving a ticket.
+
+An assessment of why the incident has occurred.
+
+Details of a known workaround.
+
+Provide regular updates to the end user on the status of the tickets.
+
+Closure of tickets after taking confirmation from the user. 
+
+Document the resolution and closure of each ticket and update the knowledge management repository
+
+ Reporting 
+
+We will provide monthly report with any commentary for review on tickets and status. A Client can ticket an ad hoc report anytime. We have a monthly 30 minute meeting with clients to go through the type of tickets, hours consumed and open tickets 
+
+ Knowledge management 
+
+Help define, document, manage and maintain the knowledge management policy and process.
+
+Retrieve and share knowledge to solve tickets and support learning, strategic planning and decision-making.
+
+Maintain, evaluate and improve the data in a knowledge repository for future references.
+
+Continuously maintain technical and support documentation for all technologies Supported.
+
+Manage document version control for all documentation for which the user is responsible.
+
+ Release management 
+
+Some tickets such as uploading data or resolving a bug require work to be carried out. We encourage customers to make available both a development and production server. Works are performed on the development server before the changes are pushed live to the production server.
+
+Each time a change is pushed live it is called a release.
+
+ Patches and upgrades 
+
+Deliver and monitor upgrades from one major release or version to another. Identify, test and deploy patches for the current release or version of the application which is deployed in production in order to:
+
+Resolve a ticket.
+
+Resolve a problem.
+
+For preventative maintenance purposes.
+
+Address security vulnerabilities.
+
+Comply with laws and approvals.
+
+ User training 
+
+Octane has a library of paid training modules that public access. For all our Managed Services clients we provide access to this training for free via a discount code. Our philosophy is that a trained user would result in a more efficient system and reduce the number of support tickets. This would in turn increase the time and effort we can collectively put into building new functionality.
+
+ Location 
+
+Support will be provided at a location of our choice depending on the time of day a ticket is received, the nature of the ticket and priority. Octane Blue is a combination of onsite and offsite (Hybrid) and we aim to provide the required support required using all our resources.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SLA
+
+Our standard SLA
+
+
+
+Octane Blue
+
+
+
+Urgent
+
+System is inoperable, not functioning, data is lost or business outage with significant impact threating productivity
+
+1 Hour
+
+High
+
+Problem Impact is High, production is proceeding but in an impaired fashion. Workarounds are available
+
+4 Hours
+
+Medium
+
+Medium impact to the business operations. Minor issues not causing significant disruptions to usability of the systems
+
+8 Hours
+
+Low
+
+Minimal or no impact to the business operations. Information request, user education or change request 
+
+24 Hours
+
+
+
+
+
+Cost
+
+
+
+
+
+
+
+Fee
+
+A$4,560 / month+ GST
+
+
+
+More details on Octane Blue https://www.octanesolutions.com.au/tm1-support
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Commercials 
+
+By signing and returning this document and/or submitting a purchase order in writing addressed to Octane Software Solutions, I warrant that I am legally authorised to enter into this agreement on behalf of my company. I confirm that I have received and read all pages of this document. I hereby accept this Quotation and I acknowledge and accept the terms and conditions contained herein. 
+
+
+
+
+
+. . . . . . . . . . . . . . 
+
+
+
+Amendra Pratap
+
+
+
+Managing Director
+
+Octane Software Solutions Pty Ltd
+
+
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Client Signature / Date
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Client name
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Position
+
+
+
+
+

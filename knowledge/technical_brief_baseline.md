@@ -1,17 +1,7 @@
----
-document_id: 1cHrzNKxx-Xgn4X2FLJETWublWTCfHiySW_HYlUd_aDg
-baseline_version: 2
-fetched_at: 2026-05-28T20:00:00+10:00
-source_url: https://docs.google.com/document/d/1cHrzNKxx-Xgn4X2FLJETWublWTCfHiySW_HYlUd_aDg/export?format=txt
-content_hash_method: line_count+byte_count
-content_lines: 141
-content_bytes: 7368
----
 SALES PROCESS 
 TECHNICAL BRIEF
 		TOLD BY ANTHONY COUNDOURIS + SHEILA OCANA
 	
-
 
 
 
@@ -147,3 +137,4 @@ Booking rules
 Calendar page
 The booking widget should be embedded within a page that gives the attendee context about what to expect -- not presented as a standalone calendar. See example: salesstar.com/steve-hughson-meeting
 > runfrictionless.com
+

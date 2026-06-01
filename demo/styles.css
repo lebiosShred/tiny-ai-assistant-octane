@@ -1,21 +1,29 @@
 :root {
-    /* === Enterprise White Theme === */
-    --bg-base: #ffffff;
-    --bg-surface: #ffffff;
-    --bg-card: #ffffff;
-    --bg-card-hover: rgba(2, 132, 199, 0.04);
-    --border-glow: rgba(2, 132, 199, 0.2);
-    --border-glass: rgba(2, 132, 199, 0.12);
-    --primary: #026aa2; /* Brand Sky Blue (Upgraded to WCAG AA sky-700 contrast ratio of 5.8:1 against white) */
-    --primary-glow: rgba(2, 106, 162, 0.18);
-    --primary-hover: #075985; /* Deepened to sky-800 hover state */
-    --accent-teal: #026aa2;
-    --accent-cyan: #026aa2;
-    --text-main: #0f172a; /* Slate-900 near-black */
-    --text-muted: #0f172a; /* Redefined from brand sky-blue 700 to near-black per user request */
-    --text-dark: rgba(15, 23, 42, 0.70); /* Opacity upgraded from 0.55 to 0.70 to meet WCAG AA contrast standard (>4.5:1) */
-    --glass-bg: #ffffff;
-    --hubspot-orange: #026aa2;
+    /* === Octane Brand Protocol V1.5 Theme === */
+    --brand-black: #000000;
+    --brand-charcoal: #0e0e0e;
+    --brand-white: #ffffff;
+    --brand-light-grey: #f7f7f7;
+    --brand-dark-grey: #dadada;
+    --brand-cyan: #4daeeb;
+    --brand-accent: #33A9E1;
+
+    --bg-base: var(--brand-white);
+    --bg-surface: var(--brand-light-grey);
+    --bg-card: var(--brand-white);
+    --bg-card-hover: rgba(77, 174, 235, 0.04);
+    --border-glow: rgba(77, 174, 235, 0.2);
+    --border-glass: var(--brand-dark-grey);
+    --primary: var(--brand-cyan);
+    --primary-glow: rgba(77, 174, 235, 0.18);
+    --primary-hover: var(--brand-accent);
+    --accent-teal: var(--brand-cyan);
+    --accent-cyan: var(--brand-cyan);
+    --text-main: var(--brand-black);
+    --text-muted: var(--brand-charcoal);
+    --text-dark: var(--brand-charcoal);
+    --glass-bg: var(--brand-white);
+    --hubspot-orange: var(--brand-cyan);
     --green: #10b981;
     --yellow: #f59e0b;
     --red: #ef4444;
@@ -40,7 +48,7 @@
 }
 
 body {
-    font-family: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     background-color: var(--bg-base);
     color: var(--text-main);
     line-height: 1.6;
@@ -100,6 +108,7 @@ body {
     object-fit: cover;
     border: 1px solid var(--primary);
     box-shadow: 0 0 8px var(--primary-glow);
+    filter: grayscale(100%);
 }
 
 .brand-logo {
@@ -2610,4 +2619,13 @@ body.resizing * {
     font-size: 0.8rem;
     color: #334155;
     font-weight: 500;
+}
+
+/* Octane Brand V1.5 Helpers */
+.brand-slice {
+    transform: skewY(-4deg);
+    transform-origin: top left;
+}
+.brand-slice > * {
+    transform: skewY(4deg);
 }

@@ -13,6 +13,7 @@ Baseline: [technical_brief_baseline.md](file:///c:/Users/SkyDr/OneDrive/Desktop/
 |:--------|:------------|:------|:------|:-----------------|
 | v1 (baseline) | 2026-05-27 00:00 | 147 | 7525 | Initial baseline established |
 | v2 | 2026-05-28 20:00 | 141 | 7368 | Transitioned to Version 2 brief, refactored scheduler to deterministic, and mapped System Administrator to Amendra/Amiel |
+| v3 | 2026-06-01 10:00 | 150 | 7705 | Added Brand Guidelines, SOP requirements, and deterministic API calculation for travel distance |
 
 ---
 
@@ -49,3 +50,8 @@ Compare-Object (Get-Content "knowledge\technical_brief_baseline.md" | Select-Obj
    - **Amiel**: Onshore Lead Architect responsible for custom scopes of work.
    - *Security compliance:* User administrative setup in admin_setup.html remains untouched as "System Administrator".
 4. **Tool Selection Updates (Fireflies Purged)**: Purged all references to Fireflies from the Technical Brief baseline and latest files, replacing them with Fathom/Jamie AI or HubSpot options to align with corporate tooling directives. Updated requirements matrix.
+
+### Version 3 Transition (2026-06-01)
+1. **API Routing Integration**: Implemented a backend deterministic routing API for Amendra's travel distance calculation to eliminate LLM hallucinations.
+2. **Visual Sovereignty Enforcement**: Applied Brand Protocol V1.5 to `styles.css` (Roboto typography, 4-degree slant, strict hex codes, grayscale icons).
+3. **Knowledge Ingestion**: Extended AI Assistant logic to ingest Octane Brand Protocol V1.5 and Early/Middle Game SOP constraints into the system prompt payload.

@@ -1,0 +1,142 @@
+Proof of Concept (POC/V/T) 
+
+A Joint Investment in Innovation 
+
+Between:
+
+Client: _________________________________________
+
+Octane Software Solutions Pty Ltd (IBM Gold Partner)
+
+Date: _________________________________________
+
+Purpose
+
+This Proof of Concept (PoC) or Proof of Value (PoV) or Proof of Technology (PoT) is a joint initiative between the Client and Octane to validate the business value using IBM Data , AI and Automation portfolio listed in Appendix (1) in addressing the Client’s business challenges.
+
+The proof of concept (POC) is considered a mutual investment in innovation. It is designed to deliver measurable value to the client before scaling up to full implementation. Offered free of charge as a goodwill gesture, the POC enables the client to evaluate potential benefits before committing to a complete rollout.
+
+Scope & Duration
+
+The POC will be limited to specific use cases mutually agreed upon before commencement.
+
+Delivery will occur over an estimated 2-6 weeks, using Octane’s sandbox or IBM’s environment (as applicable).
+
+Deliverables include a working demonstration, success metrics, and a joint review session showcasing business outcomes.
+
+Client Commitments
+
+To ensure a successful outcome, the Client agrees to:
+
+Nominate a primary business contact to collaborate and provide timely inputs.
+
+Make relevant data and access available where required.
+
+Participate in the final POC review and evaluation meeting within 10 business days of completion.
+
+Provide written feedback and a decision on next steps (proceed, modify, or defer) within 15 business days of completion.
+
+Budget awareness & Intent - the Client confirms that they have allocated or can allocate a reasonable budget for the potential implementation of IBM software licences and Octane’s professional services, should the POC demonstrate expected value.
+
+Indicative Cost Awareness - the Client acknowledges that they have been informed of the indicative cost range for the full production deployment (software licensing and delivery services) and that this POC is intended to validate solution fit prior to commercial engagement.
+
+Decision Commitment - Both parties agree that upon completion of the POC, a decision workshop will be held within 10 business days to confirm next steps — including a go/no-go decision and indicative budget alignment for production rollout.
+
+Post-POC Alignment
+
+Both parties acknowledge that the POC is not a production implementation but an evaluation exercise. If the outcomes meet the agreed success criteria, the parties will work in good faith to:
+
+Define the scope, timeline, and cost for a complete project implementation; and
+
+Agree on commercial terms within 30 days following successful POC completion.
+
+Mutual Good Faith Intent - The Client and Octane undertake to act in good faith towards progressing to a production engagement, provided the POC meets the agreed-upon success criteria, subject to commercial negotiation.
+
+Non-Disclosure and reuse - The Client agrees not to reuse or replicate Octane’s POC work or materials for internal development or third-party implementation unless a commercial agreement is executed with Octane.
+
+Success Criteria Confirmation - The parties will agree on success criteria (technical performance, business usability, and integration readiness) prior to commencement, and both will measure outcomes against these jointly at conclusion.
+
+
+
+Cost & Intellectual Property
+
+The POC is provided at no financial cost, but both parties recognise the time and resource investment made to demonstrate value.
+
+All configuration, models, and materials remain the property of Octane until a commercial agreement is executed.
+
+Any reusable design or intellectual property developed by Octane will not be transferred unless part of a paid engagement
+
+
+
+Next Steps and Decision Workshop
+
+Upon completion, both parties will hold a Decision Workshop within 10 business days to:
+
+Review the outcomes against the success criteria.
+
+Align on an indicative budget and delivery roadmap.
+
+Confirm a go/no-go decision for production rollout. 
+
+
+
+For Octane Solutions 
+
+
+
+For client
+
+Name
+
+
+
+Name
+
+
+
+Title
+
+
+
+Title
+
+
+
+Signature
+
+
+
+Signature
+
+
+
+Date
+
+
+
+Date
+
+
+
+
+
+
+
+Appendix 1
+
+
+
+SW
+
+Capability
+
+IBM Planning Analytics
+
+IBM Planning Analytics powered by TM1 is a business performance management software suite designed to implement collaborative planning, budgeting and forecasting solutions, interactive "what-if" analyses, as well as analytical and reporting applications.
+
+IBM watsox Orchestrate
+
+IBM watsonx Orchestrate is a generative AI and automation solution that empowers clients business by automating tasks, simplifying complex processes.
+
+
+

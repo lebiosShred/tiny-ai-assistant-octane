@@ -1,0 +1,610 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+IBM gold partner TM1 upgrade services for Belron
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+Prepared by Sheila Ocana and reviewed by Amendra Pratap
+
+Jan 2023
+
+3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+we go the extra mile so you can go       the distance
+
+
+
+
+
+
+
+
+
+
+
+
+
+octanesolutions.com.au
+
+
+
+
+
+ Objective 
+
+Migrate from existing legacy TM1 application to modern Planning Analytics platform. Provide guidance on licensing procurement and services to migrate the application.
+
+	About the client 
+
+Belron Canada, the Canadian division of Belron International, offers unique know-how, rigorous safety standards, customized service, state-of-the-art technologies and a comprehensive training program, which position us as a leader in vehicle glass repair, replacement and distribution, in addition to being experts in advanced driver assistance system (ADAS) front camera recalibration. We operate under the Speedy Glass, Lebeau Vitres d’autos, Apple Auto Glass and Broco Glass banners to ensure local service for our customers across Canada.
+
+More here https://www.belroncanada.com/
+
+	About us 
+
+For the best TM1 people in the world, CFOs talk to Octane. Octane supports Fortune 500 companies and is subject-matter experts in IBM Planning Analytics TM1 and other financial software. Octane is an IBM gold partner and an IBM Champion 2023. For five consecutive years, Octane has achieved less than one percent customer attrition.
+
+More here https://www.octanesolutions.com.au/
+
+	Background 
+
+The Client has a legacy TM1 application that is used bu Finance and operations teams to generate budgets, forecasts and actuals reporting. The current application is unsupported and unlicenced posing a risk to Belron Canada. Octane who has assisted Belron’s sister company in Australia (Obrien’s) through a similar path to upgrade and migrate to a new instance of TM1.
+
+Provide consulting expertise on correct versions of software and capacity planning
+
+Guidance and liaison to procure IBM licensing from a local IBM partner in Canada
+
+Migrate from Legacy TM1 to Planning Analytics TM1 
+
+Reconciliation and testing to ensure like for like Migration
+
+Super User and End User training on new functionality available to Belron Canada
+
+Octane will also provide application support service via Octane Blue. Octane Blue is support services and items out of scope for migration can be conducted via Octane Blue 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Client licensing 
+
+
+
+✪
+
+Modeler (admin)
+
+tbd
+
+Contributor (read/write) 
+
+Tbd
+
+Explorer (read only)
+
+Tbd
+
+TOTAL
+
+Tbd
+
+
+
+ Client environment 
+
+⚐
+
+Integrate with data source from GL and other finance systems
+
+IT will provide relevant support during upgrade 
+
+	Recommendations 
+
+
+
+✪
+
+
+
+High priority. Finalise licence procurement via IBM
+
+
+
+Medium priority. Detailed migration plan and timelines
+
+
+
+Low priority. Test plan and training schedule
+
+  TM1 Projects 
+
+To spin-up IBM Planning Analytics (TM1) and all its associated applications like Workspace and the Microsoft Excel interface, Octane offers TM1 Projects. Our Project team performs a migration of excel sheets and rules to TM1 Cubes as well as piping into TM1 required data sources and setting up user access. 
+
+Belron will provide infrastructure (servers) for Octane team to install software and configure source systems, data uploads and test
+
+As the new version of TM1 has a updated user interfaces Octane will provide training to Belron used on new functionality. High level timelines
+
+5 Reports (client selected) are included as part of upgrade. End user training would allow users to convert their reports or alternatively Octane Blue support services can be used for report conversion
+
+
+
+✪
+
+Wk 1
+
+Buy licenses and receive. Octane access, Stakeholder meetings, Finalise detailed plan
+
+Wk 2-3
+
+Install software, Install ad in , Configure source systems, validate data feeds, Reconcile historic actuals, validate and test chores, cube data , user security , 
+
+Wk 4
+
+Testing, user training, user acceptance testing
+
+
+
+Fee
+
+A$19,950 + GST
+
+
+
+ TM1 project inclusions and exclusions 
+
+
+
+Inclusions
+
+
+
+5 standard Report conversion
+
+
+
+1 Instance per Environment(Dev, Test and Production)
+
+
+
+20 User in Training Platform
+
+
+
+Coordination between IBM and Client to Install and configure  Secure Gateway
+
+
+
+TM1 Security Update
+
+
+
+Replacing CAM based Groups to TM1 Native Groups
+
+
+
+Setting up the automated  Backup of Model
+
+
+
+Clearing automation of Log files as per the Organization Policy
+
+
+
+SSO configuration coordination with IBM and IT team
+
+
+
+TM1 Instance Creation
+
+
+
+Setting up the appropriate Folder path
+
+
+
+Test run the TM1 process - one per source system
+
+
+
+Exclusions
+
+
+
+DB Service Account creation
+
+
+
+Exporting data from IBM PA Cloud to Local Server
+
+
+
+Importing date from Local Server to IBM PA Cloud
+
+
+
+Replicating Local server folder securities
+
+
+
+PAX Training for the extended user base
+
+
+
+ High level project plan 
+
+Environment
+
+Task details
+
+Days
+
+Responsible
+
+General
+
+Cloud Server Access Testing (Dev and Test)
+
+Day 1
+
+Octane
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Development
+
+Creating Instance(s)
+
+Day 1
+
+Octane
+
+Creating Secure Gateway connection
+
+Day 1
+
+Octane
+
+Installing Secure gateway client at client DB Server side
+
+Day 1
+
+Client
+
+Placing Config and ACL file at the Client DB Server side
+
+Day 2
+
+Client
+
+Establishing connection from TM1 cloud to On Prem DB
+
+Day 2
+
+Octane
+
+Copying the TM1 Objects from On-Perm to TM1 cloud
+
+Day 2
+
+Octane
+
+Starting the Instance After data copy
+
+Day 3
+
+Octane
+
+Validating the TM1 Objects between Cloud and On Prem
+
+Day 3
+
+Octane
+
+Test run a process with Secure Gateway Connection
+
+Day 3
+
+Octane
+
+Update the process(es) with the Secure Gateway connection
+
+Day 5
+
+Octane
+
+Converting named standard perspective reports to PAX reports
+
+Day 5
+
+Octane
+
+
+
+UAT
+
+Move the converted report to UAT
+
+Day 6
+
+Octane
+
+Updating the TM1 security
+
+Day 6
+
+Octane
+
+UAT Sign off from Client
+
+Day 7
+
+Client
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Production
+
+
+
+
+
+
+
+
+
+
+
+Creating Instance(s)
+
+Day 6
+
+Octane
+
+Creating Secure Gateway connection
+
+Day 6
+
+Octane
+
+Installing Secure gateway client at client DB Server side
+
+Day 6
+
+Client
+
+Establishing connection from TM1 cloud to On Prem DB
+
+Day 6
+
+Octane
+
+Copying the TM1 Objects from On-Perm to TM1 cloud
+
+Day 7
+
+Octane
+
+Starting the Instance After data copy
+
+Day 7
+
+Octane
+
+Validating the TM1 Objects between Cloud and On Prem
+
+Day 8
+
+Octane
+
+Test run a process with Secure Gateway Connection
+
+Day 8
+
+Octane
+
+Deploying the updated process
+
+Day 9
+
+Octane
+
+Deploying the Converted report to Production from Development
+
+Day 9
+
+Octane
+
+Sending Invite to the TM1 users
+
+Day 10
+
+Client
+
+
+
+Critical path 
+
+⚐
+
+✪
+
+Jan 31
+
+Client to provide an in-principle approval on resource plan
+
+Jan 31
+
+contract and purchase order complete, Licence purchased, Infrastructure ready 
+
+Feb 1 
+
+Octane to devise a hand-over checklist, stakeholder management, user expectations, and improve documentation with senior resources
+
+Feb 15
+
+Finalise upgrade 
+
+March 1
+
+End User training, final testing and launch of Planning Analytics TM1
+
+
+
+
+
+By signing and returning this document and/or submitting a purchase order in writing addressed to Octane Software Solutions, I warrant that I am legally authorised to enter into this agreement on behalf of my company. I confirm that I have received and read all pages of this document. I hereby accept this Quotation and I acknowledge and accept the terms and conditions contained herein. 
+
+
+
+
+
+
+
+. . . . . . . . . . . . . . . . . 
+
+
+
+Managing Director
+
+
+
+Amendra Pratap
+
+Octane Software Solutions Pty Ltd
+
+
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Client Signature / Date
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Client name
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Position
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Full Company Name  
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+ACN/ABN Number 
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Company address  
+
+
+
+
+

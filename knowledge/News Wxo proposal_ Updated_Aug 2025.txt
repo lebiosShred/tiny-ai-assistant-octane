@@ -1,0 +1,436 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Watson Orchestrate Proposal for
+
+NewsCorp 
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+Prepared by Sheila Ocana and reviewed by Amendra Pratap
+
+May 2025
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+we go the extra mile so you can go       the distance
+
+
+
+
+
+
+
+
+
+
+
+
+
+octanesolutions.com.au
+
+
+
+
+
+ About the client 
+
+News Corp Australia is one of the country’s leading media companies, reaching over 17 million Australians each month through its digital, print, and broadcast platforms. As part of the global News Corp network, it delivers trusted journalism, engaging content, and powerful marketing solutions. Its portfolio includes iconic brands like The Australian, news.com.au, and The Daily Telegraph, alongside lifestyle, real estate, and regional publications. With a strong commitment to innovation, storytelling, and community, News Corp Australia plays a vital role in shaping national conversations and connecting audiences with the news, information, and experiences that matter most.
+
+	About us 
+
+Octane is a premier global provider of IBM Planning Analytics and AI software solutions. Octane specializes in delivering advanced analytics, automation, and AI services, offering a competitive edge to businesses seeking to optimize their operations and drive strategic decision-making.
+
+With a strong focus on innovation, Octane delivers cost-effective services that deliver exceptional value to its clients. Leveraging the power of IBM Planning Analytics and Watson Orchestrate, Octane enables organizations to enhance their financial planning processes, streamline operations, and improve forecast accuracy.
+
+Octane stands out for its commitment to innovation and customer satisfaction. The company's team of experts collaborates closely with clients to understand their unique business challenges and develop tailored solutions that address their specific needs. By leveraging the latest advancements in AI and automation, Octane empowers businesses to stay ahead in today's dynamic business landscape.
+
+Embark on a transformative journey with Octane and discover how their innovative solutions can drive your business towards greater efficiency and success.
+
+More here https://www.octanesolutions.com.au/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	Background 
+
+News Corp Australia operates a complex and fast-paced media business, requiring timely, accurate, and insightful financial reporting to support decision-making at all levels. The Commercial Finance team is responsible for producing monthly executive summary reports, financial insights, and ad hoc data analysis across the organization. However, these tasks were heavily manual, time-consuming, and prone to data inconsistencies, duplication, and rework.
+
+
+
+The team identified several key challenges:
+
+
+
+Significant time was spent on repetitive manual processes like data extraction, cleansing, and formatting.
+
+Validation of data required extensive manual effort, especially when working across multiple systems such as TM1, Google Ad Manager, Adobe Analytics, and NewsQuery.
+
+Limited self-service capabilities meant executives relied on analysts for basic queries, leading to delays and inefficiencies.
+
+The growing volume and complexity of data made traditional reporting methods unsustainable.
+
+
+
+Recognizing the potential of artificial intelligence to streamline operations, News Corp Australia engaged IBM Client Engineering and Octane to explore how Generative AI could modernize the financial reporting process. It was agreed that POC would be the best way to showcase how IBM AI technology could transform this function.
+
+
+
+Approach: A Co-Creation Journey
+
+Over five weeks, IBM, Octane and News Corp co-developed a tailored PoC focused on automating the generation of executive-level financial reports and enabling real-time data access through conversational interfaces.
+
+The approach included:
+
+
+
+Design Thinking Workshops: IBM and News Corp stakeholders collaboratively defined use cases, pain points, and user personas. The team selected two focus areas: automated report generation and conversational financial queries.
+
+Data Integration: The team connected key enterprise systems (NewsQuery/BigQuery, TM1, Adobe Analytics, AdSlot) to create a unified data foundation. This allowed for consistent access to curated, validated financial data across reports.
+
+AI-Driven Automation: Using Python and IBM’s watsonx Orchestrate platform, the team built an automation pipeline capable of generating structured PowerPoint slides containing charts, KPIs, and commentary. The pilot focused on automating five commonly used slides from the Monthly FNL (Finance News & Listings) report.
+
+Conversational AI Layer: Leveraging IBM’s Bee AI framework, the team built a natural language query interface that allows users—particularly executive stakeholders—to ask financial questions and receive contextual, curated responses. This helped validate the vision of self-service analytics.
+
+Security and Scalability Considerations: The solution was designed with role-based access, integration into News Corp’s cloud environment (GCP), and support for multiple concurrent users—ensuring it could scale securely to broader use.
+
+Technical Demonstrations & Feedback Loops: Throughout the PoC, IBM and Octane demonstrated progress to the News Corp finance and technology teams, iterating on feedback and ensuring the prototypes aligned with user needs and business objectives.
+
+
+
+Pilot Scope
+
+Focused on five core slides from the executive financial report.
+
+Included natural language financial querying via the “AskFinance” assistant.
+
+Built as a modular, scalable framework with a clear pathway for future expansion.
+
+
+
+
+
+
+
+
+
+ POC Solution Overview 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Estimated Benefits – Current Project 
+
+
+
+
+
+
+
+ IBM AI technology 
+
+
+
+
+
+ Next Steps – Transition to Production   
+
+We propose a phased approach to Productionise the POC and then move on to automating reminder of the reports. This commercial proposal is for the licence, tokens and services required to Productionise the 30-slide report. Licence is SaaS based and can be used across News for other use cases. However, it may require additional tokens if it’s required to call Watson X for processing 
+
+ Licensing Cost 
+
+IBM Product
+
+License Required
+
+Pricing – Annual 
+
+D018PZX IBM Watsonx Orchestrate
+
+1 Enterprise License 
+
+$ 142,875
+
+D0FGVZX IBM Watsonx.ai
+
+Watson X cloud credits 
+
+$ 19,980
+
+
+
+Total – Annual 
+
+$ 162,855
+
+ Delivery Cost 
+
+Team 
+
+Responsibility
+
+Delivery Pricing – One off 
+
+IBM Expert Labs 
+
+Solution Architecture
+
+Handover from IBM Client Engineering
+
+Productionise 5 slides (Phase1)
+
+Productionise 30 slides (Phase2)
+
+Technical ownership of Project
+
+UI Interface 
+
+
+
+$ 87,500
+
+Octane AI team 
+
+Data Integration with News Query, Adobe TM1
+
+Project management 
+
+Technical Development
+
+End User Training 
+
+Documentation 
+
+
+
+$ 37,500
+
+
+
+Total – Annual 
+
+$ 125,000
+
+
+
+
+
+
+
+
+
+Total Project Cost
+
+$ 287,855
+
+
+
+
+
+ Commercial Approval 
+
+By signing and returning this document and/or submitting a purchase order in writing addressed to Octane Software Solutions, I warrant that I am legally authorised to enter into this agreement on behalf of my company. I confirm that I have received and read all pages of this document. I hereby accept this Quotation and I acknowledge and accept the terms and conditions contained herein. 
+
+
+
+
+
+. . . . . . . . . . . . . . . . . 
+
+
+
+Amendra Pratap – Octane Software Solutions
+
+
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Client Signature / Date
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Client name
+
+
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Position
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+Full Company Name  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Appendix – Future AI use cases across enterprise using Orchestrate as Agentic AI 
+
+Business Area
+
+Common Use Cases – Watson Orchestrate
+
+Sales & Advertising
+
+- Automate ad campaign reporting and billing workflows 
+
+- Generate real-time advertiser performance dashboards 
+
+- Streamline client onboarding and contract setup
+
+Editorial Operations
+
+- Automate content performance summaries across platforms 
+
+- Schedule and publish stories based on AI-driven recommendations 
+
+- Reduce time spent on content tagging and SEO optimisation
+
+Human Resources (HR)
+
+- Automate employee onboarding, policy acknowledgment, and benefits enrollment 
+
+- Support query resolution via HR chatbots 
+
+- Streamline performance appraisal reminders and data collection
+
+Customer Support
+
+- Provide AI-assisted ticket triaging and routing 
+
+- Generate summaries of customer interactions 
+
+- Automate follow-ups or escalate based on sentiment or urgency
+
+Marketing
+
+- Generate campaign performance reports across platforms (email, social, web) 
+
+- Automate competitor analysis and trend monitoring 
+
+- Curate content calendars from engagement data
+
+IT & Security Ops
+
+- Automate routine health checks, alerts, and patch updates 
+
+- Trigger workflows for access provisioning and revocation 
+
+- Streamline incident management and escalation paths
+
+Procurement
+
+- Automate vendor onboarding and compliance verification 
+
+- Generate insights on purchase orders, spend analysis, and contract renewals
+
+Legal & Compliance
+
+- Assist with document summarization, version tracking, and legal risk tagging 
+
+- Ensure consistency in compliance reporting and deadline reminders
+
+
+
+
+

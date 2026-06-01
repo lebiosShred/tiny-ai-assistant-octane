@@ -100,6 +100,21 @@ async function loadPricingCatalog() {
      */
     async function generateProspectDossier(params, customConfig = {}) {
         const config = { ...DEFAULT_CONFIG, ...customConfig };
+        try {
+            const distanceRes = await fetch('/api/calculate-distance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ destination: params.company })
+            });
+            if (distanceRes.ok) {
+                const data = await distanceRes.json();
+                params.transitDistance = data.distanceString || "Online/Phone call only (Distance unavailable)";
+            } else {
+                params.transitDistance = "Online/Phone call only (Distance unavailable)";
+            }
+        } catch (e) {
+            params.transitDistance = "Online/Phone call only (API Error)";
+        }
         const prompt = `You are a sales preparation assistant for Octane Software Solutions.
 I am about to have a 30-minute pre-screen call with a prospect. Using the inputs below and your knowledge of Octane's services (IBM TM1/Planning Analytics managed support, Watsonx Orchestrate agentic AI integrations, and DataFusion connectors), produce a 12-POINT BRIEFING.
 
@@ -128,46 +143,60 @@ Refer to these standard target customer profiles for Octane to classify the pros
 - MidMarket AI in Finance: CFO. Pain: Month-end reporting is manual/slow, CFO chasing data, no self-serve reporting, board packs take too long, struggling to hire, turnover $100M-$500M. Product: FastClose entry point, then upsell to Finance Agent.
 - IBM PA + AI Upgrade (Existing TM1 Shops): CFO, System Owner, Head of FP&A. Pain: TM1 not delivering AI-powered insights, investment underutilized, competitor pressure, manual reporting. Product: Finance Agent on top of existing Planning Analytics.
 
+--- HISTORICAL CLIENT PROFILES ---
+Use these real examples for peer credibility stories:
+- Steric (Life Sciences): Olivia McKellar / Vicki Carline. Deanna Chapman. Product in Use: Octane Blue Support. Limited TM1 bandwidth.
+- GreyOrange (Supply Chain Automation): Nageswara Reddy Kondreddy. Product in Use: Octane Blue. APAC operations support.
+- Iqony / STEAG (Energy): Carola Jochheim. Product in Use: DataFusion. SAP to PA integration.
+- Shift (FinTech / Auto Finance): Alvin Ah-Chok. Product in Use: Octane Blue & IBM Planning Analytics. Slow cycles, spreadsheet sprawl.
+- mycar (Retail / Automotive): Olivia McKellar. Product in Use: Additional RAM & IBM Planning Analytics Upgrade. Legacy TM1 memory bottleneck.
+- McPherson’s (Consumer Goods): Will Clemente. Product in Use: IBM Planning Analytics. Large analytics transformation.
+- News Corp Australia (Media): Ritwik Deo. Product in Use: TeamOne/TM1 Renewal.
+- Fintechs (AP Pain Point): raised Series C, $10M+ revenue, Scenario A (AP Volume): TM1, Scenario B (Hiring AP): AI Assistants.
+
 --- OUTPUT INSTRUCTIONS ---
 You MUST separate each section with its corresponding delimiter string EXACTLY as shown below. Do not include any other markdown fences or conversations outside of these blocks. Format the content inside sections in clean HTML using standard tags like <p>, <ul>, <li>, <strong>, and <br>.
+You are strictly forbidden from using the words 'likely', 'probably', 'standard', or 'general'. If you do not have hard evidence from the RAG inputs, output 'UNKNOWN' or 'NO DATA'.
 
 Use these delimiters:
 
 === LINKEDIN ANALYSIS ===
-Analyze their LinkedIn profile: role history, tenure, seniority, network signals.
+Extract the exact names of the prospect's 3 most recent companies, their exact job titles, and their university/education. If none are found in the RAG context, output exactly: 'NO DATA'. Do not summarize. List the hard facts.
 
 === COMPANY OVERVIEW ===
-Company overview: products, services, revenue signals, industry.
+Company overview: Extract specific products, services, and recent corporate news or triggers from the RAG context. If none found, output 'NO DATA'.
 
-=== OCTANE SERVICES ===
-Octane services relevant to this prospect: customize based on track, client size, and company.
+=== DISCOVERY TRACK CLASS ===
+Classify the prospect into:
+- **Variant A (First-Time TM1 / Planning Analytics User)**: If they consolidate data manually in Excel spreadsheets.
+- **Variant B (Existing TM1 / Planning Analytics User)**: If they already run IBM Planning Analytics / TM1 but face support bottlenecks or migration requirements.
 
-=== OCTANE COMPETITORS ===
-Key competitors this prospect may be evaluating.
+=== TAILORED PLAYBOOK QUESTIONS ===
+Provide 4-5 specific open-ended discovery questions. DO NOT use generic questions. Map the questions explicitly to their exact job title and their specific industry.
+
+=== RELEVANT OCTANE SERVICES & PRICING ===
+Specify the exact recommended package with pricing (e.g. DevOps Blue Support at A$4,560/mo flat-rate, TM1 Flight Check fixed audit at A$5,800, or DataFusion Setup at A$6,950, or watsonx AI Pilots starting at $125,000).
+
+=== PEER CREDIBILITY STORY ===
+Map this prospect's exact sector and stack to 1-2 relevant Octane historical clients (Steric, GreyOrange, mycar, Iqony, Shift, News Corp, McPherson's). Explain how Octane resolved a similar pain point.
 
 === COMPETING APPLICATIONS ===
-Competing applications they may already use (e.g., Anaplan, Workday Adaptive, manual Excel).
+Detail competing systems they are evaluating. Only list systems explicitly mentioned in the RAG or highly specific to their exact niche. If unknown, output 'UNKNOWN'. Do not guess.
 
-=== COMPLEMENTARY APPLICATIONS ===
-Complementary applications in their stack (e.g., NetSuite, SAP, Power BI).
-
-=== TM1 AND AI APPLICATIONS ===
-TM1 or AI applications relevant to their industry/role.
+=== COMPLEMENTARY STACK APPLICATIONS ===
+Detail ERP systems (SAP, NetSuite, Dynamics) and BI tools (Power BI, Tableau) present in their RAG technographics. If unknown, output 'UNKNOWN'. Do not guess.
 
 === RELEVANCE ASSESSMENT ===
-Relevance assessment of their business size/revenue vs Octane's products (Octane Black, Octane Blue, AI layer, etc.).
+Qualify their business size and revenue markers against Octane's core products.
 
-=== PAIN POINTS ===
-Likely pain points based on role, company size, and service interest.
+=== LIKELY PAIN POINTS ===
+3 specific pain points mapped explicitly to their job title. If the title is CFO, list 3 financial metrics they care about. If the title is IT, list 3 technical bottlenecks. Do not use generic spreadsheet examples unless they are Variant A.
 
-=== CONVERSATION STARTERS ===
-3 specific openers that demonstrate relevance from the first sentence (do NOT use generic discovery questions).
-
-=== CUSTOMER PROFILES ===
-Classify the prospect into one of Octane's 9 target customer profiles based on the playbook. Detail the rationale and recommended product/service.
+=== HIGH-IMPACT OPENERS ===
+3 concrete conversation openers. Combine a specific fact from their career history or company news with a target metric question.
 
 === TRAVEL DISTANCE ===
-Estimate the travel distance/time for an in-person meeting. The travel origin is System Administrator's home address (Richmond, Melbourne, VIC 3121). Based on the prospect's company address or office location (e.g., if Australian/Melbourne, compute drive/transit time, if interstate or international, indicate 'Online/Phone only'). Output only a brief string, e.g., '~45 min from System Administrator's location' or 'Online/Phone call'.`;
+Output exactly this string: "${params.transitDistance || "Online/Phone call only (Distance unavailable)"}". Do not add any additional explanation.`;
 
         const messages = [
             {
@@ -200,38 +229,43 @@ Estimate the travel distance/time for an in-person meeting. The travel origin is
 === COMPANY OVERVIEW ===
 <p><strong>Company Overview:</strong> Factual background for ${targetCompany} requires an active server-side search connection. In offline/mock mode, this section degrades gracefully to protect data integrity.</p>
 
-=== OCTANE SERVICES ===
-<p><strong>Relevant Octane Services:</strong> Based on the identified track (<strong>${targetTrack}</strong>), Octane would focus on aligning their services with ${targetCompany}. Typical tracks include IBM Planning Analytics / TM1 Managed support for finance departments or Watsonx agentic automations.</p>
+=== DISCOVERY TRACK CLASS ===
+<p><strong>Discovery Track:</strong> Variant A (First-Time TM1 / Planning Analytics User) based on offline analysis of spreadsheets usage.</p>
 
-=== OCTANE COMPETITORS ===
-<p><strong>Key Competitors:</strong> Competitor analysis requires live context. (Standard industry-specific competitors would be mapped in live mode).</p>
+=== TAILORED PLAYBOOK QUESTIONS ===
+<p><strong>Tailored Playbook Questions:</strong></p>
+<ul>
+    <li>What general ledger/ERP system (e.g. NetSuite) are you using, and does it currently integrate with your planning tool?</li>
+    <li>How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting?</li>
+    <li>Do you manually export CSV files to reconcile data?</li>
+</ul>
+
+=== RELEVANT OCTANE SERVICES & PRICING ===
+<p><strong>Recommended Octane Services & Pricing:</strong> Octane DevOps Blue Support at A$4,560/month base support flat-rate (rollover hours included).</p>
+
+=== PEER CREDIBILITY STORY ===
+<p><strong>Peer Credibility Story:</strong> Similar to <strong>Meridian Logistics</strong>, who transitioned from 35 manual spreadsheets to automated NetSuite loading using DataFusion NetSuite Connector, saving 3 close days per month.</p>
 
 === COMPETING APPLICATIONS ===
 <p><strong>Competing Applications:</strong> Excel spreadsheets remain the primary competing manual planning interface. Mid-to-enterprise scale systems typically run Anaplan, Workday Adaptive, or legacy Planning Analytics models.</p>
 
-=== COMPLEMENTARY APPLICATIONS ===
+=== COMPLEMENTARY STACK APPLICATIONS ===
 <p><strong>Complementary Applications:</strong> Common enterprise systems found in similar stacks include typical ERPs (SAP, NetSuite, Microsoft Dynamics) and BI tools (Power BI, Tableau).</p>
-
-=== TM1 AND AI APPLICATIONS ===
-<p><strong>Planning Applications:</strong> Standard multi-dimensional planning models mapping to the prospect's profile as a ${targetTitle} in corporate planning cycles.</p>
 
 === RELEVANCE ASSESSMENT ===
 <p><strong>Relevance Assessment:</strong> Pending live tech stack mapping. The lead represents a ${targetTitle} at ${targetCompany}, which requires validation of their user scale and revenue markers.</p>
 
-=== PAIN POINTS ===
+=== LIKELY PAIN POINTS ===
 <p><strong>Likely Pain Points:</strong> Based on the job title <strong>${targetTitle}</strong>, standard pain points center around manual reporting cycles, spreadsheet sprawl, data consolidation latency, and high resource costs for system support.</p>
 
-=== CONVERSATION STARTERS ===
+=== HIGH-IMPACT OPENERS ===
 <p><strong>Conversation Starters:</strong>
 1. Address the service track interest: <em>"${targetTrack}"</em>.<br>
 2. Reference booking intake answers: <em>"${targetIntake}"</em>.<br>
 3. Ask how ${targetCompany} currently handles manual consolidation bottlenecks across their department.</p>
 
-=== CUSTOMER PROFILES ===
-<p><strong>Octane Customer Profile:</strong> Rationale requires live API analysis. The lead's title (<em>${targetTitle}</em>) suggests alignment with finance operational playbooks, pending corporate revenue and system scale metrics.</p>
-
 === TRAVEL DISTANCE ===
-~45 min from System Administrator's location (Richmond, Melbourne, VIC 3121) or Online/Phone
+~45 min from Amendra's location (Richmond, Melbourne, VIC 3121) or Online/Phone
 <!-- METADATA: {"name": "${targetName.replace(/"/g, '\\"')}", "company": "${targetCompany.replace(/"/g, '\\"')}", "title": "${targetTitle.replace(/"/g, '\\"')}", "track": "${targetTrack.replace(/"/g, '\\"')}", "intake": "${targetIntake.replace(/"/g, '\\"')}"} -->`;
         }
     }
