@@ -2276,7 +2276,24 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
             gDriveFileId = `mock-tm1-${Date.now()}`;
         }
         
-        gDriveFileContent = `Name: ${name}\nEmail: ${email}\nPhone number: ${phone}\nCompany: ${company}\nPosition: ${title}\nService Interest: ${track}`;
+        let discussTopics = "No specific topics provided.";
+        const match = intake.match(/Discuss details:\s*(.*)/);
+        if (match && match[1]) {
+            discussTopics = match[1].trim();
+        }
+
+        const pdfData = {
+            name: name,
+            company: company,
+            title: title,
+            track: track,
+            email: email,
+            phone: phone,
+            rep: latestBooking ? latestBooking.rep || 'Round Robin' : 'Round Robin',
+            discuss: discussTopics
+        };
+        
+        gDriveFileContent = JSON.stringify(pdfData);
         
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({

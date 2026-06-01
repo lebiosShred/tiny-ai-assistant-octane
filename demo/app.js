@@ -3388,13 +3388,52 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
             const mockPre = document.getElementById('mock-pdf-text-target');
             if (mockPre) mockPre.style.display = 'none';
 
+            let pdfContent = [];
+            try {
+                const data = JSON.parse(attachedGDriveFileContent);
+                pdfContent = [
+                    { text: `New Pre-Screen Booking: ${data.name} — ${data.company}`, fontSize: 18, bold: true, margin: [0, 0, 0, 20] },
+                    {
+                        layout: 'lightHorizontalLines',
+                        table: {
+                            headerRows: 0,
+                            widths: [150, '*'],
+                            body: [
+                                [ { text: 'Prospect', bold: true }, data.name || 'N/A' ],
+                                [ { text: 'Company', bold: true }, data.company || 'N/A' ],
+                                [ { text: 'Position', bold: true }, data.title || 'N/A' ],
+                                [ { text: 'Service Interest', bold: true, color: '#315a7a' }, { text: data.track || 'N/A', color: '#315a7a' } ],
+                                [ { text: 'Email', bold: true }, data.email || 'N/A' ],
+                                [ { text: 'Phone', bold: true }, data.phone || 'N/A' ]
+                            ]
+                        },
+                        margin: [0, 0, 0, 20]
+                    },
+                    {
+                        text: 'Discussion Topics:',
+                        bold: true,
+                        fontSize: 14,
+                        margin: [0, 10, 0, 10]
+                    },
+                    {
+                        text: data.discuss || 'No discussion topics provided.',
+                        italics: true,
+                        margin: [0, 0, 0, 0]
+                    }
+                ];
+            } catch (e) {
+                // Fallback for plain text
+                pdfContent = [
+                    { text: attachedGDriveFileContent || 'No mock content provided.', fontSize: 12, lineHeight: 1.5 }
+                ];
+            }
+
             // Generate physical PDF in-memory via pdfMake
             const docDefinition = {
-                content: [
-                    { text: attachedGDriveFileContent || 'No mock content provided.', fontSize: 12, lineHeight: 1.5 }
-                ],
+                content: pdfContent,
                 defaultStyle: {
-                    font: 'Roboto'
+                    font: 'Roboto',
+                    fontSize: 12
                 }
             };
             
