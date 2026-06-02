@@ -128,8 +128,13 @@ async function getFileContent(fileId) {
             }, { responseType: 'arraybuffer' });
 
             const buffer = Buffer.from(downloadResponse.data);
-            const data = await pdfParse(buffer);
-            return data.text;
+            try {
+                const data = await pdfParse(buffer);
+                return data.text;
+            } catch (pdfErr) {
+                console.warn(`⚠️ PDF parse failed for ${name} (${pdfErr.message}). Falling back to text decoding...`);
+                return buffer.toString('utf8');
+            }
         }
 
         // Generic text files (txt, csv, logs, etc.)
