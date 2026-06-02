@@ -2268,12 +2268,17 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
         let gDriveFileId = "";
         let gDriveFileContent = "";
 
-        if (isAI) {
-            gDriveFile = `${company.replace(/\s+/g, '_')}_AI_Strategy_2026.pdf`;
-            gDriveFileId = `mock-ai-${Date.now()}`;
+        if (latestBooking && latestBooking.gDriveFileId) {
+            gDriveFile = latestBooking.gDriveFile;
+            gDriveFileId = latestBooking.gDriveFileId;
         } else {
-            gDriveFile = `${company.replace(/\s+/g, '_')}_TM1_Migration_SOW.pdf`;
-            gDriveFileId = `mock-tm1-${Date.now()}`;
+            if (isAI) {
+                gDriveFile = `${company.replace(/\s+/g, '_')}_AI_Strategy_2026.pdf`;
+                gDriveFileId = `mock-ai-${Date.now()}`;
+            } else {
+                gDriveFile = `${company.replace(/\s+/g, '_')}_TM1_Migration_SOW.pdf`;
+                gDriveFileId = `mock-tm1-${Date.now()}`;
+            }
         }
         
         let discussTopics = "No specific topics provided.";

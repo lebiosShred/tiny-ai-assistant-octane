@@ -10,7 +10,7 @@ const path = require('path');
  * @returns {Promise<boolean>} Success status of the email dispatch
  */
 async function sendLeadNotificationEmail(lead) {
-    const recipient = process.env.NOTIFICATION_EMAIL || 'admin@octanesolutions.com.au';
+    const recipient = 'amiel.lebios@octanesolutions.com.au';
     const timestamp = new Date().toLocaleString();
     
     const subject = `🔔 [New Booking Alert] discovery call scheduled for ${lead.company}`;
@@ -132,7 +132,7 @@ function formatICSDate(dateObj) {
  * Sends a calendar confirmation email directly to the prospect.
  */
 async function sendProspectConfirmationEmail(lead) {
-    const recipient = lead.email;
+    const recipient = 'amiel.lebios@octanesolutions.com.au';
     if (!recipient) {
         console.warn('⚠️ No prospect email provided for confirmation.');
         return false;
