@@ -60,16 +60,17 @@ test.describe('Aegis Functional E2E Suite', () => {
         const indexPage = new IndexPage(page);
         await indexPage.goto();
         await indexPage.loadSample();
+        await page.waitForFunction(() => document.querySelector('#prep-name').value !== '', { timeout: 10000 });
         await indexPage.submitForm();
         await indexPage.waitForDossier(20000);
         await indexPage.goToPlaybook();
         await indexPage.switchVariant('B');
 
-        // Wait for variant to load by checking counter text contains a number
+        // Wait for Variant B to specifically finish loading (10 questions total)
         await page.waitForFunction(
             () => {
                 const el = document.querySelector('#teleprompter-counter');
-                return el && /\d+/.test(el.innerText);
+                return el && el.innerText.includes('10');
             },
             { timeout: 5000 }
         );
@@ -83,6 +84,7 @@ test.describe('Aegis Functional E2E Suite', () => {
         const indexPage = new IndexPage(page);
         await indexPage.goto();
         await indexPage.loadSample();
+        await page.waitForFunction(() => document.querySelector('#prep-name').value !== '', { timeout: 10000 });
         await indexPage.submitForm();
         await indexPage.waitForDossier(20000);
         await indexPage.goToPlaybook();

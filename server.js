@@ -1518,10 +1518,13 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     }
                     
                     let query = '';
+                    let competitorQuery = '';
                     if (prospectName && companyName) {
                         query = `"${prospectName}" "${companyName}"`;
+                        competitorQuery = `competitors competing applications planning PA TM1 ERP for "${companyName}"`;
                     } else if (companyName) {
                         query = `"${companyName}" news OR products`;
+                        competitorQuery = `competitors competing applications planning PA TM1 ERP for "${companyName}"`;
                     } else if (prospectName) {
                         query = `"${prospectName}" LinkedIn`;
                     }
@@ -1531,6 +1534,14 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         webSearchResults = await searchWeb(query);
                         if (webSearchResults) {
                             console.log(`🌐 Web search completed. Results size: ${webSearchResults.length} chars.`);
+                        }
+                        if (competitorQuery) {
+                            console.log(`🌐 Performing parallel Tavily competitor search for: ${competitorQuery}`);
+                            const compResults = await searchWeb(competitorQuery);
+                            if (compResults) {
+                                console.log(`🌐 Competitor search completed. Results size: ${compResults.length} chars.`);
+                                webSearchResults += `\n\n=== COMPETITOR WEB SEARCH ===\n${compResults}`;
+                            }
                         }
                     }
                 }
@@ -2531,7 +2542,20 @@ Use exactly these 12 keys:
   "TRAVEL DISTANCE": "..."
 }
 If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
-                    const userPrompt = `--- BEGIN EXTERNAL CONTEXT ---\n${simulatedLinkedIn}\n\n${simulatedDrive}\n--- END EXTERNAL CONTEXT ---\n\n--- BEGIN TRANSCRIPT ---\n${transcript}\n--- END TRANSCRIPT ---\n\nGenerate the output.`;
+                    let competitorResults = "";
+                    if (company && company !== "Unknown Company" && company !== "Meridian Logistics") {
+                        const competitorQuery = `competitors competing applications planning PA TM1 ERP for "${company}"`;
+                        console.log(`🌐 Performing sample loadout Tavily competitor search for: ${competitorQuery}`);
+                        try {
+                            competitorResults = await searchWeb(competitorQuery);
+                        } catch (e) {
+                            console.error("⚠️ Sample loadout competitor search failed:", e);
+                        }
+                    } else if (company === "Meridian Logistics") {
+                        competitorResults = "Source: Market Analysis (Internal)\nContent: Meridian Logistics is actively evaluating Anaplan and Workday Adaptive Planning to replace manual Excel workflows. Standard NetSuite ERP stack identified.";
+                    }
+
+                    const userPrompt = `--- BEGIN EXTERNAL CONTEXT ---\n${simulatedLinkedIn}\n\n${simulatedDrive}\n--- END EXTERNAL CONTEXT ---\n\n--- BEGIN WEB SEARCH CONTEXT ---\n${competitorResults}\n--- END WEB SEARCH CONTEXT ---\n\n--- BEGIN TRANSCRIPT ---\n${transcript}\n--- END TRANSCRIPT ---\n\nGenerate the output.`;
                     
                     generatedText = await generateAICompletion(systemPrompt, userPrompt);
                 } catch (completionErr) {

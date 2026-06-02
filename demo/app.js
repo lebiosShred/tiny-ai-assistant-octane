@@ -422,9 +422,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             contextCard.remove();
                         }
                         rapportGuideBody.innerHTML = tempDiv.innerHTML;
-                        // Auto-expand Rapport Guide
-                        rapportGuideBody.style.display = 'block';
-                        if (rapportGuideToggleIcon) rapportGuideToggleIcon.innerText = '▲ Collapse';
+                        // Keep Rapport Guide collapsed by default to allow Dossier Quick Reference visibility
+                        rapportGuideBody.style.display = 'none';
+                        if (rapportGuideToggleIcon) rapportGuideToggleIcon.innerText = '▶ Expand';
                     })
                     .catch(err => {
                         console.warn("Failed to generate rapport guide:", err);
@@ -1385,10 +1385,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (stepNum === 2) {
             renderBattlecards();
             renderQuickReference();
-            // Auto-expand Rapport Guide when entering Step 2
+            // Auto-collapse Rapport Guide when entering Step 2 to allow Dossier Quick Reference visibility
             if (rapportGuideBody && rapportGuideToggleIcon) {
-                rapportGuideBody.style.display = 'block';
-                rapportGuideToggleIcon.innerText = '▲ Collapse';
+                rapportGuideBody.style.display = 'none';
+                rapportGuideToggleIcon.innerText = '▶ Expand';
             }
         } else if (stepNum === 3) {
             if (currentDocs) {
@@ -2274,9 +2274,9 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
                             contextCard.remove();
                         }
                         rapportGuideBody.innerHTML = tempDiv.innerHTML;
-                        // Auto-expand Rapport Guide
-                        rapportGuideBody.style.display = 'block';
-                        if (rapportGuideToggleIcon) rapportGuideToggleIcon.innerText = '▲ Collapse';
+                        // Auto-collapse Rapport Guide to prioritize Dossier Quick Reference view
+                        rapportGuideBody.style.display = 'none';
+                        if (rapportGuideToggleIcon) rapportGuideToggleIcon.innerText = '▶ Expand';
                     })
                     .catch(err => {
                         console.warn("Failed to generate rapport guide:", err);
@@ -3460,6 +3460,42 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
             const mockPre = document.getElementById('mock-pdf-text-target');
             if (mockPre) mockPre.style.display = 'none';
 
+            // Check if it's already a raw PDF binary string
+            if (typeof attachedGDriveFileContent === 'string' && attachedGDriveFileContent.trim().startsWith('%PDF')) {
+                const binStr = attachedGDriveFileContent;
+                const len = binStr.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binStr.charCodeAt(i) & 0xff;
+                }
+
+                const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+                if (lib) {
+                    lib.getDocument({ data: bytes }).promise.then(pdf => {
+                        return pdf.getPage(1);
+                    }).then(page => {
+                        const scale = 1.25;
+                        const viewport = page.getViewport({ scale: scale });
+                        
+                        pdfRenderTarget.height = viewport.height;
+                        pdfRenderTarget.width = viewport.width;
+                        
+                        const renderContext = {
+                            canvasContext: ctx,
+                            viewport: viewport
+                        };
+                        page.render(renderContext);
+                    }).catch(err => {
+                        console.error('Error rendering binary PDF:', err);
+                        showToast('Failed to render PDF preview.', 'error');
+                    });
+                } else {
+                    console.error('PDF.js library failed to load globally.');
+                    showToast('Failed to load PDF viewer engine.', 'error');
+                }
+                return;
+            }
+
             let pdfContent = [];
             try {
                 const data = JSON.parse(attachedGDriveFileContent);
@@ -3663,12 +3699,12 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
 
             // Show progress state
             if (progressContainer) progressContainer.classList.remove('hidden');
-            if (progressBar) progressBar.style.width = '20%';
+            if (progressBar) progressBar.style.setProperty('--progress', '20%');
             if (statusText) statusText.innerText = "Reading audio file...";
 
             const reader = new FileReader();
             reader.onload = async (e) => {
-                if (progressBar) progressBar.style.width = '40%';
+                if (progressBar) progressBar.style.setProperty('--progress', '40%');
                 if (statusText) statusText.innerText = "Transcribing audio call recording...";
 
                 const base64Audio = e.target.result.split(',')[1];
@@ -3697,14 +3733,14 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
                         })
                     });
 
-                    if (progressBar) progressBar.style.width = '80%';
+                    if (progressBar) progressBar.style.setProperty('--progress', '80%');
                     const data = await res.json();
 
                     if (!res.ok) {
                         throw new Error(data.error || `HTTP error ${res.status}`);
                     }
 
-                    if (progressBar) progressBar.style.width = '100%';
+                    if (progressBar) progressBar.style.setProperty('--progress', '100%');
                     if (statusText) statusText.innerText = "Success! Loaded transcript.";
 
                     // Inject transcript into Step 3
@@ -3723,7 +3759,7 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
                     // Hide progress container after a short delay
                     setTimeout(() => {
                         if (progressContainer) progressContainer.classList.add('hidden');
-                        if (progressBar) progressBar.style.width = '0%';
+                        if (progressBar) progressBar.style.setProperty('--progress', '0%');
                         
                         // Automatically progress to Step 3
                         goToStep(3);

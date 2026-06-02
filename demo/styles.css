@@ -2441,7 +2441,7 @@ body.resizing * {
     left: 0;
     top: 0;
     height: 100%;
-    width: 0%;
+    width: var(--progress, 0%);
     background: linear-gradient(90deg, #8b5cf6, #a78bfa);
     border-radius: 3px;
     transition: width 0.3s ease;
