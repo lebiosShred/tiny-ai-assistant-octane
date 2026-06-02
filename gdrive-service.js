@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { google } = require('googleapis');
 const pdfParse = require('pdf-parse');
+const PDFDocument = require('pdfkit');
 
 // Load environment variables if dotenv is available (local dev)
 if (fs.existsSync(path.join(__dirname, '.env'))) {
@@ -206,20 +207,32 @@ async function createIntakeFile(fileName, contentText, parentFolderId) {
         throw new Error('Google Drive client not initialized. Check credentials.');
     }
 
-    const { Readable } = require('stream');
+    const { PassThrough } = require('stream');
     const folderId = parentFolderId || process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
 
     try {
         console.log(`📤 Uploading lead intake file "${fileName}" to GDrive folder: ${folderId}`);
+        
+        // Generate PDF Stream
+        const doc = new PDFDocument({ margin: 50 });
+        const stream = new PassThrough();
+        doc.pipe(stream);
+        
+        // Add content to PDF
+        doc.fontSize(20).font('Helvetica-Bold').text('Octane Solutions - Lead Intake', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).font('Helvetica').text(contentText);
+        doc.end();
+
         const fileMetadata = {
             name: fileName,
             parents: [folderId],
-            mimeType: 'text/plain'
+            mimeType: 'application/pdf'
         };
 
         const media = {
-            mimeType: 'text/plain',
-            body: Readable.from([contentText])
+            mimeType: 'application/pdf',
+            body: stream
         };
 
         const response = await drive.files.create({

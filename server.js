@@ -2643,7 +2643,7 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                                 try {
                                     const cleanCompany = payload.company.replace(/[^a-zA-Z0-9]/g, '_');
                                     const cleanName = payload.name.replace(/[^a-zA-Z0-9]/g, '_');
-                                    const gdriveName = `Lead_Intake_${cleanCompany}_${cleanName}.txt`;
+                                    const gdriveName = `Lead_Intake_${cleanCompany}_${cleanName}.pdf`;
                                     
                                     driveFile = await gdriveService.createIntakeFile(gdriveName, payload.intakeAnswers);
                                     
