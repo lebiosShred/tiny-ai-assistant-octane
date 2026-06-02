@@ -8,7 +8,6 @@ if (fs.existsSync(path.join(__dirname, '.env'))) {
     require('dotenv').config();
 }
 
-const KEY_FILE_PATH = path.join(__dirname, 'credentials', 'google-service-account.json');
 let driveClient = null;
 
 // Initialize Google Drive API client
@@ -17,19 +16,24 @@ function getDriveClient() {
         return driveClient;
     }
 
-    if (!fs.existsSync(KEY_FILE_PATH)) {
-        console.warn(`⚠️ Google Drive Service Account key not found at: ${KEY_FILE_PATH}. Real GDrive API calls will fail.`);
+    if (!process.env.GDRIVE_CLIENT_ID || !process.env.GDRIVE_REFRESH_TOKEN) {
+        console.warn('⚠️ Google Drive OAuth2 credentials not found in environment. Real GDrive API calls will fail.');
         return null;
     }
 
     try {
-        const auth = new google.auth.GoogleAuth({
-            keyFile: KEY_FILE_PATH,
-            scopes: ['https://www.googleapis.com/auth/drive']
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.GDRIVE_CLIENT_ID,
+            process.env.GDRIVE_CLIENT_SECRET,
+            'http://localhost:8080'
+        );
+
+        oauth2Client.setCredentials({
+            refresh_token: process.env.GDRIVE_REFRESH_TOKEN
         });
 
-        driveClient = google.drive({ version: 'v3', auth });
-        console.log('✅ Google Drive API client initialized successfully.');
+        driveClient = google.drive({ version: 'v3', auth: oauth2Client });
+        console.log('✅ Google Drive API client initialized successfully via OAuth2.');
         return driveClient;
     } catch (err) {
         console.error('❌ Failed to initialize Google Drive API client:', err);
