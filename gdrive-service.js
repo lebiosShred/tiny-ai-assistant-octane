@@ -213,16 +213,23 @@ async function createIntakeFile(fileName, contentText, parentFolderId) {
     try {
         console.log(`📤 Uploading lead intake file "${fileName}" to GDrive folder: ${folderId}`);
         
-        // Generate PDF Stream
+        // Generate PDF Buffer
         const doc = new PDFDocument({ margin: 50 });
-        const stream = new PassThrough();
-        doc.pipe(stream);
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
         
-        // Add content to PDF
-        doc.fontSize(20).font('Helvetica-Bold').text('Octane Solutions - Lead Intake', { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(12).font('Helvetica').text(contentText);
-        doc.end();
+        const pdfBuffer = await new Promise((resolve, reject) => {
+            doc.on('end', () => resolve(Buffer.concat(buffers)));
+            doc.on('error', reject);
+            
+            // Add content to PDF
+            doc.fontSize(20).font('Helvetica-Bold').text('Octane Solutions - Lead Intake', { align: 'center' });
+            doc.moveDown();
+            doc.fontSize(12).font('Helvetica').text(contentText);
+            doc.end();
+        });
+
+        const stream = require('stream').Readable.from(pdfBuffer);
 
         const fileMetadata = {
             name: fileName,
