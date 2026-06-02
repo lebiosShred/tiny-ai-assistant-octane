@@ -2065,14 +2065,15 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
         showToast("Prefilled Structural Empty State Template!");
     });
 
-    // --- Dossier Parsing & Rendering Helper Functions ---
     function parseDossierResponse(text) {
         try {
-            return JSON.parse(text);
+            // Clean markdown code blocks (e.g. ```json or ```html)
+            const cleanText = text.replace(/^```(?:json|html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+            return JSON.parse(cleanText);
         } catch (e) {
-            console.error("Failed to parse JSON dossier response:", e);
-            // Fallback for empty or invalid response
-            return {
+            console.warn("Failed to parse JSON dossier response, running structured delimiter parser fallback:", e);
+            
+            const result = {
                 'LINKEDIN ANALYSIS': '[UNKNOWN]',
                 'COMPANY OVERVIEW': '[UNKNOWN]',
                 'DISCOVERY TRACK CLASS': '[UNKNOWN]',
@@ -2086,6 +2087,35 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
                 'HIGH-IMPACT OPENERS': '[UNKNOWN]',
                 'TRAVEL DISTANCE': '[UNKNOWN]'
             };
+
+            const keys = Object.keys(result);
+            keys.forEach((key) => {
+                const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                
+                // 1. Try matching "=== KEY ===" delimited blocks
+                const delimRegex = new RegExp(`===\\s*${escapedKey}\\s*===[\\s\\n\\r]*(.*?)(?=(?:===\\s*|###\\s*|\\s*$))`, 'si');
+                let match = text.match(delimRegex);
+                
+                // 2. Try matching "### KEY" or "### emoji KEY" markdown headers
+                if (!match) {
+                    const mdRegex = new RegExp(`###\\s*(?:[\\u2700-\\u27BF]|[\\uE000-\\uF8FF]|\\uD83C[\\uDC00-\\uDFFF]|\\uD83D[\\uDC00-\\uDFFF]|[\\u2011-\\u26FF]|\\uD83E[\\uDD10-\\uDDFF])*\\s*${escapedKey}[\\s\\n\\r]*(.*?)(?=(?:===\\s*|###\\s*|\\s*$))`, 'si');
+                    match = text.match(mdRegex);
+                }
+                
+                // 3. Try matching JSON keys '"KEY": "content"'
+                if (!match) {
+                    const jsonKeyRegex = new RegExp(`"${escapedKey}"\\s*:\\s*"(.*?)(?=(?:",?\\s*"|\\s*\\}))`, 'si');
+                    match = text.match(jsonKeyRegex);
+                }
+
+                if (match && match[1]) {
+                    let val = match[1].trim();
+                    // Clean trailing quotes/brackets if matched via JSON regex
+                    val = val.replace(/^["'\s]+|["'\s]+$/g, '');
+                    result[key] = val || '[UNKNOWN]';
+                }
+            });
+            return result;
         }
     }
 
@@ -3557,4 +3587,165 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
             ctx.clearRect(0, 0, pdfRenderTarget.width, pdfRenderTarget.height);
         }
     });
+
+    // Self-contained call recording upload initializer
+    function initCallRecordingUpload() {
+        const fileInput = document.getElementById('recording-file-input');
+        const dropzone = document.getElementById('upload-dropzone');
+        const browseBtn = document.getElementById('upload-browse-btn');
+        const progressContainer = document.getElementById('upload-progress');
+        const progressBar = document.getElementById('upload-progress-bar');
+        const statusText = document.getElementById('upload-status');
+        const transcriptArea = document.getElementById('synth-transcript');
+        const audioContainer = document.getElementById('mock-audio-container');
+        const audioPlayer = document.getElementById('mock-audio-player');
+
+        if (!fileInput || !dropzone || !browseBtn) {
+            console.warn("Call recording elements not found in the DOM.");
+            return;
+        }
+
+        // Trigger file input dialog on dropzone click or browse button click
+        browseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+
+        dropzone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight drop zone when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => {
+                dropzone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'dragend', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => {
+                dropzone.classList.remove('dragover');
+            }, false);
+        });
+
+        // Handle dropped files
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                handleUploadedFile(files[0]);
+            }
+        });
+
+        // Handle selected files
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files && fileInput.files.length > 0) {
+                handleUploadedFile(fileInput.files[0]);
+            }
+        });
+
+        async function handleUploadedFile(file) {
+            // Validate size (max 500MB)
+            if (file.size > 500 * 1024 * 1024) {
+                showToast("❌ File size exceeds 500MB limit.");
+                return;
+            }
+
+            // Show progress state
+            if (progressContainer) progressContainer.classList.remove('hidden');
+            if (progressBar) progressBar.style.width = '20%';
+            if (statusText) statusText.innerText = "Reading audio file...";
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                if (progressBar) progressBar.style.width = '40%';
+                if (statusText) statusText.innerText = "Transcribing audio call recording...";
+
+                const base64Audio = e.target.result.split(',')[1];
+                const mimeType = file.type || 'audio/wav';
+
+                // Read context values dynamically from Step 1 inputs
+                const nameVal = document.getElementById('prep-name')?.value?.trim() || '';
+                const titleVal = document.getElementById('prep-title')?.value?.trim() || '';
+                const companyVal = document.getElementById('prep-company')?.value?.trim() || '';
+                const intakeVal = document.getElementById('prep-intake')?.value?.trim() || '';
+
+                try {
+                    const res = await fetch('/api/sample-loadout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            audio_base64: base64Audio,
+                            mime_type: mimeType,
+                            filename: file.name,
+                            name: nameVal,
+                            title: titleVal,
+                            company: companyVal,
+                            intake: intakeVal
+                        })
+                    });
+
+                    if (progressBar) progressBar.style.width = '80%';
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        throw new Error(data.error || `HTTP error ${res.status}`);
+                    }
+
+                    if (progressBar) progressBar.style.width = '100%';
+                    if (statusText) statusText.innerText = "Success! Loaded transcript.";
+
+                    // Inject transcript into Step 3
+                    if (transcriptArea) {
+                        transcriptArea.value = data.transcript;
+                    }
+
+                    // Setup audio player
+                    if (audioContainer && audioPlayer) {
+                        const audioUrl = URL.createObjectURL(file);
+                        audioPlayer.src = audioUrl;
+                        audioContainer.classList.remove('hidden');
+                        showToast("✔️ Recording uploaded and transcribed successfully.");
+                    }
+
+                    // Hide progress container after a short delay
+                    setTimeout(() => {
+                        if (progressContainer) progressContainer.classList.add('hidden');
+                        if (progressBar) progressBar.style.width = '0%';
+                        
+                        // Automatically progress to Step 3
+                        goToStep(3);
+                    }, 800);
+
+                } catch (err) {
+                    console.error("Transcription upload failed:", err);
+                    showToast(`❌ Transcription failed: ${err.message}`);
+                    if (progressContainer) progressContainer.classList.add('hidden');
+                }
+            };
+
+            reader.onerror = (err) => {
+                console.error("FileReader failed:", err);
+                showToast("❌ Failed to read call recording file.");
+                if (progressContainer) progressContainer.classList.add('hidden');
+            };
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Initialize call recording upload system
+    initCallRecordingUpload();
 });
