@@ -5,31 +5,35 @@ from pathlib import Path
 import edge_tts
 
 # ── Voice Configuration ──
-# Isha (Sales)
+# Isha (Sales Rep)
 VOICE_FEMALE = "en-US-JennyNeural"
-# CJ Amiel Lebios (Prospect) 
+# Marcus (Prospect at Meridian Logistics)
 VOICE_MALE = "en-US-GuyNeural"
 
 OUTPUT_DIR = Path(__file__).parent.parent / "demo" / "assets"
 TEMP_DIR = OUTPUT_DIR / "temp_audio"
 
-# Dialogue Data
+# Dialogue Data mapping exactly to the 12 Variant A questions
 DIALOGUE = [
-    ("Female", "Hi CJ, thank you for booking some time with us. I saw on your discovery form that you're leading the team over at Octane Software Solutions."),
-    ("Male", "Yes, that's correct. We've been experiencing quite a bit of growth lately, and it's putting a lot of pressure on our sales and technical teams."),
-    ("Female", "I saw you mentioned a bottleneck regarding lead qualification and technical handover. Can you elaborate on that?"),
-    ("Male", "Sure. Right now, our sales reps are spending hours manually researching prospects, typing up notes, and copying CRM data. By the time they hand a lead over to the engineering team, half the context is lost, or it takes them two days just to format a proposal. It's incredibly inefficient."),
-    ("Female", "That's a classic bottleneck. It sounds like you're spending 80% of your time just moving data instead of actually closing deals."),
-    ("Male", "Exactly. We need a way to automate the pre-call research and post-call synthesis without losing the human touch in our sales process."),
-    ("Female", "If we could implement an AI-driven pipeline that instantly analyzes a prospect's background, and then automatically synthesizes your call transcripts into ready-to-send proposals and CRM notes, what would that mean for your team?"),
-    ("Male", "It would save us at least three days every week. My team could actually focus on talking to clients and driving revenue instead of doing tedious data entry."),
-    ("Female", "Wonderful. Now, in terms of timeline, when are you hoping to have a solution in place?"),
-    ("Male", "We want this resolved before the start of next quarter, which is about a month away."),
-    ("Female", "And is there a budget allocated specifically for this AI integration project?"),
-    ("Male", "We have a sign-off threshold of up to $50,000 for this financial year if we can see a clear return on investment."),
-    ("Female", "Excellent. I want to book a deep dive meeting for you with Anthony, our Lead AI Architect. He can walk you through the architecture of our local AI agent deployment. How does next Tuesday at 10:00 AM AEST look for you?"),
+    ("Female", "Hi Marcus, thanks for hopping on the call today. I saw on your booking form that you're leading the FP&A team over at Meridian Logistics."),
+    ("Male", "Hi Isha, good to be here. Yes, that's right. We've been scaling up fast, and honestly, the manual work is starting to break our finance processes."),
+    ("Female", "I completely understand. That scale pressure is very common. To start off, what general ledger or ERP system are you currently running, and does it connect to any planning tools today?"),
+    ("Male", "We run NetSuite as our core ERP. But it doesn't integrate with any planning tool at all. It's completely disconnected from our planning environment."),
+    ("Female", "Ah, NetSuite. And since it's disconnected, how are you managing your budgeting and forecasting? How many separate manual spreadsheets are you consolidating?"),
+    ("Male", "We do all our budgeting and forecasting in Excel. Right now, I'm manually consolidating about thirty-five separate spreadsheets from our department managers. We focus mostly on monthly OPEX forecasting and workforce payroll allocations."),
+    ("Female", "Wow, thirty-five manual Excel spreadsheets. That sounds incredibly tedious. What dynamic reporting or BI tools do you use for management reporting, and do you need to drill down from high-level reports to transaction-level data?"),
+    ("Male", "We do have Power BI for dashboards, and we use PAX for Excel reports, but they are all fed by manual files. And yes, absolutely, our executive team constantly asks to drill down from high-level summaries directly to NetSuite transaction-level details, which is a huge pain right now."),
+    ("Female", "That makes total sense. Having to manually drill down is a massive bottleneck. Do you have any internal developers or admins to manage these planning systems, and how many planning contributors, read-only users, and admins are involved in the planning process?"),
+    ("Male", "No, we don't have any dedicated internal admins or developers—our finance team has to manage it all. In terms of users, we have about thirty planning contributors submitting sheets, ten read-only executives, and just two of us trying to act as administrators."),
+    ("Female", "I see. That's a lot of weight on just two people. Besides the spreadsheet consolidation, what repetitive financial tasks feel most manual to you?"),
+    ("Male", "The worst part is manually extracting the NetSuite actuals every month, checking for formula errors, and copying them into our Excel templates. It takes about forty-five minutes per worksheet. It's easily several days of mind-numbing copy-pasting, and we're always worried a broken formula will slip through."),
+    ("Female", "I hear you. That monthly copying of actuals is a recipe for burn-out. In terms of timing, what is your target timeline for going live, and is there an allocated budget for licensing and delivery this financial year?"),
+    ("Male", "We want this live before the Q3 planning cycle, which starts in about two months. For budget, we have a sign-off threshold of up to forty-thousand dollars for this financial year, provided we see a clear return on investment."),
+    ("Female", "Two months is a very achievable timeline for us. Have you evaluated other tools or platforms like Anaplan or Jedox, and what does success look like for this project? Would a sixty-day trial of our DataFusion connectors help validate the solution?"),
+    ("Male", "We looked briefly at Anaplan, but the licensing costs were way out of our league, and Jedox felt too complex for our team. For us, success means automating that actuals transfer so we can close our forecast in hours instead of days. And yes, a sixty-day trial of your NetSuite connectors would be the perfect way to prove this works before we commit."),
+    ("Female", "That's fantastic. I want to book a deep dive meeting for you with Amendra Pratap, our TM1 Practice Lead. He can walk you through the architecture of our DataFusion connector to NetSuite. How does next Tuesday at ten A.M. AEST look for you?"),
     ("Male", "That works perfectly for me. Let's schedule it."),
-    ("Female", "Fantastic, I've booked that meeting and sent the invitation. I look forward to working with you, CJ.")
+    ("Female", "Excellent, I've booked that meeting and sent the invitation. I look forward to working with you, Marcus.")
 ]
 
 async def generate_chunk(voice, text, filepath):

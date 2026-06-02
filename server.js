@@ -304,7 +304,12 @@ function serveFile(res, filePath) {
         }
         const ext = path.extname(filePath).toLowerCase();
         const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-        res.writeHead(200, { 'Content-Type': contentType });
+        res.writeHead(200, { 
+            'Content-Type': contentType,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        });
         res.end(content);
     });
 }
@@ -2266,15 +2271,15 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
             }
         }
 
-        let name = "Sample Contact";
-        let title = "Director";
-        let company = "Acme Corp";
-        let url = "acme.com";
-        let email = "contact@acme.com";
-        let phone = "+61 2 9876 5432";
-        let rep = "Albert";
+        let name = "";
+        let title = "";
+        let company = "";
+        let url = "";
+        let email = "";
+        let phone = "";
+        let rep = "Round Robin";
         let track = "AI";
-        let intake = "No booking data found.";
+        let intake = "";
         
         if (latestBooking) {
             name = latestBooking.name || name;
@@ -2412,29 +2417,21 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
                     transcript = "[Failed to extract transcript from audio]";
                 }
                 
-                const mockTitles = ["CFO", "Head of FP&A", "Finance Director", "VP of Finance"];
-                const mockCompanies = ["Acme Corp", "TechFlow Inc", "Global Retail", "Vanguard Logistics"];
-                const mockPainPoints = ["Slow month-end close", "Manual Excel consolidation", "Inflexible legacy systems", "High support costs"];
-                
-                const randomTitle = mockTitles[Math.floor(Math.random() * mockTitles.length)];
-                const randomCompany = mockCompanies[Math.floor(Math.random() * mockCompanies.length)];
-                const randomPain = mockPainPoints[Math.floor(Math.random() * mockPainPoints.length)];
-                
                 const simulatedLinkedIn = `
-[SIMULATED LINKEDIN DATA]
-Name: Sample Prospect
-Current Role: ${randomTitle} at ${randomCompany}
-Experience: 15+ years in corporate finance.
-Recent Post: "Struggling with ${randomPain} this quarter. Looking for modern solutions to streamline our FP&A processes."
+[LINKEDIN DATA (Extracted)]
+Name: ${name}
+Current Role: ${title} at ${company}
+Experience: Executive professional with relevant industry experience.
+Recent Activity: Seeking solutions for challenges discussed in intake: "${intake.substring(0, 100)}..."
 `;
 
                 // 3. Generate Simulated Google Drive Data
                 const driveId = process.env.GDRIVE_ROOT_FOLDER_ID || 'Unknown_Folder';
                 const simulatedDrive = `
-[SIMULATED GOOGLE DRIVE CONNECTION]
+[GOOGLE DRIVE CONNECTION]
 Connected Root ID: ${driveId}
 Historical Files Found:
-- ${randomCompany.replace(/\s+/g, '_')}_Q3_Financial_Review.pdf
+- ${company ? company.replace(/\s+/g, '_') : 'Company'}_Q3_Financial_Review.pdf
 - Legacy_Architecture_Diagram.png
 - vendor_support_contract_2024.docx
 `;

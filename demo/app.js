@@ -3425,7 +3425,7 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
         // Show modal
         pdfModal.classList.remove('modal-hidden');
 
-        if (attachedGDriveFileId && attachedGDriveFileId.startsWith('mock-')) {
+        if (attachedGDriveFileContent) {
             pdfRenderTarget.style.display = 'block';
             const mockPre = document.getElementById('mock-pdf-text-target');
             if (mockPre) mockPre.style.display = 'none';

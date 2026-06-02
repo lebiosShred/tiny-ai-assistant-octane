@@ -740,12 +740,9 @@
             // Calculate assigned Sales Representative (Round Robin load balancing across their shared shift, or direct to Steny for AI)
             let assignedRep = (track === 'AI') ? "Steny" : (Math.random() > 0.5 ? "Albert" : "Isha");
 
-            // Format intake summary text exactly as required by Sales Team parse
+            // Format intake summary dynamically from form inputs
             const summaryText = `Service track interest: ${track === 'AI' ? 'AI' : 'Planning Analytics (TM1)'}
-Excel spreadsheets consolidated: 35 sheets currently consolidated manually (verify on call)
 Workflow description: ${discuss}
-GL/ERP system: Oracle / SAP / MS Business Central (verify on call)
-Discuss details: ${discuss}
 Company Website: ${url}
 Position: ${position}
 Company: ${company}
