@@ -790,15 +790,18 @@ Booking Host: ${assignedRep}`;
 
         btnBookAnother.addEventListener('click', () => {
             // Reset fields
-            selectReason.value = '';
+            selectReason.value = 'Requirements Meeting | 30 mins';
             // Host stays as Round Robin (auto-assigned)
             otherReasonText.value = '';
             otherReasonWrapper.style.display = 'none';
             btnNext.disabled = true;
             detailsForm.reset();
             
+            // Clear previous calendar selections and re-render slots
+            updateCalendarDatesForHost('Round Robin');
+            
             stepSuccess.style.display = 'none';
-            stepReason.style.display = 'block';
+            stepCalendar.style.display = 'block';
         });
 
 
