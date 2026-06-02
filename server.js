@@ -1431,13 +1431,22 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             
             // Check if key is the mock decoy or empty
             const isMockKey = apiKey === "N1V4ErGCSlQSLdDrc7vhkSfpf334TgRo";
+            let isOpenRouter = false;
+            
             if (!apiKey || isMockKey) {
-                apiKey = (process.env.MISTRAL_API_KEY || '').trim();
+                if (process.env.MISTRAL_API_KEY) {
+                    apiKey = process.env.MISTRAL_API_KEY.trim();
+                } else if (process.env.OPENROUTER_API_KEY) {
+                    apiKey = process.env.OPENROUTER_API_KEY.trim();
+                    isOpenRouter = true;
+                }
+            } else if (apiKey.startsWith('sk-or-')) {
+                isOpenRouter = true;
             }
 
             if (!apiKey) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'API key is missing. Set MISTRAL_API_KEY environment variable or configure a custom key in Settings.' }));
+                res.end(JSON.stringify({ error: 'API key is missing. Set MISTRAL_API_KEY or OPENROUTER_API_KEY environment variable or configure a custom key in Settings.' }));
                 return;
             }
 
@@ -1856,17 +1865,29 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
                 return;
             }
 
+            if (isOpenRouter) {
+                if (payload.model) {
+                    if (payload.model.includes('mistral') && !payload.model.startsWith('mistralai/')) {
+                        payload.model = `mistralai/${payload.model.replace('-latest', '')}`;
+                    } else if (payload.model.includes('deepseek') && !payload.model.startsWith('deepseek/')) {
+                        payload.model = `deepseek/${payload.model}`;
+                    }
+                }
+            }
+
             const jsonPayload = JSON.stringify(payload);
 
             const options = {
-                hostname: 'api.mistral.ai',
+                hostname: isOpenRouter ? 'openrouter.ai' : 'api.mistral.ai',
                 port: 443,
-                path: '/v1/chat/completions',
+                path: isOpenRouter ? '/api/v1/chat/completions' : '/v1/chat/completions',
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json',
-                    'Content-Length': Buffer.byteLength(jsonPayload)
+                    'Content-Length': Buffer.byteLength(jsonPayload),
+                    'HTTP-Referer': 'https://octane-tiny-assistant.vercel.app',
+                    'X-Title': 'Octane Assistant'
                 }
             };
 
