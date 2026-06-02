@@ -1863,6 +1863,41 @@ document.addEventListener('DOMContentLoaded', () => {
                         attachedGDriveFileId = fileId;
                         attachedGDriveFileContent = data.content;
                         
+                        if (attachedGDriveFileContent) {
+                            const parseField = (key) => {
+                                const regex = new RegExp(`^${key}:\\s*(.*)$`, 'm');
+                                const match = attachedGDriveFileContent.match(regex);
+                                return match ? match[1].trim() : '';
+                            };
+                            
+                            const n = parseField('Name');
+                            const c = parseField('Company');
+                            const e = parseField('Email');
+                            const p = parseField('Phone');
+                            const t = parseField('Title');
+                            const w = parseField('Website');
+                            
+                            const nameInput = document.getElementById('prep-name');
+                            const compInput = document.getElementById('prep-company');
+                            const emailInput = document.getElementById('prep-email');
+                            const phoneInput = document.getElementById('prep-phone');
+                            const titleInput = document.getElementById('prep-title');
+                            const urlInput = document.getElementById('prep-url');
+                            const intakeInput = document.getElementById('prep-intake');
+                            
+                            if (nameInput && n) nameInput.value = n;
+                            if (compInput && c) compInput.value = c;
+                            if (emailInput && e) emailInput.value = e;
+                            if (phoneInput && p) phoneInput.value = p;
+                            if (titleInput && t) titleInput.value = t;
+                            if (urlInput && w) urlInput.value = w;
+                            
+                            const intakeSplit = attachedGDriveFileContent.split('--- Intake Answers ---');
+                            if (intakeInput && intakeSplit.length > 1) {
+                                intakeInput.value = intakeSplit[1].trim();
+                            }
+                        }
+                        
                         const badgeName = document.getElementById('gdrive-attached-name');
                         if (gdriveBadge && badgeName) {
                             badgeName.innerText = fileName;

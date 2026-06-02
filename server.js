@@ -2645,12 +2645,22 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                                     const cleanName = payload.name.replace(/[^a-zA-Z0-9]/g, '_');
                                     const gdriveName = `Lead_Intake_${cleanCompany}_${cleanName}.pdf`;
                                     
-                                    driveFile = await gdriveService.createIntakeFile(gdriveName, payload.intakeAnswers);
+                                    const formattedContent = `Name: ${payload.name || ''}
+Company: ${payload.company || ''}
+Email: ${payload.email || ''}
+Phone: ${payload.phone || ''}
+Title: ${payload.title || ''}
+Website: ${payload.website || ''}
+
+--- Intake Answers ---
+${payload.intakeAnswers || ''}`;
+
+                                    driveFile = await gdriveService.createIntakeFile(gdriveName, formattedContent);
                                     
                                     // Update local dossier json with GDrive metadata for unified SDR extraction!
                                     payload.gDriveFile = driveFile.name;
                                     payload.gDriveFileId = driveFile.id;
-                                    payload.gDriveFileContent = payload.intakeAnswers;
+                                    payload.gDriveFileContent = formattedContent;
                                     
                                     fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', () => {
                                         // Non-blocking write back
