@@ -5,31 +5,31 @@ from pathlib import Path
 import edge_tts
 
 # ── Voice Configuration ──
-# Albert (Sales)
-VOICE_MALE = "en-US-GuyNeural"
-# Sarah (Prospect) 
+# Isha (Sales)
 VOICE_FEMALE = "en-US-JennyNeural"
+# CJ Amiel Lebios (Prospect) 
+VOICE_MALE = "en-US-GuyNeural"
 
 OUTPUT_DIR = Path(__file__).parent.parent / "demo" / "assets"
 TEMP_DIR = OUTPUT_DIR / "temp_audio"
 
 # Dialogue Data
 DIALOGUE = [
-    ("Male", "Hi Sarah, thank you for booking some time with us. I saw on the discovery form that you're currently leading the FP&A team at Meridian Logistics."),
-    ("Female", "Yes, that's correct. We've been experiencing quite a bit of scale lately, and it's putting a lot of pressure on our finance team, especially during our monthly forecast close."),
-    ("Male", "I saw you mentioned a bottleneck regarding NetSuite data consolidation in Excel. Can you elaborate on that?"),
-    ("Female", "Sure. Our actuals reside in NetSuite, but all our planning models are housed in Excel. We have about 35 separate spreadsheets that get sent out to different department heads. When they come back, we have to manually extract the data and update our consolidation worksheets. It takes about 45 minutes per sheet, and with 35 sheets, it's easily several days of mind-numbing copy-pasting. It's incredibly prone to formula errors."),
-    ("Male", "That's a classic bottleneck. It sounds like you're spending 80% of your time just moving data instead of analyzing it."),
-    ("Female", "Exactly. We are using Power BI and PAX for some basic reporting, but they're fed from these manual Excel files."),
-    ("Male", "If we could integrate your NetSuite actuals directly with a central IBM Planning Analytics database, and push that clean data straight to your Power BI reports in real time, what would that mean for your team?"),
-    ("Female", "It would save us at least 3 days every month. My analysts could actually focus on tracking logistics variance instead of doing data entry."),
-    ("Male", "Wonderful. Now, in terms of timeline, when are you hoping to have a solution in place?"),
-    ("Female", "We want this resolved before the Q3 planning cycle, which starts in about two months."),
-    ("Male", "And is there a budget allocated specifically for this integration project?"),
-    ("Female", "We have a sign-off threshold of up to $40,000 for this financial year if we can show a clear return on investment."),
-    ("Male", "Excellent. I want to book a deep dive meeting for you with System Administrator, our TM1 Practice Lead. He can walk you through the architecture of our DataFusion connector to NetSuite. Let me pull up his calendar. How does next Tuesday at 10:00 AM AEST look for you?"),
-    ("Female", "That works perfectly for me. Let's schedule it."),
-    ("Male", "Fantastic, I've booked that meeting and sent the invitation. I look forward to working with you, Sarah.")
+    ("Female", "Hi CJ, thank you for booking some time with us. I saw on your discovery form that you're leading the team over at Octane Software Solutions."),
+    ("Male", "Yes, that's correct. We've been experiencing quite a bit of growth lately, and it's putting a lot of pressure on our sales and technical teams."),
+    ("Female", "I saw you mentioned a bottleneck regarding lead qualification and technical handover. Can you elaborate on that?"),
+    ("Male", "Sure. Right now, our sales reps are spending hours manually researching prospects, typing up notes, and copying CRM data. By the time they hand a lead over to the engineering team, half the context is lost, or it takes them two days just to format a proposal. It's incredibly inefficient."),
+    ("Female", "That's a classic bottleneck. It sounds like you're spending 80% of your time just moving data instead of actually closing deals."),
+    ("Male", "Exactly. We need a way to automate the pre-call research and post-call synthesis without losing the human touch in our sales process."),
+    ("Female", "If we could implement an AI-driven pipeline that instantly analyzes a prospect's background, and then automatically synthesizes your call transcripts into ready-to-send proposals and CRM notes, what would that mean for your team?"),
+    ("Male", "It would save us at least three days every week. My team could actually focus on talking to clients and driving revenue instead of doing tedious data entry."),
+    ("Female", "Wonderful. Now, in terms of timeline, when are you hoping to have a solution in place?"),
+    ("Male", "We want this resolved before the start of next quarter, which is about a month away."),
+    ("Female", "And is there a budget allocated specifically for this AI integration project?"),
+    ("Male", "We have a sign-off threshold of up to $50,000 for this financial year if we can see a clear return on investment."),
+    ("Female", "Excellent. I want to book a deep dive meeting for you with Anthony, our Lead AI Architect. He can walk you through the architecture of our local AI agent deployment. How does next Tuesday at 10:00 AM AEST look for you?"),
+    ("Male", "That works perfectly for me. Let's schedule it."),
+    ("Female", "Fantastic, I've booked that meeting and sent the invitation. I look forward to working with you, CJ.")
 ]
 
 async def generate_chunk(voice, text, filepath):
