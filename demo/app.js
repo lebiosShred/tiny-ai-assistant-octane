@@ -1643,8 +1643,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`/api/questions?variant=${variant}`);
             if (res.ok) {
                 const data = await res.json();
-                // Validate server response has matching length (indicates server is running updated code)
-                if (Array.isArray(data) && data.length === expectedLength) {
+                // Relaxed validation: accept any non-empty questionnaire from the server
+                if (Array.isArray(data) && data.length > 0) {
                     currentQuestions = data.map((item, index) => {
                         const q = typeof item === 'object' && item !== null ? item.q : item;
                         const a = typeof item === 'object' && item !== null ? (item.a || '') : '';
@@ -1654,7 +1654,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log(`Loaded custom questions for Variant ${variant} from server.`);
                     return;
                 } else {
-                    console.warn(`Server questions count mismatch for Variant ${variant}: expected ${expectedLength}, got ${data ? data.length : 0}. Rejecting server payload.`);
+                    console.warn(`Server questions payload is empty or invalid for Variant ${variant}. Rejecting server payload.`);
                 }
             }
         } catch (e) {

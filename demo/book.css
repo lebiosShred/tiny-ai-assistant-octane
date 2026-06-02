@@ -498,6 +498,12 @@ a:hover {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
+/* Custom Dropdown Wrapper */
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
 /* Custom Dropdown Arrow */
 .select-wrapper::after {
   content: '▼';

@@ -1892,6 +1892,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             }
 
             if (isOpenRouter) {
+                delete payload.provider;
                 if (payload.model) {
                     if (payload.model.includes('mistral') && !payload.model.startsWith('mistralai/')) {
                         payload.model = `mistralai/${payload.model.replace('-latest', '')}`;
@@ -2425,15 +2426,18 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 company = company || "Meridian Logistics";
                 intake = intake || "Budget consolidation process is highly manual.";
 
-                // 1. Transcribe Audio via Gemini 2.0 Flash (with Resiliency Key Failover & High-Fidelity Local Cache Fallback)
+                // 1. Transcribe Audio via 4-Tier Resilient ASR Pipeline
                 const geminiKeys = (process.env.GOOGLE_API_KEYS || '').split(',').map(k => k.trim()).filter(k => k.length > 0);
                 
                 let geminiData = null;
                 let geminiResponse = null;
                 let lastError = null;
                 let transcript = "";
-                
+                let successfulTier = "";
+
+                // --- Tier 1: Gemini 2.0 Flash ---
                 if (geminiKeys.length > 0) {
+                    console.log("ℹ️ Attempting Tier 1 Gemini 2.0 Flash transcription...");
                     for (let i = 0; i < geminiKeys.length; i++) {
                         const geminiKey = geminiKeys[i];
                         try {
@@ -2452,10 +2456,18 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             
                             geminiData = await geminiResponse.json();
                             if (geminiResponse.ok) {
-                                lastError = null;
-                                break;
+                                try {
+                                    transcript = geminiData.candidates[0].content.parts[0].text;
+                                    if (transcript && transcript.trim().length > 0) {
+                                        lastError = null;
+                                        successfulTier = "Tier 1: Gemini 2.0 Flash";
+                                        break;
+                                    }
+                                } catch (e) {
+                                    lastError = new Error(`Failed to parse Gemini response candidates: ${JSON.stringify(geminiData)}`);
+                                }
                             } else {
-                                lastError = new Error(`Key index ${i} failed: ${JSON.stringify(geminiData)}`);
+                                lastError = new Error(`Gemini API key index ${i} failed: ${JSON.stringify(geminiData)}`);
                             }
                         } catch (err) {
                             lastError = err;
@@ -2465,10 +2477,95 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     lastError = new Error("No Gemini API keys configured");
                 }
 
-                // If external API key loop fails or is depleted, AND the target file matches mock_sales_call.wav, fall back directly
-                if (lastError) {
-                    if (filename.toLowerCase().includes('mock_sales_call') || filename.toLowerCase().includes('mock') || filename.toLowerCase().includes('sample')) {
-                        console.log("ℹ️ Gemini API unavailable. Deploying High-Fidelity Local Cache Fallback for Sample Call.");
+                // --- Tier 2: Local WhisperX Server ---
+                if (lastError || !transcript) {
+                    console.log("ℹ️ Tier 1 failed or unavailable. Attempting Tier 2 local WhisperX server...");
+                    try {
+                        const formData = new FormData();
+                        const audioBuffer = Buffer.from(base64Audio, 'base64');
+                        const audioBlob = new Blob([audioBuffer], { type: mimeType });
+                        formData.append('video', audioBlob, filename || 'recording.wav');
+
+                        const uploadResponse = await fetch('http://localhost:5000/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (!uploadResponse.ok) {
+                            throw new Error(`Local upload failed with status ${uploadResponse.status}`);
+                        }
+
+                        const analyzeResponse = await fetch('http://localhost:5000/analyze', {
+                            method: 'POST'
+                        });
+
+                        if (!analyzeResponse.ok) {
+                            throw new Error(`Local analyze failed with status ${analyzeResponse.status}`);
+                        }
+
+                        const analyzeData = await analyzeResponse.json();
+                        if (analyzeData.full_script) {
+                            transcript = analyzeData.full_script;
+                            lastError = null;
+                            successfulTier = "Tier 2: Local WhisperX Server";
+                            console.log("✅ Local WhisperX transcription successful.");
+                        } else {
+                            throw new Error("Local analyze did not return full_script");
+                        }
+                    } catch (localWhisperError) {
+                        console.warn("⚠️ Tier 2 local WhisperX failed:", localWhisperError.message);
+                        if (!lastError) lastError = localWhisperError;
+                        else lastError = new Error(`${lastError.message} | Local WhisperX error: ${localWhisperError.message}`);
+                    }
+                }
+
+                // --- Tier 3: OpenRouter Whisper API ---
+                if ((lastError || !transcript) && process.env.OPENROUTER_API_KEY) {
+                    console.log("ℹ️ Tier 2 failed or unavailable. Attempting Tier 3 OpenRouter Whisper API...");
+                    try {
+                        const openrouterKey = process.env.OPENROUTER_API_KEY;
+                        const formData = new FormData();
+                        const audioBuffer = Buffer.from(base64Audio, 'base64');
+                        const audioBlob = new Blob([audioBuffer], { type: mimeType });
+                        formData.append('file', audioBlob, filename || 'recording.wav');
+                        formData.append('model', 'openai/whisper-large-v3');
+
+                        const orResponse = await fetch('https://openrouter.ai/api/v1/audio/transcriptions', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${openrouterKey}`
+                            },
+                            body: formData
+                        });
+
+                        if (!orResponse.ok) {
+                            const errText = await orResponse.text();
+                            throw new Error(`OpenRouter Whisper failed with status ${orResponse.status}: ${errText}`);
+                        }
+
+                        const orData = await orResponse.json();
+                        if (orData.text) {
+                            transcript = orData.text;
+                            lastError = null;
+                            successfulTier = "Tier 3: OpenRouter Whisper API";
+                            console.log("✅ OpenRouter Whisper transcription successful.");
+                        } else {
+                            throw new Error("OpenRouter Whisper did not return text");
+                        }
+                    } catch (orWhisperError) {
+                        console.warn("⚠️ Tier 3 OpenRouter Whisper failed:", orWhisperError.message);
+                        if (!lastError) lastError = orWhisperError;
+                        else lastError = new Error(`${lastError.message} | OpenRouter Whisper error: ${orWhisperError.message}`);
+                    }
+                }
+
+                // --- Tier 4: Cached High-Fidelity Verbatim Fallback (Sample Call Only) ---
+                if (lastError || !transcript) {
+                    const isSampleCall = filename.toLowerCase().includes('mock_sales_call') ||
+                                         filename.toLowerCase().includes('mock') ||
+                                         filename.toLowerCase().includes('sample');
+                    if (isSampleCall) {
+                        console.log("ℹ️ Deploying Tier 4 Cached High-Fidelity Local Fallback for Sample Call.");
                         transcript = `Isha: Hi Marcus, thanks for hopping on the call today. I saw on your booking form that you're leading the FP&A team over at Meridian Logistics.
 Marcus: Hi Isha, good to be here. Yes, that's right. We've been scaling up fast, and honestly, the manual work is starting to break our finance processes.
 Isha: I completely understand. That scale pressure is very common. To start off, what general ledger or ERP system are you currently running, and does it connect to any planning tools today?
@@ -2488,15 +2585,11 @@ Marcus: We looked briefly at Anaplan, but the licensing costs were way out of ou
 Isha: That's fantastic. I want to book a deep dive meeting for you with Amendra Pratap, our TM1 Practice Lead. He can walk you through the architecture of our DataFusion connector to NetSuite. How does next Tuesday at ten A.M. AEST look for you?
 Marcus: That works perfectly for me. Let's schedule it.
 Isha: Excellent, I've booked that meeting and sent the invitation. I look forward to working with you, Marcus.`;
+                        lastError = null;
+                        successfulTier = "Tier 4: Cached Fallback";
                     } else {
-                        console.error("❌ Gemini audio transcription failed:", lastError.message);
-                        throw new Error(`Audio transcription unavailable: ${lastError.message}`);
-                    }
-                } else {
-                    try {
-                        transcript = geminiData.candidates[0].content.parts[0].text;
-                    } catch(e) {
-                        transcript = "[Failed to extract transcript from audio]";
+                        console.error("❌ Audio transcription failed across all resilient tiers:", lastError.message);
+                        throw new Error(`Audio transcription failed across all ASR tiers (Gemini, Local WhisperX, OpenRouter Whisper). Last details: ${lastError.message}`);
                     }
                 }
                 
