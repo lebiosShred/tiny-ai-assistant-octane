@@ -2109,8 +2109,11 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
         
         let completedCount = 0;
         coreSections.forEach(sec => {
-            if (parsed[sec] && parsed[sec].trim().length > 10) {
-                completedCount++;
+            if (parsed[sec]) {
+                const secStr = typeof parsed[sec] === 'string' ? parsed[sec] : JSON.stringify(parsed[sec]);
+                if (secStr.trim().length > 10) {
+                    completedCount++;
+                }
             }
         });
         
@@ -2144,7 +2147,9 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
             'TRAVEL DISTANCE': '🚗'
         };
         
-        const travelDist = parsed['TRAVEL DISTANCE'] ? parsed['TRAVEL DISTANCE'].replace(/<[^>]*>/g, '').trim() : '';
+        let travelDistRaw = parsed['TRAVEL DISTANCE'];
+        let travelDistStr = typeof travelDistRaw === 'string' ? travelDistRaw : (travelDistRaw ? JSON.stringify(travelDistRaw) : '');
+        const travelDist = travelDistStr ? travelDistStr.replace(/<[^>]*>/g, '').trim() : '';
         if (travelDist) {
             const travelDistEl = document.getElementById('positional-travel-distance');
             if (travelDistEl) {
@@ -2154,7 +2159,9 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
         
         Object.entries(parsed).forEach(([title, content]) => {
             const emoji = emojiMap[title] || '📄';
-            const formattedContent = formatMarkdown(content);
+            // Safe format markdown if it's not a string
+            const contentStr = typeof content === 'string' ? content : (content ? JSON.stringify(content, null, 2) : '');
+            const formattedContent = formatMarkdown(contentStr);
             const isActive = (title === 'LIKELY PAIN POINTS' || title === 'HIGH-IMPACT OPENERS' || title === 'LINKEDIN ANALYSIS') ? 'active' : '';
             
             html += `
