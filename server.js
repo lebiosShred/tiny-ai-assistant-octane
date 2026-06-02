@@ -1429,27 +1429,6 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 apiKey = authHeader.substring(7).trim();
             }
             
-            // Check if key is the mock decoy or empty
-            const isMockKey = apiKey === "N1V4ErGCSlQSLdDrc7vhkSfpf334TgRo";
-            let isOpenRouter = false;
-            
-            if (!apiKey || isMockKey) {
-                if (process.env.MISTRAL_API_KEY) {
-                    apiKey = process.env.MISTRAL_API_KEY.trim();
-                } else if (process.env.OPENROUTER_API_KEY) {
-                    apiKey = process.env.OPENROUTER_API_KEY.trim();
-                    isOpenRouter = true;
-                }
-            } else if (apiKey.startsWith('sk-or-')) {
-                isOpenRouter = true;
-            }
-
-            if (!apiKey) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'API key is missing. Set MISTRAL_API_KEY or OPENROUTER_API_KEY environment variable or configure a custom key in Settings.' }));
-                return;
-            }
-
             // Load and inject knowledge base
             const knowledgeBase = await loadKnowledgeBase();
             let payload;
@@ -1458,6 +1437,32 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             } catch (e) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
+                return;
+            }
+
+            // Check if key is the mock decoy or empty
+            const isMockKey = apiKey === "N1V4ErGCSlQSLdDrc7vhkSfpf334TgRo";
+            let isOpenRouter = false;
+            
+            if (!apiKey || isMockKey) {
+                // If the client requested deepseek, prioritize the native DeepSeek key
+                if (payload.provider === 'deepseek' && process.env.DEEPSEEK_API_KEY) {
+                    apiKey = process.env.DEEPSEEK_API_KEY.trim();
+                } else if (process.env.DEEPSEEK_API_KEY && !process.env.MISTRAL_API_KEY && !process.env.OPENROUTER_API_KEY) {
+                    apiKey = process.env.DEEPSEEK_API_KEY.trim();
+                } else if (process.env.OPENROUTER_API_KEY) {
+                    apiKey = process.env.OPENROUTER_API_KEY.trim();
+                    isOpenRouter = true;
+                } else if (process.env.MISTRAL_API_KEY) {
+                    apiKey = process.env.MISTRAL_API_KEY.trim();
+                }
+            } else if (apiKey.startsWith('sk-or-')) {
+                isOpenRouter = true;
+            }
+
+            if (!apiKey) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'API key is missing. Set DEEPSEEK_API_KEY, MISTRAL_API_KEY or OPENROUTER_API_KEY environment variable or configure a custom key in Settings.' }));
                 return;
             }
 
@@ -1480,8 +1485,8 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     }
                 }
             }
-            chatDetails.provider = payload.provider || 'mistral';
-            chatDetails.model = payload.model || 'mistral-large-latest';
+            chatDetails.provider = payload.provider || 'deepseek';
+            chatDetails.model = payload.model || 'deepseek-chat';
             logAuditEvent(req, chatAction, chatDetails);
 
             // Trigger web search if this is a pre-screen call preparation request
@@ -2316,6 +2321,9 @@ If the RAG context is insufficient to confidently answer any field, you MUST out
             email: email,
             phone: phone,
             rep: latestBooking ? latestBooking.rep || 'Round Robin' : 'Round Robin',
+            model: "deepseek-chat",
+            provider: "deepseek",
+            agentId: "bba19eb6-8038-4f06-8afe-20d4198c7121",
             discuss: discussTopics
         };
         

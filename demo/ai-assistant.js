@@ -10,8 +10,8 @@
 const DEFAULT_CONFIG = {
     apiKey: "",
     apiUrl: "/api/chat",
-    model: "meta-llama/llama-3-70b-instruct",
-    provider: "watsonx",
+    model: "deepseek-chat",
+    provider: "deepseek",
     agentId: "bba19eb6-8038-4f06-8afe-20d4198c7121",
     prepSystemPrompt: "You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler.",
     synthSystemPrompt: "You are a professional B2B sales operations assistant. You analyze call transcripts and produce clean, formatted HTML documents separated by delimiters."
