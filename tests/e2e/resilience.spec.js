@@ -4,10 +4,6 @@ const { test, expect } = require('../fixtures/base');
  * Aegis v2 -- Network Resilience Tests
  * Simulates API failures, timeouts, and malformed responses to verify
  * the application degrades gracefully without crashes.
- *
- * These tests use page.evaluate() for form interactions to bypass
- * viewport visibility constraints -- we are testing API error handling,
- * not button clickability.
  */
 test.describe('Aegis Network Resilience Tests', () => {
 
@@ -18,15 +14,20 @@ test.describe('Aegis Network Resilience Tests', () => {
         await page.goto('/');
         await page.locator('body').waitFor({ state: 'attached' });
 
-        // Programmatically fill form and trigger submission
+        // Initialize session
+        await page.click('#btn-new-chat');
         await page.evaluate(() => {
-            document.querySelector('#prep-name').value = 'Test User';
-            document.querySelector('#prep-company').value = 'Test Corp';
-            document.querySelector('#prep-name').dispatchEvent(new Event('input', { bubbles: true }));
-            document.querySelector('#prep-company').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#meta-name').value = 'Test User';
+            document.querySelector('#meta-company').value = 'Test Corp';
+            document.querySelector('#meta-name').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#meta-company').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#btn-save-sources').click();
         });
 
-        // Install route intercept AFTER page is initialized
+        // Wait for chat panel initialization
+        await page.locator('#chat-messages-log').waitFor({ state: 'visible' });
+
+        // Install route intercept for chat API
         await page.route('**/api/chat', async route => {
             await route.fulfill({
                 status: 500,
@@ -35,9 +36,11 @@ test.describe('Aegis Network Resilience Tests', () => {
             });
         });
 
-        // Trigger submit programmatically
+        // Trigger chat prompt submit
         await page.evaluate(() => {
-            document.querySelector('#prep-submit-btn').click();
+            document.querySelector('#chat-user-input').value = 'Hello Tiny';
+            document.querySelector('#chat-user-input').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#chat-send-btn').click();
         });
 
         // Wait for the app to process the error response
@@ -56,19 +59,25 @@ test.describe('Aegis Network Resilience Tests', () => {
         await page.goto('/');
         await page.locator('body').waitFor({ state: 'attached' });
 
+        await page.click('#btn-new-chat');
         await page.evaluate(() => {
-            document.querySelector('#prep-name').value = 'Test User';
-            document.querySelector('#prep-company').value = 'Test Corp';
-            document.querySelector('#prep-name').dispatchEvent(new Event('input', { bubbles: true }));
-            document.querySelector('#prep-company').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#meta-name').value = 'Test User';
+            document.querySelector('#meta-company').value = 'Test Corp';
+            document.querySelector('#meta-name').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#meta-company').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#btn-save-sources').click();
         });
+
+        await page.locator('#chat-messages-log').waitFor({ state: 'visible' });
 
         await page.route('**/api/chat', async route => {
             await route.abort('timedout');
         });
 
         await page.evaluate(() => {
-            document.querySelector('#prep-submit-btn').click();
+            document.querySelector('#chat-user-input').value = 'Hello Tiny';
+            document.querySelector('#chat-user-input').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#chat-send-btn').click();
         });
 
         await page.waitForTimeout(5000);
@@ -86,12 +95,16 @@ test.describe('Aegis Network Resilience Tests', () => {
         await page.goto('/');
         await page.locator('body').waitFor({ state: 'attached' });
 
+        await page.click('#btn-new-chat');
         await page.evaluate(() => {
-            document.querySelector('#prep-name').value = 'Test User';
-            document.querySelector('#prep-company').value = 'Test Corp';
-            document.querySelector('#prep-name').dispatchEvent(new Event('input', { bubbles: true }));
-            document.querySelector('#prep-company').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#meta-name').value = 'Test User';
+            document.querySelector('#meta-company').value = 'Test Corp';
+            document.querySelector('#meta-name').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#meta-company').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#btn-save-sources').click();
         });
+
+        await page.locator('#chat-messages-log').waitFor({ state: 'visible' });
 
         await page.route('**/api/chat', async route => {
             await route.fulfill({
@@ -102,7 +115,9 @@ test.describe('Aegis Network Resilience Tests', () => {
         });
 
         await page.evaluate(() => {
-            document.querySelector('#prep-submit-btn').click();
+            document.querySelector('#chat-user-input').value = 'Hello Tiny';
+            document.querySelector('#chat-user-input').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#chat-send-btn').click();
         });
 
         await page.waitForTimeout(5000);

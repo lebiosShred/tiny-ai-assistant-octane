@@ -16,7 +16,8 @@ test.describe('Aegis Visual Regression Suite', () => {
         await expect(page).toHaveScreenshot('index-full.png', {
             fullPage: true,
             mask: [
-                page.locator('#output-doc-content'),
+                page.locator('#chat-messages-log'),
+                page.locator('#recent-chats-list'),
             ],
         });
     });

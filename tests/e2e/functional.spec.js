@@ -1,7 +1,7 @@
 const { test, expect } = require('../fixtures/base');
 const { IndexPage } = require('../pages/IndexPage');
-const { BookPage } = require('../pages/BookPage');
 const { DocsPage } = require('../pages/DocsPage');
+
 /**
  * Aegis v2 -- Core Functional E2E Test Suite
  */
@@ -11,12 +11,10 @@ test.describe('Aegis Functional E2E Suite', () => {
         if (!process.env.TEST_URL) {
             await page.route('**/api/chat', async route => {
                 const mockContent = `
-[DOCUMENT: DOSSIER]
-<p>Mocked dossier content for deterministic testing.</p>
-[DOCUMENT: QUESTIONS A]
-<ol><li>Q1</li><li>Q2</li><li>Q3</li><li>Q4</li><li>Q5</li></ol>
-[DOCUMENT: QUESTIONS B]
-<ol><li>Q1</li><li>Q2</li><li>Q3</li><li>Q4</li><li>Q5</li><li>Q6</li><li>Q7</li><li>Q8</li><li>Q9</li><li>Q10</li></ol>
+=== DOSSIER SUMMARY ===
+- Prospect: Sarah Chen
+- Company: Meridian Logistics
+- Pain Points: Manual spreadsheets bottleneck
                 `;
                 await route.fulfill({
                     status: 200,
@@ -29,96 +27,46 @@ test.describe('Aegis Functional E2E Suite', () => {
         }
     });
 
-    test('SDR Prep Briefing form submission generates valid dossier', async ({ page }) => {
+    test('SDR Prep Briefing form submission initializes chat session', async ({ page }) => {
         test.setTimeout(60000);
         const indexPage = new IndexPage(page);
         await indexPage.goto();
-        await indexPage.loadSample();
-
-        // Wait for the asynchronous fetch to populate the form fields
-        await page.waitForFunction(() => document.querySelector('#prep-name').value !== '', { timeout: 10000 });
+        
+        // Start new chat session
+        await indexPage.newChatBtn.click();
+        
+        // Fill form manually for determinism
+        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah.chen@meridianlogistics.com.au');
 
         const values = await indexPage.getFormValues();
-        expect(values.name.length).toBeGreaterThan(0);
-        expect(values.company.length).toBeGreaterThan(0);
+        expect(values.name).toBe('Sarah Chen');
+        expect(values.company).toBe('Meridian Logistics');
 
         await indexPage.submitForm();
-        await indexPage.waitForDossier(20000);
+        await indexPage.waitForChatInit();
 
-        const dossierText = await indexPage.getDossierText();
-        expect(dossierText.length).toBeGreaterThan(50);
-
-        // Attach extracted dossier for downstream judge consumption
-        test.info().annotations.push({
-            type: 'dossier',
-            description: dossierText.substring(0, 2000),
-        });
+        // Assert welcome message containing initialization text
+        const welcomeText = await page.locator('#chat-messages-log').innerText();
+        expect(welcomeText).toContain('Chat session initialized');
     });
 
-    test('Variant B enforces exactly 10 questions', async ({ page }) => {
+    test('Generating reports via quick prompts generates a valid response', async ({ page }) => {
         test.setTimeout(60000);
         const indexPage = new IndexPage(page);
         await indexPage.goto();
-        await indexPage.loadSample();
-        await page.waitForFunction(() => document.querySelector('#prep-name').value !== '', { timeout: 10000 });
+        
+        await indexPage.newChatBtn.click();
+        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah.chen@meridianlogistics.com.au');
         await indexPage.submitForm();
-        await indexPage.waitForDossier(20000);
-        await indexPage.goToPlaybook();
-        await indexPage.switchVariant('B');
+        await indexPage.waitForChatInit();
 
-        // Wait for Variant B to specifically finish loading (10 questions total)
-        await page.waitForFunction(
-            () => {
-                const el = document.querySelector('#teleprompter-counter');
-                return el && el.innerText.includes('10');
-            },
-            { timeout: 5000 }
-        );
+        // Click Lead Sheet quick prompt
+        await page.click('button[data-prompt-type="leadSheet"]');
+        await indexPage.waitForResponse(20000);
 
-        const count = await indexPage.getQuestionCount();
-        expect(count).toBe(10);
-    });
-
-    test('Variant B contains no italicized tips', async ({ page }) => {
-        test.setTimeout(60000);
-        const indexPage = new IndexPage(page);
-        await indexPage.goto();
-        await indexPage.loadSample();
-        await page.waitForFunction(() => document.querySelector('#prep-name').value !== '', { timeout: 10000 });
-        await indexPage.submitForm();
-        await indexPage.waitForDossier(20000);
-        await indexPage.goToPlaybook();
-        await indexPage.switchVariant('B');
-
-        await page.waitForFunction(
-            () => {
-                const el = document.querySelector('#teleprompter-counter');
-                return el && /\d+/.test(el.innerText);
-            },
-            { timeout: 5000 }
-        );
-
-        const hasItalics = await indexPage.hasItalicizedTips();
-        expect(hasItalics).toBe(false);
-    });
-
-    test('AI Solutions booking routes directly to Steny', async ({ page }) => {
-        const bookPage = new BookPage(page);
-        await bookPage.goto();
-        await bookPage.selectMeetingType('AI Solutions Discussion | 45 mins');
-
-        // Wait for dynamic host update
-        await page.waitForFunction(
-            () => {
-                const el = document.querySelector('#hosts-display-subtitle');
-                return el && el.innerText.includes('Steny');
-            },
-            { timeout: 5000 }
-        );
-
-        const host = await bookPage.getHostDetails();
-        expect(host.subtitle).toContain('Steny');
-        expect(host.title).toContain('Host');
+        const responseText = await indexPage.getLastResponseText();
+        expect(responseText.length).toBeGreaterThan(20);
+        expect(responseText).toContain('Sarah Chen');
     });
 
     test('Documentation page contains Tiny AI Assistant branding', async ({ page }) => {

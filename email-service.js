@@ -245,7 +245,82 @@ async function sendProspectConfirmationEmail(lead) {
     }
 }
 
+/**
+ * Sends a recap email directly to the client.
+ */
+async function sendRecapEmail(recipient, clientName, company, recapText, rep) {
+    if (!recipient) {
+        console.warn('⚠️ No recipient email provided for recap.');
+        return false;
+    }
+    
+    const subject = `Recap of our call: Octane & ${company}`;
+    
+    const htmlBody = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Hi ${clientName},</h2>
+        <p>Thank you for taking the time to speak with us. Below is the summary and key takeaways from our conversation:</p>
+        <div style="background-color: #f8fafc; border-left: 4px solid #0284c7; padding: 15px; margin: 15px 0; white-space: pre-wrap; font-family: inherit; font-size: 0.9rem; color: #1e293b; border-radius: 4px;">${recapText}</div>
+        <p>If you have any questions or would like to add feedback, feel free to reply directly to this email.</p>
+        <br>
+        <p>Best regards,<br>${rep || 'Anthony'} / Octane Software Solutions</p>
+    </body>
+    </html>
+    `;
+
+    const useSmtp = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+    
+    if (useSmtp) {
+        try {
+            const nodemailer = require('nodemailer');
+            const transporter = nodemailer.createTransport({
+                host: process.env.SMTP_HOST,
+                port: parseInt(process.env.SMTP_PORT || '587', 10),
+                secure: process.env.SMTP_SECURE === 'true',
+                auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+            });
+
+            await transporter.sendMail({
+                from: `"Octane Software Solutions" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+                to: recipient,
+                subject: subject,
+                html: htmlBody
+            });
+
+            console.log(`✉️ Recap email sent successfully to ${recipient} via SMTP.`);
+            return true;
+        } catch (err) {
+            console.error('❌ Failed to dispatch recap email via SMTP:', err.message);
+        }
+    }
+
+    // Fallback developer workflow
+    try {
+        const scratchDir = path.join(__dirname, 'scratch');
+        if (!fs.existsSync(scratchDir)) fs.mkdirSync(scratchDir, { recursive: true });
+        
+        const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+        const emailLogPath = path.join(scratchDir, `Recap_Email_${cleanCompany}.html`);
+        
+        fs.writeFileSync(emailLogPath, htmlBody, 'utf8');
+        
+        console.log('\n================ RECAP EMAIL FALLBACK ================');
+        console.log(`✉️ Subject: ${subject}`);
+        console.log(`✉️ Recipient: ${recipient}`);
+        console.log(`📁 Simulated Recap Email: file:///${emailLogPath.replace(/\\/g, '/')}`);
+        console.log('======================================================\n');
+        return true;
+    } catch (err) {
+        console.error('⚠️ Failed to write recap email simulation file:', err.message);
+        return false;
+    }
+}
+
 module.exports = {
     sendLeadNotificationEmail,
-    sendProspectConfirmationEmail
+    sendProspectConfirmationEmail,
+    sendRecapEmail
 };

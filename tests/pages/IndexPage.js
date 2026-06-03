@@ -1,4 +1,4 @@
-// Aegis v2 -- Page Object: IndexPage (Sales Assistant)
+// Aegis v2 -- Page Object: IndexPage (Chat-First Sales Assistant)
 
 class IndexPage {
   /**
@@ -7,29 +7,41 @@ class IndexPage {
   constructor(page) {
     this.page = page;
 
-    // Prep panel controls
-    this.sampleBtn = page.locator('#prep-load-sample-btn');
-    this.submitBtn = page.locator('#prep-submit-btn');
-    this.nameInput = page.locator('#prep-name');
-    this.companyInput = page.locator('#prep-company');
+    // Sidebar and Navigation
+    this.newChatBtn = page.locator('#btn-new-chat');
+    this.chatSearchInput = page.locator('#chat-search');
+    this.recentChatsList = page.locator('#recent-chats-list');
 
-    // Output panel
-    this.outputContent = page.locator('#output-doc-content');
+    // Chat Header and Actions
+    this.toggleSourcesBtn = page.locator('#btn-toggle-sources');
+    this.clientTitle = page.locator('#active-chat-client-title');
+    this.clientMeta = page.locator('#active-chat-client-meta');
 
-    // Navigation
-    this.nextBtn = page.locator('#step-1-next-btn');
+    // Sources Drawer Controls
+    this.drawer = page.locator('#sources-drawer');
+    this.closeDrawerBtn = page.locator('#btn-close-drawer');
+    this.nameInput = page.locator('#meta-name');
+    this.companyInput = page.locator('#meta-company');
+    this.titleInput = page.locator('#meta-title');
+    this.emailInput = page.locator('#meta-email');
+    this.phoneInput = page.locator('#meta-phone');
+    this.repSelect = page.locator('#meta-rep');
+    this.trackSelect = page.locator('#meta-track');
+    this.gdriveSelect = page.locator('#source-gdrive-file');
+    
+    // Action Buttons
+    this.sampleBtn = page.locator('#btn-load-sample');
+    this.submitBtn = page.locator('#btn-save-sources');
 
-    // Playbook panel
-    this.variantSelector = page.locator('#battlecard-selector');
-    this.teleprompterCounter = page.locator('#teleprompter-counter');
-    this.battlecardBody = page.locator('#battlecard-body');
-
-    // Layout
-    this.leftPanelTitle = page.locator('#left-panel-title');
+    // Chat Console Controls
+    this.chatInput = page.locator('#chat-user-input');
+    this.sendBtn = page.locator('#chat-send-btn');
+    this.messagesLog = page.locator('#chat-messages-log');
+    this.loadingIndicator = page.locator('#chat-loading-indicator');
   }
 
   /**
-   * Navigate to the index page and wait for the body to render.
+   * Navigate to the index page.
    */
   async goto() {
     await this.page.goto('/?demo=true');
@@ -37,93 +49,113 @@ class IndexPage {
   }
 
   /**
-   * Click the sample data loader button.
+   * Open the sources drawer if it is not already visible.
+   */
+  async openDrawer() {
+    const isVisible = await this.drawer.isVisible();
+    if (!isVisible) {
+      await this.toggleSourcesBtn.click();
+    }
+  }
+
+  /**
+   * Close the sources drawer if it is visible.
+   */
+  async closeDrawer() {
+    const isVisible = await this.drawer.isVisible();
+    if (isVisible) {
+      await this.closeDrawerBtn.click();
+    }
+  }
+
+  /**
+   * Click the sample data loader button inside the drawer.
    */
   async loadSample() {
-    await this.sampleBtn.scrollIntoViewIfNeeded();
+    await this.openDrawer();
     await this.sampleBtn.click();
   }
 
   /**
-   * Click the form submission button.
+   * Fill the metadata form in the drawer.
+   */
+  async fillMetadata(name, company, email) {
+    await this.openDrawer();
+    await this.nameInput.fill(name);
+    await this.companyInput.fill(company);
+    await this.emailInput.fill(email);
+  }
+
+  /**
+   * Submit the sources form to initialize the session.
    */
   async submitForm() {
+    await this.openDrawer();
     await this.submitBtn.click();
   }
 
   /**
-   * Wait until the dossier output contains substantive content.
-   * @param {number} timeout -- max wait in ms (default 15000)
+   * Wait for the chat workspace to initialize.
    */
-  async waitForDossier(timeout = 15000) {
-    await this.outputContent.waitFor({ state: 'attached', timeout });
+  async waitForChatInit() {
     await this.page.waitForFunction(
-      (selector) => {
-        const el = document.querySelector(selector);
-        return el && el.innerText && el.innerText.length > 100;
+      () => {
+        const log = document.querySelector('#chat-messages-log');
+        return log && log.innerText.includes('Chat session initialized');
       },
-      '#output-doc-content',
+      null,
+      { timeout: 15000 }
+    );
+  }
+
+  /**
+   * Send a chat message.
+   */
+  async sendMessage(text) {
+    await this.chatInput.fill(text);
+    await this.sendBtn.click();
+  }
+
+  /**
+   * Wait for assistant response to be rendered in the log.
+   */
+  async waitForResponse(timeout = 15000) {
+    await this.page.waitForFunction(
+      () => {
+        const cards = document.querySelectorAll('#chat-messages-log .chat-message-card.assistant');
+        if (cards.length === 0) return false;
+        const lastCard = cards[cards.length - 1];
+        return lastCard && lastCard.innerText && lastCard.innerText.length > 5;
+      },
+      null,
       { timeout }
     );
   }
 
   /**
-   * Retrieve the dossier output text content.
-   * @returns {Promise<string>}
+   * Get the last assistant message content.
    */
-  async getDossierText() {
-    return this.outputContent.innerText();
-  }
-
-  /**
-   * Advance to the Playbook step by clicking the next button.
-   */
-  async goToPlaybook() {
-    const isStep2Active = await this.page.evaluate(() => {
-      const el = document.querySelector('#step-2-content');
-      return el && el.classList.contains('active');
+  async getLastResponseText() {
+    return this.page.evaluate(() => {
+      const cards = document.querySelectorAll('#chat-messages-log .chat-message-card.assistant');
+      if (cards.length === 0) return '';
+      const lastCard = cards[cards.length - 1];
+      // Exclude actions buttons text if present
+      const pre = lastCard.querySelector('pre');
+      if (pre) return pre.innerText;
+      return lastCard.innerText;
     });
-    if (!isStep2Active) {
-      await this.nextBtn.click();
-    }
   }
 
   /**
-   * Switch the battlecard variant via the selector dropdown.
-   * @param {string} variant -- option value to select
-   */
-  async switchVariant(variant) {
-    await this.variantSelector.selectOption(variant);
-  }
-
-  /**
-   * Read the teleprompter counter and parse out the numeric question count.
-   * Expects text like "3 / 10" or "Question 3" -- extracts the first integer.
-   * @returns {Promise<number>}
-   */
-  async getQuestionCount() {
-    const text = await this.teleprompterCounter.innerText();
-    const match = text.match(/(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  }
-
-  /**
-   * Check whether the battlecard body contains italicized tips (<i> or <em>).
-   * @returns {Promise<boolean>}
-   */
-  async hasItalicizedTips() {
-    const count = await this.battlecardBody.locator('i, em').count();
-    return count > 0;
-  }
-
-  /**
-   * Retrieve current form input values.
-   * @returns {Promise<{name: string, company: string}>}
+   * Retrieve current form values from the drawer.
    */
   async getFormValues() {
+    await this.openDrawer();
     const name = await this.nameInput.inputValue();
     const company = await this.companyInput.inputValue();
-    return { name, company };
+    const email = await this.emailInput.inputValue();
+    return { name, company, email };
   }
 }
 

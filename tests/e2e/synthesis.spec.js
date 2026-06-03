@@ -2,206 +2,139 @@ const { test, expect } = require('../fixtures/base');
 
 /**
  * Aegis v2 -- Call Report Synthesis E2E Suite
- * Thoroughly validates the entire Step 3 reports pipeline, navigation, UI states,
- * and individual document tab rendering.
+ * Validates Google Drive list loading, file parsing, assistant prompt generation,
+ * and client email recap dispatch triggers.
  */
 test.describe('Aegis Synthesis E2E Suite', () => {
 
-    test('Step 3: End-to-End Report Generation Pipeline, Tab Navigation, and UI Integrity', async ({ page }) => {
-        await page.goto('/');
+    test('Step 3: End-to-End Report Generation Pipeline, Google Drive & Email Dispatch UI Integrity', async ({ page }) => {
         page.on('console', msg => console.log('PAGE LOG:', msg.text()));
         page.on('pageerror', err => console.error('PAGE ERROR:', err.message));
+
+        // Mock GDrive and Chat Endpoints BEFORE goto
+        await page.route('**/api/gdrive/list', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    items: [
+                        { id: 'file-123', name: 'Lead_Intake_AECOM_Kyle_Fouche.pdf', size: 10240, isFolder: false }
+                    ]
+                })
+            });
+        });
+
+        await page.route('**/api/gdrive/read*', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    status: 'success',
+                    content: 'This SOW covers TM1 Flight Check for AECOM.'
+                })
+            });
+        });
+
+        await page.route('**/api/chat', async route => {
+            const request = route.request();
+            const postData = JSON.parse(request.postData() || '{}');
+            const messages = postData.messages || [];
+            const userMsg = messages.find(m => m.role === 'user')?.content || '';
+
+            let reply = 'Simulated assistant response';
+            if (userMsg.includes('recap') || userMsg.includes('Recap')) {
+                reply = `Here is your call summary and takeaways:
+- Discussed TM1 Flight Check
+- Estimated timeline: 6 days
+
+Kind regards,
+Albert`;
+            }
+
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    choices: [{
+                        message: {
+                            role: 'assistant',
+                            content: reply
+                        }
+                    }]
+                })
+            });
+        });
+
+        await page.route('**/api/email/recap', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ status: 'success' })
+            });
+        });
+
+        // Navigate to dashboard page
+        await page.goto('/');
         await page.locator('body').waitFor({ state: 'attached' });
 
-        if (!process.env.TEST_URL) {
-            await page.route('**/api/chat', async route => {
-                const request = route.request();
-                const postData = JSON.parse(request.postData() || '{}');
-                const messages = postData.messages || [];
-                const systemMessage = messages.find(m => m.role === 'system')?.content || '';
-                
-                if (systemMessage.includes('research') || systemMessage.includes('brief') || systemMessage.includes('dossier')) {
-                    await route.fulfill({
-                        status: 200,
-                        contentType: 'application/json',
-                        body: JSON.stringify({
-                            choices: [{
-                                message: {
-                                    role: 'assistant',
-                                    content: `
-=== LIKELY PAIN POINTS ===
-- Highly manual workflow processes
-- Scalability bottlenecks in existing TM1 instances
-=== HIGH-IMPACT OPENERS ===
-- "How do you currently handle manual syncs?"
-- "What issues are you seeing with TM1 sizing limits?"
-                                    `
-                                }
-                            }]
-                        })
-                    });
-                } else if (systemMessage.includes('Synthesizer') || systemMessage.includes('operations') || systemMessage.includes('synth')) {
-                    const mockOutputText = `
-[DOCUMENT: QUESTIONNAIRE_ANSWERS]
-<h3>1. Questionnaire Answers</h3><p>Prospect verified manual spreadsheets are a major bottleneck.</p><ul><li>Active TM1 databases: 4</li><li>Users affected: 15</li></ul>
+        // 1. Initialize new chat session
+        await page.click('#btn-new-chat');
+        await page.locator('#chat-messages-log').waitFor({ state: 'visible' });
 
-[DOCUMENT: SUMMARY]
-<h4>QUALIFICATION SCORE: HOT</h4>
-<p><strong>SCORING RATIONALE:</strong> The prospect has a clear budget and urgent timeline.</p>
-<p><strong>RECOMMENDED NEXT STEP:</strong> Schedule deep dive.</p>
-<p><strong>RED FLAGS:</strong> None.</p>
+        // 2. Open sources drawer and verify GDrive selector loads files
+        await page.click('#btn-toggle-sources');
+        await page.locator('#sources-drawer').waitFor({ state: 'visible' });
 
-[DOCUMENT: MIGRATION_REPORT]
-<h3>3. Migration Report</h3><p>Direct migration pathway determined to be highly viable.</p>
+        // Wait for select files options to load
+        await page.waitForFunction(
+            () => document.querySelector('#source-gdrive-file').options.length > 1,
+            { timeout: 10000 }
+        );
 
-[DOCUMENT: RECAP_EMAIL]
-<h3>4. Client Recap Email</h3><p>Dear Sarah, thank you for outlining your TM1 pain points...</p>
-
-[DOCUMENT: SUMMARY_SHEET]
-<h3>5. Summary Sheet</h3><p>Enterprise data transition project metrics...</p>
-
-[DOCUMENT: NOTES]
-<h3>6. Meeting Notes</h3><p>Prospect was very receptive to Steny AI capabilities.</p>
-
-[DOCUMENT: PROPOSAL]
-<h3>7. Consultative Proposal</h3><p>Steny AI proposed migration plan and commercial options...</p>
-
-[DOCUMENT: ACTION_ITEMS]
-<h3>8. Action Items</h3><p>Send calendar invite for next session.</p>
-                    `;
-
-                    await route.fulfill({
-                        status: 200,
-                        contentType: 'application/json',
-                        body: JSON.stringify({
-                            choices: [{
-                                message: {
-                                    role: 'assistant',
-                                    content: mockOutputText
-                                }
-                            }]
-                        })
-                    });
-                } else {
-                    await route.continue();
-                }
-            });
-        }
-
-        // 1. Advance through Step 1 (Dossier Generation)
+        // Select the file and trigger change
+        await page.selectOption('#source-gdrive-file', 'file-123');
         await page.evaluate(() => {
-            document.querySelector('#prep-name').value = 'Sarah Chen';
-            document.querySelector('#prep-company').value = 'Meridian Logistics';
-            document.querySelector('#prep-email').value = 'sarah.chen@meridianlogistics.com.au';
-            document.querySelector('#prep-phone').value = '+61 2 9876 5432';
-            
-            document.querySelector('#prep-name').dispatchEvent(new Event('input', { bubbles: true }));
-            document.querySelector('#prep-company').dispatchEvent(new Event('input', { bubbles: true }));
-            document.querySelector('#prep-email').dispatchEvent(new Event('input', { bubbles: true }));
-            document.querySelector('#prep-phone').dispatchEvent(new Event('input', { bubbles: true }));
-            
-            document.querySelector('#prep-submit-btn').click();
+            document.querySelector('#source-gdrive-file').dispatchEvent(new Event('change', { bubbles: true }));
         });
 
-        // Wait for dossier to complete and render in right panel
-        await page.locator('#output-doc-content').waitFor({ state: 'visible', timeout: 15000 });
-        await expect(page.locator('#output-doc-content')).toContainText('LIKELY PAIN POINTS');
-
-        // 2. Navigate to Step 2 (Session)
+        // Fill form fields
         await page.evaluate(() => {
-            document.querySelector('#step-1-next-btn').click();
+            document.querySelector('#meta-name').value = 'Kyle Fouche';
+            document.querySelector('#meta-company').value = 'AECOM';
+            document.querySelector('#meta-email').value = 'kyle.fouche@aecom.com';
+            document.querySelector('#meta-name').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#meta-company').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#meta-email').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#btn-save-sources').click();
         });
-        await expect(page.locator('#step-2-content')).toHaveClass(/active/);
 
-        // 3. Bypass Step 2 booking validation and navigate to Step 3 (Reports)
-        await page.evaluate(() => {
-            const btn = document.querySelector('#positional-confirm-btn');
-            if (btn) {
-                btn.disabled = true;
-            }
-            document.querySelector('#step-2-next-btn').click();
-        });
-        await expect(page.locator('#step-3-content')).toHaveClass(/active/);
+        // Wait for chat workspace initialization to complete
+        await page.waitForFunction(
+            () => {
+                const log = document.querySelector('#chat-messages-log');
+                return log && log.innerText.includes('Chat session initialized');
+            },
+            { timeout: 15000 }
+        );
 
-        // 4. Fill in transcript data and trigger synthesis
-        const sampleTranscript = `
-        Sarah Chen: We are using 4 legacy TM1 databases. They are extremely slow.
-        Albert: Let's run a complete migration report.
-        Sarah Chen: Manual spreadsheets are taking 15 hours per week.
-        `;
+        // 3. Trigger recap email generation in chat console
+        await page.click('button[data-prompt-type="recapEmail"]');
 
-        await page.evaluate((transcriptText) => {
-            document.querySelector('#synth-transcript').value = transcriptText;
-            document.querySelector('#synth-transcript').dispatchEvent(new Event('input', { bubbles: true }));
-            document.querySelector('#synth-submit-btn').click();
-        }, sampleTranscript);
+        // Wait for recap email bubble with send recap action button to appear
+        const sendRecapBtn = page.locator('button:has-text("✉️ Send Recap")');
+        await expect(sendRecapBtn).toBeVisible({ timeout: 15000 });
 
-        // 5. Assert the focus stays on Step 3 and the reports container is visible
-        const step3Content = page.locator('#step-3-content');
-        await expect(step3Content).toHaveClass(/active/);
+        // 4. Click Send Recap and verify it changes state/shows success
+        await sendRecapBtn.click();
+        await page.waitForFunction(
+            () => {
+                const toast = document.querySelector('#toast');
+                return toast && toast.classList.contains('show');
+            },
+            { timeout: 5000 }
+        );
 
-        const step2Content = page.locator('#step-2-content');
-        await expect(step2Content).not.toHaveClass(/active/);
-
-        const outputResults = page.locator('#output-results');
-        await expect(outputResults).toBeVisible();
-
-        const outputDocNav = page.locator('#output-doc-nav');
-        await expect(outputDocNav).toBeVisible();
-
-        // 6. Deep Tab Verification: Step through every report type and assert DOM content updates correctly
-        const outputDocContent = page.locator('#output-doc-content');
-
-        // Tab 1: Questionnaire Answers
-        await page.click('#output-doc-nav button[data-doc="questionnaireAnswers"]', { force: true });
-        await expect(page.locator('#output-doc-nav button[data-doc="questionnaireAnswers"]')).toHaveClass(/active/);
-        await expect(outputDocContent).toContainText('Prospect verified manual spreadsheets');
-        await expect(outputDocContent).toContainText('Active TM1 databases: 4');
-
-        // Tab 2: Migration Report
-        await page.click('#output-doc-nav button[data-doc="migrationReport"]', { force: true });
-        await expect(page.locator('#output-doc-nav button[data-doc="migrationReport"]')).toHaveClass(/active/);
-        await expect(outputDocContent).toContainText('Direct migration pathway determined');
-
-        // Tab 3: Recap Email
-        await page.click('#output-doc-nav button[data-doc="recapEmail"]', { force: true });
-        await expect(page.locator('#output-doc-nav button[data-doc="recapEmail"]')).toHaveClass(/active/);
-        await expect(outputDocContent).toContainText('Dear Sarah, thank you for outlining');
-
-        // Tab 4: Summary Sheet
-        await page.click('#output-doc-nav button[data-doc="summarySheet"]', { force: true });
-        await expect(page.locator('#output-doc-nav button[data-doc="summarySheet"]')).toHaveClass(/active/);
-        await expect(outputDocContent).toContainText('Enterprise data transition project metrics');
-
-        // Tab 5: Notes
-        await page.click('#output-doc-nav button[data-doc="notes"]', { force: true });
-        await expect(page.locator('#output-doc-nav button[data-doc="notes"]')).toHaveClass(/active/);
-        await expect(outputDocContent).toContainText('very receptive to Steny AI capabilities');
-
-        // Tab 6: Proposal
-        await page.click('#output-doc-nav button[data-doc="proposal"]', { force: true });
-        await expect(page.locator('#output-doc-nav button[data-doc="proposal"]')).toHaveClass(/active/);
-        await expect(outputDocContent).toContainText('proposed migration plan and commercial options');
-
-        // Tab 7: Action Items
-        await page.click('#output-doc-nav button[data-doc="actionItems"]', { force: true });
-        await expect(page.locator('#output-doc-nav button[data-doc="actionItems"]')).toHaveClass(/active/);
-        await expect(outputDocContent).toContainText('Send calendar invite for next session');
-
-        // Tab 8: Transcript
-        await page.click('#output-doc-nav button[data-doc="transcript"]', { force: true });
-        await expect(page.locator('#output-doc-nav button[data-doc="transcript"]')).toHaveClass(/active/);
-        await expect(outputDocContent).toContainText('using 4 legacy TM1 databases');
-
-        // 7. Verify UI styling indicators match generated state
-        const generateButtons = page.locator('.report-type-btn');
-        const count = await generateButtons.count();
-        expect(count).toBe(7);
-
-        for (let i = 0; i < count; i++) {
-            const btn = generateButtons.nth(i);
-            const style = await btn.getAttribute('style');
-            expect(style).toContain('border-color: rgb(0, 200, 83)'); // green highlight verification
-        }
+        const toastText = await page.locator('#toast').innerText();
+        expect(toastText).toContain('email sent');
     });
 });

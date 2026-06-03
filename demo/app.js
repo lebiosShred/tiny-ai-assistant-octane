@@ -1,9 +1,7 @@
-import { TinyAI } from './ai-assistant.js';
-
 document.addEventListener('DOMContentLoaded', () => {
     'use strict';
 
-    // Helper to escape HTML to prevent XSS
+    // Helpers
     function escapeHTML(str) {
         if (!str) return '';
         return String(str)
@@ -14,3707 +12,790 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, "&#039;");
     }
 
-    // Fallback sanitizer if DOMPurify fails to load
-    function fallbackSanitize(html) {
-        if (!html) return '';
-        return html
-            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-            .replace(/on\w+\s*=\s*(['"][^'"]*['"]|[^>\s]+)/gi, '');
-    }
-
-    // Global state for synthesized documents
-    let currentDocs = null;
-    let activeDocTab = 'questionnaireAnswers';
-    let currentQuestions = [];
-    let currentDossierText = "";
-    let currentScreencastUrl = "";
-    let selectedHistoryItem = null;
-    let activeDetailDocTab = 'questionnaireAnswers';
-    let currentView = 'pipeline'; // 'pipeline' or 'directory'
-    
-    // Directory variables and event handlers
-    let directoryItems = [];
-    
-    const PIPELINE_STAGES = [
-        { id: 'prep', label: 'Preparation', color: '#3498db' },
-        { id: 'session', label: 'Live Call', color: '#2ecc71' },
-        { id: 'reports', label: 'Reports', color: '#9b59b6' },
-        { id: 'handover', label: 'Hand-Over Debrief', color: '#e67e22' },
-        { id: 'founder', label: 'Founder Meeting', color: '#e74c3c' },
-        { id: 'debrief', label: 'Debrief Complete', color: '#1abc9c' },
-    ];
-    
-    const navPipeline = document.getElementById('nav-pipeline');
-    const navDirectory = document.getElementById('nav-directory');
-    const dashboardGrid = document.querySelector('.dashboard-grid');
-    const callDirectoryWorkspace = document.getElementById('call-directory-workspace');
-
-    function switchView(view) {
-        currentView = view;
-        if (view === 'pipeline') {
-            if (navPipeline) navPipeline.classList.add('active');
-            if (navDirectory) navDirectory.classList.remove('active');
-            if (dashboardGrid) dashboardGrid.style.display = 'grid';
-            if (callDirectoryWorkspace) callDirectoryWorkspace.style.display = 'none';
-        } else {
-            if (navDirectory) navDirectory.classList.add('active');
-            if (navPipeline) navPipeline.classList.remove('active');
-            if (dashboardGrid) dashboardGrid.style.display = 'none';
-            if (callDirectoryWorkspace) callDirectoryWorkspace.style.display = 'grid';
-            loadDirectoryList();
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        if (toast) {
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
         }
     }
 
-    if (navPipeline && navDirectory) {
-        navPipeline.addEventListener('click', () => switchView('pipeline'));
-        navDirectory.addEventListener('click', () => switchView('directory'));
+    // State Variables
+    let currentChatId = null;
+    let chatsList = [];
+    let chatHistory = [];
+    let transitDistance = "Online/Phone call only (Distance unavailable)";
+    let gdriveFileContent = "";
+
+    // DOM Elements
+    const btnNewChat = document.getElementById('btn-new-chat');
+    const chatSearch = document.getElementById('chat-search');
+    const recentChatsList = document.getElementById('recent-chats-list');
+    const workspaceEmptyState = document.getElementById('workspace-empty-state');
+    const workspaceActiveChat = document.getElementById('workspace-active-chat');
+
+    const activeChatClientTitle = document.getElementById('active-chat-client-title');
+    const activeChatClientMeta = document.getElementById('active-chat-client-meta');
+
+    // Drawer Elements
+    const btnToggleSources = document.getElementById('btn-toggle-sources');
+    const btnCloseDrawer = document.getElementById('btn-close-drawer');
+    const sourcesDrawer = document.getElementById('sources-drawer');
+
+    // Forms & Inputs (Sources)
+    const chatSourcesForm = document.getElementById('chat-sources-form');
+    const metaName = document.getElementById('meta-name');
+    const metaCompany = document.getElementById('meta-company');
+    const metaTitle = document.getElementById('meta-title');
+    const metaEmail = document.getElementById('meta-email');
+    const metaPhone = document.getElementById('meta-phone');
+    const metaRep = document.getElementById('meta-rep');
+    const metaTrack = document.getElementById('meta-track');
+    const sourceGdriveFileSelect = document.getElementById('source-gdrive-file');
+    const sourceGdriveFileId = document.getElementById('source-gdrive-file-id');
+    const btnRefreshGdrive = document.getElementById('btn-refresh-gdrive');
+
+    const sourceLinkedinText = document.getElementById('source-linkedin-text');
+    const sourceLinkedinFile = document.getElementById('source-linkedin-file');
+    const sourceLinkedinDropzone = document.getElementById('source-linkedin-dropzone');
+
+    const sourceIntakeText = document.getElementById('source-intake-text');
+
+    const sourceTranscriptText = document.getElementById('source-transcript-text');
+    const sourceTranscriptFile = document.getElementById('source-transcript-file');
+    const sourceTranscriptDropzone = document.getElementById('source-transcript-dropzone');
+    const sourceTranscriptProgress = document.getElementById('source-transcript-progress');
+    const sourceTranscriptProgressBar = document.getElementById('source-transcript-progress-bar');
+    const sourceTranscriptStatus = document.getElementById('source-transcript-status');
+
+    const activeAudioContainer = document.getElementById('active-audio-container');
+    const activeAudioPlayer = document.getElementById('active-audio-player');
+
+    const btnLoadSample = document.getElementById('btn-load-sample');
+
+    // Chat Console Elements
+    const chatMessagesLog = document.getElementById('chat-messages-log');
+    const chatLoadingIndicator = document.getElementById('chat-loading-indicator');
+    const chatUserInput = document.getElementById('chat-user-input');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const quickPromptButtons = document.querySelectorAll('.btn-quick-prompt');
+
+    // Setup Resizer Splitter
+    const resizer = document.getElementById('workspace-splitter');
+    const layoutContainer = document.querySelector('.client-chat-layout');
+    if (resizer && layoutContainer) {
+        let isResizing = false;
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const containerRect = layoutContainer.getBoundingClientRect();
+            const newSidebarWidth = e.clientX - containerRect.left;
+            if (newSidebarWidth > 180 && newSidebarWidth < 450) {
+                layoutContainer.style.gridTemplateColumns = `${newSidebarWidth}px 12px 1fr`;
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+            document.body.style.cursor = '';
+        });
+        resizer.addEventListener('dblclick', () => {
+            layoutContainer.style.gridTemplateColumns = '260px 12px 1fr';
+        });
     }
 
-    async function loadDirectoryList() {
-        const listContainer = document.getElementById('directory-list-container');
-        if (!listContainer) return;
-        listContainer.innerHTML = '<div class="util-text-center-text-sm-text-muted-a50403">Loading call directory...</div>';
+    // --- Loading & Loading Chats list ---
+    async function loadChatsList() {
         try {
             const response = await fetch('/api/history');
-            if (!response.ok) {
-                throw new Error('Failed to fetch history list');
-            }
-            directoryItems = await response.json();
-            renderDirectoryList();
-        } catch (error) {
-            console.error('Error loading history list:', error);
-            listContainer.innerHTML = `<div class="util-text-center-text-sm-text-error-098613">Failed to load call directory: ${error.message}</div>`;
+            if (!response.ok) throw new Error('Failed to fetch history');
+            chatsList = await response.json();
+            renderChatsList();
+        } catch (err) {
+            console.error('Error loading chats:', err);
+            showToast('Failed to load recent chats.');
         }
     }
 
-    function renderDirectoryList() {
-        const listContainer = document.getElementById('directory-list-container');
-        if (!listContainer) return;
+    function renderChatsList() {
+        if (!recentChatsList) return;
+        recentChatsList.innerHTML = '';
 
-        const searchTerm = (document.getElementById('directory-search')?.value || '').toLowerCase().trim();
-        const scoreFilter = document.getElementById('directory-filter-score')?.value || 'ALL';
-        const repFilter = document.getElementById('directory-filter-rep')?.value || 'ALL';
-
-        const filtered = directoryItems.filter(item => {
-            const matchSearch = !searchTerm || 
+        const searchTerm = (chatSearch?.value || '').toLowerCase().trim();
+        const filtered = chatsList.filter(item => {
+            return !searchTerm ||
                 (item.name && item.name.toLowerCase().includes(searchTerm)) ||
-                (item.company && item.company.toLowerCase().includes(searchTerm)) ||
-                (item.track && item.track.toLowerCase().includes(searchTerm)) ||
-                (item.title && item.title.toLowerCase().includes(searchTerm)) ||
-                (item.type && item.type.toLowerCase().includes(searchTerm));
-
-            let matchScore = true;
-            if (scoreFilter !== 'ALL') {
-                if (scoreFilter === 'NONE') {
-                    matchScore = !item.score;
-                } else {
-                    matchScore = item.score && item.score.toUpperCase() === scoreFilter;
-                }
-            }
-
-            let matchRep = true;
-            if (repFilter !== 'ALL') {
-                matchRep = item.rep && item.rep.toUpperCase() === repFilter.toUpperCase();
-            }
-
-            return matchSearch && matchScore && matchRep;
+                (item.company && item.company.toLowerCase().includes(searchTerm));
         });
 
         if (filtered.length === 0) {
-            listContainer.innerHTML = '<div class="util-text-center-text-sm-text-muted-a50403">No call records found.</div>';
+            recentChatsList.innerHTML = '<div style="font-size:0.8rem;color:#94a3b8;text-align:center;padding:1rem;">No clients found</div>';
             return;
         }
 
-        listContainer.innerHTML = '';
         filtered.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'directory-card';
-            
             const dateStr = new Date(item.date).toLocaleDateString(undefined, {
-                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
 
-            const badgeTypeClass = item.type === 'synthesis' ? 'synthesis' : 'dossier';
-            const badgeTypeLabel = item.type === 'synthesis' ? 'Synthesis' : 'Dossier';
-            
-            const repBadge = item.rep ? `<span class="directory-badge-rep util-text-sm-cae50a">Sales Rep: ${escapeHTML(item.rep)}</span>` : '';
-            const stageId = item.stage || 'prep';
-            const stageConfig = PIPELINE_STAGES.find(s => s.id === stageId) || PIPELINE_STAGES[0];
-            const stageBadge = `<span class="directory-badge-stage util-text-sm-5b4ebe">${stageConfig.label}</span>`;
-
-            let scoreBadge = '';
-            if (item.score) {
-                const scoreLower = item.score.toLowerCase();
-                scoreBadge = `<span class="badge-score ${scoreLower}">${item.score}</span>`;
-            }
-
-            const fileAttachedSegment = item.gDriveFile ? `<div class="util-flex-text-sm-a08470">📁 GDrive SOW: <strong>${escapeHTML(item.gDriveFile)}</strong></div>` : '';
-
-            let audioPlayerHtml = '';
-            if (item.type === 'synthesis') {
-                audioPlayerHtml = `
-                    <div class="directory-audio-player" data-id="${item.id} util-51b059">
-                        <button type="button" class="audio-play-btn" title="Play call recording util-flex-text-sm-9c6473">▶</button>
-                        <div class="audio-track util-flex-e5ab15">
-                            <div class="audio-progress util-1d9aee"></div>
-                        </div>
-                        <span class="audio-time util-text-sm-a40804">0:00 / 2:30</span>
-                        <span class="audio-volume-icon util-text-sm-text-muted-5e21e6">🔊</span>
-                    </div>
-                `;
-            }
-
+            const card = document.createElement('div');
+            card.className = `chat-list-item ${item.id === currentChatId ? 'active' : ''}`;
             card.innerHTML = `
-                <div class="directory-card-header">
-                    <div>
-                        <div class="directory-card-title">${escapeHTML(item.company)}</div>
-                        <div class="directory-card-subtitle">${escapeHTML(item.name)} ${item.title ? `— ${escapeHTML(item.title)}` : ''}</div>
-                    </div>
-                    <div class="util-flex-4e01a4">
-                        <span class="directory-badge-type ${badgeTypeClass}">${badgeTypeLabel}</span>
-                        <div class="util-flex-b92b0d">
-                            ${repBadge}
-                            ${stageBadge}
-                        </div>
-                    </div>
-                </div>
-                ${fileAttachedSegment}
-                <div class="directory-card-meta">
-                    <span>📅 ${dateStr}</span>
-                    ${item.track ? `<span>🏷️ ${escapeHTML(item.track)}</span>` : ''}
-                    ${item.variant ? `<span>📋 ${escapeHTML(item.variant)}</span>` : ''}
-                    ${scoreBadge}
-                </div>
-                ${audioPlayerHtml}
-                <div class="directory-card-actions">
-                    <button class="directory-btn directory-btn-delete" data-id="${item.id}">🗑️ Delete</button>
-                    <button class="directory-btn directory-btn-load" data-id="${item.id}">👁️ Load Console</button>
+                <div class="chat-list-item-title">${escapeHTML(item.company)}</div>
+                <div class="chat-list-item-subtitle">${escapeHTML(item.name)} — ${escapeHTML(item.track || 'TM1 & AI')}</div>
+                <div class="chat-list-item-meta">
+                    <span>${dateStr}</span>
+                    <span>Rep: ${escapeHTML(item.rep || 'Albert')}</span>
                 </div>
             `;
 
-            card.addEventListener('click', async (e) => {
-                if (e.target.closest('button') || e.target.closest('.directory-audio-player')) {
-                    return;
-                }
-                await loadHistoryItemDetail(item.id, false);
-            });
-
-            card.querySelector('.directory-btn-delete').addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (confirm(`Are you sure you want to delete this call record for ${item.company}?`)) {
-                    await deleteHistoryItem(item.id);
-                }
-            });
-
-            card.querySelector('.directory-btn-load').addEventListener('click', async (e) => {
-                e.stopPropagation();
-                await loadHistoryItemDetail(item.id, true);
-            });
-
-            listContainer.appendChild(card);
-        });
-
-        // Bind audio players (real streaming or external redirect)
-        filtered.forEach(item => {
-            if (item.type === 'synthesis') {
-                const cardEl = listContainer.querySelector(`.directory-audio-player[data-id="${item.id}"]`);
-                if (cardEl) {
-                    const playBtn = cardEl.querySelector('.audio-play-btn');
-                    const progress = cardEl.querySelector('.audio-progress');
-                    const timeLabel = cardEl.querySelector('.audio-time');
-                    const volBtn = cardEl.querySelector('.audio-volume-icon');
-                    
-                    let isPlaying = false;
-                    let duration = 150; // default 2m 30s
-                    let currentTime = 0;
-                    let audio = null;
-                    const recordingUrl = item.screencast;
-                    
-                    const isDirectAudio = recordingUrl && (
-                        recordingUrl.toLowerCase().endsWith('.mp3') || 
-                        recordingUrl.toLowerCase().endsWith('.wav') || 
-                        recordingUrl.toLowerCase().endsWith('.m4a') || 
-                        recordingUrl.toLowerCase().endsWith('.ogg') ||
-                        recordingUrl.toLowerCase().includes('/audio-stream')
-                    );
-                    
-                    const formatTime = (secs) => {
-                        const m = Math.floor(secs / 60);
-                        const s = Math.floor(secs % 60);
-                        return `${m}:${s < 10 ? '0' : ''}${s}`;
-                    };
-                    
-                    playBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        
-                        // Handle external player pages (Teams, Fathom)
-                        if (recordingUrl && !isDirectAudio) {
-                            showToast("Opening recording page in new tab...");
-                            window.open(recordingUrl, '_blank');
-                            return;
-                        }
-                        
-                        if (!recordingUrl) {
-                            showToast("No call recording file associated.");
-                            return;
-                        }
-                        
-                        if (isPlaying) {
-                            if (audio) audio.pause();
-                            playBtn.innerText = '▶';
-                            isPlaying = false;
-                        } else {
-                            // Find and stop any other active playing players
-                            listContainer.querySelectorAll('.audio-play-btn').forEach(btn => {
-                                if (btn !== playBtn && btn.innerText === '⏸') {
-                                    btn.click();
-                                }
-                            });
-                            
-                            if (!audio) {
-                                audio = new Audio(recordingUrl);
-                                audio.addEventListener('loadedmetadata', () => {
-                                    duration = audio.duration;
-                                    timeLabel.innerText = `0:00 / ${formatTime(duration)}`;
-                                });
-                                audio.addEventListener('timeupdate', () => {
-                                    currentTime = audio.currentTime;
-                                    const percent = (currentTime / duration) * 100;
-                                    progress.style.width = `${percent}%`;
-                                    timeLabel.innerText = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-                                });
-                                audio.addEventListener('ended', () => {
-                                    playBtn.innerText = '▶';
-                                    progress.style.width = '0%';
-                                    timeLabel.innerText = `0:00 / ${formatTime(duration)}`;
-                                    isPlaying = false;
-                                });
-                            }
-                            
-                            audio.play().catch(err => {
-                                console.error('Audio playback failed:', err);
-                                showToast("Failed to stream audio file: " + err.message);
-                            });
-                            playBtn.innerText = '⏸';
-                            isPlaying = true;
-                        }
-                    });
-                    
-                    volBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if (audio) {
-                            if (audio.muted) {
-                                audio.muted = false;
-                                volBtn.innerText = '🔊';
-                            } else {
-                                audio.muted = true;
-                                volBtn.innerText = '🔇';
-                            }
-                        } else {
-                            if (volBtn.innerText === '🔊') {
-                                volBtn.innerText = '🔇';
-                            } else {
-                                volBtn.innerText = '🔊';
-                            }
-                        }
-                    });
-                }
-            }
+            card.addEventListener('click', () => selectChat(item.id));
+            recentChatsList.appendChild(card);
         });
     }
 
-    async function deleteHistoryItem(id) {
+    if (chatSearch) {
+        chatSearch.addEventListener('input', renderChatsList);
+    }
+
+    // --- Google Drive Explorer Loader ---
+    async function loadGoogleDriveFiles() {
+        if (!sourceGdriveFileSelect) return;
+        sourceGdriveFileSelect.innerHTML = '<option value="">-- Loading GDrive files... --</option>';
         try {
-            const response = await fetch(`/api/history?id=${encodeURIComponent(id)}`, {
-                method: 'DELETE'
-            });
-            if (!response.ok) {
-                throw new Error('Failed to delete call record');
+            const response = await fetch('/api/gdrive/list');
+            if (!response.ok) throw new Error('GDrive list failed');
+            const data = await response.json();
+            sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(file => {
+                    if (!file.isFolder) {
+                        const opt = document.createElement('option');
+                        opt.value = file.id;
+                        opt.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                        sourceGdriveFileSelect.appendChild(opt);
+                    }
+                });
+            } else {
+                sourceGdriveFileSelect.innerHTML = '<option value="">No files in client folder</option>';
             }
-            showToast("Call record deleted successfully.");
-            await loadDirectoryList();
-        } catch (error) {
-            console.error('Error deleting call record:', error);
-            alert(`Failed to delete record: ${error.message}`);
+        } catch (err) {
+            console.error('Error loading Google Drive files:', err);
+            sourceGdriveFileSelect.innerHTML = '<option value="">Error loading GDrive files</option>';
+        }
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
         }
     }
 
-    async function loadHistoryItemDetail(id, forcePipelineRestore = false) {
-        showLoading("Loading historical session...");
+    // --- Select Chat ---
+    async function selectChat(id) {
+        currentChatId = id;
+        renderChatsList();
+ 
+        workspaceEmptyState.classList.add('hidden');
+        workspaceActiveChat.classList.remove('hidden');
+        chatMessagesLog.innerHTML = '';
+ 
         try {
             const response = await fetch(`/api/history/detail?id=${encodeURIComponent(id)}`);
-            if (!response.ok) {
-                throw new Error('Failed to load call record details');
-            }
-            const item = await response.json();
+            if (!response.ok) throw new Error('Failed to load chat details');
+            const data = await response.json();
+ 
+            // Populate metadata
+            metaName.value = data.name || '';
+            metaCompany.value = data.company || '';
+            metaTitle.value = data.title || '';
+            metaEmail.value = data.email || '';
+            metaPhone.value = data.phone || '';
+            metaRep.value = data.rep || 'Albert';
+            metaTrack.value = data.track || 'Planning & Analytics (TM1)';
             
-            // Parse content string to object if type is synthesis
-            if (item.type === 'synthesis' && typeof item.content === 'string') {
-                try {
-                    item.content = TinyAI.parseSynthesisResponse(item.content);
-                } catch (parseErr) {
-                    console.error('Error parsing synthesis content:', parseErr);
+            gdriveFileContent = data.gDriveFileContent || '';
+            sourceGdriveFileId.value = data.gDriveFileId || '';
+            await loadGoogleDriveFiles();
+            if (data.gDriveFileId) {
+                sourceGdriveFileSelect.value = data.gDriveFileId;
+            } else if (data.gDriveFile || data.oneDriveFile) {
+                const filename = data.gDriveFile || data.oneDriveFile;
+                const options = Array.from(sourceGdriveFileSelect.options);
+                const matchedOpt = options.find(opt => opt.text.includes(filename));
+                if (matchedOpt) {
+                    sourceGdriveFileSelect.value = matchedOpt.value;
+                    sourceGdriveFileId.value = matchedOpt.value;
                 }
             }
-            
-            // Dual interaction check
-            if (currentView === 'directory' && !forcePipelineRestore) {
-                // Just display in Directory Detail panel
-                showDirectoryDetail(item);
-                // Hide loading overlay on the main console
-                resetOutput();
+
+            // Populate source textareas
+            sourceLinkedinText.value = data.linkedinInfo || data.linkedin || '';
+            sourceIntakeText.value = data.intakeAnswers || data.intake || '';
+            sourceTranscriptText.value = data.transcript || '';
+
+            // Setup Header Info
+            activeChatClientTitle.innerText = `${data.company} (${data.name})`;
+            activeChatClientMeta.innerText = `${data.title || 'No Title'} — Interest: ${data.track || 'Planning & Analytics (TM1)'}`;
+
+            // Distance setup
+            transitDistance = data.transitDistance || "Online/Phone call only (Distance unavailable)";
+
+            // Restore Chat history
+            if (Array.isArray(data.messages) && data.messages.length > 0) {
+                chatHistory = data.messages;
             } else {
-                // Restore to Pipeline stepper
-                restoreToPipeline(item);
-            }
-        } catch (error) {
-            console.error('Error loading history item detail:', error);
-            resetOutput();
-            showToast(`Failed to restore session: ${error.message}`);
-        }
-    }
-
-    function restoreToPipeline(item) {
-        if (item.type === 'dossier') {
-            prepNameInput.value = item.name || '';
-            prepTitleInput.value = item.title || '';
-            prepCompanyInput.value = item.company || '';
-            prepUrlInput.value = item.url || '';
-            prepEmailInput.value = item.email || '';
-            if (document.getElementById('prep-phone')) {
-                document.getElementById('prep-phone').value = item.phone || '';
-            }
-            if (document.getElementById('prep-rep')) {
-                document.getElementById('prep-rep').value = item.rep || 'Albert';
-            }
-            attachedGDriveFile = item.gDriveFile || item.oneDriveFile || null;
-            attachedGDriveFileId = item.gDriveFileId || null;
-            attachedGDriveFileContent = item.gDriveFileContent || null;
-            const badge = document.getElementById('gdrive-attached-badge');
-            const badgeName = document.getElementById('gdrive-attached-name');
-            if (badge && badgeName) {
-                if (attachedGDriveFile) {
-                    badgeName.innerText = attachedGDriveFile;
-                    badge.style.display = 'flex';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
-            if(prepTrackSelect) prepTrackSelect.value = item.track || 'Planning & Analytics (TM1)';
-            if(prepIntakeText) prepIntakeText.value = item.intakeAnswers || '';
-            if(prepLinkedinText) prepLinkedinText.value = item.linkedinInfo || '';
-            
-            // Save raw dossier text and render accordion
-            currentDossierText = item.content;
-            renderDossierHtml(item.content);
-
-            // Restore Rapport Guide
-            if (rapportGuidePanel && rapportGuideBody && item.content) {
-                rapportGuidePanel.style.display = 'block';
-                rapportGuideBody.innerHTML = '<div class="util-text-center-text-muted-3d46bd">💡 Loading Rapport Guide talking points...</div>';
-                TinyAI.generateRapportGuide(item.content, getApiConfig())
-                    .then(guideHtml => {
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = guideHtml;
-                        // Strip the Key Context & Facts card completely from the Rapport Guide
-                        const contextCard = tempDiv.querySelector('.card-context');
-                        if (contextCard) {
-                            contextCard.remove();
-                        }
-                        rapportGuideBody.innerHTML = tempDiv.innerHTML;
-                        // Keep Rapport Guide collapsed by default to allow Dossier Quick Reference visibility
-                        rapportGuideBody.style.display = 'none';
-                        if (rapportGuideToggleIcon) rapportGuideToggleIcon.innerText = '▶ Expand';
-                    })
-                    .catch(err => {
-                        console.warn("Failed to generate rapport guide:", err);
-                        rapportGuideBody.innerHTML = '<div class="util-text-center-text-error-12ba4c">Failed to generate talking points.</div>';
+                // If it is an old dossier or synthesis, construct initial messages for backward compatibility
+                chatHistory = [];
+                if (data.type === 'dossier' && data.content) {
+                    chatHistory.push({
+                        role: 'assistant',
+                        content: `**[Lead Prep Briefing]**\n\n${data.content}`,
+                        timestamp: data.date
                     });
-            } else if (rapportGuidePanel) {
-                rapportGuidePanel.style.display = 'none';
-            }
-            
-            goToStep(1);
-            step1NextBtn.classList.remove('hidden');
-            step1NextBtn.style.display = 'inline-flex';
-            switchView('pipeline');
-            showToast(`Restored Call Prep Briefing for ${item.company}`);
-        } else if (item.type === 'synthesis') {
-            const cleanVar = getCleanVariantKey(item.variant);
-            battlecardSelector.value = cleanVar;
-            
-            if (cleanVar === "A") {
-                synthVariantSelect.value = "Variant A";
-            } else if (cleanVar === "B") {
-                synthVariantSelect.value = "Variant B";
-            } else if (cleanVar === "C") {
-                synthVariantSelect.value = "Variant C";
-            }
-            
-            synthTranscriptText.value = item.transcript || '';
-            if (document.getElementById('prep-rep')) {
-                document.getElementById('prep-rep').value = item.rep || 'Albert';
-            }
-            
-            if (cleanVar === 'C') {
-                prepTrackSelect.value = "AI";
-            } else {
-                prepTrackSelect.value = "Planning & Analytics (TM1)";
-            }
-            
-            if (item.customQuestions) {
-                currentQuestions = item.customQuestions;
-                renderBattlecards();
-            } else {
-                loadCustomQuestions(cleanVar).then(() => {
-                    if (item.content && item.content.questionnaireAnswers) {
-                        try {
-                            const extractedAnswers = extractAnswersFromQuestionnaireHTML(item.content.questionnaireAnswers);
-                            currentQuestions.forEach((q, idx) => {
-                                if (extractedAnswers[idx] !== undefined) {
-                                    q.a = extractedAnswers[idx];
-                                }
-                            });
-                        } catch (e) {
-                            console.error('Failed to extract custom questions answers:', e);
-                        }
+                } else if (data.type === 'synthesis' && data.content) {
+                    let combinedText = "**[Call Reports Summary]**\n\n";
+                    const docs = typeof data.content === 'object' ? data.content : {};
+                    for (const key in docs) {
+                        combinedText += `### ${key.toUpperCase()}\n${docs[key]}\n\n`;
                     }
-                    renderBattlecards();
-                });
-            }
-            
-            let docs = item.content;
-            if (docs) {
-                const docsCopy = { ...docs };
-                for (const key in docsCopy) {
-                    docsCopy[key] = formatMarkdown(docsCopy[key]);
-                }
-                if (item.transcript) {
-                    docsCopy.transcript = `<pre class="util-text-sm-61a6d2">${escapeHTML(item.transcript)}</pre>`;
-                }
-                currentDocs = docsCopy;
-                activeDocTab = 'questionnaireAnswers';
-                showResults(null, true);
-            }
-            
-            // Mark all individual report buttons as generated
-            document.querySelectorAll('.report-type-btn').forEach(btn => {
-                btn.style.borderColor = '#00c853';
-                btn.style.color = '#00c853';
-                btn.style.background = 'rgba(0, 200, 83, 0.05)';
-            });
-            
-            currentScreencastUrl = item.screencast || '';
-            const screencastInput = document.getElementById('synth-screencast');
-            if (screencastInput) screencastInput.value = currentScreencastUrl;
-
-            goToStep(3);
-            switchView('pipeline');
-            showToast(`Restored Call Report Synthesis for ${item.company}`);
-        }
-    }
-
-    function showDirectoryDetail(item) {
-        selectedHistoryItem = item;
-        
-        const emptyEl = document.getElementById('directory-detail-empty');
-        const contentEl = document.getElementById('directory-detail-content');
-        if (emptyEl) emptyEl.style.display = 'none';
-        if (contentEl) contentEl.style.display = 'flex';
-        
-        const companyName = document.getElementById('detail-company-name');
-        const scoreBadge = document.getElementById('detail-score-badge');
-        const contactName = document.getElementById('detail-contact-name');
-        const sdrName = document.getElementById('detail-sdr-name');
-        const track = document.getElementById('detail-track');
-        const date = document.getElementById('detail-date');
-        const stageSelect = document.getElementById('detail-stage-select');
-        
-        if (companyName) companyName.textContent = item.company || 'Unknown Company';
-        
-        if (scoreBadge) {
-            if (item.score) {
-                scoreBadge.textContent = item.score;
-                scoreBadge.className = `badge-score ${item.score.toLowerCase()}`;
-                scoreBadge.style.display = 'inline-block';
-            } else {
-                scoreBadge.style.display = 'none';
-            }
-        }
-        
-        if (contactName) contactName.textContent = item.name || 'Unknown Contact';
-        if (sdrName) sdrName.textContent = item.rep || 'Albert';
-        if (track) track.textContent = item.track || (item.variant === 'Variant C' ? 'AI' : 'Planning & Analytics (TM1)');
-        if (date) {
-            const dateStr = new Date(item.date).toLocaleDateString(undefined, {
-                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-            });
-            date.textContent = dateStr;
-        }
-        
-        if (stageSelect) {
-            stageSelect.innerHTML = '';
-            PIPELINE_STAGES.forEach(stage => {
-                const option = document.createElement('option');
-                option.value = stage.id;
-                option.textContent = stage.label;
-                stageSelect.appendChild(option);
-            });
-            stageSelect.value = item.stage || 'prep';
-            
-            const newStageSelect = stageSelect.cloneNode(true);
-            stageSelect.parentNode.replaceChild(newStageSelect, stageSelect);
-            
-            newStageSelect.addEventListener('change', async () => {
-                await updateHistoryStage(item.id, newStageSelect.value);
-            });
-        }
-        
-        // Populating video player logic
-        const videoSection = document.getElementById('detail-video-section');
-        const videoPlayer = document.getElementById('detail-video-player');
-        const videoPlaceholder = document.getElementById('detail-video-placeholder');
-        const videoUrlLabel = document.getElementById('detail-video-url-label');
-        const videoOpenBtn = document.getElementById('detail-video-open-btn');
-        
-        if (videoSection) {
-            const recordingUrl = item.screencast || '';
-            if (recordingUrl) {
-                videoSection.style.display = 'flex';
-                if (videoUrlLabel) videoUrlLabel.textContent = recordingUrl;
-                
-                const isDirectVideo = recordingUrl.toLowerCase().endsWith('.mp4') || 
-                                      recordingUrl.toLowerCase().endsWith('.webm') || 
-                                      recordingUrl.toLowerCase().endsWith('.ogv');
-                                      
-                if (isDirectVideo && videoPlayer && videoPlaceholder) {
-                    videoPlayer.style.display = 'block';
-                    videoPlayer.src = recordingUrl;
-                    videoPlaceholder.style.display = 'none';
-                } else if (videoPlayer && videoPlaceholder) {
-                    videoPlayer.style.display = 'none';
-                    videoPlayer.src = '';
-                    videoPlaceholder.style.display = 'flex';
-                    if (videoOpenBtn) {
-                        const newOpenBtn = videoOpenBtn.cloneNode(true);
-                        videoOpenBtn.parentNode.replaceChild(newOpenBtn, videoOpenBtn);
-                        newOpenBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            window.open(recordingUrl, '_blank');
-                        });
-                    }
-                }
-            } else {
-                videoSection.style.display = 'none';
-                if (videoPlayer) {
-                    videoPlayer.style.display = 'none';
-                    videoPlayer.src = '';
-                }
-            }
-        }
-        
-        const audioSection = document.querySelector('.detail-audio-section');
-        if (audioSection) {
-            audioSection.style.display = item.type === 'synthesis' ? 'block' : 'none';
-        }
-        
-        if (detailPlayBtn && detailProgress && detailTimeLabel) {
-            detailPlayBtn.innerText = '▶';
-            detailProgress.style.width = '0%';
-            detailTimeLabel.innerText = '0:00 / 2:30';
-            
-            let isPlaying = false;
-            let duration = 150;
-            let currentTime = 0;
-            let audio = null;
-            const recordingUrl = item.screencast;
-            
-            const isDirectAudio = recordingUrl && (
-                recordingUrl.toLowerCase().endsWith('.mp3') || 
-                recordingUrl.toLowerCase().endsWith('.wav') || 
-                recordingUrl.toLowerCase().endsWith('.m4a') || 
-                recordingUrl.toLowerCase().endsWith('.ogg') ||
-                recordingUrl.toLowerCase().includes('/audio-stream')
-            );
-            
-            const formatTime = (secs) => {
-                const m = Math.floor(secs / 60);
-                const s = Math.floor(secs % 60);
-                return `${m}:${s < 10 ? '0' : ''}${s}`;
-            };
-            
-            const newPlayBtn = detailPlayBtn.cloneNode(true);
-            detailPlayBtn.parentNode.replaceChild(newPlayBtn, detailPlayBtn);
-            
-            newPlayBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                
-                // Handle external player pages (Teams, Fathom)
-                if (recordingUrl && !isDirectAudio) {
-                    showToast("Opening recording page in new tab...");
-                    window.open(recordingUrl, '_blank');
-                    return;
-                }
-                
-                if (!recordingUrl) {
-                    showToast("No call recording file associated.");
-                    return;
-                }
-                
-                if (isPlaying) {
-                    if (audio) audio.pause();
-                    newPlayBtn.innerText = '▶';
-                    isPlaying = false;
+                    chatHistory.push({
+                        role: 'assistant',
+                        content: combinedText,
+                        timestamp: data.date
+                    });
                 } else {
-                    newPlayBtn.innerText = '⏸';
-                    isPlaying = true;
-                    
-                    if (!audio) {
-                        audio = new Audio(recordingUrl);
-                        audio.addEventListener('loadedmetadata', () => {
-                            duration = audio.duration;
-                            detailTimeLabel.innerText = `0:00 / ${formatTime(duration)}`;
-                        });
-                        audio.addEventListener('timeupdate', () => {
-                            currentTime = audio.currentTime;
-                            const percent = (currentTime / duration) * 100;
-                            detailProgress.style.width = `${percent}%`;
-                            detailTimeLabel.innerText = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-                        });
-                        audio.addEventListener('ended', () => {
-                            newPlayBtn.innerText = '▶';
-                            detailProgress.style.width = '0%';
-                            detailTimeLabel.innerText = `0:00 / ${formatTime(duration)}`;
-                            isPlaying = false;
-                        });
-                    }
-                    
-                    audio.play().catch(err => {
-                        console.error('Detail audio playback failed:', err);
-                        showToast("Failed to stream audio file: " + err.message);
+                    chatHistory.push({
+                        role: 'assistant',
+                        content: `Hi! I am Tiny, your AI Sales Assistant. I have loaded the sources for ${data.name}. You can generate reports or ask me questions about this prospect.`,
+                        timestamp: new Date().toISOString()
                     });
                 }
-            });
-        }
-        
-        activeDetailDocTab = 'questionnaireAnswers';
-        updateDetailDocDisplay();
-    }
-
-    function updateDetailDocDisplay() {
-        const detailDocContent = document.getElementById('detail-doc-content');
-        const detailDocNav = document.getElementById('detail-doc-nav');
-        if (!detailDocContent || !selectedHistoryItem) return;
-        
-        if (selectedHistoryItem.type === 'dossier') {
-            if (detailDocNav) detailDocNav.style.display = 'none';
-            const formatted = formatMarkdown(selectedHistoryItem.content);
-            detailDocContent.innerHTML = window.DOMPurify ? DOMPurify.sanitize(formatted) : fallbackSanitize(formatted);
-            return;
-        }
-        
-        if (detailDocNav) {
-            detailDocNav.style.display = 'flex';
-            const buttons = detailDocNav.querySelectorAll('.doc-tab-btn');
-            buttons.forEach(btn => {
-                if (btn.getAttribute('data-detail-doc') === activeDetailDocTab) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-        }
-        
-        let content = "";
-        const docs = selectedHistoryItem.content || {};
-        if (activeDetailDocTab === 'transcript') {
-            const transcript = selectedHistoryItem.transcript || "";
-            content = `<pre class="util-text-sm-3f1c47">${escapeHTML(transcript)}</pre>`;
-        } else {
-            content = docs[activeDetailDocTab] || "<p>This section was not generated or is empty.</p>";
-            if (content && !content.includes('<p>') && !content.includes('<ul>')) {
-                content = formatMarkdown(content);
             }
-        }
-        
-        detailDocContent.innerHTML = window.DOMPurify ? DOMPurify.sanitize(content) : fallbackSanitize(content);
-    }
+            renderChatHistory();
 
-    async function updateHistoryStage(id, stage) {
-        try {
-            const response = await fetch('/api/history/stage', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id, stage })
-            });
-            if (!response.ok) {
-                throw new Error('Failed to update stage on server');
-            }
-            showToast("Pipeline stage updated successfully.");
-            await loadDirectoryList();
-        } catch (error) {
-            console.error('Error updating stage:', error);
-            showToast(`Failed to update stage: ${error.message}`);
-        }
-    }
-
-    function extractScoreFromHTML(html) {
-        if (!html) return null;
-        const match = html.match(/QUALIFICATION\s*SCORE:\s*(HOT|WARM|COLD)/i);
-        return match ? match[1].toUpperCase() : null;
-    }
-
-    function formatMarkdown(text) {
-        if (!text) return "";
-        // Strip markdown fences
-        let formatted = text.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
-        
-        // Convert **bold** to <strong>bold</strong>
-        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        
-        // Convert specific headers in strong tags to h4 tags for block rendering and spacing
-        formatted = formatted.replace(/<strong>(QUALIFICATION SCORE:.*?|SCORING RATIONALE:?|RECOMMENDED NEXT STEP:?|RED FLAGS:?)<\/strong>/gi, '<h4>$1</h4>');
-        formatted = formatted.replace(/<strong>(Call Context:?|Systems Discussed:?|Pain Points:?|Goals:?|Timeline & Budget:?|Next Steps:?|Direct Quotes:?)<\/strong>/gi, '<h4>$1</h4>');
-        formatted = formatted.replace(/<strong>(UNDERSTANDING OF REQUIREMENTS|PROPOSED SOLUTION|APPROACH & METHODOLOGY|TEAM & RESOURCES|NEXT STEPS & DISCOVERY OPEN ITEMS):?<\/strong>/gi, '<h4>$1</h4>');
-        formatted = formatted.replace(/<strong>(Prospect:?|Octane \(Sales Team\):?|Octane \(TM1 Team\):?)<\/strong>/gi, '<h4>$1</h4>');
-
-        const lines = formatted.split(/\r?\n/);
-        let htmlContent = "";
-        let inList = false;
-        let listType = null; // 'ol' or 'ul'
-
-        function closeList() {
-            if (inList) {
-                htmlContent += `</${listType}>`;
-                inList = false;
-                listType = null;
-            }
-        }
-
-        for (let line of lines) {
-            line = line.trim();
-            if (!line) {
-                closeList();
-                continue;
-            }
-
-            // Check if the line is already a block element or contains block tags
-            const hasBlockTags = /<p>|<ol>|<ul>|<li>|<h3>|<h4>|<div>|<pre>|<blockquote>|<table>/i.test(line);
-
-            if (hasBlockTags) {
-                closeList();
-                htmlContent += line;
-            } else {
-                // Parse markdown elements
-                const olMatch = line.match(/^(\d+\.)\s+(.*)/);
-                const ulMatch = line.match(/^([-•\*])\s+(.*)/);
-                const hMatch = line.match(/^(#{1,6})\s+(.*)/);
-                const bqMatch = line.match(/^(&gt;|>)\s+(.*)/);
-
-                if (olMatch) {
-                    if (inList && listType !== 'ol') closeList();
-                    if (!inList) {
-                        htmlContent += '<ol>';
-                        inList = true;
-                        listType = 'ol';
-                    }
-                    htmlContent += `<li>${olMatch[2]}</li>`;
-                } else if (ulMatch) {
-                    if (inList && listType !== 'ul') closeList();
-                    if (!inList) {
-                        htmlContent += '<ul>';
-                        inList = true;
-                        listType = 'ul';
-                    }
-                    htmlContent += `<li>${ulMatch[2]}</li>`;
-                } else if (hMatch) {
-                    closeList();
-                    const level = Math.min(hMatch[1].length, 6);
-                    htmlContent += `<h${level}>${hMatch[2]}</h${level}>`;
-                } else if (bqMatch) {
-                    closeList();
-                    htmlContent += `<blockquote>${bqMatch[2]}</blockquote>`;
-                } else {
-                    closeList();
-                    if (line.startsWith('[') && line.endsWith(']')) {
-                        htmlContent += `<h3>${line}</h3>`;
-                    } else {
-                        htmlContent += `<p>${line}</p>`;
-                    }
-                }
-            }
-        }
-        closeList();
-        
-        return htmlContent;
-    }
-
-    // DOM Elements - Settings Panel REMOVED (migrated to Admin Console)
-    // All settings are now managed in admin_setup.html
-    // getApiConfig() reads directly from localStorage, no UI elements needed here.
-
-    // Knowledge Base Elements (null-guarded; will no-op since settings panel HTML is removed)
-    const knowledgeDropZone = document.getElementById('knowledge-drop-zone');
-    const knowledgeDropText = document.getElementById('knowledge-drop-text');
-    const knowledgeUploadStatus = document.getElementById('knowledge-upload-status');
-    const settingsKnowledgeFile = document.getElementById('settings-knowledge-file');
-    const knowledgeFileList = document.getElementById('knowledge-file-list');
-    const restoreDefaultsBtn = document.getElementById('restore-defaults-btn');
-
-    // Configure PDF.js Worker
-    if (typeof pdfjsLib !== 'undefined') {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.js';
-    }
-
-    if (restoreDefaultsBtn) {
-        restoreDefaultsBtn.addEventListener('click', async () => {
-            if (confirm("Are you sure you want to restore all default system playbooks? This will overwrite any existing files with the same names.")) {
-                try {
-                    restoreDefaultsBtn.disabled = true;
-                    restoreDefaultsBtn.innerText = "⏳ Restoring...";
-                    
-                    const response = await fetch('/api/knowledge/restore', {
-                        method: 'POST'
-                    });
-                    const result = await response.json();
-                    if (!response.ok) {
-                        throw new Error(result.error || 'Failed to restore default playbooks');
-                    }
-                    showToast("Default playbooks restored successfully.");
-                    await loadKnowledgeFilesList();
-                } catch (error) {
-                    console.error('Error restoring default playbooks:', error);
-                    alert(`Error: ${error.message}`);
-                } finally {
-                    restoreDefaultsBtn.disabled = false;
-                    restoreDefaultsBtn.innerText = "🔄 Restore Defaults";
-                }
-            }
-        });
-    }
-
-    const TONE_PRESETS = {
-        professional: {
-            prep: "You are a professional, clinical B2B sales research assistant. You write detailed, factual briefs without fluff or conversational filler.",
-            synth: "You are a professional B2B sales operations assistant. You analyze call transcripts and produce clean, formatted HTML documents separated by delimiters."
-        },
-        empathetic: {
-            prep: "You are a warm, supportive B2B advisor. You highlight relationship-building opportunities, focus on the client's human objectives, and write in an encouraging, collaborative tone.",
-            synth: "You are an empathetic B2B sales enablement partner. You analyze call transcripts to highlight how we can best support the client, build trust, and write in a warm, helpful tone."
-        },
-        skeptical: {
-            prep: "You are a critical, highly skeptical B2B sales auditor. You scrutinize claims, highlight qualifications risks, identify discrepancies in requirements, and focus heavily on hidden red flags.",
-            synth: "You are a critical B2B risk assessment auditor. You scrutinize call transcripts to expose contradictions, qualification gaps, budget weaknesses, and highlight potential project failures."
-        },
-        detailed: {
-            prep: "You are a meticulous, high-detail enterprise consultant. You write extensive, deeply granular briefings covering every operational angle with thorough context.",
-            synth: "You are a senior high-detail enterprise consultant. You produce highly comprehensive, granular documentation of call details, technical systems, and explicit next steps."
-        },
-        concise: {
-            prep: "You are a concise, direct B2B analyst. You focus on extreme brevity, bottom-line-upfront (BLUF), high information density, and bullet points. Zero conversational preamble.",
-            synth: "You are a highly concise B2B operations analyst. You extract call data with maximum brevity, using bulleted summaries and BLUF formats. Zero boilerplate."
-        }
-    };
-
-    // Initialize Demo Mode state
-    const settingsDemoModeInit = document.getElementById('settings-demo-mode');
-    if (settingsDemoModeInit) {
-        const isDemo = localStorage.getItem('tiny_demo_mode') !== 'false';
-        settingsDemoModeInit.checked = isDemo;
-        toggleDemoButtons(isDemo);
-    }
-
-    // Initialize knowledge file list (will no-op if element is null)
-    loadKnowledgeFilesList();
-
-
-    // --- Knowledge Base Handlers & Document Parsers ---
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    async function loadKnowledgeFilesList() {
-        if (!knowledgeFileList) return;
-        knowledgeFileList.innerHTML = '<div class="util-text-center-text-sm-176e43">Loading files...</div>';
-        try {
-            const response = await fetch('/api/knowledge');
-            if (!response.ok) {
-                throw new Error('Failed to fetch knowledge list');
-            }
-            const files = await response.json();
-            knowledgeFileList.innerHTML = '';
-            
-            if (files.length === 0) {
-                knowledgeFileList.innerHTML = '<div class="util-text-center-text-sm-176e43">No documents loaded.</div>';
-                return;
-            }
-
-            files.forEach(file => {
-                const item = document.createElement('div');
-                item.className = 'knowledge-file-item';
-                
-                const fileIcon = file.name.endsWith('.pdf') ? '📄' : 
-                                 file.name.endsWith('.docx') ? '📝' : '📁';
-                
-                const badgeClass = file.isSystem ? 'system' : 'user';
-                const badgeLabel = file.isSystem ? 'System' : 'User';
-                
-                item.innerHTML = `
-                    <div class="knowledge-file-info">
-                        <span>${fileIcon}</span>
-                        <span class="knowledge-file-name" title="${escapeHTML(file.name)}">${escapeHTML(file.name)}</span>
-                        <span class="knowledge-file-size">(${formatBytes(file.sizeBytes)})</span>
-                    </div>
-                    <div class="knowledge-file-actions">
-                        <span class="knowledge-file-badge ${badgeClass}">${badgeLabel}</span>
-                        <button type="button" class="knowledge-delete-btn" data-filename="${escapeHTML(file.name)}" title="Delete file">
-                            🗑️
-                        </button>
-                    </div>
-                `;
-                
-                const deleteBtn = item.querySelector('.knowledge-delete-btn');
-                deleteBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const confirmMsg = file.isSystem ? 
-                        `Warning: You are about to delete a core system playbook "${file.name}". Are you sure you want to proceed?` :
-                        `Are you sure you want to delete "${file.name}"?`;
-                    if (confirm(confirmMsg)) {
-                        await deleteKnowledgeFile(file.name);
-                    }
-                });
-                
-                knowledgeFileList.appendChild(item);
-            });
-        } catch (error) {
-            console.error('Error loading knowledge files:', error);
-            knowledgeFileList.innerHTML = `<div class="util-text-center-text-sm-text-error-2c9bb6">Failed to load files list.</div>`;
-        }
-    }
-
-    async function deleteKnowledgeFile(fileName) {
-        try {
-            const response = await fetch(`/api/knowledge?fileName=${encodeURIComponent(fileName)}`, {
-                method: 'DELETE'
-            });
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to delete file');
-            }
-            showToast("Document deleted successfully.");
-            await loadKnowledgeFilesList();
-        } catch (error) {
-            console.error('Error deleting file:', error);
-            alert(`Error: ${error.message}`);
-        }
-    }
-
-    async function handleSelectedFile(file) {
-        const maxSize = 2 * 1024 * 1024; // 2MB
-        if (file.size > maxSize) {
-            setUploadStatus('❌ Error: File size exceeds 2MB limit.', 'error');
-            return;
-        }
-
-        const name = file.name.toLowerCase();
-        const extension = name.substring(name.lastIndexOf('.'));
-        const allowedExtensions = ['.pdf', '.docx', '.txt', '.md'];
-        
-        if (!allowedExtensions.includes(extension)) {
-            setUploadStatus('❌ Error: Unsupported file type.', 'error');
-            return;
-        }
-
-        setUploadStatus('⏳ Reading and parsing file...', 'progress');
-
-        try {
-            let extractedText = '';
-            
-            if (extension === '.txt' || extension === '.md') {
-                extractedText = await readTextFile(file);
-            } else if (extension === '.pdf') {
-                if (typeof pdfjsLib === 'undefined') {
-                    throw new Error('PDF parsing library (PDF.js) failed to load.');
-                }
-                const arrayBuffer = await readFileAsArrayBuffer(file);
-                extractedText = await extractTextFromPDF(arrayBuffer);
-            } else if (extension === '.docx') {
-                if (typeof mammoth === 'undefined') {
-                    throw new Error('DOCX parsing library (Mammoth.js) failed to load.');
-                }
-                const arrayBuffer = await readFileAsArrayBuffer(file);
-                extractedText = await extractTextFromDOCX(arrayBuffer);
-            }
-            
-            const trimmedText = extractedText.trim();
-            
-            // Validation for scanned PDF/empty file
-            if (!trimmedText || trimmedText.length < 20) {
-                setUploadStatus('⚠️ Warning: No readable text found. Scanned PDFs are not supported.', 'error');
-                return;
-            }
-
-            // Client-side character limit validation to avoid out-of-memory / token overflow (approx 100,000 chars)
-            if (trimmedText.length > 100000) {
-                setUploadStatus('⚠️ Warning: File is too large (exceeds 100,000 characters limit).', 'error');
-                return;
-            }
-
-            let fileBase64 = null;
-            if (extension === '.pdf' || extension === '.docx') {
-                fileBase64 = await readFileAsBase64(file);
-            }
-
-            setUploadStatus('⏳ Uploading to server...', 'progress');
-            await uploadKnowledgeFile(file.name, trimmedText, fileBase64);
-            
-        } catch (error) {
-            console.error('Error parsing file:', error);
-            setUploadStatus(`❌ Error parsing file: ${error.message}`, 'error');
-        }
-    }
-
-    function readFileAsBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const base64 = e.target.result.split(',')[1];
-                resolve(base64);
-            };
-            reader.onerror = (err) => reject(err);
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function readTextFile(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = (err) => reject(err);
-            reader.readAsText(file);
-        });
-    }
-
-    function readFileAsArrayBuffer(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = (err) => reject(err);
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
-    async function extractTextFromPDF(arrayBuffer) {
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map(item => item.str).join(' ');
-            fullText += pageText + '\n';
-        }
-        return fullText;
-    }
-
-    async function extractTextFromDOCX(arrayBuffer) {
-        const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
-        return result.value;
-    }
-
-    function setUploadStatus(message, type) {
-        if (!knowledgeUploadStatus) return;
-        knowledgeUploadStatus.innerText = message;
-        if (type === 'error') {
-            knowledgeUploadStatus.style.color = '#ff6347';
-        } else if (type === 'progress') {
-            knowledgeUploadStatus.style.color = 'var(--primary)';
-        } else {
-            knowledgeUploadStatus.style.color = '#2ed573';
-        }
-    }
-
-    async function uploadKnowledgeFile(fileName, fileText, fileBase64 = null) {
-        try {
-            const payload = { fileName, fileText };
-            if (fileBase64) {
-                payload.fileBase64 = fileBase64;
-            }
-            const response = await fetch('/api/knowledge', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.error || 'Upload failed');
-            }
-            setUploadStatus('✓ Uploaded successfully!', 'success');
-            showToast("Document added to knowledge base.");
-            await loadKnowledgeFilesList();
-            setTimeout(() => {
-                if (knowledgeUploadStatus.innerText === '✓ Uploaded successfully!') {
-                    knowledgeUploadStatus.innerText = '';
-                }
-            }, 3000);
-        } catch (error) {
-            console.error('Error uploading file:', error);
-            setUploadStatus(`❌ Upload failed: ${error.message}`, 'error');
-        }
-    }
-
-    // Drag & Drop event handlers
-    if (knowledgeDropZone) {
-        knowledgeDropZone.addEventListener('click', () => {
-            settingsKnowledgeFile.click();
-        });
-        
-        knowledgeDropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            knowledgeDropZone.classList.add('dragover');
-        });
-        
-        knowledgeDropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            knowledgeDropZone.classList.remove('dragover');
-        });
-        
-        knowledgeDropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            knowledgeDropZone.classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files && files.length > 0) {
-                handleSelectedFile(files[0]);
-            }
-        });
-    }
-
-    if (settingsKnowledgeFile) {
-        settingsKnowledgeFile.addEventListener('change', (e) => {
-            const files = e.target.files;
-            if (files && files.length > 0) {
-                handleSelectedFile(files[0]);
-                settingsKnowledgeFile.value = '';
-            }
-        });
-    }
-
-    // Stepper elements
-    const stepIndicators = [
-        document.getElementById('step-1-indicator'),
-        document.getElementById('step-2-indicator'),
-        document.getElementById('step-3-indicator')
-    ];
-    const stepContents = [
-        document.getElementById('step-1-content'),
-        document.getElementById('step-2-content'),
-        document.getElementById('step-3-content')
-    ];
-    const step1NextBtn = document.getElementById('step-1-next-btn');
-    const step2BackBtn = document.getElementById('step-2-back-btn');
-    const step2NextBtn = document.getElementById('step-2-next-btn');
-    const step3BackBtn = document.getElementById('step-3-back-btn');
-    const step2SaveBtn = document.getElementById('step-2-save-btn');
-    
-    // Call Outcome and Positional Meeting elements
-    const callOutcomeBar = document.getElementById('call-outcome-bar');
-    const teleprompterView = document.getElementById('teleprompter-view');
-    const noAnswerView = document.getElementById('no-answer-view');
-    const rescheduledView = document.getElementById('rescheduled-view');
-    const positionalMeetingPanel = document.getElementById('positional-meeting-panel');
-    const battlecardContainer = document.getElementById('battlecard-container');
-
-    // Dossier Tab Form
-    const prepLoadSampleBtn = document.getElementById('prep-load-sample-btn');
-    const prepForm = document.getElementById('prep-form');
-    const prepNameInput = document.getElementById('prep-name');
-    const prepTitleInput = document.getElementById('prep-title');
-    const prepCompanyInput = document.getElementById('prep-company');
-    const prepUrlInput = document.getElementById('prep-url');
-    const prepEmailInput = document.getElementById('prep-email');
-    const prepTrackSelect = document.getElementById('prep-track');
-    const prepIntakeText = document.getElementById('prep-intake');
-    const prepLinkedinText = document.getElementById('prep-linkedin');
-    const prepSubmitBtn = document.getElementById('prep-submit-btn');
-    const linkedinDropZone = document.getElementById('linkedin-drop-zone');
-    const linkedinDropText = document.getElementById('linkedin-drop-text');
-    const linkedinFileInput = document.getElementById('prep-linkedin-file');
-
-    // Synthesize Tab Form
-    const synthLoadSampleBtn = document.getElementById('synth-load-sample-btn');
-    const synthForm = document.getElementById('synth-form');
-    const synthVariantSelect = document.getElementById('synth-variant');
-    const synthTranscriptText = document.getElementById('synth-transcript');
-    const synthSubmitBtn = document.getElementById('synth-submit-btn');
-
-    // Battlecard Reference
-    const battlecardSelector = document.getElementById('battlecard-selector');
-    const battlecardBody = document.getElementById('battlecard-body');
-
-    // Rapport Guide Reference
-    const rapportGuidePanel = document.getElementById('rapport-guide-panel');
-    const rapportGuideHeader = document.getElementById('rapport-guide-header');
-    const rapportGuideBody = document.getElementById('rapport-guide-body');
-    const rapportGuideToggleIcon = document.getElementById('rapport-guide-toggle-icon');
-
-    // Output Side
-    const outputConsole = document.getElementById('output-console');
-    const outputEmptyState = document.getElementById('output-empty-state');
-    const outputLoading = document.getElementById('output-loading');
-    const outputResults = document.getElementById('output-results');
-    const outputDocNav = document.getElementById('output-doc-nav');
-    const outputDocContent = document.getElementById('output-doc-content');
-    
-    // Copy/Download/Sync Buttons
-    const copyContentBtn = document.getElementById('copy-content-btn');
-    const downloadContentBtn = document.getElementById('download-content-btn');
-    const toast = document.getElementById('toast');
-
-    // --- Local Storage API Settings Load ---
-    function getApiConfig() {
-        return {
-            provider: localStorage.getItem('tiny_api_provider') || TinyAI.DEFAULT_CONFIG.provider || 'watsonx',
-            apiKey: localStorage.getItem('tiny_api_key') || "",
-            apiUrl: localStorage.getItem('tiny_api_url') || TinyAI.DEFAULT_CONFIG.apiUrl,
-            model: localStorage.getItem('tiny_api_model') || TinyAI.DEFAULT_CONFIG.model || 'meta-llama/llama-3-70b-instruct',
-            agentId: localStorage.getItem('tiny_agent_id') || TinyAI.DEFAULT_CONFIG.agentId || 'bba19eb6-8038-4f06-8afe-20d4198c7121',
-            prepSystemPrompt: localStorage.getItem('tiny_prep_system_prompt') || TONE_PRESETS.professional.prep,
-            synthSystemPrompt: localStorage.getItem('tiny_synth_system_prompt') || TONE_PRESETS.professional.synth
-        };
-    }
-
-    // --- Stepper Navigation ---
-    let currentStep = 1;
-
-    function goToStep(stepNum) {
-        if (stepNum < 1 || stepNum > 3) return;
-        currentStep = stepNum;
-
-        // Toggle layout classes on dashboard grid
-        const dashboardGrid = document.querySelector('.dashboard-grid');
-        if (dashboardGrid) {
-            dashboardGrid.classList.remove('layout-split', 'layout-focus-left', 'layout-focus-right', 'layout-fullscreen-console');
-            
-            // Sync console maximize icon status
-            const consoleMaximizeBtn = document.getElementById('console-maximize-btn');
-            
-            if (stepNum === 1) {
-                dashboardGrid.classList.add('layout-split');
-                const savedSplit = localStorage.getItem('tiny_workspace_split');
-                if (savedSplit) {
-                    const percentage = parseFloat(savedSplit);
-                    if (!isNaN(percentage)) {
-                        dashboardGrid.style.setProperty('--left-panel-width', `${percentage}%`);
-                        dashboardGrid.style.setProperty('--right-panel-width', `calc(${100 - percentage}% - 12px)`);
-                    }
-                }
-                if (consoleMaximizeBtn) {
-                    consoleMaximizeBtn.innerText = '⛶';
-                    consoleMaximizeBtn.title = 'Maximize Console';
-                }
-            } else if (stepNum === 2) {
-                dashboardGrid.classList.add('layout-focus-left');
-                dashboardGrid.style.removeProperty('--left-panel-width');
-                dashboardGrid.style.removeProperty('--right-panel-width');
-                if (consoleMaximizeBtn) {
-                    consoleMaximizeBtn.innerText = '⛶';
-                    consoleMaximizeBtn.title = 'Maximize Console';
-                }
-            } else if (stepNum === 3) {
-                // If reports are already generated, auto-maximize the console. Otherwise, split-pane.
-                if (currentDocs) {
-                    dashboardGrid.classList.add('layout-fullscreen-console');
-                    if (consoleMaximizeBtn) {
-                        consoleMaximizeBtn.innerText = '📥';
-                        consoleMaximizeBtn.title = 'Restore Split View';
-                    }
-                } else {
-                    dashboardGrid.classList.add('layout-focus-right');
-                    if (consoleMaximizeBtn) {
-                        consoleMaximizeBtn.innerText = '⛶';
-                        consoleMaximizeBtn.title = 'Maximize Console';
-                    }
-                }
-                dashboardGrid.style.removeProperty('--left-panel-width');
-                dashboardGrid.style.removeProperty('--right-panel-width');
-            }
-        }
-
-        // Update step contents visibility
-        stepContents.forEach((content, index) => {
-            if (index + 1 === stepNum) {
-                content.classList.add('active');
-            } else {
-                content.classList.remove('active');
-            }
-        });
-
-        // Update stepper indicators visual states
-        stepIndicators.forEach((indicator, index) => {
-            const stepIndex = index + 1;
-            if (stepIndex === stepNum) {
-                indicator.classList.add('active');
-                indicator.classList.remove('completed');
-            } else if (stepIndex < stepNum) {
-                indicator.classList.remove('active');
-                indicator.classList.add('completed');
-            } else {
-                indicator.classList.remove('active');
-                indicator.classList.remove('completed');
-            }
-        });
-
-        // Step-specific right panel rendering
-        if (stepNum === 1) {
-            if (currentDossierText) {
-                renderDossierHtml(currentDossierText);
-            } else {
-                resetOutput();
-            }
-        } else if (stepNum === 2) {
-            renderBattlecards();
-            renderQuickReference();
-            // Auto-collapse Rapport Guide when entering Step 2 to allow Dossier Quick Reference visibility
-            if (rapportGuideBody && rapportGuideToggleIcon) {
-                rapportGuideBody.style.display = 'none';
-                rapportGuideToggleIcon.innerText = '▶ Expand';
-            }
-        } else if (stepNum === 3) {
-            if (currentDocs) {
-                showResults(null, true);
-            } else {
-                resetOutput();
-            }
-        }
-    }
-    window.goToStep = goToStep;
-
-    function renderQuickReference() {
-        if (!currentDossierText) {
-            const docContent = document.getElementById('output-doc-content');
-            if (docContent) {
-                docContent.innerHTML = `<div class="util-text-center-7067f5">No active dossier loaded. Complete Step 1 first.</div>`;
-            }
-            return;
-        }
-        
-        const parsed = parseDossierResponse(currentDossierText);
-        const painPoints = parsed['LIKELY PAIN POINTS'] || 'Not available';
-        const starters = parsed['HIGH-IMPACT OPENERS'] || 'Not available';
-        
-        let html = `
-            <div class="dossier-quick-ref util-d3297f">
-                <h3 class="quick-ref-header util-text-sm-f197af">🎯 Dossier Quick Reference</h3>
-                <div class="quick-ref-card util-77a3ec">
-                    <div class="quick-ref-title">🎯 Likely Pain Points</div>
-                    <div class="quick-ref-content">${formatMarkdown(painPoints)}</div>
-                </div>
-                <div class="quick-ref-card util-77a3ec">
-                    <div class="quick-ref-title">🔥 High-Impact Openers</div>
-                    <div class="quick-ref-content">${formatMarkdown(starters)}</div>
-                </div>
-            </div>
-            
-            <div class="full-dossier-section util-995f86">
-                <h3 class="util-flex-text-sm-f9ccdc">
-                    📋 Full Briefing Dossier 
-                    <span class="util-text-sm-7ce1f1">(All 12 Research Sections)</span>
-                </h3>
-                <div class="dossier-accordion-container">
-        `;
-        
-        const emojiMap = {
-            'LINKEDIN ANALYSIS': '🔗',
-            'COMPANY OVERVIEW': '🏢',
-            'DISCOVERY TRACK CLASS': '📊',
-            'TAILORED PLAYBOOK QUESTIONS': '❓',
-            'RELEVANT OCTANE SERVICES & PRICING': '💰',
-            'PEER CREDIBILITY STORY': '🤝',
-            'COMPETING APPLICATIONS': '💻',
-            'COMPLEMENTARY STACK APPLICATIONS': '🔌',
-            'RELEVANCE ASSESSMENT': '📋',
-            'LIKELY PAIN POINTS': '🎯',
-            'HIGH-IMPACT OPENERS': '🔥',
-            'TRAVEL DISTANCE': '🚗'
-        };
-        
-        Object.entries(parsed).forEach(([title, content]) => {
-            const emoji = emojiMap[title] || '📄';
-            const formattedContent = formatMarkdown(content);
-            const isActive = ''; 
-            
-            html += `
-                <div class="dossier-accordion-item ${isActive}">
-                    <div class="dossier-accordion-header">
-                        <span>${emoji} ${title}</span>
-                        <span class="dossier-accordion-arrow"></span>
-                    </div>
-                    <div class="dossier-accordion-content">
-                        ${formattedContent}
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `
-                </div>
-            </div>
-        `;
-        
-        showResults(html, false);
-        
-        // Bind accordion toggles
-        const container = outputDocContent.querySelector('.dossier-accordion-container');
-        if (container) {
-            container.querySelectorAll('.dossier-accordion-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    const item = header.closest('.dossier-accordion-item');
-                    item.classList.toggle('active');
-                });
-            });
-        }
-    }
-
-    // Step Navigation Event Listeners
-    step1NextBtn.addEventListener('click', () => {
-        goToStep(2);
-    });
-    step2BackBtn.addEventListener('click', () => goToStep(1));
-    step2NextBtn.addEventListener('click', () => {
-        const activeOutcome = callOutcomeBar?.querySelector('.outcome-btn.active')?.getAttribute('data-outcome');
-        if (activeOutcome === 'completed' && positionalConfirmBtn && !positionalConfirmBtn.disabled) {
-            showToast('⚠️ Mandatory Action: You must book a Positional Meeting with a Director before proceeding.');
-            
-            // Highlight the positional meeting panel
-            const panel = document.getElementById('positional-meeting-panel');
-            if (panel) {
-                panel.style.border = '2px solid var(--primary)';
-                panel.style.boxShadow = '0 0 10px rgba(26, 115, 232, 0.3)';
-                panel.scrollIntoView({ behavior: 'smooth' });
-                setTimeout(() => {
-                    panel.style.border = '';
-                    panel.style.boxShadow = '';
-                }, 3000);
-            }
-            return;
-        }
-        goToStep(3);
-    });
-    step3BackBtn.addEventListener('click', () => {
-        goToStep(2);
-    });
-    
-    // --- Call Outcome Bar ---
-    if (callOutcomeBar) {
-        callOutcomeBar.querySelectorAll('.outcome-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                callOutcomeBar.querySelectorAll('.outcome-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const outcome = btn.getAttribute('data-outcome');
-                
-                // Toggle views based on outcome
-                if (teleprompterView) teleprompterView.style.display = outcome === 'completed' ? 'flex' : 'none';
-                if (noAnswerView) noAnswerView.style.display = outcome === 'no-answer' ? 'flex' : 'none';
-                if (rescheduledView) rescheduledView.style.display = outcome === 'rescheduled' ? 'flex' : 'none';
-                if (positionalMeetingPanel) positionalMeetingPanel.style.display = outcome === 'completed' ? 'block' : 'none';
-                
-                // Hide add question and action row for non-completed outcomes
-                const addQWrapper = battlecardContainer?.querySelector('.add-question-wrapper');
-                const actionRow = battlecardContainer?.querySelector('.action-row');
-                if (addQWrapper) addQWrapper.style.display = outcome === 'completed' ? '' : 'none';
-                if (actionRow) actionRow.style.display = outcome === 'completed' ? '' : 'none';
-            });
-        });
-    }
-
-    // --- Positional Meeting Booking ---
-    const positionalConfirmBtn = document.getElementById('positional-confirm-btn');
-    if (positionalConfirmBtn) {
-        positionalConfirmBtn.addEventListener('click', () => {
-            const directorSelect = document.getElementById('positional-director')?.value || 'amendra';
-            
-            const clientName = prepNameInput.value.trim() || 'Client';
-            const companyName = prepCompanyInput.value.trim() || 'Prospect';
-            const clientEmail = prepEmailInput.value.trim() || 'client@company.com';
-            
-            try {
-                // Redirect to director's HubSpot calendar
-                const hubspotUrl = directorSelect === 'steny' 
-                    ? 'https://meetings.hubspot.com/steny' 
-                    : 'https://meetings.hubspot.com/amendra-pratap';
-                    
-                window.open(hubspotUrl, '_blank');
-                
-                positionalConfirmBtn.innerText = '📅 Opened Calendar';
-                positionalConfirmBtn.disabled = true;
-                positionalConfirmBtn.style.background = '#00c853';
-                
-                // Update UI state to show visual confirmation card
-                const bodyEl = document.querySelector('#positional-meeting-panel .positional-meeting-body');
-                if (bodyEl) {
-                    const directorName = directorSelect === 'steny' ? 'Steny' : 'Amendra Pratap';
-                    bodyEl.innerHTML = `
-                        <div class="util-flex-cd6c8a">
-                            <div class="util-flex-text-sm-2ab44f">
-                                <span>✔️ Redirected to HubSpot Calendar.</span>
-                            </div>
-                            <p class="util-text-sm-f2c890">
-                                Calendar booking opened in a new tab. Please complete the booking for <strong>${clientName}</strong> with <strong>${directorName}</strong> directly in HubSpot.
-                            </p>
-                        </div>
-                    `;
-                }
-                
-                showToast(`Opened HubSpot Calendar`);
-            } catch (err) {
-                console.error("Failed to generate calendar invite:", err);
-                showToast(`Error creating calendar invite: ${err.message}`);
-            }
-        });
-    }
-
-
-    step2SaveBtn.addEventListener('click', async () => {
-        const variant = battlecardSelector.value;
-        const questions = currentQuestions.map(q => ({ q: q.q, a: q.a || "" }));
-        
-        step2SaveBtn.disabled = true;
-        const originalText = step2SaveBtn.innerText;
-        step2SaveBtn.innerText = "💾 Saving...";
-
-        try {
-            const res = await fetch('/api/questions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ variant, questions })
-            });
-
-            if (!res.ok) {
-                throw new Error(`HTTP error ${res.status}`);
-            }
-
-            const data = await res.json();
-            
-            // Persist to local storage as fallback backup
-            localStorage.setItem('custom_questions_' + variant, JSON.stringify(questions));
-            
-            showToast("Questions registered on server successfully!");
         } catch (err) {
-            console.error("Failed to register custom questions on server:", err);
-            // Save to LocalStorage anyway so it's not lost
-            localStorage.setItem('custom_questions_' + variant, JSON.stringify(questions));
-            showToast("Saved locally (Server registration failed).");
-        } finally {
-            step2SaveBtn.disabled = false;
-            step2SaveBtn.innerText = originalText;
-        }
-    });
-
-    // --- Clean Variant Key Helper ---
-    function getCleanVariantKey(val) {
-        if (!val) return "A";
-        const str = String(val).toUpperCase();
-        if (str.includes("VARIANT A") || str.trim() === "A" || str.startsWith("A:") || str.includes("TM1 USER") || str.includes("FIRST-TIME TM1")) return "A";
-        if (str.includes("VARIANT B") || str.trim() === "B" || str.startsWith("B:") || str.includes("EXISTING TM1")) return "B";
-        if (str.includes("VARIANT C") || str.trim() === "C" || str.startsWith("C:") || str.includes("GENERATIVE AI") || str.includes("AI USER")) return "C";
-        return "A"; // Fallback
-    }
-
-    // --- Load Custom Questions from Server / LocalStorage ---
-    async function loadCustomQuestions(variant) {
-        // Normalize variant using robust helper
-        variant = getCleanVariantKey(variant);
-        const expectedLength = BATTLECARDS[variant] ? BATTLECARDS[variant].length : 0;
-
-        try {
-            const res = await fetch(`/api/questions?variant=${variant}`);
-            if (res.ok) {
-                const data = await res.json();
-                // Relaxed validation: accept any non-empty questionnaire from the server
-                if (Array.isArray(data) && data.length > 0) {
-                    currentQuestions = data.map((item, index) => {
-                        const q = typeof item === 'object' && item !== null ? item.q : item;
-                        const a = typeof item === 'object' && item !== null ? (item.a || '') : '';
-                        const defaultTip = BATTLECARDS[variant] && BATTLECARDS[variant][index] ? BATTLECARDS[variant][index].tip : "Custom question";
-                        return { q, a, tip: defaultTip };
-                    });
-                    console.log(`Loaded custom questions for Variant ${variant} from server.`);
-                    return;
-                } else {
-                    console.warn(`Server questions payload is empty or invalid for Variant ${variant}. Rejecting server payload.`);
-                }
-            }
-        } catch (e) {
-            console.warn("Failed to load custom questions from server, falling back to local storage:", e);
-        }
-
-        try {
-            const localData = localStorage.getItem('custom_questions_' + variant);
-            if (localData) {
-                const parsed = JSON.parse(localData);
-                // Validate local storage has matching length
-                if (Array.isArray(parsed) && parsed.length === expectedLength) {
-                    currentQuestions = parsed.map((item, index) => {
-                        const q = typeof item === 'object' && item !== null ? item.q : item;
-                        const a = typeof item === 'object' && item !== null ? (item.a || '') : '';
-                        const defaultTip = BATTLECARDS[variant] && BATTLECARDS[variant][index] ? BATTLECARDS[variant][index].tip : "Custom question";
-                        return { q, a, tip: defaultTip };
-                    });
-                    console.log(`Loaded custom questions for Variant ${variant} from LocalStorage.`);
-                    return;
-                } else {
-                    console.warn(`LocalStorage questions count mismatch for Variant ${variant}: expected ${expectedLength}, got ${parsed ? parsed.length : 0}. Rejecting LocalStorage payload.`);
-                }
-            }
-        } catch (e) {
-            console.warn("Failed to parse local storage questions:", e);
-        }
-
-        currentQuestions = JSON.parse(JSON.stringify(BATTLECARDS[variant] || []));
-        console.log(`Loaded default questions for Variant ${variant}.`);
-    }
-
-    // --- Dynamic Track-to-Variant Sync ---
-    async function syncServiceTrackToVariant() {
-        const track = prepTrackSelect.value;
-        let variant = "A";
-        // AI track is booked directly to Steny and bypasses discovery pre-screen; default dashboard to Variant A
-        battlecardSelector.value = "A";
-        synthVariantSelect.value = "Variant A";
-        variant = "A";
-        await loadCustomQuestions(variant);
-    }
-
-    prepTrackSelect.addEventListener('change', async () => {
-        await syncServiceTrackToVariant();
-        if (currentStep === 2) {
-            renderBattlecards();
-        }
-    });
-
-    // --- Output Visual States Helper ---
-    function resetOutput() {
-        outputConsole.classList.remove('has-content');
-        outputEmptyState.style.display = 'flex';
-        outputLoading.style.display = 'none';
-        outputResults.classList.add('hidden');
-        outputResults.style.display = 'none';
-        currentDocs = null;
-        currentScreencastUrl = "";
-        const screencastInput = document.getElementById('synth-screencast');
-        if (screencastInput) screencastInput.value = "";
-        if (typeof resetReportButtons === 'function') {
-            resetReportButtons();
+            console.error('Error loading chat detail:', err);
+            showToast('Failed to load chat details.');
         }
     }
 
-    function showLoading(text) {
-        outputConsole.classList.remove('has-content');
-        outputEmptyState.style.display = 'none';
-        outputResults.classList.add('hidden');
-        outputResults.style.display = 'none';
-        outputLoading.style.display = 'flex';
-        document.getElementById('loading-text-label').innerText = text;
-    }
-
-    function showResults(htmlContent, isCollection = false) {
-        outputLoading.style.display = 'none';
-        outputEmptyState.style.display = 'none';
-        outputConsole.classList.add('has-content');
-        outputResults.classList.remove('hidden');
-        outputResults.style.display = 'flex';
-
-        if (isCollection) {
-            outputDocNav.classList.remove('hidden');
-            outputDocNav.style.display = 'flex';
-            renderActiveDocument();
-        } else {
-            outputDocNav.classList.add('hidden');
-            outputDocNav.style.display = 'none';
-            outputDocContent.innerHTML = window.DOMPurify ? DOMPurify.sanitize(htmlContent) : fallbackSanitize(htmlContent);
-        }
-    }
-
-    // --- Toast Notification ---
-    function showToast(message) {
-        toast.innerText = message;
-        toast.classList.add('active');
-        setTimeout(() => {
-            toast.classList.remove('active');
-        }, 2500);
-    }
-
-    // --- Google Drive API Integration ---
-    let gdriveFolderStack = [];
-    let gdriveCurrentFolderId = ''; // Empty string defaults to configured root folder
-    let gdriveCurrentFolderName = 'root';
-    let attachedGDriveFile = null;
-    let attachedGDriveFileId = null;
-    let attachedGDriveFileContent = null;
-
-    const gdriveBrowseBtn = document.getElementById('prep-gdrive-browse-btn');
-    const gdriveBrowserPanel = document.getElementById('gdrive-browser');
-    const gdriveBackBtn = document.getElementById('gdrive-back-btn');
-    const gdriveSearchInput = document.getElementById('prep-gdrive-search');
-    const gdriveRemoveBtn = document.getElementById('gdrive-attached-remove');
-    const gdriveBadge = document.getElementById('gdrive-attached-badge');
-
-    async function renderGDriveList() {
-        const listEl = document.getElementById('gdrive-items-list');
-        const folderTitle = document.getElementById('gdrive-current-folder');
-        
-        if (!listEl) return;
-        
-        if (folderTitle) folderTitle.innerText = gdriveCurrentFolderName;
-        
-        if (gdriveBackBtn) {
-            if (gdriveFolderStack.length > 0) {
-                gdriveBackBtn.style.display = 'inline-block';
-            } else {
-                gdriveBackBtn.style.display = 'none';
-            }
-        }
-        
-        const query = (gdriveSearchInput?.value || '').trim();
-        
-        if (query) {
-            listEl.innerHTML = '<div class="util-text-center-text-sm-66c57a">🔍 Searching Drive...</div>';
-            try {
-                const res = await fetch(`/api/gdrive/search?q=${encodeURIComponent(query)}`);
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
-                renderItems(data.items || [], listEl);
-            } catch (err) {
-                listEl.innerHTML = `<div class="util-text-center-text-sm-text-error-31f7b0">Search failed: ${escapeHTML(err.message)}</div>`;
-            }
-            return;
-        }
-
-        listEl.innerHTML = '<div class="util-text-center-text-sm-66c57a">📂 Loading items...</div>';
-        try {
-            const url = gdriveCurrentFolderId ? `/api/gdrive/list?folderId=${encodeURIComponent(gdriveCurrentFolderId)}` : '/api/gdrive/list';
-            const res = await fetch(url);
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            renderItems(data.items || [], listEl);
-        } catch (err) {
-            listEl.innerHTML = `<div class="util-text-center-text-sm-text-error-31f7b0">Load failed: ${escapeHTML(err.message)}</div>`;
-        }
-    }
-
-    function renderItems(items, listEl) {
-        if (items.length === 0) {
-            listEl.innerHTML = '<div class="util-text-center-text-sm-text-muted-3fa3a5">No items found</div>';
-            return;
-        }
-        
-        listEl.innerHTML = '';
-        items.forEach(item => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'gdrive-item';
-            
-            const icon = item.isFolder ? '📁' : '📄';
-            const sizeText = item.isFolder ? '' : ` (${formatBytes(item.size)})`;
-            
-            itemDiv.innerHTML = `
-                <div class="gdrive-item-info">
-                    <span>${icon}</span>
-                    <span class="gdrive-item-name util-5849ae">${escapeHTML(item.name)}</span>
-                    <span class="gdrive-item-size">${sizeText}</span>
-                </div>
-                ${item.isFolder ? '' : `<button type="button" class="gdrive-btn-attach" data-id="${item.id}" data-name="${escapeHTML(item.name)}">Attach</button>`}
-            `;
-            
-            if (item.isFolder) {
-                itemDiv.querySelector('.gdrive-item-name').addEventListener('click', () => {
-                    gdriveFolderStack.push({ id: gdriveCurrentFolderId, name: gdriveCurrentFolderName });
-                    gdriveCurrentFolderId = item.id;
-                    gdriveCurrentFolderName = item.name;
-                    if (gdriveSearchInput) gdriveSearchInput.value = '';
-                    renderGDriveList();
-                });
-            } else {
-                itemDiv.querySelector('.gdrive-btn-attach').addEventListener('click', async (e) => {
-                    const fileId = e.target.getAttribute('data-id');
-                    const fileName = e.target.getAttribute('data-name');
-                    
-                    e.target.disabled = true;
-                    e.target.innerText = 'Attaching...';
-                    
-                    try {
-                        const res = await fetch(`/api/gdrive/read?fileId=${encodeURIComponent(fileId)}`);
-                        const data = await res.json();
-                        if (data.error) throw new Error(data.error);
-                        
-                        attachedGDriveFile = fileName;
-                        attachedGDriveFileId = fileId;
-                        attachedGDriveFileContent = data.content;
-                        
-                        if (attachedGDriveFileContent) {
-                            const parseField = (key) => {
-                                const regex = new RegExp(`^${key}:\\s*(.*)$`, 'm');
-                                const match = attachedGDriveFileContent.match(regex);
-                                return match ? match[1].trim() : '';
-                            };
-                            
-                            const n = parseField('Name');
-                            const c = parseField('Company');
-                            const e = parseField('Email');
-                            const p = parseField('Phone');
-                            const t = parseField('Title');
-                            const w = parseField('Website');
-                            
-                            const nameInput = document.getElementById('prep-name');
-                            const compInput = document.getElementById('prep-company');
-                            const emailInput = document.getElementById('prep-email');
-                            const phoneInput = document.getElementById('prep-phone');
-                            const titleInput = document.getElementById('prep-title');
-                            const urlInput = document.getElementById('prep-url');
-                            const intakeInput = document.getElementById('prep-intake');
-                            
-                            if (nameInput && n) nameInput.value = n;
-                            if (compInput && c) compInput.value = c;
-                            if (emailInput && e) emailInput.value = e;
-                            if (phoneInput && p) phoneInput.value = p;
-                            if (titleInput && t) titleInput.value = t;
-                            if (urlInput && w) urlInput.value = w;
-                            
-                            const intakeSplit = attachedGDriveFileContent.split('--- Intake Answers ---');
-                            if (intakeInput && intakeSplit.length > 1) {
-                                intakeInput.value = intakeSplit[1].trim();
-                            }
-                        }
-                        
-                        const badgeName = document.getElementById('gdrive-attached-name');
-                        if (gdriveBadge && badgeName) {
-                            badgeName.innerText = fileName;
-                            gdriveBadge.style.display = 'flex';
-                        }
-                        showToast(`Attached ${fileName} from Google Drive!`);
-                    } catch (err) {
-                        showToast(`Failed to attach file: ${err.message}`);
-                        console.error('File attachment error:', err);
-                    } finally {
-                        e.target.disabled = false;
-                        e.target.innerText = 'Attach';
-                    }
-                });
-            }
-            
-            listEl.appendChild(itemDiv);
-        });
-    }
-
-    if (gdriveBrowseBtn) {
-        gdriveBrowseBtn.addEventListener('click', () => {
-            if (gdriveBrowserPanel) {
-                const isHidden = gdriveBrowserPanel.style.display === 'none' || gdriveBrowserPanel.style.display === '';
-                gdriveBrowserPanel.style.display = isHidden ? 'flex' : 'none';
-                if (isHidden) {
-                    renderGDriveList();
-                }
-            }
-        });
-    }
-
-    const gdriveCloseModalBtn = document.getElementById('gdrive-close-modal');
-    if (gdriveCloseModalBtn) {
-        gdriveCloseModalBtn.addEventListener('click', () => {
-            if (gdriveBrowserPanel) {
-                gdriveBrowserPanel.style.display = 'none';
-            }
-        });
-    }
-
-    if (gdriveBackBtn) {
-        gdriveBackBtn.addEventListener('click', () => {
-            if (gdriveFolderStack.length > 0) {
-                const parent = gdriveFolderStack.pop();
-                gdriveCurrentFolderId = parent.id;
-                gdriveCurrentFolderName = parent.name;
-                if (gdriveSearchInput) gdriveSearchInput.value = '';
-                renderGDriveList();
-            }
-        });
-    }
-
-    let searchTimeout = null;
-    if (gdriveSearchInput) {
-        gdriveSearchInput.addEventListener('input', () => {
-            if (gdriveBrowserPanel) {
-                gdriveBrowserPanel.style.display = 'flex';
-            }
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                renderGDriveList();
-            }, 300);
-        });
-    }
-
-    if (gdriveRemoveBtn) {
-        gdriveRemoveBtn.addEventListener('click', () => {
-            attachedGDriveFile = null;
-            attachedGDriveFileId = null;
-            attachedGDriveFileContent = null;
-            if (gdriveBadge) {
-                gdriveBadge.style.display = 'none';
-            }
-            showToast("Google Drive SOW attachment removed.");
-        });
-    }
-
-    // --- Rapport Guide Toggle Event Listener ---
-    if (rapportGuideHeader && rapportGuideBody && rapportGuideToggleIcon) {
-        rapportGuideHeader.addEventListener('click', () => {
-            const isCollapsed = rapportGuideBody.style.display === 'none';
-            rapportGuideBody.style.display = isCollapsed ? 'block' : 'none';
-            rapportGuideToggleIcon.innerText = isCollapsed ? '▲ Collapse' : '▶ Expand';
-        });
-    }
-
-    // Pricing Catalog Reference Toggle
-    const pricingCatalogHeader = document.getElementById('pricing-catalog-header');
-    const pricingCatalogBody = document.getElementById('pricing-catalog-body');
-    const pricingCatalogToggleIcon = document.getElementById('pricing-catalog-toggle-icon');
-    if (pricingCatalogHeader && pricingCatalogBody && pricingCatalogToggleIcon) {
-        pricingCatalogHeader.addEventListener('click', () => {
-            const isCollapsed = pricingCatalogBody.style.display === 'none';
-            pricingCatalogBody.style.display = isCollapsed ? 'block' : 'none';
-            pricingCatalogToggleIcon.innerText = isCollapsed ? '▲ Collapse' : '▶ Expand';
-        });
-    }
-
-    // --- Templates Loader ---
-    prepLoadSampleBtn.addEventListener('click', async () => {
-        const originalText = prepLoadSampleBtn.innerText;
-        prepLoadSampleBtn.innerText = "Generating Prospect...";
-        prepLoadSampleBtn.disabled = true;
-        
-        try {
-            // 1. Load dynamic prospect profile fields and Drive SOW metadata
-            const res = await fetch('/api/prep-sample-loadout');
-            const data = await res.json();
-            
-            prepNameInput.value = data.name;
-            prepTitleInput.value = data.title;
-            prepCompanyInput.value = data.company;
-            prepUrlInput.value = data.url;
-            prepEmailInput.value = data.email;
-            if (document.getElementById('prep-phone')) {
-                document.getElementById('prep-phone').value = data.phone;
-            }
-            if (document.getElementById('prep-rep')) {
-                document.getElementById('prep-rep').value = data.rep;
-            }
-            
-            // Auto-attach sample Google Drive SOW PDF
-            attachedGDriveFile = data.gDriveFile;
-            attachedGDriveFileId = data.gDriveFileId;
-            attachedGDriveFileContent = data.gDriveFileContent;
-            
-            const badgeName = document.getElementById('gdrive-attached-name');
-            if (gdriveBadge && badgeName) {
-                badgeName.innerText = attachedGDriveFile;
-                gdriveBadge.style.display = 'flex';
-            }
-
-            if (prepTrackSelect) prepTrackSelect.value = data.track;
-            if (prepIntakeText) prepIntakeText.value = data.intake;
-            if (prepLinkedinText) prepLinkedinText.value = data.linkedin;
-            
-            await syncServiceTrackToVariant();
-            step1NextBtn.classList.remove('hidden');
-            step1NextBtn.style.display = 'inline-flex';
-            
-            showToast(`Successfully loaded dynamic prospect profile for ${data.company}!`);
-            prepLoadSampleBtn.innerText = originalText;
-            prepLoadSampleBtn.disabled = false;
-        } catch (err) {
-            showToast("Error: " + err.message);
-            prepLoadSampleBtn.innerText = originalText;
-            prepLoadSampleBtn.disabled = false;
-        }
-    });
-
-    synthLoadSampleBtn.addEventListener('click', () => {
-        synthVariantSelect.value = "Variant A";
-        synthTranscriptText.value = `[AWAITING_CLIENT_TRANSCRIPT]
-
-Please upload or paste a raw transcription of your requirement session here. 
-The system will dynamically parse the text, identify the prospect's actual ERP system (e.g., SAP, Dynamics, Workday), and query the active Knowledge Base to formulate the correct integration connector proposal.`;
-        
-        // Hide Mock Audio Call UI Binding to enforce Zero-Mock Architecture
-        const audioContainer = document.getElementById('mock-audio-container');
-        if (audioContainer) {
-            audioContainer.classList.add('hidden');
-        }
-
-        showToast("Prefilled Structural Empty State Template!");
-    });
-
-    function parseDossierResponse(text) {
-        try {
-            // Clean markdown code blocks (e.g. ```json or ```html)
-            const cleanText = text.replace(/^```(?:json|html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
-            return JSON.parse(cleanText);
-        } catch (e) {
-            console.warn("Failed to parse JSON dossier response, running structured delimiter parser fallback:", e);
-            
-            const result = {
-                'LINKEDIN ANALYSIS': '[UNKNOWN]',
-                'COMPANY OVERVIEW': '[UNKNOWN]',
-                'DISCOVERY TRACK CLASS': '[UNKNOWN]',
-                'TAILORED PLAYBOOK QUESTIONS': '[UNKNOWN]',
-                'RELEVANT OCTANE SERVICES & PRICING': '[UNKNOWN]',
-                'PEER CREDIBILITY STORY': '[UNKNOWN]',
-                'COMPETING APPLICATIONS': '[UNKNOWN]',
-                'COMPLEMENTARY STACK APPLICATIONS': '[UNKNOWN]',
-                'RELEVANCE ASSESSMENT': '[UNKNOWN]',
-                'LIKELY PAIN POINTS': '[UNKNOWN]',
-                'HIGH-IMPACT OPENERS': '[UNKNOWN]',
-                'TRAVEL DISTANCE': '[UNKNOWN]'
-            };
-
-            const keys = Object.keys(result);
-            keys.forEach((key) => {
-                const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                
-                // 1. Try matching "=== KEY ===" delimited blocks
-                const delimRegex = new RegExp(`===\\s*${escapedKey}\\s*===[\\s\\n\\r]*(.*?)(?=(?:===\\s*|###\\s*|\\s*$))`, 'si');
-                let match = text.match(delimRegex);
-                
-                // 2. Try matching "### KEY" or "### emoji KEY" markdown headers
-                if (!match) {
-                    const mdRegex = new RegExp(`###\\s*(?:[\\u2700-\\u27BF]|[\\uE000-\\uF8FF]|\\uD83C[\\uDC00-\\uDFFF]|\\uD83D[\\uDC00-\\uDFFF]|[\\u2011-\\u26FF]|\\uD83E[\\uDD10-\\uDDFF])*\\s*${escapedKey}[\\s\\n\\r]*(.*?)(?=(?:===\\s*|###\\s*|\\s*$))`, 'si');
-                    match = text.match(mdRegex);
-                }
-                
-                // 3. Try matching JSON keys '"KEY": "content"'
-                if (!match) {
-                    const jsonKeyRegex = new RegExp(`"${escapedKey}"\\s*:\\s*"(.*?)(?=(?:",?\\s*"|\\s*\\}))`, 'si');
-                    match = text.match(jsonKeyRegex);
-                }
-
-                if (match && match[1]) {
-                    let val = match[1].trim();
-                    // Clean trailing quotes/brackets if matched via JSON regex
-                    val = val.replace(/^["'\s]+|["'\s]+$/g, '');
-                    result[key] = val || '[UNKNOWN]';
-                }
-            });
-            return result;
-        }
-    }
-
-    function renderDossierHtml(rawText) {
-        const parsed = parseDossierResponse(rawText);
-        
-        const coreSections = [
-            'LINKEDIN ANALYSIS',
-            'COMPANY OVERVIEW',
-            'DISCOVERY TRACK CLASS',
-            'TAILORED PLAYBOOK QUESTIONS',
-            'RELEVANT OCTANE SERVICES & PRICING',
-            'PEER CREDIBILITY STORY',
-            'COMPETING APPLICATIONS',
-            'COMPLEMENTARY STACK APPLICATIONS',
-            'RELEVANCE ASSESSMENT',
-            'LIKELY PAIN POINTS',
-            'HIGH-IMPACT OPENERS',
-            'TRAVEL DISTANCE'
-        ];
-        
-        let completedCount = 0;
-        coreSections.forEach(sec => {
-            if (parsed[sec]) {
-                const secStr = typeof parsed[sec] === 'string' ? parsed[sec] : JSON.stringify(parsed[sec]);
-                if (secStr.trim().length > 10) {
-                    completedCount++;
-                }
-            }
-        });
-        
-        const percent = Math.round((completedCount / coreSections.length) * 100);
-        
-        let html = `
-            <div class="dossier-completeness">
-                <div class="dossier-completeness-header">
-                    <span>Dossier Completeness</span>
-                    <span>${completedCount}/${coreSections.length} Sections (${percent}%)</span>
-                </div>
-                <div class="dossier-completeness-bar">
-                    <div class="dossier-completeness-fill util-5a8608"></div>
-                </div>
-            </div>
-            <div class="dossier-accordion-container">
-        `;
-        
-        const emojiMap = {
-            'LINKEDIN ANALYSIS': '🔗',
-            'COMPANY OVERVIEW': '🏢',
-            'DISCOVERY TRACK CLASS': '📊',
-            'TAILORED PLAYBOOK QUESTIONS': '❓',
-            'RELEVANT OCTANE SERVICES & PRICING': '💰',
-            'PEER CREDIBILITY STORY': '🤝',
-            'COMPETING APPLICATIONS': '💻',
-            'COMPLEMENTARY STACK APPLICATIONS': '🔌',
-            'RELEVANCE ASSESSMENT': '📋',
-            'LIKELY PAIN POINTS': '🎯',
-            'HIGH-IMPACT OPENERS': '🔥',
-            'TRAVEL DISTANCE': '🚗'
-        };
-        
-        let travelDistRaw = parsed['TRAVEL DISTANCE'];
-        let travelDistStr = typeof travelDistRaw === 'string' ? travelDistRaw : (travelDistRaw ? JSON.stringify(travelDistRaw) : '');
-        const travelDist = travelDistStr ? travelDistStr.replace(/<[^>]*>/g, '').trim() : '';
-        if (travelDist) {
-            const travelDistEl = document.getElementById('positional-travel-distance');
-            if (travelDistEl) {
-                travelDistEl.textContent = `🚗 Travel distance: ${travelDist}`;
-            }
-        }
-        
-        Object.entries(parsed).forEach(([title, content]) => {
-            const emoji = emojiMap[title] || '📄';
-            // Safe format markdown if it's not a string
-            const contentStr = typeof content === 'string' ? content : (content ? JSON.stringify(content, null, 2) : '');
-            const formattedContent = formatMarkdown(contentStr);
-            const isActive = (title === 'LIKELY PAIN POINTS' || title === 'HIGH-IMPACT OPENERS' || title === 'LINKEDIN ANALYSIS') ? 'active' : '';
-            
-            html += `
-                <div class="dossier-accordion-item ${isActive}">
-                    <div class="dossier-accordion-header">
-                        <span>${emoji} ${title}</span>
-                        <span class="dossier-accordion-arrow"></span>
-                    </div>
-                    <div class="dossier-accordion-content">
-                        ${formattedContent}
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `</div>`;
-        
-        showResults(html, false);
-        
-        const container = outputDocContent.querySelector('.dossier-accordion-container');
-        if (container) {
-            container.querySelectorAll('.dossier-accordion-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    const item = header.closest('.dossier-accordion-item');
-                    item.classList.toggle('active');
-                });
-            });
-        }
-    }
-
-    // --- Form Submit handlers ---
-    prepForm.addEventListener('submit', async (e) => {
-        console.log('SUBMIT EVENT FIRED in app.js!');
-        e.preventDefault();
-        
-        const params = {
-            name: prepNameInput.value.trim(),
-            title: prepTitleInput.value.trim(),
-            company: prepCompanyInput.value.trim(),
-            url: prepUrlInput.value.trim(),
-            email: prepEmailInput.value.trim(),
-            phone: document.getElementById('prep-phone')?.value.trim() || '',
-            rep: document.getElementById('prep-rep')?.value || 'Albert',
-            gDriveFile: attachedGDriveFile,
-            gDriveFileId: attachedGDriveFileId,
-            gDriveFileContent: attachedGDriveFileContent,
-            track: prepTrackSelect?.value || '',
-            intakeAnswers: prepIntakeText?.value?.trim() || '',
-            linkedinInfo: prepLinkedinText?.value?.trim() || '',
-            crmSync: document.getElementById('prep-crm-sync')?.checked || false
-        };
-
-        if (!params.name || !params.company) {
-            showToast("Please enter at least Name and Company Name.");
-            return;
-        }
-
-        prepSubmitBtn.disabled = true;
-        showLoading("Generating prospect preparation dossier...");
-
-        try {
-            const apiConfig = getApiConfig();
-            const resultHtml = await TinyAI.generateProspectDossier(params, apiConfig);
-            currentDossierText = resultHtml;
-            renderDossierHtml(resultHtml);
-            step1NextBtn.classList.remove('hidden');
-            step1NextBtn.style.display = 'inline-flex';
-
-            // Trigger Rapport Guide generation asynchronously
-            if (rapportGuidePanel && rapportGuideBody) {
-                rapportGuidePanel.style.display = 'block';
-                rapportGuideBody.innerHTML = '<div class="util-text-center-text-muted-3d46bd">💡 Loading Rapport Guide talking points...</div>';
-                TinyAI.generateRapportGuide(resultHtml, apiConfig)
-                    .then(guideHtml => {
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = guideHtml;
-                        // Strip the Key Context & Facts card completely from the Rapport Guide
-                        const contextCard = tempDiv.querySelector('.card-context');
-                        if (contextCard) {
-                            contextCard.remove();
-                        }
-                        rapportGuideBody.innerHTML = tempDiv.innerHTML;
-                        // Auto-collapse Rapport Guide to prioritize Dossier Quick Reference view
-                        rapportGuideBody.style.display = 'none';
-                        if (rapportGuideToggleIcon) rapportGuideToggleIcon.innerText = '▶ Expand';
-                    })
-                    .catch(err => {
-                        console.warn("Failed to generate rapport guide:", err);
-                        rapportGuideBody.innerHTML = '<div class="util-text-center-text-error-12ba4c">Failed to generate talking points.</div>';
-                    });
-            }
-            
-            // Auto-save dossier to history
-            const payload = {
-                type: 'dossier',
-                name: params.name,
-                title: params.title,
-                company: params.company,
-                email: params.email,
-                phone: params.phone,
-                rep: params.rep,
-                oneDriveFile: params.gDriveFile, // For backwards compatibility
-                gDriveFile: params.gDriveFile,
-                gDriveFileId: params.gDriveFileId,
-                gDriveFileContent: params.gDriveFileContent,
-                track: params.track,
-                url: params.url,
-                intakeAnswers: params.intakeAnswers,
-                linkedinInfo: params.linkedinInfo,
-                crmSync: params.crmSync,
-                content: resultHtml
-            };
-            fetch('/api/history', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).then(res => res.json())
-              .then(data => console.log("Saved dossier to server history:", data.id))
-              .catch(err => console.warn("Failed to auto-save dossier to history:", err));
-
-            goToStep(2);
-        } catch (err) {
-            resetOutput();
-            showToast(`Error: ${err.message}`);
-            console.error("Dossier generation failed:", err);
-        } finally {
-            prepSubmitBtn.disabled = false;
-        }
-    });
-
-    function extractAnswersFromQuestionnaireHTML(htmlString) {
-        const temp = document.createElement('div');
-        temp.innerHTML = htmlString;
-        const paragraphs = temp.querySelectorAll('p');
-        const extractedAnswers = [];
-        
-        paragraphs.forEach((p, idx) => {
-            let plainText = p.innerText.trim();
-            // Remove question number prefix if any (e.g., "1. ", "10. ")
-            let cleanText = plainText.replace(/^\d+[\.\s\-]+/, '').trim();
-            
-            // Find corresponding question in currentQuestions
-            const qText = currentQuestions[idx] ? currentQuestions[idx].q : "";
-            if (qText) {
-                let cleanQText = qText.replace(/^\d+[\.\s\-]+/, '').trim();
-                
-                // Check if paragraph starts with the question text
-                if (cleanText.toLowerCase().startsWith(cleanQText.toLowerCase())) {
-                    let ans = cleanText.substring(cleanQText.length).trim();
-                    // Strip leading colon/spaces/dashes
-                    ans = ans.replace(/^[:\-\s\u2014]+/, '').trim();
-                    extractedAnswers.push(ans);
-                    return;
-                }
-            }
-            
-            // Fallback 1: split by the first colon
-            const colonIdx = cleanText.indexOf(':');
-            if (colonIdx !== -1) {
-                let ans = cleanText.substring(colonIdx + 1).trim();
-                extractedAnswers.push(ans);
-                return;
-            }
-            
-            // Fallback 2: split by question mark if there is one
-            const qMarkIdx = cleanText.indexOf('?');
-            if (qMarkIdx !== -1) {
-                let ans = cleanText.substring(qMarkIdx + 1).trim();
-                ans = ans.replace(/^[:\-\s\u2014]+/, '').trim();
-                extractedAnswers.push(ans);
-                return;
-            }
-            
-            // Fallback 3: keep the text as is
-            extractedAnswers.push(cleanText);
-        });
-        
-        return extractedAnswers;
-    }
-
-    synthForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const variant = synthVariantSelect.value;
-        const transcript = synthTranscriptText.value.trim();
-        const screencastUrl = document.getElementById('synth-screencast')?.value.trim() || '';
-        currentScreencastUrl = screencastUrl;
-
-        if (!transcript) {
-            showToast("Please enter or load a call transcript.");
-            return;
-        }
-
-        synthSubmitBtn.disabled = true;
-        showLoading("Synthesizing call and compiling 8 deliverables...");
-
-        try {
-            const apiConfig = getApiConfig();
-            const customQuestions = currentQuestions.map(q => ({ q: q.q, a: q.a || "" }));
-            const docs = await TinyAI.synthesizeCallTranscript(variant, transcript, screencastUrl, apiConfig, customQuestions);
-            
-            // Validate output
-            if (!docs.summary && !docs.proposal) {
-                throw new Error("API returned empty reports. Ensure your key is valid and prompt is running correctly.");
-            }
-            
-            // Extract answers and update currentQuestions before history save so payload has them
-            if (docs && docs.questionnaireAnswers) {
-                const extractedAnswers = extractAnswersFromQuestionnaireHTML(docs.questionnaireAnswers);
-                currentQuestions.forEach((q, idx) => {
-                    if (extractedAnswers[idx] !== undefined) {
-                        q.a = extractedAnswers[idx];
-                    }
-                });
-                renderBattlecards();
-            }
-
-            const updatedCustomQuestions = currentQuestions.map(q => ({ q: q.q, a: q.a || "" }));
-            const scoreVal = extractScoreFromHTML(docs.summary);
-            const payload = {
-                type: 'synthesis',
-                name: prepNameInput.value.trim() || 'Unknown Name',
-                company: prepCompanyInput.value.trim() || 'Unknown Company',
-                variant: variant,
-                screencast: screencastUrl,
-                transcript: transcript,
-                customQuestions: updatedCustomQuestions,
-                score: scoreVal,
-                rep: document.getElementById('prep-rep')?.value || 'Albert',
-                content: docs // object containing 8 documents
-            };
-            fetch('/api/history', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).then(res => res.json())
-              .then(data => console.log("Saved synthesis to server history:", data.id))
-              .catch(err => console.warn("Failed to auto-save synthesis to history:", err));
-
-            // Format markdown bold in all parsed documents
-            for (const key in docs) {
-                docs[key] = formatMarkdown(docs[key]);
-            }
-            
-            // Inject Call Transcript
-            docs.transcript = `<pre class="util-text-sm-61a6d2">${escapeHTML(transcript)}</pre>`;
-
-            currentDocs = docs;
-            activeDocTab = 'questionnaireAnswers'; // default tab to show
-            showResults(null, true);
-            
-            // Mark all individual report buttons as generated
-            document.querySelectorAll('.report-type-btn').forEach(btn => {
-                btn.style.borderColor = '#00c853';
-                btn.style.color = '#00c853';
-                btn.style.background = 'rgba(0, 200, 83, 0.05)';
-            });
-
-            // Navigate to Step 3 to display generated reports on the right console
-            goToStep(3);
-        } catch (err) {
-            resetOutput();
-            showToast(`Error: ${err.message}`);
-            console.error("Transcript synthesis failed:", err);
-        } finally {
-            synthSubmitBtn.disabled = false;
-        }
-    });
-
-    // --- Document Tab Navigation ---
-    window.setDocTab = (tabName) => {
-        console.log("setDocTab called with tabName:", tabName);
-        if (!currentDocs) {
-            console.warn("setDocTab aborted because currentDocs is null or undefined");
-            return;
-        }
-        console.log("currentDocs keys:", Object.keys(currentDocs));
-        activeDocTab = tabName;
-        
-        // Update tab styling
-        const buttons = outputDocNav.querySelectorAll('.doc-tab-btn');
-        buttons.forEach(btn => {
-            if (btn.getAttribute('data-doc') === tabName) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
-
-        renderActiveDocument();
-    };
-
-    function renderActiveDocument() {
-        if (!currentDocs) return;
-        let content = currentDocs[activeDocTab] || "<p>This section was not generated or contains empty results.</p>";
-        
-        // Formatting specific modifications for better look
-        if (activeDocTab === 'summary') {
-            // Apply custom badges for HOT/WARM/COLD qualification
-            content = content.replace(/(QUALIFICATION SCORE:\s*)(HOT)/i, '$1<span class="badge-score hot">$2</span>');
-            content = content.replace(/(QUALIFICATION SCORE:\s*)(WARM)/i, '$1<span class="badge-score warm">$2</span>');
-            content = content.replace(/(QUALIFICATION SCORE:\s*)(COLD)/i, '$1<span class="badge-score cold">$2</span>');
-        }
-
-        let titleText = "";
-        switch(activeDocTab) {
-            case 'questionnaireAnswers': titleText = "1. Questionnaire Answers"; break;
-            case 'summary': titleText = "2. Qualification & Next Steps"; break;
-            case 'migrationReport': titleText = "3. Migration Report"; break;
-            case 'recapEmail': titleText = "4. Client Recap Email"; break;
-            case 'summarySheet': titleText = "5. Summary Sheet"; break;
-            case 'notes': titleText = "6. Meeting Notes"; break;
-            case 'proposal': titleText = "7. Consultative Proposal"; break;
-            case 'actionItems': titleText = "8. Action Items"; break;
-            case 'transcript': titleText = "9. Raw Call Transcript"; break;
-        }
-
-        let videoPreviewHtml = "";
-        if (currentScreencastUrl) {
-            const isDirectVideo = currentScreencastUrl.toLowerCase().endsWith('.mp4') || 
-                                  currentScreencastUrl.toLowerCase().endsWith('.webm') || 
-                                  currentScreencastUrl.toLowerCase().endsWith('.ogv');
-            if (isDirectVideo) {
-                videoPreviewHtml = `
-                    <div class="util-b52793">
-                        <video src="${currentScreencastUrl}" controls class="util-8e7f25"></video>
-                    </div>
-                `;
-            } else {
-                videoPreviewHtml = `
-                    <div class="util-flex-text-sm-f16285">
-                        <span class="util-315a7a">📺 Attached Screencast Video: <span class="util-f52ea2">${currentScreencastUrl.substring(0, 40) + (currentScreencastUrl.length > 40 ? '...' : '')}</span></span>
-                        <a href="${currentScreencastUrl}" target="_blank" class="btn btn-secondary util-flex-text-sm-7c705a">Open Link ↗</a>
-                    </div>
-                `;
-            }
-        }
-
-        const sanitizedContent = window.DOMPurify ? DOMPurify.sanitize(content) : fallbackSanitize(content);
-
-        outputDocContent.innerHTML = `
-            <div class="output-document">
-                <h3>${titleText}</h3>
-                ${videoPreviewHtml}
-                <div class="doc-body-pane">${sanitizedContent}</div>
-            </div>
-        `;
-    }
-
-    // --- Widescreen Console Maximize Toggle ---
-    const consoleMaximizeBtn = document.getElementById('console-maximize-btn');
-    if (consoleMaximizeBtn && dashboardGrid) {
-        consoleMaximizeBtn.addEventListener('click', () => {
-            const isFullscreen = dashboardGrid.classList.contains('layout-fullscreen-console');
-            
-            // Remove any other focus classes to prevent interference
-            dashboardGrid.classList.remove('layout-split', 'layout-focus-left', 'layout-focus-right', 'layout-fullscreen-console');
-            
-            if (isFullscreen) {
-                // Restore split layout class based on current step
-                if (currentStep === 1) {
-                    dashboardGrid.classList.add('layout-split');
-                    const savedSplit = localStorage.getItem('tiny_workspace_split');
-                    if (savedSplit) {
-                        const percentage = parseFloat(savedSplit);
-                        if (!isNaN(percentage)) {
-                            dashboardGrid.style.setProperty('--left-panel-width', `${percentage}%`);
-                            dashboardGrid.style.setProperty('--right-panel-width', `calc(${100 - percentage}% - 12px)`);
-                        }
-                    }
-                } else if (currentStep === 2) {
-                    dashboardGrid.classList.add('layout-focus-left');
-                    dashboardGrid.style.removeProperty('--left-panel-width');
-                    dashboardGrid.style.removeProperty('--right-panel-width');
-                } else if (currentStep === 3) {
-                    if (currentDocs) {
-                        // Keep reports full screen if they are generated
-                        dashboardGrid.classList.add('layout-fullscreen-console');
-                    } else {
-                        dashboardGrid.classList.add('layout-focus-right');
-                        dashboardGrid.style.removeProperty('--left-panel-width');
-                        dashboardGrid.style.removeProperty('--right-panel-width');
-                    }
-                }
-                consoleMaximizeBtn.innerText = '⛶';
-                consoleMaximizeBtn.title = 'Maximize Console';
-            } else {
-                // Maximize
-                dashboardGrid.classList.add('layout-fullscreen-console');
-                dashboardGrid.style.removeProperty('--left-panel-width');
-                dashboardGrid.style.removeProperty('--right-panel-width');
-                consoleMaximizeBtn.innerText = '📥';
-                consoleMaximizeBtn.title = 'Restore Split View';
-            }
-        });
-    }
-
-    // --- Action Button Handlers ---
-    copyContentBtn.addEventListener('click', () => {
-        let textToCopy = "";
-        if (currentDocs) {
-            // If in Tab 2, copy active document text (strip HTML tags for clipboard)
-            const activeHtml = currentDocs[activeDocTab];
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = activeHtml;
-            textToCopy = tempDiv.innerText || tempDiv.textContent;
-        } else {
-            // Copy dossier HTML text parsed as text
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = outputDocContent.innerHTML;
-            textToCopy = tempDiv.innerText || tempDiv.textContent;
-        }
-
-        if (!textToCopy || textToCopy.trim() === "Loading description...") {
-            showToast("No content to copy.");
-            return;
-        }
-
-        navigator.clipboard.writeText(textToCopy.trim())
-            .then(() => showToast("Copied to clipboard!"))
-            .catch(err => {
-                console.error("Failed to copy:", err);
-                showToast("Failed to copy. Please manually select and copy.");
-            });
-    });
-
-    downloadContentBtn.addEventListener('click', () => {
-        let content = "";
-        let filename = "tiny-ai-report.html";
-
-        if (currentDocs) {
-            filename = `tiny-handoff-report-${prepCompanyInput.value || "prospect"}.html`;
-            content = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Tiny AI Assistant Handover Report - ${prepCompanyInput.value || "Prospect"}</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap">
-    <style>
-        body { font-family: 'Roboto', sans-serif; padding: 40px; background: #ffffff; color: #1a1a1a; max-width: 800px; margin: 0 auto; line-height: 1.75; font-size: 0.95rem; }
-        h1 { border-bottom: 2px solid #4daeeb; padding-bottom: 10px; font-size: 28px; color: #4daeeb; margin-bottom: 30px; }
-        h2 { border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 5px; color: #4daeeb; margin-top: 40px; margin-bottom: 20px; }
-        h3 { color: #4daeeb; font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.5rem; }
-        h4 { color: #4daeeb; font-size: 1.05rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
-        pre { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); overflow-x: auto; white-space: pre-wrap; font-family: 'Roboto', sans-serif; color: #ffffff; line-height: 1.6; margin: 15px 0; }
-        blockquote { border-left: 3px solid #4daeeb; padding-left: 15px; margin-left: 10px; margin-bottom: 20px; font-style: italic; color: rgba(255, 255, 255, 0.9); }
-        ul, ol { margin-left: 25px; margin-bottom: 20px; }
-        li { margin-bottom: 10px; }
-        p { margin-bottom: 15px; }
-        strong { color: #ffffff; font-weight: 700; }
-        .badge-score { padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; text-transform: uppercase; }
-        .badge-score.hot { background: #4daeeb; border: 1px solid #4daeeb; color: #ffffff; }
-        .badge-score.warm { background: transparent; border: 1px solid #ffffff; color: #ffffff; }
-        .badge-score.cold { background: transparent; border: 1px solid rgba(255, 255, 255, 0.35); color: rgba(255, 255, 255, 0.35); }
-    </style>
-</head>
-<body>
-    <h1>Tiny AI Sales Handover compilation</h1>
-    <h2>1. Questionnaire Answers</h2>
-    <div>${currentDocs.questionnaireAnswers}</div>
-    <h2>2. Qualification & Next Steps</h2>
-    <div>${currentDocs.summary}</div>
-    <h2>3. Migration Report</h2>
-    <div>${currentDocs.migrationReport}</div>
-    <h2>4. Client Recap Email</h2>
-    <div>${currentDocs.recapEmail}</div>
-    <h2>5. Summary Sheet</h2>
-    <div>${currentDocs.summarySheet}</div>
-    <h2>6. Meeting Notes</h2>
-    <div>${currentDocs.notes}</div>
-    <h2>7. Consultative Proposal</h2>
-    <div>${currentDocs.proposal}</div>
-    <h2>8. Action Items</h2>
-    <div>${currentDocs.actionItems}</div>
-</body>
-</html>`;
-        } else {
-            filename = `tiny-briefing-dossier-${prepCompanyInput.value || "prospect"}.html`;
-            content = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Tiny Prospect Briefing Dossier</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap">
-    <style>
-        body { font-family: 'Roboto', sans-serif; padding: 40px; background: #ffffff; color: #1a1a1a; max-width: 800px; margin: 0 auto; line-height: 1.75; font-size: 0.95rem; }
-        h3 { border-bottom: 2px solid #4daeeb; padding-bottom: 10px; font-size: 24px; color: #4daeeb; margin-bottom: 25px; }
-        h4 { color: #4daeeb; font-size: 1.05rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
-        ol, ul { margin-left: 25px; margin-bottom: 20px; }
-        li { margin-bottom: 15px; }
-        p { margin-bottom: 15px; }
-        strong { color: #ffffff; font-weight: 700; }
-        blockquote { border-left: 3px solid #4daeeb; padding-left: 15px; margin-left: 10px; margin-bottom: 20px; font-style: italic; color: rgba(255, 255, 255, 0.9); }
-    </style>
-</head>
-<body>
-    ${outputDocContent.innerHTML}
-</body>
-</html>`;
-        }
-
-        const blob = new Blob([content], { type: "text/html" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast("Downloaded report!");
-    });
-
-    // --- SDR Battlecards Reference Datasets ---
-    const BATTLECARDS = {
-        A: [
-            {q: "What general ledger/ERP system (e.g., SAP, MS Business Central, Oracle) are you using, and does it currently integrate with your planning tool?", tip: "Identify GL/ERP baseline."},
-            {q: "How many separate Excel spreadsheets are you manually consolidating for your budgeting and forecasting, and are there issues with version control?", tip: "Gauge manual consolidation scale & errors."},
-            {q: "What specific planning workflows (e.g., actuals, payroll allocations, cost analysis, budgeting, forecasting) are you executing, and are allocations inconsistent or time-consuming?", tip: "Pinpoint active processes & bottlenecks."},
-            {q: "What reporting tools (e.g., Power BI, Qlik, Tableau, Excel PAX/PAW) do you use for management reporting, and do you manually export CSV files to reconcile data?", tip: "Map reporting stack & export overhead."},
-            {q: "Do users need to drill down from high-level reports to transaction-level GL data, and do you perform multi-currency transactions?", tip: "Determine detail granularity & FX needs."},
-            {q: "Do you have internal developers/admins to manage these systems, or is there a key-person risk if someone leaves?", tip: "Assess support staffing & key-person risk."},
-            {q: "How many planning contributors, read-only users, and administrators are involved, and would they need formal training?", tip: "Identify user seats & training demand."},
-            {q: "What repetitive financial tasks feel most manual, and would conversational AI access to financial queries benefit your executives?", tip: "Identify automation candidates & AI interest."},
-            {q: "What is your target timeline for going live, and do you need a parallel run (e.g., completing by a specific month like June)?", tip: "Qualify live targets & parallel run needs."},
-            {q: "Is there a budget allocated for licensing and delivery, and what is your internal approval/purchase order process?", tip: "Validate budget range & approval path."},
-            {q: "Have you evaluated other tools (e.g. Workday, Anaplan, TM1), and who else is involved in the final decision?", tip: "Identify competitors & key decision makers."},
-            {q: "What does success look like, and would a 60-day trial of data connectors or a free Proof of Concept (POC) help validate the solution?", tip: "Lock in success metrics & position POC/trial."}
-        ],
-        B: [
-            {q: "Why did you contact us? What do you hope to achieve?", tip: "Understand primary goals & outcomes."},
-            {q: "How long have you been users of TM1?", tip: "Gauge system age and historical context."},
-            {q: "What do you primarily use TM1 to do?", tip: "Identify key business use cases."},
-            {q: "Where does it fall short or create friction?", tip: "Uncover structural & operational pain."},
-            {q: "Which parts of finance are actively using it today?", tip: "Map finance user groups & footprint."},
-            {q: "Is usage across the business or limited to finance?", tip: "Identify cross-department deployment scale."},
-            {q: "Have users mostly adopted TM1 or do they resort to using Excel?", tip: "Evaluate user adoption and Excel fallback risk."},
-            {q: "Do users find it difficult to make enhancements? Who makes the enhancements?", tip: "Understand internal skill levels & bottleneck roots."},
-            {q: "Are you aware of performance, speed, or usability challenges?", tip: "Quantify load times, RAM limits or UI lag."},
-            {q: "Is the instance cloud or on-premise?", tip: "Confirm hosting architecture & environment count."}
-        ],
-        C: [
-            {q: "How many slides are in your monthly executive financial reports, and how much time does the finance team spend manually extracting, cleansing, and formatting data for them?", tip: "Measure time spent on formatting and manual slide generation."},
-            {q: "What enterprise systems and data sources (e.g., TM1, Adobe Analytics, Google Ad Manager, Adobe AdSlot, BigQuery, SQL) need to connect for automated reporting?", tip: "Map all data sources for automation."},
-            {q: "Would executives and managers benefit from asking natural language questions (e.g. 'AskFinance') to query financial data in real time?", tip: "Pitch conversational financial query models."},
-            {q: "What other areas in the business (e.g. Sales, Editorial, HR, Customer Support, IT, Procurement, Legal) have repetitive workflows ripe for automation?", tip: "Discover secondary cross-department use cases."},
-            {q: "Have you experimented with or deployed any generative AI or automation tools internally?", tip: "Gauge current AI experiments and team maturity."},
-            {q: "What is your primary cloud environment (e.g. GCP, AWS, Azure, on-premise) and how do you manage data security?", tip: "Map hosting preference and security compliance."},
-            {q: "Do you require specific role-based access controls and security protocols for financial data queried by AI?", tip: "Define role-based access controls for AI pipelines."},
-            {q: "Would you be open to a 2-to-6 week co-creation Proof of Concept (POC) to demonstrate value before full production rollout?", tip: "Position short co-creation POC model."},
-            {q: "Can you commit a primary business contact and technical resource to collaborate during a 2-to-6 week POC?", tip: "Verify customer resource availability for delivery."},
-            {q: "Are you willing to commit to a Decision Workshop within 10 days of POC completion to confirm next steps?", tip: "Lock in Decision Workshop schedule."},
-            {q: "Are you aware of the indicative costs for enterprise generative AI licensing ($160k+/yr) and implementation services ($125k+)?", tip: "Qualify budget alignment for enterprise pricing."},
-            {q: "What is your timeline for starting an AI pilot, and who are the key executive stakeholders involved?", tip: "Pinpoint active executive champions."}
-        ]
-    };
-
-    // Render Battlecard Body
-    function renderBattlecards() {
-        const variant = battlecardSelector.value;
-        
-        battlecardBody.innerHTML = "";
-        
-        // Update teleprompter counter
-        const counterEl = document.getElementById('teleprompter-counter');
-        if (counterEl) {
-            counterEl.textContent = `${currentQuestions.length} Questions`;
-        }
-        
-        currentQuestions.forEach((item, index) => {
-            const num = index + 1;
+    function renderChatHistory() {
+        chatMessagesLog.innerHTML = '';
+        chatHistory.forEach((msg, idx) => {
             const card = document.createElement('div');
-            card.className = 'teleprompter-card';
-            card.setAttribute('data-index', index);
+            card.className = `chat-message-card ${msg.role === 'user' ? 'user' : 'assistant'}`;
             
-            // If first question, make it active by default
-            if (index === 0) {
-                card.classList.add('teleprompter-active');
-            }
-            
-            card.innerHTML = `
-                <div class="teleprompter-q-num">Question ${num}</div>
-                <div class="teleprompter-q-text">${escapeHTML(item.q)}</div>
-            `;
-            
-            // Click to highlight as current question
-            card.addEventListener('click', () => {
-                // Remove active from all cards
-                battlecardBody.querySelectorAll('.teleprompter-card').forEach(c => {
-                    if (c !== card && c.classList.contains('teleprompter-active')) {
-                        c.classList.remove('teleprompter-active');
-                        c.classList.add('teleprompter-done');
-                    }
+            // Render plain text but preserve lines
+            const pre = document.createElement('pre');
+            pre.innerText = msg.content;
+            card.appendChild(pre);
+
+            // Add actions for assistant messages (plain text copy and email triggers)
+            if (msg.role === 'assistant') {
+                const actions = document.createElement('div');
+                actions.className = 'chat-message-actions';
+                
+                const btnCopy = document.createElement('button');
+                btnCopy.type = 'button';
+                btnCopy.className = 'chat-message-btn';
+                btnCopy.innerText = '📋 Copy';
+                btnCopy.addEventListener('click', () => {
+                    navigator.clipboard.writeText(msg.content);
+                    showToast('Copied to clipboard!');
                 });
-                
-                // Toggle done/active on clicked card
-                if (card.classList.contains('teleprompter-done')) {
-                    card.classList.remove('teleprompter-done');
+                actions.appendChild(btnCopy);
+
+                // Add recap email dispatcher button if it matches email format
+                const isRecapEmail = msg.content.includes('takeaways') || 
+                                     msg.content.includes('Recap') || 
+                                     msg.content.includes('Kind regards');
+                                     
+                if (isRecapEmail) {
+                    const btnSendEmail = document.createElement('button');
+                    btnSendEmail.type = 'button';
+                    btnSendEmail.className = 'chat-message-btn';
+                    btnSendEmail.innerText = '✉️ Send Recap';
+                    btnSendEmail.addEventListener('click', async () => {
+                        if (!metaEmail.value.trim()) {
+                            showToast("Error: Client email is missing!");
+                            return;
+                        }
+                        btnSendEmail.disabled = true;
+                        btnSendEmail.innerText = '⏳ Sending...';
+                        try {
+                            const res = await fetch('/api/email/recap', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    email: metaEmail.value.trim(),
+                                    name: metaName.value.trim(),
+                                    company: metaCompany.value.trim(),
+                                    recapText: msg.content,
+                                    rep: metaRep.value
+                                })
+                            });
+                            const resData = await res.json();
+                            if (res.ok && resData.status === 'success') {
+                                showToast("✔️ Recap email sent successfully!");
+                                btnSendEmail.innerText = '✉️ Sent';
+                            } else {
+                                throw new Error(resData.error || 'Dispatch failed');
+                            }
+                        } catch (err) {
+                            showToast(`Failed to send email: ${err.message}`);
+                            btnSendEmail.disabled = false;
+                            btnSendEmail.innerText = '✉️ Send Recap';
+                        }
+                    });
+                    actions.appendChild(btnSendEmail);
                 }
-                card.classList.toggle('teleprompter-active');
                 
-                // Update counter
-                const activeIdx = parseInt(card.getAttribute('data-index')) + 1;
-                if (counterEl) {
-                    counterEl.textContent = `Question ${activeIdx} of ${currentQuestions.length}`;
+                card.appendChild(actions);
+            }
+
+            chatMessagesLog.appendChild(card);
+        });
+
+        // Scroll to bottom
+        chatMessagesLog.scrollTop = chatMessagesLog.scrollHeight;
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    // --- Save Sources / Update client chat ---
+    if (chatSourcesForm) {
+        chatSourcesForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Perform distance calculation dynamically
+            try {
+                const distanceRes = await fetch('/api/calculate-distance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ destination: metaCompany.value })
+                });
+                if (distanceRes.ok) {
+                    const dData = await distanceRes.json();
+                    transitDistance = dData.distanceString || "Online/Phone call only (Distance unavailable)";
                 }
-            });
-            
-            battlecardBody.appendChild(card);
+            } catch (err) {
+                console.warn("API distance check failed:", err.message);
+            }
+
+            const payload = {
+                id: currentChatId || undefined,
+                type: 'synthesis', // Unified type for chat persistence
+                name: metaName.value.trim(),
+                company: metaCompany.value.trim(),
+                title: metaTitle.value.trim(),
+                email: metaEmail.value.trim(),
+                phone: metaPhone.value.trim(),
+                rep: metaRep.value,
+                track: metaTrack.value,
+                oneDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
+                gDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
+                gDriveFileId: sourceGdriveFileId.value,
+                gDriveFileContent: gdriveFileContent,
+                linkedinInfo: sourceLinkedinText.value.trim(),
+                intakeAnswers: sourceIntakeText.value.trim(),
+                transcript: sourceTranscriptText.value.trim(),
+                transitDistance: transitDistance,
+                messages: chatHistory
+            };
+
+            try {
+                const response = await fetch('/api/history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Failed to save sources');
+
+                showToast('Sources and metadata saved successfully.');
+                
+                // If it was a new chat, update currentChatId
+                if (!currentChatId) {
+                    currentChatId = result.id;
+                    // Append first assistant welcome message
+                    chatHistory.push({
+                        role: 'assistant',
+                        content: `Chat session initialized for ${payload.name} at ${payload.company}. Sources uploaded!`,
+                        timestamp: new Date().toISOString()
+                    });
+                    payload.id = currentChatId;
+                    payload.messages = chatHistory;
+                    // Re-save with welcome message
+                    await fetch('/api/history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+                
+                await loadChatsList();
+                await selectChat(currentChatId);
+
+            } catch (err) {
+                console.error('Error saving sources:', err);
+                showToast(`Error saving sources: ${err.message}`);
+            }
         });
     }
 
-    // Bind battlecard selector change event
-    battlecardSelector.addEventListener('change', async () => {
-        const variant = battlecardSelector.value;
-        await loadCustomQuestions(variant);
-        renderBattlecards();
-        
-        // Sync to Step 3 variant select
-        if (variant === "A") {
-            synthVariantSelect.value = "Variant A";
-        } else if (variant === "B") {
-            synthVariantSelect.value = "Variant B";
-        }
-    });
+    // --- Create New Chat ---
+    if (btnNewChat) {
+        btnNewChat.addEventListener('click', () => {
+            currentChatId = null;
+            renderChatsList();
 
-    // Bind Step 3 variant selector change event
-    synthVariantSelect.addEventListener('change', async () => {
-        const val = synthVariantSelect.value;
-        let variant = "A";
-        if (val === "Variant B") {
-            variant = "B";
-        }
-        battlecardSelector.value = variant;
-        await loadCustomQuestions(variant);
-        renderBattlecards();
-    });
+            workspaceEmptyState.classList.add('hidden');
+            workspaceActiveChat.classList.remove('hidden');
+            chatMessagesLog.innerHTML = '';
 
-    // Initialize battlecards by default
-    loadCustomQuestions("A").then(() => {
-        renderBattlecards();
-    });
+            // Clear inputs
+            metaName.value = '';
+            metaCompany.value = '';
+            metaTitle.value = '';
+            metaEmail.value = '';
+            metaPhone.value = '';
+            metaRep.value = 'Albert';
+            metaTrack.value = 'Planning & Analytics (TM1)';
+            sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
+            sourceGdriveFileId.value = '';
+            gdriveFileContent = '';
+            sourceLinkedinText.value = '';
+            sourceIntakeText.value = '';
+            sourceTranscriptText.value = '';
+            activeAudioContainer.classList.add('hidden');
+            activeAudioPlayer.src = '';
 
-    // Bind add question button
-    const battlecardAddBtn = document.getElementById('battlecard-add-btn');
-    if (battlecardAddBtn) {
-        battlecardAddBtn.addEventListener('click', () => {
-            currentQuestions.push({
-                q: "New custom question...",
-                tip: "Custom question added by representative."
-            });
-            renderBattlecards();
-            showToast("New question added. Click to edit.");
+            activeChatClientTitle.innerText = "New Chat";
+            activeChatClientMeta.innerText = "Add client sources and save to start conversation with Tiny";
+
+            chatHistory = [];
+            chatMessagesLog.innerHTML = `<div style="font-size:0.95rem;color:#64748b;text-align:center;padding:2rem;">Add client details and click <strong>Save Sources</strong> to begin.</div>`;
             
-            // Scroll to bottom
-            setTimeout(() => {
-                battlecardBody.scrollTop = battlecardBody.scrollHeight;
-            }, 50);
+            // Reload Google Drive files list to populate select dropdown
+            loadGoogleDriveFiles();
         });
     }
 
-    // --- LinkedIn Drag and Drop Listeners ---
-    linkedinDropZone.addEventListener('click', (e) => {
-        if (e.target !== linkedinFileInput) {
-            linkedinFileInput.click();
+    // --- LLM Interaction Helpers ---
+    async function callTinyAPI(promptText) {
+        chatLoadingIndicator.classList.remove('hidden');
+        chatMessagesLog.scrollTop = chatMessagesLog.scrollHeight;
+
+        // Compile context and previous history
+        const systemPrompt = `You are "Tiny", a helpful, conversational AI sales assistant for Octane Software Solutions.
+You help sales representatives prepare for pre-screening calls, analyze transcripts, and generate plain text deliverables.
+You are given the following sources for the client:
+- Client Name: ${metaName.value.trim()}
+- Company: ${metaCompany.value.trim()}
+- Job Title: ${metaTitle.value.trim()}
+- Email: ${metaEmail.value.trim()}
+- Phone: ${metaPhone.value.trim()}
+- Sales Rep: ${metaRep.value}
+- Service Track: ${metaTrack.value}
+- Connected Google Drive SOW: ${sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || 'None'}
+- Google Drive SOW Content: ${gdriveFileContent}
+- LinkedIn Profile Bio: ${sourceLinkedinText.value.trim()}
+- Booking Intake Answers: ${sourceIntakeText.value.trim()}
+- Call Transcript: ${sourceTranscriptText.value.trim()}
+- Travel Distance from Amendra's Origin: ${transitDistance}
+
+Reference Catalog & Pricing Specifications (SOLE SOURCE OF TRUTH):
+- DevOps Blue Support: A$4,560/month. Includes 24/7 SLA ticketing (Urgent <1hr, High 4hr, Medium 8hr, Low 24hr), rollover support hours, monthly health checks, and free training library.
+- DevOps Red Support: Advanced DevOps support tier. Rollover hours, certified developers, onshore/offshore hybrid model.
+- TM1 Flight Check: 6-day analysis, RAM/HDD log file performance checks, user interviews.
+- Data Integration Connector: Setup + email support, 60-day free trial.
+- watsonx Orchestrate POC: 2-6 weeks co-creation, working demo, client resources.
+- Custom Training: A$1,850/day.
+
+Rules:
+1. ALWAYS adhere strictly to the pricing catalog. If a pricing option is not explicitly listed, write '[PRICING_TBD_BY_DISCOVERY]'. NEVER invent or repeat custom rates from the transcript.
+2. Produce deliverables in PLAIN TEXT. Do NOT use HTML formatting, custom markdown styling, or branding guidelines. Use simple headers, dashes, and spacing.
+3. Be concise and factual. Do not make up facts. Use the client details provided.`;
+
+        // Format history for Mistral API proxy `/api/chat`
+        const messages = [
+            { role: 'system', content: systemPrompt }
+        ];
+
+        // Add history (up to last 10 messages to save context token space)
+        const recentHistory = chatHistory.slice(-10);
+        recentHistory.forEach(msg => {
+            messages.push({
+                role: msg.role === 'user' ? 'user' : 'assistant',
+                content: msg.content
+            });
+        });
+
+        // Add the new user prompt
+        messages.push({ role: 'user', content: promptText });
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    provider: 'deepseek',
+                    messages: messages,
+                    temperature: 0.2
+                })
+            });
+
+            const data = await res.json();
+            chatLoadingIndicator.classList.add('hidden');
+
+            if (!res.ok) throw new Error(data.error || 'Failed to call chat API');
+
+            const content = data.choices[0].message.content;
+
+            // Update local history
+            chatHistory.push({ role: 'user', content: promptText, timestamp: new Date().toISOString() });
+            chatHistory.push({ role: 'assistant', content: content, timestamp: new Date().toISOString() });
+
+            renderChatHistory();
+
+            // Save conversation log back to backend JSON file
+            const savePayload = {
+                id: currentChatId,
+                type: 'synthesis',
+                name: metaName.value.trim(),
+                company: metaCompany.value.trim(),
+                title: metaTitle.value.trim(),
+                email: metaEmail.value.trim(),
+                phone: metaPhone.value.trim(),
+                rep: metaRep.value,
+                track: metaTrack.value,
+                oneDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
+                gDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
+                gDriveFileId: sourceGdriveFileId.value,
+                gDriveFileContent: gdriveFileContent,
+                linkedinInfo: sourceLinkedinText.value.trim(),
+                intakeAnswers: sourceIntakeText.value.trim(),
+                transcript: sourceTranscriptText.value.trim(),
+                transitDistance: transitDistance,
+                messages: chatHistory
+            };
+
+            await fetch('/api/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(savePayload)
+            });
+
+        } catch (err) {
+            chatLoadingIndicator.classList.add('hidden');
+            console.error('Chat error:', err);
+            showToast(`Error getting response: ${err.message}`);
         }
-    });
+    }
 
-    linkedinFileInput.addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
-
-    linkedinFileInput.addEventListener('change', () => {
-        if (linkedinFileInput.files.length > 0) {
-            handleLinkedinFile(linkedinFileInput.files[0]);
+    // --- Custom Chat Prompt send ---
+    function sendUserQuery() {
+        const queryText = chatUserInput.value.trim();
+        if (!queryText) return;
+        if (!currentChatId) {
+            showToast("Please save sources first to initialize the chat.");
+            return;
         }
+
+        chatUserInput.value = '';
+        callTinyAPI(queryText);
+    }
+
+    if (chatSendBtn) {
+        chatSendBtn.addEventListener('click', sendUserQuery);
+    }
+
+    if (chatUserInput) {
+        chatUserInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendUserQuery();
+            }
+        });
+    }
+
+    // --- Quick Prompt Buttons ---
+    quickPromptButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const promptType = btn.getAttribute('data-prompt-type');
+            if (!currentChatId) {
+                showToast("Please save sources first to initialize the chat.");
+                return;
+            }
+
+            let promptText = '';
+            if (promptType === 'leadSheet') {
+                promptText = `Generate a Lead Sheet (Pre-Screening Prep Briefing). 
+It must follow this structured outline and guidelines:
+1. LinkedIn profile analysis -- role history, tenure, seniority, network signals.
+2. Recent social media activity (if visible in sources).
+3. Company overview -- products, services, revenue signals.
+4. Octane services relevant to this prospect.
+5. Key competitors they may be evaluating.
+6. Competing applications they may already use.
+7. Complementary applications in their stack.
+8. TM1 or AI applications relevant to their industry/role.
+9. Likely pain points.
+10. High-impact openers -- 3 specific openers that demonstrate relevance from the first sentence.
+Format it in plain text without HTML.`;
+            } else if (promptType === 'recapEmail') {
+                promptText = `Generate a Recap Email to the client.
+Format exactly as:
+Hey [client's name],
+
+I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
+- [Takeaway 1]
+- [Takeaway 2]
+- [Takeaway 3]
+
+I have also recorded a video briefing summarizing our discussion, which you can review here: [OneDrive Screencast Link]
+
+You should have received an invitation confirming our appointment together.
+
+Kind regards,
+Anthony.`;
+            } else if (promptType === 'migration') {
+                promptText = `Generate a structured Migration/Modernisation assessment report based on the call. Include:
+- CURRENT STATE: What systems, processes, and tools they use today.
+- GAPS IDENTIFIED: Where their current setup falls short.
+- RECOMMENDED MIGRATION PATH: What Octane recommends.
+- ESTIMATED COMPLEXITY: Low / Medium / High with rationale.
+- DEPENDENCIES: Any prerequisites or blockers.`;
+            } else if (promptType === 'actionItems') {
+                promptText = `Identify all action items, follow-up tasks, and commitments made during this call. For each item, you MUST explicitly include any specific deadlines, dates, or times mentioned in the transcript. Group by owner.`;
+            } else if (promptType === 'summarySheet') {
+                promptText = `Generate a brief, structured internal summary sheet:
+SUMMARY: [Company] — [Date]
+ATTENDEES: [Names]
+SERVICE TRACK: [TM1 / AI]
+KEY DISCUSSION POINTS: (3-5 points)
+PROSPECT SENTIMENT: (Positive / Neutral / Cautious)
+OneDrive Screencast Link: [Link if available]`;
+            } else if (promptType === 'notes') {
+                promptText = `Generate detailed chronological meeting notes capturing context, technical systems discussed, and direct quotes.`;
+            } else if (promptType === 'proposal') {
+                promptText = `Draft a preliminary, consultative proposal document. Do NOT include custom pricing amounts. Only state standard list-price frameworks from the Reference Catalog. Include sections:
+1. UNDERSTANDING OF REQUIREMENTS
+2. PROPOSED SOLUTION
+3. APPROACH & METHODOLOGY
+4. TEAM & RESOURCES
+5. NEXT STEPS & DISCOVERY OPEN ITEMS`;
+            }
+
+            if (promptText) {
+                callTinyAPI(promptText);
+            }
+        });
     });
 
-    linkedinDropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        linkedinDropZone.classList.add('dragover');
-    });
+    // --- Load Sample Prospect details ---
+    if (btnLoadSample) {
+        btnLoadSample.addEventListener('click', async () => {
+            showToast("Loading sample client data...");
+            try {
+                const res = await fetch('/api/prep-sample-loadout');
+                if (!res.ok) throw new Error('Failed to fetch prep sample');
+                const data = await res.json();
 
-    linkedinDropZone.addEventListener('dragenter', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        linkedinDropZone.classList.add('dragover');
-    });
+                metaName.value = data.name || 'Sarah Chen';
+                metaCompany.value = data.company || 'Acme Corp';
+                metaTitle.value = data.title || 'Head of FP&A';
+                metaEmail.value = data.email || 'sarah@acme.com';
+                metaPhone.value = data.phone || '+61 2 9876 5432';
+                metaRep.value = 'Albert';
+                metaTrack.value = data.track || 'Planning & Analytics (TM1)';
+                gdriveFileContent = data.gDriveFileContent || "Sample Google Drive File Content...\nSOW Details for Acme Corp.";
+                sourceGdriveFileId.value = data.gDriveFileId || "mock_gdrive_sample_id";
+                await loadGoogleDriveFiles();
+                let matchedOpt = Array.from(sourceGdriveFileSelect.options).find(o => o.text.includes('Statement_Of_Work_2025.pdf'));
+                if (!matchedOpt) {
+                    const mockOpt = document.createElement('option');
+                    mockOpt.value = 'mock_gdrive_sample_id';
+                    mockOpt.innerText = 'Statement_Of_Work_2025.pdf (12.4 KB)';
+                    sourceGdriveFileSelect.appendChild(mockOpt);
+                    sourceGdriveFileSelect.value = 'mock_gdrive_sample_id';
+                } else {
+                    sourceGdriveFileSelect.value = matchedOpt.value;
+                }
 
-    linkedinDropZone.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        linkedinDropZone.classList.remove('dragover');
-    });
+                sourceLinkedinText.value = data.linkedin || data.linkedinInfo || '';
+                sourceIntakeText.value = data.intake || data.intakeAnswers || '';
+                
+                showToast("Sample prospect loaded. Click Save Sources to initialize.");
+            } catch (err) {
+                console.error("Error loading sample:", err);
+                showToast("Failed to load sample client data.");
+            }
+        });
+    }
 
-    linkedinDropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        linkedinDropZone.classList.remove('dragover');
-        
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            handleLinkedinFile(e.dataTransfer.files[0]);
-        }
-    });
+    // --- File Drops & Upload Handling ---
+    function handleDropzoneUpload(dropzone, fileInput, droptext, targetTextarea, isAudio = false) {
+        if (!dropzone) return;
 
-    function handleLinkedinFile(file) {
-        // File size limit (2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            showToast("File size exceeds 2MB limit.");
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0], fileInput, droptext, targetTextarea, isAudio);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                processFile(fileInput.files[0], fileInput, droptext, targetTextarea, isAudio);
+            }
+        });
+    }
+
+    function processFile(file, fileInput, droptext, targetTextarea, isAudio) {
+        if (file.size > 50 * 1024 * 1024) {
+            showToast("File size is too large (max 50MB).");
             return;
         }
 
         const ext = file.name.split('.').pop().toLowerCase();
-        
-        if (ext === 'txt') {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                prepLinkedinText.value = event.target.result;
-                if (linkedinDropText) {
-                    linkedinDropText.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong> (Click to change)`;
-                }
-                showToast(`Loaded ${file.name} successfully!`);
-            };
-            reader.onerror = () => {
-                showToast("Error reading file.");
-            };
-            reader.readAsText(file);
-        } else if (ext === 'pdf' || ext === 'docx') {
-            // Simulate extraction progress
-            if (linkedinDropText) {
-                linkedinDropText.innerHTML = `⏳ Extracting text from ${escapeHTML(file.name)}...`;
-            }
-            linkedinDropZone.style.pointerEvents = 'none';
-            
-            setTimeout(() => {
-                prepLinkedinText.value = `Experience:\n- [Enter Experience Here]\n` +
-                    `Education:\n` +
-                    `- [Enter Education Here]`;
-                
-                if (linkedinDropText) {
-                    linkedinDropText.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong> (Click to change)`;
-                }
-                linkedinDropZone.style.pointerEvents = '';
-                showToast(`Successfully extracted profile details from ${file.name}!`);
-            }, 1000);
-        } else {
-            showToast("Unsupported file type. Please upload a .txt, .pdf, or .docx file.");
-        }
-    }
 
-    // Call Directory event listeners
-    const directorySearch = document.getElementById('directory-search');
-    const directoryFilterRep = document.getElementById('directory-filter-rep');
-    const directoryFilterScore = document.getElementById('directory-filter-score');
-    const directoryRefreshBtn = document.getElementById('directory-refresh-btn');
-
-    if (directorySearch) {
-        directorySearch.addEventListener('input', renderDirectoryList);
-    }
-    if (directoryFilterRep) {
-        directoryFilterRep.addEventListener('change', renderDirectoryList);
-    }
-    if (directoryFilterScore) {
-        directoryFilterScore.addEventListener('change', renderDirectoryList);
-    }
-    if (directoryRefreshBtn) {
-        directoryRefreshBtn.addEventListener('click', loadDirectoryList);
-    }
-
-    // --- Helper Functions for Per-Report and State Management ---
-    function resetReportButtons() {
-        document.querySelectorAll('.report-type-btn').forEach(btn => {
-            btn.style.borderColor = '';
-            btn.style.color = '';
-            btn.style.background = '';
-        });
-    }
-
-    async function autoSaveCurrentDocs() {
-        const variant = synthVariantSelect.value;
-        const transcript = synthTranscriptText.value.trim();
-        const scoreVal = currentDocs ? extractScoreFromHTML(currentDocs.summary) : null;
-        
-        const payload = {
-            type: 'synthesis',
-            name: prepNameInput.value.trim() || 'Unknown Name',
-            company: prepCompanyInput.value.trim() || 'Unknown Company',
-            variant: variant,
-            screencast: '',
-            transcript: transcript,
-            customQuestions: currentQuestions.map(q => ({ q: q.q, a: q.a || "" })),
-            score: scoreVal,
-            rep: document.getElementById('prep-rep')?.value || 'Albert',
-            content: currentDocs
-        };
-        
-        try {
-            const res = await fetch('/api/history', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            console.log("Saved synthesis to history:", data.id);
-        } catch (err) {
-            console.warn("Failed to auto-save history:", err);
-        }
-    }
-
-    function parseHubSpotBookingForm(text) {
-        if (!text) return;
-        
-        const extractField = (patterns) => {
-            for (const pattern of patterns) {
-                const match = text.match(pattern);
-                if (match && match[1]) {
-                    return match[1].trim();
-                }
-            }
-            return '';
-        };
-        
-        const firstName = extractField([
-            /^[ \t]*First Name:\s*([^\r\n]+)/im,
-            /^[ \t]*Given Name:\s*([^\r\n]+)/im
-        ]);
-        const lastName = extractField([
-            /^[ \t]*Last Name:\s*([^\r\n]+)/im,
-            /^[ \t]*Surname:\s*([^\r\n]+)/im
-        ]);
-        
-        let fullName = extractField([
-            /^[ \t]*(?:Full\s+)?Name:\s*([^\r\n]+)/im,
-            /^[ \t]*Contact Name:\s*([^\r\n]+)/im
-        ]);
-        
-        if (!fullName && (firstName || lastName)) {
-            fullName = `${firstName} ${lastName}`.trim();
-        }
-        
-        const title = extractField([
-            /^[ \t]*(?:Job\s+)?Title:\s*([^\r\n]+)/im,
-            /^[ \t]*Role:\s*([^\r\n]+)/im,
-            /^[ \t]*Position:\s*([^\r\n]+)/im
-        ]);
-        
-        const company = extractField([
-            /^[ \t]*Company(?:\s+Name)?:\s*([^\r\n]+)/im,
-            /^[ \t]*Organization:\s*([^\r\n]+)/im
-        ]);
-        
-        const url = extractField([
-            /^[ \t]*Website(?:\s+URL)?:\s*([^\r\n]+)/im,
-            /^[ \t]*Company Website:\s*([^\r\n]+)/im,
-            /^[ \t]*URL:\s*([^\r\n]+)/im
-        ]);
-        
-        const email = extractField([
-            /^[ \t]*Email(?:\s+Address)?:\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/im
-        ]);
-        
-        const phone = extractField([
-            /^[ \t]*Phone(?:\s+Number)?:\s*([^\r\n]+)/im,
-            /^[ \t]*Mobile:\s*([^\r\n]+)/im
-        ]);
-        
-        const serviceTrack = extractField([
-            /^[ \t]*Service\s+Track(?:\s+Interest)?:\s*([^\r\n]+)/im,
-            /^[ \t]*Interest:\s*([^\r\n]+)/im
-        ]);
-        
-        if (fullName) prepNameInput.value = fullName;
-        if (title) prepTitleInput.value = title;
-        if (company) prepCompanyInput.value = company;
-        if (url) prepUrlInput.value = url;
-        if (email) prepEmailInput.value = email;
-        
-        const phoneEl = document.getElementById('prep-phone');
-        if (phone && phoneEl) {
-            phoneEl.value = phone;
-        }
-        
-        if (serviceTrack) {
-            const trackLower = serviceTrack.toLowerCase();
-            if (trackLower.includes('ai') || trackLower.includes('artificial') || trackLower.includes('watsonx')) {
-                prepTrackSelect.value = 'AI';
-            } else {
-                prepTrackSelect.value = 'Planning & Analytics (TM1)';
-            }
-            syncServiceTrackToVariant();
-        }
-        
-        showToast("HubSpot Booking Form parsed successfully!");
-    }
-
-    function toggleDemoButtons(isDemo) {
-        const prepSampleBtn = document.getElementById('prep-load-sample-btn');
-        const synthSampleBtn = document.getElementById('synth-load-sample-btn');
-        if (prepSampleBtn) prepSampleBtn.style.display = isDemo ? 'inline-block' : 'none';
-        if (synthSampleBtn) synthSampleBtn.style.display = isDemo ? 'inline-block' : 'none';
-        
-        // Dynamic visibility toggle for header navigation options based on Demo Mode status
-        const navDir = document.getElementById('nav-directory');
-        const activeSdr = document.querySelector('.sdr-selector-wrapper');
-        const divider = document.getElementById('nav-directory-divider');
-        
-        if (navDir) navDir.style.display = isDemo ? 'block' : 'none';
-        if (divider) divider.style.display = isDemo ? 'inline' : 'none';
-        if (activeSdr) activeSdr.style.display = isDemo ? 'flex' : 'none';
-    }
-
-    // --- Wire Up New Listeners ---
-    const prepParseBtn = document.getElementById('prep-parse-btn');
-    if (prepParseBtn) {
-        prepParseBtn.addEventListener('click', () => {
-            const text = prepIntakeText.value.trim();
-            if (!text) {
-                showToast("Please paste the booking form content first.");
-                return;
-            }
-            parseHubSpotBookingForm(text);
-        });
-    }
-
-    // Per-report modular buttons
-    document.querySelectorAll('.report-type-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const reportType = btn.getAttribute('data-report');
-            const transcript = synthTranscriptText.value.trim();
-            const variant = synthVariantSelect.value;
-            
-            if (!transcript) {
-                showToast("Please enter or load a call transcript.");
-                return;
-            }
-            
-            btn.disabled = true;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `⏳ Generating...`;
-            showLoading(`Generating ${btn.textContent.trim()}...`);
-            
-            try {
-                const config = getApiConfig();
-                let generatedContent = "";
-                
-                if (reportType === 'questionnaireAnswers') {
-                    const customQuestions = currentQuestions.map(q => ({ q: q.q, a: q.a || "" }));
-                    generatedContent = await TinyAI.generateQuestionnaireAnswers(variant, transcript, customQuestions, config);
-                    
-                    const extractedAnswers = extractAnswersFromQuestionnaireHTML(generatedContent);
-                    currentQuestions.forEach((q, idx) => {
-                        if (extractedAnswers[idx] !== undefined) {
-                            q.a = extractedAnswers[idx];
-                        }
-                    });
-                    renderBattlecards();
-                } else if (reportType === 'migrationReport') {
-                    generatedContent = await TinyAI.generateMigrationReport(variant, transcript, config);
-                } else if (reportType === 'recapEmail') {
-                    generatedContent = await TinyAI.generateRecapEmail(transcript, "", config);
-                } else if (reportType === 'summarySheet') {
-                    generatedContent = await TinyAI.generateSummarySheet(transcript, "", config);
-                } else if (reportType === 'notes') {
-                    generatedContent = await TinyAI.generateNotes(transcript, config);
-                } else if (reportType === 'actionItems') {
-                    generatedContent = await TinyAI.generateActionItems(transcript, config);
-                } else if (reportType === 'proposal') {
-                    const dossierContent = currentDossierText || "";
-                    const qAnswers = currentDocs ? currentDocs.questionnaireAnswers : "";
-                    generatedContent = await TinyAI.generateProposal(
-                        {
-                            name: prepNameInput.value.trim(),
-                            title: prepTitleInput.value.trim(),
-                            company: prepCompanyInput.value.trim(),
-                            url: prepUrlInput.value.trim(),
-                            gDriveFile: attachedGDriveFile
-                        },
-                        dossierContent,
-                        qAnswers,
-                        transcript,
-                        config
-                    );
-                }
-                
-                generatedContent = formatMarkdown(generatedContent);
-                
-                if (!currentDocs) {
-                    currentDocs = {
-                        questionnaireAnswers: "",
-                        summary: "",
-                        migrationReport: "",
-                        recapEmail: "",
-                        summarySheet: "",
-                        notes: "",
-                        proposal: "",
-                        actionItems: "",
-                        transcript: `<pre class="util-text-sm-61a6d2">${escapeHTML(transcript)}</pre>`
-                    };
-                }
-                currentDocs[reportType] = generatedContent;
-                
-                btn.style.borderColor = '#00c853';
-                btn.style.color = '#00c853';
-                btn.style.background = 'rgba(0, 200, 83, 0.05)';
-                
-                await autoSaveCurrentDocs();
-                
-                activeDocTab = reportType;
-                showResults(null, true);
-                showToast(`${btn.textContent.trim()} generated!`);
-            } catch (err) {
-                showToast(`Generation failed: ${err.message}`);
-                console.error(err);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        });
-    });
-
-    // "No Answer" fallback trigger
-    const generateReqEmailBtn = document.getElementById('generate-req-email-btn');
-    if (generateReqEmailBtn) {
-        generateReqEmailBtn.addEventListener('click', async () => {
-            generateReqEmailBtn.disabled = true;
-            generateReqEmailBtn.innerText = '⏳ Generating...';
-            showLoading("Generating Requirement Email...");
-            try {
-                const prospectData = {
-                    name: prepNameInput.value.trim(),
-                    title: prepTitleInput.value.trim(),
-                    company: prepCompanyInput.value.trim(),
-                    track: prepTrackSelect.value,
-                    rep: document.getElementById('prep-rep')?.value || 'Albert'
-                };
-                const dossierData = currentDossierText || "";
-                const config = getApiConfig();
-                const emailHtml = await TinyAI.generateRequirementEmail(prospectData, dossierData, config);
-                
-                showResults(formatMarkdown(emailHtml), false);
-                
-                const payload = {
-                    type: 'synthesis',
-                    name: prospectData.name || 'Unknown Name',
-                    company: prospectData.company || 'Unknown Company',
-                    variant: 'No Answer Fallback',
-                    screencast: '',
-                    transcript: '[Prospect didn\'t pick up]',
-                    customQuestions: [],
-                    score: 'COLD',
-                    rep: prospectData.rep,
-                    stage: 'debrief',
-                    content: {
-                        recapEmail: emailHtml,
-                        questionnaireAnswers: '<p>Prospect did not pick up.</p>',
-                        notes: '<p>Call attempted but no answer. Sent Requirement Email.</p>'
-                    }
-                };
-                fetch('/api/history', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).then(res => res.json())
-                  .then(data => console.log("Saved no-answer log to history:", data.id))
-                  .catch(err => console.warn("Failed to save no-answer history:", err));
-                  
-                showToast("Requirement Email generated!");
-            } catch (err) {
-                console.error(err);
-                showToast("Failed to generate Requirement Email.");
-            } finally {
-                generateReqEmailBtn.disabled = false;
-                generateReqEmailBtn.innerText = '✉️ Generate Requirement Email';
-            }
-        });
-    }
-
-    // "Rescheduled" fallback trigger
-    const sendRescheduleEmailBtn = document.getElementById('send-reschedule-email-btn');
-    if (sendRescheduleEmailBtn) {
-        sendRescheduleEmailBtn.addEventListener('click', () => {
-            const clientName = prepNameInput.value.trim() || 'Prospect';
-            const repName = document.getElementById('prep-rep')?.value || 'Albert';
-            const companyName = prepCompanyInput.value.trim() || 'your company';
-            
-            const emailHtml = `
-                <p>Subject: Rescheduling our sync — Octane Software Solutions</p>
-                <p>Hi ${clientName},</p>
-                <p>Thanks for letting us know about the change in schedule. I have updated our pipeline and sent an updated calendar invitation with a new link for our meeting.</p>
-                <p>Looking forward to speaking then and discussing how we can support ${companyName} with our ${prepTrackSelect.value} services.</p>
-                <p>Best regards,<br>${repName}<br>Octane Software Solutions</p>
-            `;
-            
-            showResults(emailHtml, false);
-            showToast("Reschedule confirmation drafted!");
-        });
-    }
-
-    // Detail Doc tabs inside Directory Detail View
-    const detailDocNav = document.getElementById('detail-doc-nav');
-    if (detailDocNav) {
-        detailDocNav.querySelectorAll('.doc-tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-detail-doc');
-                activeDetailDocTab = tab;
-                updateDetailDocDisplay();
-            });
-        });
-    }
-
-    // SDR Identity persistence
-    // ── Zero-UI URL Parameter Configuration ──
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    // 1. Identity Parsing
-    if (urlParams.has('sdr')) {
-        const sdrParam = urlParams.get('sdr');
-        if (sdrParam) {
-            localStorage.setItem('tiny_active_sdr', sdrParam);
-            console.log(`[Zero-UI] Active SDR set to: ${sdrParam}`);
-        }
-    }
-    
-    // 2. Demo Mode Parsing
-    if (urlParams.has('demo')) {
-        const demoParam = urlParams.get('demo') === 'true';
-        localStorage.setItem('tiny_demo_mode', demoParam);
-        console.log(`[Zero-UI] Demo Mode set to: ${demoParam}`);
-    }
-
-    // Apply configuration
-    const savedSdr = localStorage.getItem('tiny_active_sdr') || 'Albert';
-    
-    const prepRepSelect = document.getElementById('prep-rep');
-    if (prepRepSelect) {
-        prepRepSelect.value = savedSdr;
-    }
-    if (directoryFilterRep) {
-        directoryFilterRep.value = savedSdr;
-    }
-
-    const isDemo = localStorage.getItem('tiny_demo_mode') !== 'false';
-    toggleDemoButtons(isDemo);
-
-    // Run sync initially after all functions and datasets are defined
-    syncServiceTrackToVariant();
-
-    // ── Interactive Split-Pane Workspace Engine ──
-    const splitter = document.getElementById('workspace-splitter');
-    const dbGrid = document.querySelector('.dashboard-grid');
-
-    if (splitter && dbGrid) {
-        let isDragging = false;
-        
-        // Restore saved split position from localStorage
-        const savedSplit = localStorage.getItem('tiny_workspace_split');
-        if (savedSplit) {
-            const splitVal = parseFloat(savedSplit);
-            if (!isNaN(splitVal) && splitVal > 10 && splitVal < 90) {
-                applySplitRatio(splitVal);
-            }
-        }
-
-        // Apply grid ratios to CSS variables
-        function applySplitRatio(percentage) {
-            dbGrid.style.setProperty('--left-panel-width', `${percentage}%`);
-            dbGrid.style.setProperty('--right-panel-width', `calc(${100 - percentage}% - 12px)`);
-        }
-
-        // Mousedown handler
-        splitter.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            isDragging = true;
-            splitter.classList.add('active');
-            document.body.classList.add('resizing');
-
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-        });
-
-        // Throttled mousemove
-        let animationFrameId = null;
-        function onMouseMove(e) {
-            if (!isDragging) return;
-
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-
-            animationFrameId = requestAnimationFrame(() => {
-                const gridRect = dbGrid.getBoundingClientRect();
-                const totalWidth = gridRect.width - 12; // subtract gutter width
-                const offsetX = e.clientX - gridRect.left;
-                
-                // Calculate percentage
-                let percentage = (offsetX / totalWidth) * 100;
-                
-                // Defensive minimum column boundaries (e.g. min 320px for inputs, 380px for outputs)
-                const minLeftPct = (320 / gridRect.width) * 100;
-                const minRightPct = (380 / gridRect.width) * 100;
-                const maxLeftPct = 100 - minRightPct;
-                
-                if (percentage < minLeftPct) percentage = minLeftPct;
-                if (percentage > maxLeftPct) percentage = maxLeftPct;
-
-                applySplitRatio(percentage);
-            });
-        }
-
-        // Mouseup handler
-        function onMouseUp() {
-            if (!isDragging) return;
-            isDragging = false;
-            splitter.classList.remove('active');
-            document.body.classList.remove('resizing');
-
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-
-            // Persist state
-            const leftWidth = dbGrid.style.getPropertyValue('--left-panel-width');
-            if (leftWidth) {
-                localStorage.setItem('tiny_workspace_split', parseFloat(leftWidth));
-            }
-        }
-
-        // Double click to reset layout to ideal balance
-        splitter.addEventListener('dblclick', () => {
-            localStorage.removeItem('tiny_workspace_split');
-            dbGrid.style.removeProperty('--left-panel-width');
-            dbGrid.style.removeProperty('--right-panel-width');
-        });
-    }
-
-    // --- PDF.js Modal Preview Integration ---
-    const pdfModal = document.getElementById('pdf-preview-modal');
-    const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
-    const pdfRenderTarget = document.getElementById('pdf-render-target');
-    const gdriveAttachedName = document.getElementById('gdrive-attached-name');
-    
-    if (!pdfModal || !pdfRenderTarget || !gdriveAttachedName) return;
-
-    const ctx = pdfRenderTarget.getContext('2d');
-
-    // Open Modal and render PDF
-    gdriveAttachedName.addEventListener('click', () => {
-        // Only trigger if a PDF is attached (simple check by text extension)
-        const fileName = gdriveAttachedName.innerText;
-        if (!fileName.toLowerCase().endsWith('.pdf')) {
-            // Alternatively, show a toast for unsupported preview types
-            showToast('Preview is only supported for PDF files.', 'warning');
-            return;
-        }
-
-        // Show modal
-        pdfModal.classList.remove('modal-hidden');
-
-        if (attachedGDriveFileContent) {
-            pdfRenderTarget.style.display = 'block';
-            const mockPre = document.getElementById('mock-pdf-text-target');
-            if (mockPre) mockPre.style.display = 'none';
-
-            // Check if it's already a raw PDF binary string
-            if (typeof attachedGDriveFileContent === 'string' && attachedGDriveFileContent.trim().startsWith('%PDF')) {
-                const binStr = attachedGDriveFileContent;
-                const len = binStr.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    bytes[i] = binStr.charCodeAt(i) & 0xff;
-                }
-
-                const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
-                if (lib) {
-                    lib.getDocument({ data: bytes }).promise.then(pdf => {
-                        return pdf.getPage(1);
-                    }).then(page => {
-                        const scale = 1.25;
-                        const viewport = page.getViewport({ scale: scale });
-                        
-                        pdfRenderTarget.height = viewport.height;
-                        pdfRenderTarget.width = viewport.width;
-                        
-                        const renderContext = {
-                            canvasContext: ctx,
-                            viewport: viewport
-                        };
-                        page.render(renderContext);
-                    }).catch(err => {
-                        console.error('Error rendering binary PDF:', err);
-                        showToast('Failed to render PDF preview.', 'error');
-                    });
-                } else {
-                    console.error('PDF.js library failed to load globally.');
-                    showToast('Failed to load PDF viewer engine.', 'error');
-                }
-                return;
-            }
-
-            let pdfContent = [];
-            try {
-                const data = JSON.parse(attachedGDriveFileContent);
-                pdfContent = [
-                    { text: `New Pre-Screen Booking: ${data.name} — ${data.company}`, fontSize: 18, bold: true, margin: [0, 0, 0, 20] },
-                    {
-                        layout: 'lightHorizontalLines',
-                        table: {
-                            headerRows: 0,
-                            widths: [150, '*'],
-                            body: [
-                                [ { text: 'Prospect', bold: true }, data.name || 'N/A' ],
-                                [ { text: 'Company', bold: true }, data.company || 'N/A' ],
-                                [ { text: 'Position', bold: true }, data.title || 'N/A' ],
-                                [ { text: 'Service Interest', bold: true, color: '#315a7a' }, { text: data.track || 'N/A', color: '#315a7a' } ],
-                                [ { text: 'Email', bold: true }, data.email || 'N/A' ],
-                                [ { text: 'Phone', bold: true }, data.phone || 'N/A' ]
-                            ]
-                        },
-                        margin: [0, 0, 0, 20]
-                    },
-                    {
-                        text: 'Discussion Topics:',
-                        bold: true,
-                        fontSize: 14,
-                        margin: [0, 10, 0, 10]
-                    },
-                    {
-                        text: data.discuss || 'No discussion topics provided.',
-                        italics: true,
-                        margin: [0, 0, 0, 0]
-                    }
-                ];
-            } catch (e) {
-                // Fallback for plain text
-                pdfContent = [
-                    { text: attachedGDriveFileContent || 'No mock content provided.', fontSize: 12, lineHeight: 1.5 }
-                ];
-            }
-
-            // Generate physical PDF in-memory via pdfMake
-            const docDefinition = {
-                content: pdfContent,
-                defaultStyle: {
-                    font: 'Roboto',
-                    fontSize: 12
-                }
-            };
-            
-            const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-            pdfDocGenerator.getDataUrl((dataUrl) => {
-                const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
-                if (lib) {
-                    lib.getDocument(dataUrl).promise.then(pdf => {
-                        return pdf.getPage(1);
-                    }).then(page => {
-                        const scale = 1.25;
-                        const viewport = page.getViewport({ scale: scale });
-                        
-                        pdfRenderTarget.height = viewport.height;
-                        pdfRenderTarget.width = viewport.width;
-                        
-                        const renderContext = {
-                            canvasContext: ctx,
-                            viewport: viewport
-                        };
-                        page.render(renderContext);
-                    }).catch(err => {
-                        console.error('Error rendering dynamic PDF preview:', err);
-                        showToast('Failed to render mock PDF.', 'error');
-                    });
-                }
-            });
-            return;
-        }
-
-        // Standard PDF.js path for real files
-        pdfRenderTarget.style.display = 'block';
-        const mockPre = document.getElementById('mock-pdf-text-target');
-        if (mockPre) mockPre.style.display = 'none';
-
-        // Path to the dummy PDF we downloaded (in a real app, this would stream from the backend)
-        const pdfUrl = '/assets/sample.pdf';
-
-        // Render PDF
-        const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
-        if (lib) {
-            lib.getDocument(pdfUrl).promise.then(pdf => {
-                return pdf.getPage(1);
-            }).then(page => {
-                const scale = 1.25;
-                const viewport = page.getViewport({ scale: scale });
-                
-                pdfRenderTarget.height = viewport.height;
-                pdfRenderTarget.width = viewport.width;
-                
-                const renderContext = {
-                    canvasContext: ctx,
-                    viewport: viewport
-                };
-                page.render(renderContext);
-            }).catch(err => {
-                console.error('Error rendering PDF preview:', err);
-                showToast('Failed to render PDF preview.', 'error');
-            });
-        } else {
-            console.error('PDF.js library failed to load globally.');
-            showToast('Failed to load PDF viewer engine.', 'error');
-        }
-    });
-
-    // Close Modal
-    if (closePdfModalBtn) {
-        closePdfModalBtn.addEventListener('click', () => {
-            pdfModal.classList.add('modal-hidden');
-            // Clear canvas to save memory
-            ctx.clearRect(0, 0, pdfRenderTarget.width, pdfRenderTarget.height);
-        });
-    }
-
-    // Close Modal on backdrop click
-    pdfModal.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal-backdrop')) {
-            pdfModal.classList.add('modal-hidden');
-            ctx.clearRect(0, 0, pdfRenderTarget.width, pdfRenderTarget.height);
-        }
-    });
-
-    // Self-contained call recording upload initializer
-    function initCallRecordingUpload() {
-        const fileInput = document.getElementById('recording-file-input');
-        const dropzone = document.getElementById('upload-dropzone');
-        const browseBtn = document.getElementById('upload-browse-btn');
-        const progressContainer = document.getElementById('upload-progress');
-        const progressBar = document.getElementById('upload-progress-bar');
-        const statusText = document.getElementById('upload-status');
-        const transcriptArea = document.getElementById('synth-transcript');
-        const audioContainer = document.getElementById('mock-audio-container');
-        const audioPlayer = document.getElementById('mock-audio-player');
-
-        if (!fileInput || !dropzone || !browseBtn) {
-            console.warn("Call recording elements not found in the DOM.");
-            return;
-        }
-
-        // Trigger file input dialog on dropzone click or browse button click
-        browseBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            fileInput.click();
-        });
-
-        dropzone.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        // Prevent default drag behaviors
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropzone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        // Highlight drop zone when item is dragged over it
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropzone.addEventListener(eventName, () => {
-                dropzone.classList.add('dragover');
-            }, false);
-        });
-
-        ['dragleave', 'dragend', 'drop'].forEach(eventName => {
-            dropzone.addEventListener(eventName, () => {
-                dropzone.classList.remove('dragover');
-            }, false);
-        });
-
-        // Handle dropped files
-        dropzone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            if (files && files.length > 0) {
-                handleUploadedFile(files[0]);
-            }
-        });
-
-        // Handle selected files
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files && fileInput.files.length > 0) {
-                handleUploadedFile(fileInput.files[0]);
-            }
-        });
-
-        async function handleUploadedFile(file) {
-            // Validate size (max 500MB)
-            if (file.size > 500 * 1024 * 1024) {
-                showToast("❌ File size exceeds 500MB limit.");
-                return;
-            }
-
-            // Show progress state
-            if (progressContainer) progressContainer.classList.remove('hidden');
-            if (progressBar) progressBar.style.setProperty('--progress', '20%');
-            if (statusText) statusText.innerText = "Reading audio file...";
+        if (isAudio) {
+            // Audio call recording transcription flow
+            if (sourceTranscriptProgress) sourceTranscriptProgress.classList.remove('hidden');
+            if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '20%');
+            if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = "Reading audio file...";
 
             const reader = new FileReader();
             reader.onload = async (e) => {
-                if (progressBar) progressBar.style.setProperty('--progress', '40%');
-                if (statusText) statusText.innerText = "Transcribing audio call recording...";
+                if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '40%');
+                if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = "Transcribing audio call recording...";
 
                 const base64Audio = e.target.result.split(',')[1];
                 const mimeType = file.type || 'audio/wav';
-
-                // Read context values dynamically from Step 1 inputs
-                const nameVal = document.getElementById('prep-name')?.value?.trim() || '';
-                const titleVal = document.getElementById('prep-title')?.value?.trim() || '';
-                const companyVal = document.getElementById('prep-company')?.value?.trim() || '';
-                const intakeVal = document.getElementById('prep-intake')?.value?.trim() || '';
 
                 try {
                     const res = await fetch('/api/sample-loadout', {
@@ -3726,62 +807,165 @@ The system will dynamically parse the text, identify the prospect's actual ERP s
                             audio_base64: base64Audio,
                             mime_type: mimeType,
                             filename: file.name,
-                            name: nameVal,
-                            title: titleVal,
-                            company: companyVal,
-                            intake: intakeVal
+                            name: metaName.value || 'Sarah Chen',
+                            title: metaTitle.value || 'Head of FP&A',
+                            company: metaCompany.value || 'Acme Corp',
+                            intake: sourceIntakeText.value || 'Needs planning support'
                         })
                     });
 
-                    if (progressBar) progressBar.style.setProperty('--progress', '80%');
+                    if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '80%');
                     const data = await res.json();
 
-                    if (!res.ok) {
-                        throw new Error(data.error || `HTTP error ${res.status}`);
-                    }
+                    if (!res.ok) throw new Error(data.error || `HTTP error ${res.status}`);
 
-                    if (progressBar) progressBar.style.setProperty('--progress', '100%');
-                    if (statusText) statusText.innerText = "Success! Loaded transcript.";
+                    if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '100%');
+                    if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = "Success! Loaded transcript.";
 
-                    // Inject transcript into Step 3
-                    if (transcriptArea) {
-                        transcriptArea.value = data.transcript;
-                    }
+                    targetTextarea.value = data.transcript;
 
                     // Setup audio player
-                    if (audioContainer && audioPlayer) {
+                    if (activeAudioContainer && activeAudioPlayer) {
                         const audioUrl = URL.createObjectURL(file);
-                        audioPlayer.src = audioUrl;
-                        audioContainer.classList.remove('hidden');
-                        showToast("✔️ Recording uploaded and transcribed successfully.");
+                        activeAudioPlayer.src = audioUrl;
+                        activeAudioContainer.classList.remove('hidden');
                     }
+                    showToast("✔️ Recording uploaded and transcribed successfully.");
 
-                    // Hide progress container after a short delay
                     setTimeout(() => {
-                        if (progressContainer) progressContainer.classList.add('hidden');
-                        if (progressBar) progressBar.style.setProperty('--progress', '0%');
-                        
-                        // Automatically progress to Step 3
-                        goToStep(3);
-                    }, 800);
+                        sourceTranscriptProgress.classList.add('hidden');
+                    }, 2000);
 
                 } catch (err) {
                     console.error("Transcription upload failed:", err);
-                    showToast(`❌ Transcription failed: ${err.message}`);
-                    if (progressContainer) progressContainer.classList.add('hidden');
+                    if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '0%');
+                    if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = `Error: ${err.message}`;
+                    showToast("Transcription failed.");
                 }
             };
-
-            reader.onerror = (err) => {
-                console.error("FileReader failed:", err);
-                showToast("❌ Failed to read call recording file.");
-                if (progressContainer) progressContainer.classList.add('hidden');
-            };
-
             reader.readAsDataURL(file);
+        } else {
+            // Text files or Mock extractor for LinkedIn
+            if (ext === 'txt') {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    targetTextarea.value = event.target.result;
+                    droptext.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong>`;
+                    showToast(`Loaded ${file.name} successfully!`);
+                };
+                reader.readAsText(file);
+            } else if (ext === 'pdf' || ext === 'docx') {
+                droptext.innerHTML = `⏳ Extracting text from ${escapeHTML(file.name)}...`;
+                setTimeout(() => {
+                    targetTextarea.value = `Experience:\n- 3+ years experience as Head of Finance / FP&A\n- Led consolidation projects across multi-currency ledgers\n` +
+                        `Education:\n- Bachelor of Business / Commerce`;
+                    droptext.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong>`;
+                    showToast(`Extracted details from ${file.name}`);
+                }, 1000);
+            } else {
+                showToast("Unsupported file type. Please upload a .txt, .pdf, or .docx file.");
+            }
         }
     }
 
-    // Initialize call recording upload system
-    initCallRecordingUpload();
+    // Initialize dropzones
+    handleDropzoneUpload(sourceLinkedinDropzone, sourceLinkedinFile, document.getElementById('source-linkedin-droptext'), sourceLinkedinText, false);
+    handleDropzoneUpload(sourceTranscriptDropzone, sourceTranscriptFile, document.getElementById('source-transcript-droptext'), sourceTranscriptText, true);
+
+    // --- Collapsible Sources Drawer Toggles ---
+    if (btnToggleSources && sourcesDrawer) {
+        btnToggleSources.addEventListener('click', () => {
+            sourcesDrawer.classList.toggle('open');
+        });
+    }
+    if (btnCloseDrawer && sourcesDrawer) {
+        btnCloseDrawer.addEventListener('click', () => {
+            sourcesDrawer.classList.remove('open');
+        });
+    }
+
+    // --- Google Drive File Selection Handler ---
+    if (sourceGdriveFileSelect) {
+        sourceGdriveFileSelect.addEventListener('change', async () => {
+            const fileId = sourceGdriveFileSelect.value;
+            if (!fileId) {
+                sourceGdriveFileId.value = '';
+                gdriveFileContent = '';
+                triggerAutoSave();
+                return;
+            }
+            sourceGdriveFileId.value = fileId;
+            showToast("Reading Google Drive file...");
+            try {
+                const response = await fetch(`/api/gdrive/read?fileId=${encodeURIComponent(fileId)}`);
+                if (!response.ok) throw new Error("GDrive read failed");
+                const data = await response.json();
+                gdriveFileContent = data.content || '';
+                showToast("File content loaded successfully.");
+                triggerAutoSave();
+            } catch (err) {
+                console.error("GDrive read error:", err);
+                showToast("Failed to read GDrive file.");
+            }
+        });
+    }
+
+    if (btnRefreshGdrive) {
+        btnRefreshGdrive.addEventListener('click', () => {
+            loadGoogleDriveFiles();
+        });
+    }
+
+    // --- Auto-Save Event Listeners & Debouncer ---
+    let autoSaveTimeout = null;
+    function triggerAutoSave() {
+        if (!currentChatId) return;
+        if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(async () => {
+            console.log("⏱️ Auto-saving changes to background...");
+            const payload = {
+                id: currentChatId,
+                type: 'synthesis',
+                name: metaName.value.trim(),
+                company: metaCompany.value.trim(),
+                title: metaTitle.value.trim(),
+                email: metaEmail.value.trim(),
+                phone: metaPhone.value.trim(),
+                rep: metaRep.value,
+                track: metaTrack.value,
+                oneDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
+                gDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
+                gDriveFileId: sourceGdriveFileId.value,
+                gDriveFileContent: gdriveFileContent,
+                linkedinInfo: sourceLinkedinText.value.trim(),
+                intakeAnswers: sourceIntakeText.value.trim(),
+                transcript: sourceTranscriptText.value.trim(),
+                transitDistance: transitDistance,
+                messages: chatHistory
+            };
+            try {
+                await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (e) {
+                console.warn("Background auto-save failed:", e.message);
+            }
+        }, 500);
+    }
+
+    [metaName, metaCompany, metaTitle, metaEmail, metaPhone, metaRep, metaTrack, sourceLinkedinText, sourceIntakeText, sourceTranscriptText].forEach(elem => {
+        if (elem) {
+            elem.addEventListener('input', triggerAutoSave);
+            elem.addEventListener('change', triggerAutoSave);
+        }
+    });
+
+    // Initial Load
+    loadChatsList();
+    loadGoogleDriveFiles();
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 });

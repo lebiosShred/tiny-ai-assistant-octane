@@ -2829,11 +2829,14 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                         res.end(JSON.stringify({ error: 'Missing type or company in payload.' }));
                         return;
                     }
-                    const timestamp = Date.now();
-                    const random = crypto.randomBytes(4).toString('hex');
-                    const id = `${payload.type}_${payload.company.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}_${random}`;
-                    payload.id = id;
-                    payload.date = new Date().toISOString();
+                    let id = payload.id;
+                    if (!id) {
+                        const timestamp = Date.now();
+                        const random = crypto.randomBytes(4).toString('hex');
+                        id = `${payload.type}_${payload.company.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}_${random}`;
+                        payload.id = id;
+                        payload.date = new Date().toISOString();
+                    }
                     if (!payload.stage) {
                         payload.stage = payload.type === 'synthesis' ? 'reports' : 'prep';
                     }
@@ -2925,6 +2928,42 @@ ${payload.intakeAnswers || ''}`;
             });
             return;
         }
+    }
+
+    // API Google Drive / Gmail Recap Dispatch Route
+    if (pathname === '/api/email/recap' && req.method === 'POST') {
+        const MAX_PAYLOAD_SIZE = 1024 * 100; // 100KB limit
+        let body = '';
+        let bodyLength = 0;
+        req.on('data', chunk => {
+            bodyLength += chunk.length;
+            if (bodyLength > MAX_PAYLOAD_SIZE) {
+                res.writeHead(413, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Payload Too Large' }));
+                req.destroy();
+                return;
+            }
+            body += chunk;
+        });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body);
+                const { email, name, company, recapText, rep } = payload;
+                if (!email || !name || !company || !recapText) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Missing required parameters: email, name, company, recapText' }));
+                    return;
+                }
+                
+                const success = await emailService.sendRecapEmail(email, name, company, recapText, rep);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: success ? 'success' : 'failed' }));
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
+            }
+        });
+        return;
     }
 
     if (pathname === '/api/history/stage' && req.method === 'PATCH') {
