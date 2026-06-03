@@ -1080,4 +1080,9 @@ OneDrive Screencast Link: [Link if available]`;
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
+
+    // Automatically initialize a new chat session on load for a pure chat layout
+    if (!currentChatId && btnNewChat) {
+        btnNewChat.click();
+    }
 });
