@@ -3,7 +3,7 @@ export const config = {
 };
 
 // SHA-256 of 'authonly'
-const EXPECTED_HASH_HEX = '02dccf3473f324adffb11fc2e8dae48ff2675661386bb02cfb6f9d273760ea8b';
+const EXPECTED_HASH_HEX = '5827c79d9e801e1f748aa638543c78b06ecce21f27fd449268e706d00204c92f';
 
 async function hashPassword(password) {
   const encoder = new TextEncoder();
