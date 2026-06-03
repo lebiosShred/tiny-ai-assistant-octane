@@ -544,6 +544,10 @@ document.addEventListener('DOMContentLoaded', () => {
             workspaceActiveChat.classList.remove('hidden');
             chatMessagesLog.innerHTML = '';
 
+            if (sourcesDrawer) {
+                sourcesDrawer.classList.add('open');
+            }
+
             // Clear inputs
             metaName.value = '';
             metaCompany.value = '';
