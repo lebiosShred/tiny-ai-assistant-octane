@@ -102,9 +102,11 @@ Albert`;
             document.querySelector('#meta-name').value = 'Kyle Fouche';
             document.querySelector('#meta-company').value = 'AECOM';
             document.querySelector('#meta-email').value = 'kyle.fouche@aecom.com';
+            document.querySelector('#source-transcript-text').value = 'AECOM transcription details: Kyle is the main contact.';
             document.querySelector('#meta-name').dispatchEvent(new Event('input', { bubbles: true }));
             document.querySelector('#meta-company').dispatchEvent(new Event('input', { bubbles: true }));
             document.querySelector('#meta-email').dispatchEvent(new Event('input', { bubbles: true }));
+            document.querySelector('#source-transcript-text').dispatchEvent(new Event('input', { bubbles: true }));
             document.querySelector('#btn-save-sources').click();
         });
 
@@ -129,7 +131,7 @@ Albert`;
         await page.waitForFunction(
             () => {
                 const toast = document.querySelector('#toast');
-                return toast && toast.classList.contains('show');
+                return toast && toast.classList.contains('show') && toast.innerText.includes('sent');
             },
             { timeout: 5000 }
         );

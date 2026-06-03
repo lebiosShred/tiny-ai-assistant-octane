@@ -57,6 +57,7 @@ test.describe('Aegis Functional E2E Suite', () => {
         
         await indexPage.newChatBtn.click();
         await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah.chen@meridianlogistics.com.au');
+        await page.fill('#source-linkedin-text', 'Sarah Chen is Head of FP&A at Meridian Logistics.');
         await indexPage.submitForm();
         await indexPage.waitForChatInit();
 

@@ -23,6 +23,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function updateValidationBadges() {
+        const gdriveBadge = document.getElementById('gdrive-status-badge');
+        const linkedinBadge = document.getElementById('linkedin-status-badge');
+        const intakeBadge = document.getElementById('intake-status-badge');
+        const transcriptBadge = document.getElementById('transcript-status-badge');
+
+        if (gdriveBadge) {
+            const val = sourceGdriveFileSelect ? sourceGdriveFileSelect.value : '';
+            if (val) {
+                gdriveBadge.innerText = 'Ready';
+                gdriveBadge.className = 'validation-badge ready';
+            } else {
+                gdriveBadge.innerText = 'None';
+                gdriveBadge.className = 'validation-badge missing';
+            }
+        }
+
+        if (linkedinBadge) {
+            const val = sourceLinkedinText ? sourceLinkedinText.value.trim() : '';
+            if (val) {
+                linkedinBadge.innerText = 'Ready';
+                linkedinBadge.className = 'validation-badge ready';
+            } else {
+                linkedinBadge.innerText = 'Missing';
+                linkedinBadge.className = 'validation-badge missing';
+            }
+        }
+
+        if (intakeBadge) {
+            const val = sourceIntakeText ? sourceIntakeText.value.trim() : '';
+            if (val) {
+                intakeBadge.innerText = 'Ready';
+                intakeBadge.className = 'validation-badge ready';
+            } else {
+                intakeBadge.innerText = 'Missing';
+                intakeBadge.className = 'validation-badge missing';
+            }
+        }
+
+        if (transcriptBadge) {
+            const val = sourceTranscriptText ? sourceTranscriptText.value.trim() : '';
+            if (val) {
+                transcriptBadge.innerText = 'Ready';
+                transcriptBadge.className = 'validation-badge ready';
+            } else {
+                transcriptBadge.innerText = 'Missing';
+                transcriptBadge.className = 'validation-badge missing';
+            }
+        }
+    }
+
     // State Variables
     let currentChatId = null;
     let chatsList = [];
@@ -276,6 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             renderChatHistory();
+            updateValidationBadges();
 
         } catch (err) {
             console.error('Error loading chat detail:', err);
@@ -289,13 +341,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = `chat-message-card ${msg.role === 'user' ? 'user' : 'assistant'}`;
             
-            // Render plain text but preserve lines
-            const pre = document.createElement('pre');
-            pre.innerText = msg.content;
-            card.appendChild(pre);
+            if (msg.role === 'assistant' && msg.content.includes('[INSUFFICIENT_DATA_FOR_REPORT]')) {
+                card.className = 'chat-message-card assistant error-state';
+                card.innerHTML = `
+                    <div class="insufficient-data-card">
+                        <div class="card-title">
+                            <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #dc2626;"></i>
+                            <span>Insufficient Source Data</span>
+                        </div>
+                        <div class="card-description">
+                            Tiny cannot generate this report because the required source information (e.g. call transcript, LinkedIn biography, or booking intake) is missing. Please open the <strong>Sources Drawer</strong> and fill in the missing inputs.
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Render plain text but preserve lines
+                const pre = document.createElement('pre');
+                pre.innerText = msg.content;
+                card.appendChild(pre);
+            }
 
             // Add actions for assistant messages (plain text copy and email triggers)
-            if (msg.role === 'assistant') {
+            if (msg.role === 'assistant' && !msg.content.includes('[INSUFFICIENT_DATA_FOR_REPORT]')) {
                 const actions = document.createElement('div');
                 actions.className = 'chat-message-actions';
                 
@@ -485,6 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Reload Google Drive files list to populate select dropdown
             loadGoogleDriveFiles();
+            updateValidationBadges();
         });
     }
 
@@ -522,7 +590,8 @@ Reference Catalog & Pricing Specifications (SOLE SOURCE OF TRUTH):
 Rules:
 1. ALWAYS adhere strictly to the pricing catalog. If a pricing option is not explicitly listed, write '[PRICING_TBD_BY_DISCOVERY]'. NEVER invent or repeat custom rates from the transcript.
 2. Produce deliverables in PLAIN TEXT. Do NOT use HTML formatting, custom markdown styling, or branding guidelines. Use simple headers, dashes, and spacing.
-3. Be concise and factual. Do not make up facts. Use the client details provided.`;
+3. Be concise and factual. Do not make up facts. Use the client details provided.
+4. If the required input data for the requested report or query is missing from the sources (e.g., LinkedIn/Intake are empty when generating a Lead Sheet, or the transcript is empty when generating a recap email, migration assessment, action items, summary sheet, notes, or proposal), you MUST output exactly '[INSUFFICIENT_DATA_FOR_REPORT]'. Do NOT fabricate, placeholder, or assume any information.`;
 
         // Format history for Mistral API proxy `/api/chat`
         const messages = [
@@ -638,6 +707,19 @@ Rules:
                 return;
             }
 
+            // Client-side source checks to prevent generating empty/dummy reports
+            if (promptType === 'leadSheet') {
+                if (!sourceLinkedinText.value.trim() && !sourceIntakeText.value.trim()) {
+                    showToast("Error: LinkedIn and Intake sources are missing. Cannot generate Lead Sheet.");
+                    return;
+                }
+            } else if (['recapEmail', 'migration', 'actionItems', 'summarySheet', 'notes', 'proposal'].includes(promptType)) {
+                if (!sourceTranscriptText.value.trim()) {
+                    showToast("Error: Call transcript/recording is missing. Cannot generate report.");
+                    return;
+                }
+            }
+
             let promptText = '';
             if (promptType === 'leadSheet') {
                 promptText = `Generate a Lead Sheet (Pre-Screening Prep Briefing). 
@@ -737,6 +819,7 @@ OneDrive Screencast Link: [Link if available]`;
                 sourceIntakeText.value = data.intake || data.intakeAnswers || '';
                 
                 showToast("Sample prospect loaded. Click Save Sources to initialize.");
+                updateValidationBadges();
             } catch (err) {
                 console.error("Error loading sample:", err);
                 showToast("Failed to load sample client data.");
@@ -823,6 +906,7 @@ OneDrive Screencast Link: [Link if available]`;
                     if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = "Success! Loaded transcript.";
 
                     targetTextarea.value = data.transcript;
+                    updateValidationBadges();
 
                     // Setup audio player
                     if (activeAudioContainer && activeAudioPlayer) {
@@ -850,6 +934,7 @@ OneDrive Screencast Link: [Link if available]`;
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     targetTextarea.value = event.target.result;
+                    updateValidationBadges();
                     droptext.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong>`;
                     showToast(`Loaded ${file.name} successfully!`);
                 };
@@ -859,6 +944,7 @@ OneDrive Screencast Link: [Link if available]`;
                 setTimeout(() => {
                     targetTextarea.value = `Experience:\n- 3+ years experience as Head of Finance / FP&A\n- Led consolidation projects across multi-currency ledgers\n` +
                         `Education:\n- Bachelor of Business / Commerce`;
+                    updateValidationBadges();
                     droptext.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong>`;
                     showToast(`Extracted details from ${file.name}`);
                 }, 1000);
@@ -891,6 +977,7 @@ OneDrive Screencast Link: [Link if available]`;
             if (!fileId) {
                 sourceGdriveFileId.value = '';
                 gdriveFileContent = '';
+                updateValidationBadges();
                 triggerAutoSave();
                 return;
             }
@@ -902,6 +989,7 @@ OneDrive Screencast Link: [Link if available]`;
                 const data = await response.json();
                 gdriveFileContent = data.content || '';
                 showToast("File content loaded successfully.");
+                updateValidationBadges();
                 triggerAutoSave();
             } catch (err) {
                 console.error("GDrive read error:", err);
@@ -957,14 +1045,21 @@ OneDrive Screencast Link: [Link if available]`;
 
     [metaName, metaCompany, metaTitle, metaEmail, metaPhone, metaRep, metaTrack, sourceLinkedinText, sourceIntakeText, sourceTranscriptText].forEach(elem => {
         if (elem) {
-            elem.addEventListener('input', triggerAutoSave);
-            elem.addEventListener('change', triggerAutoSave);
+            elem.addEventListener('input', () => {
+                updateValidationBadges();
+                triggerAutoSave();
+            });
+            elem.addEventListener('change', () => {
+                updateValidationBadges();
+                triggerAutoSave();
+            });
         }
     });
 
     // Initial Load
     loadChatsList();
     loadGoogleDriveFiles();
+    updateValidationBadges();
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }

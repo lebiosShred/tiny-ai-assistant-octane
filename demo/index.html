@@ -138,7 +138,10 @@
 
                                 <!-- Google Drive Client Folders integration -->
                                 <div class="form-group">
-                                    <label style="display: flex; align-items: center; gap: 6px;"><i data-lucide="hard-drive" style="width: 14px; height: 14px; color: #0284c7;"></i> Google Drive Integration</label>
+                                    <label style="display: flex; align-items: center; gap: 6px; justify-content: space-between;">
+                                        <span><i data-lucide="hard-drive" style="width: 14px; height: 14px; color: #0284c7;"></i> Google Drive Integration</span>
+                                        <span id="gdrive-status-badge" class="validation-badge missing">None</span>
+                                    </label>
                                     <div class="gdrive-status-bar" style="padding: 0.5rem 0.75rem; background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.15); border-radius: 6px; margin-top: 0.25rem;">
                                         <div class="flex-align-center gap-6" style="display: flex; align-items: center; gap: 6px;">
                                             <span class="status-dot green" style="width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; display: inline-block;"></span>
@@ -159,7 +162,10 @@
 
                                 <!-- LinkedIn Bio / Experience Input -->
                                 <div class="form-group">
-                                    <label for="source-linkedin-text">LinkedIn Profile Bio / Experience</label>
+                                    <label for="source-linkedin-text" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>LinkedIn Profile Bio / Experience</span>
+                                        <span id="linkedin-status-badge" class="validation-badge missing">Missing</span>
+                                    </label>
                                     <div class="file-drop-zone text-xs" id="source-linkedin-dropzone">
                                         <span id="source-linkedin-droptext">📁 Drop LinkedIn text/PDF here, or click to upload</span>
                                         <input type="file" id="source-linkedin-file" accept=".pdf,.txt,.docx" class="hidden">
@@ -169,13 +175,19 @@
 
                                 <!-- Booking Intake Answers -->
                                 <div class="form-group">
-                                    <label for="source-intake-text">Booking Intake Answers</label>
+                                    <label for="source-intake-text" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>Booking Intake Answers</span>
+                                        <span id="intake-status-badge" class="validation-badge missing">Missing</span>
+                                    </label>
                                     <textarea id="source-intake-text" class="form-input textarea-input text-xs" rows="3" placeholder="Paste booking intake questions or notes..."></textarea>
                                 </div>
 
                                 <!-- Call Transcript / Recording -->
                                 <div class="form-group">
-                                    <label for="source-transcript-text">Call Transcript / Recording Upload</label>
+                                    <label for="source-transcript-text" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>Call Transcript / Recording Upload</span>
+                                        <span id="transcript-status-badge" class="validation-badge missing">Missing</span>
+                                    </label>
                                     <div class="file-drop-zone text-xs" id="source-transcript-dropzone">
                                         <span id="source-transcript-droptext">🎙️ Drop call recording (MP3/WAV/MP4) or transcript text file here</span>
                                         <input type="file" id="source-transcript-file" accept=".mp3,.wav,.mp4,.txt,.docx,.pdf" class="hidden">
