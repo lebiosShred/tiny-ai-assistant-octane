@@ -62,15 +62,32 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        let hasTranscript = false;
         if (transcriptBadge) {
             const val = sourceTranscriptText ? sourceTranscriptText.value.trim() : '';
             if (val) {
                 transcriptBadge.innerText = 'Ready';
                 transcriptBadge.className = 'validation-badge ready';
+                hasTranscript = true;
             } else {
                 transcriptBadge.innerText = 'Missing';
                 transcriptBadge.className = 'validation-badge missing';
             }
+        }
+
+        // Dynamically toggle visibility of transcript-dependent quick prompt buttons
+        const promptButtons = document.querySelectorAll('.btn-quick-prompt');
+        if (promptButtons && promptButtons.length > 0) {
+            promptButtons.forEach(btn => {
+                const promptType = btn.getAttribute('data-prompt-type');
+                if (promptType !== 'leadSheet') {
+                    if (hasTranscript) {
+                        btn.classList.remove('hidden');
+                    } else {
+                        btn.classList.add('hidden');
+                    }
+                }
+            });
         }
     }
 
