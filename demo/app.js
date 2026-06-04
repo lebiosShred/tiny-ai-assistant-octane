@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     folderItem.innerHTML = `
                         <div class="sidebar-folder-title">
-                            <span>📁</span> ${folder.name}
+                            ${folder.name}
                         </div>
                     `;
                     
@@ -353,17 +353,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadSourcesForCompany(folderId, companyName) {
         if (!sourcesList) return;
-        sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading sources...</div>';
+        sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
         try {
             const response = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folderId)}`);
             if (!response.ok) throw new Error('Failed to list files');
             const data = await response.json();
             sourcesList.innerHTML = '';
             
+            // Look up associated client name from chatsList, or default to currently entered metaName
+            const matchSession = chatsList.find(c => c.company.toLowerCase().trim() === companyName.toLowerCase().trim());
+            const clientName = matchSession ? (matchSession.name || 'Unknown Name') : (metaName && metaName.value ? metaName.value : 'Unknown Name');
+            
+            // Construct and render metadata context header at the top
+            const headerInfo = document.createElement('div');
+            headerInfo.className = 'sources-header-info';
+            headerInfo.style.cssText = 'padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 0.75rem; font-size: 0.8rem; color: #475569; background: #f8fafc; border-radius: 6px;';
+            headerInfo.innerHTML = `
+                <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.25rem;">${companyName}</div>
+                <div style="color: #64748b;">Prospect: ${clientName}</div>
+            `;
+            sourcesList.appendChild(headerInfo);
+            
             if (data.items && data.items.length > 0) {
                 const files = data.items.filter(f => !f.isFolder);
                 if (files.length === 0) {
-                    sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">No files inside folder</div>';
+                    const noFilesMsg = document.createElement('div');
+                    noFilesMsg.style.cssText = 'color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;';
+                    noFilesMsg.innerText = 'No files inside folder';
+                    sourcesList.appendChild(noFilesMsg);
                     return;
                 }
                 
@@ -395,11 +412,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     sourcesList.appendChild(fileItem);
                 });
             } else {
-                sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">No files inside folder</div>';
+                const noFilesMsg = document.createElement('div');
+                noFilesMsg.style.cssText = 'color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;';
+                noFilesMsg.innerText = 'No files inside folder';
+                sourcesList.appendChild(noFilesMsg);
             }
         } catch (err) {
-            console.error('Error loading company sources:', err);
-            sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load sources</div>';
+            console.error('Error loading company files:', err);
+            sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load files</div>';
         }
     }
 
@@ -606,8 +626,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // 2. Match explicit tags/labels
-        const nameMatch = text.match(/(?:client|name):\s*([^,\n\r]+)/i);
-        const companyMatch = text.match(/(?:company):\s*([^,\n\r]+)/i);
+        const nameMatch = text.match(/(?:client|name|prospect):[ \t]*([^,\n\r]+)/i);
+        const companyMatch = text.match(/(?:company|companmy|compny|copmany|compnay|companey|organization|org|co):[ \t]*([^,\n\r]+)/i);
         
         if (nameMatch) {
             name = nameMatch[1].trim();

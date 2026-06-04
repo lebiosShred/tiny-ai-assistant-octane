@@ -1486,15 +1486,15 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     
                     const systemMsgForGDrive = payload.messages.find(m => m.role === 'system');
                     if (systemMsgForGDrive) {
-                        const compMatch = systemMsgForGDrive.content.match(/- Company:\s*([^\n\r]*)/i);
+                        const compMatch = systemMsgForGDrive.content.match(/- Company:[ \t]*([^\n\r]*)/i);
                         if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
                             companyNameForGDrive = compMatch[1].trim();
                         }
-                        const nameMatch = systemMsgForGDrive.content.match(/- Client Name:\s*([^\n\r]*)/i);
+                        const nameMatch = systemMsgForGDrive.content.match(/- Client Name:[ \t]*([^\n\r]*)/i);
                         if (nameMatch && nameMatch[1].trim()) {
                             clientNameForGDrive = nameMatch[1].trim();
                         }
-                        const emailMatch = systemMsgForGDrive.content.match(/- Email:\s*([^\n\r]*)/i);
+                        const emailMatch = systemMsgForGDrive.content.match(/- Email:[ \t]*([^\n\r]*)/i);
                         if (emailMatch && emailMatch[1].trim() && emailMatch[1].trim() !== 'Unknown Email') {
                             clientEmailForGDrive = emailMatch[1].trim();
                         }
@@ -1801,8 +1801,8 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     let companyName = '';
                     
                     if (systemMsg) {
-                        const nameMatch = systemMsg.content.match(/- Client Name:\s*([^\n\r]*)/i);
-                        const compMatch = systemMsg.content.match(/- Company:\s*([^\n\r]*)/i);
+                        const nameMatch = systemMsg.content.match(/- Client Name:[ \t]*([^\n\r]*)/i);
+                        const compMatch = systemMsg.content.match(/- Company:[ \t]*([^\n\r]*)/i);
                         if (nameMatch && nameMatch[1].trim() && nameMatch[1].trim() !== 'Unknown Name') {
                             prospectName = nameMatch[1].trim();
                         }
@@ -1861,7 +1861,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 const userMsgForGDrive = payload.messages.find(m => m.role === 'user');
                 
                 if (systemMsgForGDrive) {
-                    const compMatch = systemMsgForGDrive.content.match(/- Company:\s*([^\n\r]*)/i);
+                    const compMatch = systemMsgForGDrive.content.match(/- Company:[ \t]*([^\n\r]*)/i);
                     if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
                         companyNameForGDrive = compMatch[1].trim();
                     }
