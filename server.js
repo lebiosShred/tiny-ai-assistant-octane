@@ -1453,6 +1453,11 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 return;
             }
 
+            // Ensure safe metadata and payload defaults
+            payload.messages = payload.messages || [];
+            payload.provider = payload.provider || 'deepseek';
+            payload.model = payload.model || 'deepseek-chat';
+
             // Check if key is the mock decoy or empty
             const isMockKey = apiKey === "N1V4ErGCSlQSLdDrc7vhkSfpf334TgRo";
             let isOpenRouter = false;

@@ -508,20 +508,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If it was a new chat, update currentChatId
                 if (!currentChatId) {
                     currentChatId = result.id;
-                    // Append first assistant welcome message
-                    chatHistory.push({
-                        role: 'assistant',
-                        content: `Chat session initialized for ${payload.name} at ${payload.company}. Sources uploaded!`,
-                        timestamp: new Date().toISOString()
-                    });
-                    payload.id = currentChatId;
-                    payload.messages = chatHistory;
-                    // Re-save with welcome message
-                    await fetch('/api/history', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+                    if (chatHistory.length === 0) {
+                        // Append first assistant welcome message
+                        chatHistory.push({
+                            role: 'assistant',
+                            content: `Chat session initialized for ${payload.name} at ${payload.company}. Sources uploaded!`,
+                            timestamp: new Date().toISOString()
+                        });
+                        payload.id = currentChatId;
+                        payload.messages = chatHistory;
+                        // Re-save with welcome message
+                        await fetch('/api/history', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                    }
                 }
                 
                 await loadChatsList();
@@ -579,9 +581,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LLM Interaction Helpers ---
     async function callTinyAPI(promptText) {
-        chatLoadingIndicator.classList.remove('hidden');
-        chatMessagesLog.scrollTop = chatMessagesLog.scrollHeight;
-
         // Compile context and previous history
         const systemPrompt = `You are "Tiny", a helpful, conversational AI sales assistant for Octane Software Solutions.
 You help sales representatives prepare for pre-screening calls, analyze transcripts, and generate plain text deliverables.
@@ -631,6 +630,13 @@ Rules:
         // Add the new user prompt
         messages.push({ role: 'user', content: promptText });
 
+        // Update local history and render immediately to reduce visual lag
+        chatHistory.push({ role: 'user', content: promptText, timestamp: new Date().toISOString() });
+        renderChatHistory();
+
+        chatLoadingIndicator.classList.remove('hidden');
+        chatMessagesLog.scrollTop = chatMessagesLog.scrollHeight;
+
         try {
             const res = await fetch('/api/chat', {
                 method: 'POST',
@@ -652,39 +658,39 @@ Rules:
 
             const content = data.choices[0].message.content;
 
-            // Update local history
-            chatHistory.push({ role: 'user', content: promptText, timestamp: new Date().toISOString() });
+            // Update local history with response and render
             chatHistory.push({ role: 'assistant', content: content, timestamp: new Date().toISOString() });
-
             renderChatHistory();
 
-            // Save conversation log back to backend JSON file
-            const savePayload = {
-                id: currentChatId,
-                type: 'synthesis',
-                name: metaName.value.trim(),
-                company: metaCompany.value.trim(),
-                title: metaTitle.value.trim(),
-                email: metaEmail.value.trim(),
-                phone: metaPhone.value.trim(),
-                rep: metaRep.value,
-                track: metaTrack.value,
-                oneDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
-                gDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
-                gDriveFileId: sourceGdriveFileId.value,
-                gDriveFileContent: gdriveFileContent,
-                linkedinInfo: sourceLinkedinText.value.trim(),
-                intakeAnswers: sourceIntakeText.value.trim(),
-                transcript: sourceTranscriptText.value.trim(),
-                transitDistance: transitDistance,
-                messages: chatHistory
-            };
+            // Save conversation log back to backend JSON file ONLY if currentChatId is initialized
+            if (currentChatId) {
+                const savePayload = {
+                    id: currentChatId,
+                    type: 'synthesis',
+                    name: metaName.value.trim(),
+                    company: metaCompany.value.trim(),
+                    title: metaTitle.value.trim(),
+                    email: metaEmail.value.trim(),
+                    phone: metaPhone.value.trim(),
+                    rep: metaRep.value,
+                    track: metaTrack.value,
+                    oneDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
+                    gDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
+                    gDriveFileId: sourceGdriveFileId.value,
+                    gDriveFileContent: gdriveFileContent,
+                    linkedinInfo: sourceLinkedinText.value.trim(),
+                    intakeAnswers: sourceIntakeText.value.trim(),
+                    transcript: sourceTranscriptText.value.trim(),
+                    transitDistance: transitDistance,
+                    messages: chatHistory
+                };
 
-            await fetch('/api/history', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(savePayload)
-            });
+                await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(savePayload)
+                });
+            }
 
         } catch (err) {
             chatLoadingIndicator.classList.add('hidden');
@@ -697,10 +703,6 @@ Rules:
     function sendUserQuery() {
         const queryText = chatUserInput.value.trim();
         if (!queryText) return;
-        if (!currentChatId) {
-            showToast("Please save sources first to initialize the chat.");
-            return;
-        }
 
         chatUserInput.value = '';
         callTinyAPI(queryText);
@@ -723,10 +725,6 @@ Rules:
     quickPromptButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const promptType = btn.getAttribute('data-prompt-type');
-            if (!currentChatId) {
-                showToast("Please save sources first to initialize the chat.");
-                return;
-            }
 
             // Client-side source checks to prevent generating empty/dummy reports
             if (promptType === 'leadSheet') {
