@@ -249,11 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
             
-            // Clear visual list
-            if (recentChatsList) {
-                recentChatsList.innerHTML = '';
-            }
-
             if (data.items && data.items.length > 0) {
                 data.items.forEach(file => {
                     if (!file.isFolder) {
@@ -261,44 +256,142 @@ document.addEventListener('DOMContentLoaded', () => {
                         opt.value = file.id;
                         opt.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
                         sourceGdriveFileSelect.appendChild(opt);
-
-                        // Visual row item
-                        if (recentChatsList) {
-                            const fileItem = document.createElement('div');
-                            fileItem.className = 'chat-list-item gdrive-file-item';
-                            if (sourceGdriveFileId.value === file.id) {
-                                fileItem.classList.add('active');
-                            }
-                            
-                            fileItem.innerHTML = `
-                                <div class="chat-list-item-title" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #0f172a;">
-                                    <span>📄</span> ${file.name}
-                                </div>
-                                <div class="chat-list-item-subtitle" style="color: #475569; font-size: 0.75rem; margin-top: 0.15rem;">${(file.size / 1024).toFixed(1)} KB</div>
-                            `;
-                            
-                            fileItem.addEventListener('click', async () => {
-                                document.querySelectorAll('.gdrive-file-item').forEach(el => el.classList.remove('active'));
-                                fileItem.classList.add('active');
-                                sourceGdriveFileSelect.value = file.id;
-                                sourceGdriveFileSelect.dispatchEvent(new Event('change'));
-                            });
-                            recentChatsList.appendChild(fileItem);
-                        }
                     }
                 });
             } else {
                 sourceGdriveFileSelect.innerHTML = '<option value="">No files in client folder</option>';
-                if (recentChatsList) {
-                    recentChatsList.innerHTML = '<div style="color: #475569; font-size: 0.8rem; padding: 1.5rem; text-align: center;">No files in client folder</div>';
-                }
             }
         } catch (err) {
             console.error('Error loading Google Drive files:', err);
             sourceGdriveFileSelect.innerHTML = '<option value="">Error loading GDrive files</option>';
-            if (recentChatsList) {
-                recentChatsList.innerHTML = '<div style="color: #ef4444; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Error loading files</div>';
+        }
+    }
+
+    async function loadProspectsTree() {
+        if (!recentChatsList) return;
+        recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Loading folders...</div>';
+        try {
+            const response = await fetch('/api/gdrive/list');
+            if (!response.ok) throw new Error('Failed to list folders');
+            const data = await response.json();
+            recentChatsList.innerHTML = '';
+            
+            if (data.items && data.items.length > 0) {
+                const folders = data.items.filter(item => item.isFolder);
+                if (folders.length === 0) {
+                    recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">No prospect folders found</div>';
+                    return;
+                }
+                
+                folders.forEach(folder => {
+                    const folderItem = document.createElement('div');
+                    folderItem.className = 'sidebar-folder-item';
+                    
+                    const folderHeader = document.createElement('div');
+                    folderHeader.className = 'sidebar-folder-header';
+                    folderHeader.innerHTML = `
+                        <div class="sidebar-folder-title">
+                            <span>📁</span> ${folder.name}
+                        </div>
+                        <span class="sidebar-folder-toggle">▼</span>
+                    `;
+                    
+                    const folderContents = document.createElement('div');
+                    folderContents.className = 'sidebar-folder-contents collapsed';
+                    
+                    folderHeader.addEventListener('click', async () => {
+                        const isCollapsed = folderContents.classList.contains('collapsed');
+                        
+                        if (isCollapsed && folderContents.children.length === 0) {
+                            folderContents.innerHTML = '<div style="color: #94a3b8; font-size: 0.7rem; padding: 0.5rem;">Loading files...</div>';
+                            try {
+                                const filesResponse = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`);
+                                if (!filesResponse.ok) throw new Error('Files list failed');
+                                const filesData = await filesResponse.json();
+                                folderContents.innerHTML = '';
+                                
+                                if (filesData.items && filesData.items.length > 0) {
+                                    const files = filesData.items.filter(f => !f.isFolder);
+                                    if (files.length === 0) {
+                                        folderContents.innerHTML = '<div style="color: #94a3b8; font-size: 0.7rem; padding: 0.5rem;">No files in folder</div>';
+                                    } else {
+                                        files.forEach(file => {
+                                            const fileItem = document.createElement('div');
+                                            fileItem.className = 'sidebar-file-item';
+                                            if (sourceGdriveFileId.value === file.id) {
+                                                fileItem.classList.add('active');
+                                            }
+                                            
+                                            fileItem.innerHTML = `
+                                                <div class="sidebar-file-title">
+                                                    <span>📄</span> ${file.name}
+                                                </div>
+                                                <span class="sidebar-file-size">${(file.size / 1024).toFixed(1)} KB</span>
+                                            `;
+                                            
+                                            fileItem.addEventListener('click', (e) => {
+                                                e.stopPropagation();
+                                                document.querySelectorAll('.sidebar-file-item').forEach(el => el.classList.remove('active'));
+                                                fileItem.classList.add('active');
+                                                
+                                                if (metaCompany) {
+                                                    metaCompany.value = folder.name;
+                                                    metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
+                                                    metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
+                                                }
+                                                
+                                                const matchSession = chatsList.find(c => c.company.toLowerCase().trim() === folder.name.toLowerCase().trim());
+                                                if (matchSession) {
+                                                    if (metaName) metaName.value = matchSession.name || '';
+                                                    if (metaTitle) metaTitle.value = matchSession.title || '';
+                                                    if (metaEmail) metaEmail.value = matchSession.email || '';
+                                                    if (metaPhone) metaPhone.value = matchSession.phone || '';
+                                                    if (metaRep) metaRep.value = matchSession.rep || 'Albert';
+                                                    if (metaTrack) metaTrack.value = matchSession.track || 'Planning & Analytics (TM1)';
+                                                    currentChatId = matchSession.id;
+                                                }
+                                                
+                                                setTimeout(async () => {
+                                                    await loadGoogleDriveFiles();
+                                                    sourceGdriveFileSelect.value = file.id;
+                                                    sourceGdriveFileSelect.dispatchEvent(new Event('change'));
+                                                }, 100);
+                                            });
+                                            folderContents.appendChild(fileItem);
+                                        });
+                                    }
+                                } else {
+                                    folderContents.innerHTML = '<div style="color: #94a3b8; font-size: 0.7rem; padding: 0.5rem;">No files in folder</div>';
+                                }
+                            } catch (err) {
+                                console.error('Error loading folder files:', err);
+                                folderContents.innerHTML = '<div style="color: #ef4444; font-size: 0.7rem; padding: 0.5rem;">Failed to load files</div>';
+                            }
+                        }
+                        
+                        if (isCollapsed) {
+                            folderContents.classList.remove('collapsed');
+                            folderHeader.querySelector('.sidebar-folder-toggle').innerText = '▲';
+                            if (metaCompany) {
+                                metaCompany.value = folder.name;
+                                metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        } else {
+                            folderContents.classList.add('collapsed');
+                            folderHeader.querySelector('.sidebar-folder-toggle').innerText = '▼';
+                        }
+                    });
+                    
+                    folderItem.appendChild(folderHeader);
+                    folderItem.appendChild(folderContents);
+                    recentChatsList.appendChild(folderItem);
+                });
+            } else {
+                recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">No prospect folders found</div>';
             }
+        } catch (err) {
+            console.error('Error loading prospects tree:', err);
+            recentChatsList.innerHTML = '<div style="color: #ef4444; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Error loading folders</div>';
         }
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
@@ -671,8 +764,9 @@ document.addEventListener('DOMContentLoaded', () => {
             chatHistory = [];
             chatMessagesLog.innerHTML = `<div style="font-size:0.95rem;color:#64748b;text-align:center;padding:2rem;">Add client details and click <strong>Save Sources</strong> to begin.</div>`;
             
-            // Reload Google Drive files list to populate select dropdown
+            // Reload Google Drive files list to populate select dropdown and tree
             loadGoogleDriveFiles();
+            loadProspectsTree();
             updateValidationBadges();
         });
     }
@@ -782,8 +876,9 @@ Rules:
             if (data.gdriveAction) {
                 try {
                     await loadGoogleDriveFiles();
+                    await loadProspectsTree();
                 } catch (gdriveErr) {
-                    console.error("Error refreshing GDrive files list:", gdriveErr);
+                    console.error("Error refreshing GDrive files list/tree:", gdriveErr);
                 }
             }
 
@@ -1112,6 +1207,7 @@ OneDrive Screencast Link: [Link if available]`;
                     
                     // Reload GDrive dropdown list to include this file
                     await loadGoogleDriveFiles();
+                    await loadProspectsTree();
                     if (data.fileId) {
                         sourceGdriveFileSelect.value = data.fileId;
                         sourceGdriveFileId.value = data.fileId;
@@ -1239,6 +1335,7 @@ OneDrive Screencast Link: [Link if available]`;
                         }
                         
                         await loadGoogleDriveFiles();
+                        await loadProspectsTree();
                     } catch (err) {
                         console.error("Direct drop upload failed:", err);
                         showToast(`File upload failed: ${err.message}`);
@@ -1280,6 +1377,7 @@ OneDrive Screencast Link: [Link if available]`;
     if (btnRefreshGdrive) {
         btnRefreshGdrive.addEventListener('click', () => {
             loadGoogleDriveFiles();
+            loadProspectsTree();
         });
     }
 
@@ -1337,6 +1435,7 @@ OneDrive Screencast Link: [Link if available]`;
 
     // Initial Load
     loadChatsList();
+    loadProspectsTree();
     updateValidationBadges();
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();

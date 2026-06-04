@@ -124,4 +124,37 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
             return select && !Array.from(select.options).some(opt => opt.text.includes('prompt_test.txt'));
         }, null, { timeout: 10000 });
     });
+
+    test('verifies nested folder tree rendering and call registration in sidebar', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.newChatBtn.click();
+        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.submitForm();
+        await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
+
+        // 1. Send prompt to register a call notes entry
+        await indexPage.sendMessage("made call: client is interested in IBM TM1 Support and watsonx orchestrate pilot");
+        await indexPage.waitForResponse(20000);
+        const reply = await indexPage.getLastResponseText();
+
+        expect(reply).toContain('successfully registered the new call');
+        expect(reply).toContain('call_log_');
+
+        // 2. Verify sidebar contains folder Meridian Logistics
+        await page.waitForFunction(() => {
+            const folder = document.querySelector('.sidebar-folder-header');
+            return folder && folder.innerText.includes('Meridian Logistics');
+        }, null, { timeout: 10000 });
+
+        // 3. Click the folder to expand and verify nested file item
+        await page.click('.sidebar-folder-header');
+        
+        await page.waitForFunction(() => {
+            const file = document.querySelector('.sidebar-file-item');
+            return file && file.innerText.includes('call_log_');
+        }, null, { timeout: 10000 });
+    });
 });
