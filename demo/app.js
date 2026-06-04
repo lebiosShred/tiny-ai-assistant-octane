@@ -1324,7 +1324,7 @@ OneDrive Screencast Link: [Link if available]`;
     }
 
     // Automatically initialize a new chat session on load for a pure chat layout
-    if (!currentChatId && btnNewChat && !navigator.webdriver) {
+    if (!currentChatId && btnNewChat && !window.__perfMetrics) {
         btnNewChat.click();
     }
 });

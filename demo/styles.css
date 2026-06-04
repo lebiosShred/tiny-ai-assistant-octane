@@ -3098,7 +3098,8 @@ body.resizing * {
 
 .recent-chats-list {
     flex: 1 !important;
-    overflow-y: auto !important;
+    overflow-y: scroll !important;
+    scrollbar-gutter: stable !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 0.35rem !important;
