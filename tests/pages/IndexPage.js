@@ -52,18 +52,25 @@ class IndexPage {
    * Open the sources drawer if it is not already visible.
    */
   async openDrawer() {
-    const isVisible = await this.drawer.isVisible();
-    if (!isVisible) {
+    const classes = await this.drawer.getAttribute('class');
+    const isOpen = classes && classes.includes('open');
+    if (!isOpen) {
       await this.toggleSourcesBtn.click();
     }
+    // Automatically expand the collapsible advanced section for test automation interaction
+    await this.page.evaluate(() => {
+      const details = document.getElementById('advanced-sources-details');
+      if (details) details.open = true;
+    });
   }
 
   /**
    * Close the sources drawer if it is visible.
    */
   async closeDrawer() {
-    const isVisible = await this.drawer.isVisible();
-    if (isVisible) {
+    const classes = await this.drawer.getAttribute('class');
+    const isOpen = classes && classes.includes('open');
+    if (isOpen) {
       await this.closeDrawerBtn.click();
     }
   }
@@ -112,6 +119,9 @@ class IndexPage {
    * Send a chat message.
    */
   async sendMessage(text) {
+    this._lastAssistantCount = await this.page.evaluate(() => {
+      return document.querySelectorAll('#chat-messages-log .chat-message-card.assistant').length;
+    });
     await this.chatInput.fill(text);
     await this.sendBtn.click();
   }
@@ -120,14 +130,16 @@ class IndexPage {
    * Wait for assistant response to be rendered in the log.
    */
   async waitForResponse(timeout = 15000) {
+    const expectedCount = typeof this._lastAssistantCount === 'number' ? this._lastAssistantCount : 0;
+
     await this.page.waitForFunction(
-      () => {
+      (count) => {
         const cards = document.querySelectorAll('#chat-messages-log .chat-message-card.assistant');
-        if (cards.length === 0) return false;
+        if (cards.length <= count) return false;
         const lastCard = cards[cards.length - 1];
         return lastCard && lastCard.innerText && lastCard.innerText.length > 5;
       },
-      null,
+      expectedCount,
       { timeout }
     );
   }
