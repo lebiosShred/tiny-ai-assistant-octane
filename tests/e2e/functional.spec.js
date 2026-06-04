@@ -70,6 +70,48 @@ test.describe('Aegis Functional E2E Suite', () => {
         expect(responseText).toContain('Sarah Chen');
     });
 
+    test('Session-less direct chat enables instant message sending and preserves history on subsequent metadata save', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+
+        // 1. Enter session-less direct chat
+        await indexPage.newChatBtn.click();
+
+        // Close drawer to clear view
+        await indexPage.closeDrawer();
+
+        // Send a query immediately session-less
+        const queryText = 'Hi Tiny, tell me about DevOps Blue Support.';
+        await indexPage.sendMessage(queryText);
+
+        // 2. Assert immediate UI rendering of the user's message
+        const chatLogText = await page.locator('#chat-messages-log').innerText();
+        expect(chatLogText).toContain(queryText);
+
+        // 3. Wait for LLM response
+        await indexPage.waitForResponse(20000);
+        const responseText = await indexPage.getLastResponseText();
+        expect(responseText.length).toBeGreaterThan(5);
+
+        // 4. Fill metadata later and Save Sources
+        await indexPage.fillMetadata('Alice Smith', 'Acme Systems', 'alice@acmesystems.com');
+        await indexPage.submitForm();
+
+        // Wait for Save confirmation
+        await page.waitForFunction(
+            () => {
+                const toast = document.querySelector('#toast');
+                return toast && toast.classList.contains('show') && toast.innerText.includes('saved');
+            },
+            { timeout: 10000 }
+        );
+
+        // 5. Verify prior conversation history is preserved in UI
+        const postSaveChatText = await page.locator('#chat-messages-log').innerText();
+        expect(postSaveChatText).toContain(queryText);
+    });
+
     test('Documentation page contains Tiny AI Assistant branding', async ({ page }) => {
         const docsPage = new DocsPage(page);
         await docsPage.goto();
