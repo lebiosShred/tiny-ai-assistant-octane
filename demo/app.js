@@ -244,8 +244,60 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Tab switching and Search setup
+    const tabProspects = document.getElementById('tab-prospects');
+    const tabGDrive = document.getElementById('tab-gdrive');
+    const tabContentProspects = document.getElementById('tab-content-prospects');
+    const tabContentGDrive = document.getElementById('tab-content-gdrive');
+    const gdriveFilesList = document.getElementById('gdrive-files-list');
+
+    if (tabProspects && tabGDrive) {
+        tabProspects.addEventListener('click', () => {
+            tabProspects.classList.add('active');
+            tabProspects.style.borderBottom = '2px solid var(--cyan-accent)';
+            tabProspects.style.fontWeight = 'bold';
+            tabProspects.style.color = 'var(--text-main)';
+            
+            tabGDrive.classList.remove('active');
+            tabGDrive.style.borderBottom = 'none';
+            tabGDrive.style.fontWeight = 'normal';
+            tabGDrive.style.color = 'var(--text-muted)';
+            
+            tabContentProspects.style.display = 'block';
+            tabContentGDrive.style.display = 'none';
+            if (chatSearch) chatSearch.placeholder = 'Search prospects...';
+        });
+
+        tabGDrive.addEventListener('click', () => {
+            tabGDrive.classList.add('active');
+            tabGDrive.style.borderBottom = '2px solid var(--cyan-accent)';
+            tabGDrive.style.fontWeight = 'bold';
+            tabGDrive.style.color = 'var(--text-main)';
+            
+            tabProspects.classList.remove('active');
+            tabProspects.style.borderBottom = 'none';
+            tabProspects.style.fontWeight = 'normal';
+            tabProspects.style.color = 'var(--text-muted)';
+            
+            tabContentGDrive.style.display = 'block';
+            tabContentProspects.style.display = 'none';
+            if (chatSearch) chatSearch.placeholder = 'Search files...';
+            loadGoogleDriveFiles();
+        });
+    }
+
     if (chatSearch) {
-        chatSearch.addEventListener('input', renderChatsList);
+        chatSearch.addEventListener('input', () => {
+            if (tabGDrive && tabGDrive.classList.contains('active')) {
+                const query = chatSearch.value.toLowerCase().trim();
+                document.querySelectorAll('.gdrive-file-item').forEach(item => {
+                    const fileName = item.querySelector('.chat-list-item-title').innerText.toLowerCase();
+                    item.style.display = fileName.includes(query) ? 'block' : 'none';
+                });
+            } else {
+                renderChatsList();
+            }
+        });
     }
 
     // --- Google Drive Explorer Loader ---
@@ -259,6 +311,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('GDrive list failed');
             const data = await response.json();
             sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
+            
+            // Clear visual list
+            if (gdriveFilesList) {
+                gdriveFilesList.innerHTML = '';
+            }
+
             if (data.items && data.items.length > 0) {
                 data.items.forEach(file => {
                     if (!file.isFolder) {
@@ -266,14 +324,44 @@ document.addEventListener('DOMContentLoaded', () => {
                         opt.value = file.id;
                         opt.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
                         sourceGdriveFileSelect.appendChild(opt);
+
+                        // Visual row item
+                        if (gdriveFilesList) {
+                            const fileItem = document.createElement('div');
+                            fileItem.className = 'chat-list-item gdrive-file-item';
+                            if (sourceGdriveFileId.value === file.id) {
+                                fileItem.classList.add('active');
+                            }
+                            
+                            fileItem.innerHTML = `
+                                <div class="chat-list-item-title" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #0f172a;">
+                                    <span>📄</span> ${file.name}
+                                </div>
+                                <div class="chat-list-item-subtitle" style="color: #475569; font-size: 0.75rem; margin-top: 0.15rem;">${(file.size / 1024).toFixed(1)} KB</div>
+                            `;
+                            
+                            fileItem.addEventListener('click', async () => {
+                                document.querySelectorAll('.gdrive-file-item').forEach(el => el.classList.remove('active'));
+                                fileItem.classList.add('active');
+                                sourceGdriveFileSelect.value = file.id;
+                                sourceGdriveFileSelect.dispatchEvent(new Event('change'));
+                            });
+                            gdriveFilesList.appendChild(fileItem);
+                        }
                     }
                 });
             } else {
                 sourceGdriveFileSelect.innerHTML = '<option value="">No files in client folder</option>';
+                if (gdriveFilesList) {
+                    gdriveFilesList.innerHTML = '<div style="color: #475569; font-size: 0.8rem; padding: 1.5rem; text-align: center;">No files in client folder</div>';
+                }
             }
         } catch (err) {
             console.error('Error loading Google Drive files:', err);
             sourceGdriveFileSelect.innerHTML = '<option value="">Error loading GDrive files</option>';
+            if (gdriveFilesList) {
+                gdriveFilesList.innerHTML = '<div style="color: #ef4444; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Error loading files</div>';
+            }
         }
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
