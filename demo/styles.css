@@ -3843,10 +3843,10 @@ body {
     box-shadow: 0 0 15px rgba(2, 132, 199, 0.15) !important;
 }
 
-/* 3-Column Layout Grid (NotebookLM Style) */
+/* 4-Column Layout Grid (NotebookLM Style) */
 .dashboard-grid.notebook-layout {
     display: grid !important;
-    grid-template-columns: 1fr 1fr 1fr !important;
+    grid-template-columns: 240px 240px 1fr 280px !important;
     gap: var(--space-md) !important;
     height: calc(100vh - 140px) !important;
     max-height: calc(100vh - 140px) !important;
@@ -3856,6 +3856,7 @@ body {
 }
 
 /* Sidebar Panels Styling */
+.sources-panel,
 .prospects-panel,
 .right-panel-placeholder {
     background: rgba(255, 255, 255, 0.55) !important;
@@ -3868,12 +3869,20 @@ body {
     height: 100% !important;
 }
 
-/* Client/Prospect List styling inside Prospects Panel */
+/* Client/Prospect List styling inside Prospects/Sources Panel */
+.sources-panel .panel-body,
 .prospects-panel .panel-body {
     display: flex !important;
     flex-direction: column !important;
     gap: 1rem !important;
     padding: 1rem !important;
+    overflow-y: auto !important;
+}
+
+.sources-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
     overflow-y: auto !important;
 }
 

@@ -37,8 +37,19 @@
 
 
         <!-- Main Dashboard Workspace -->
-        <!-- Main Dashboard Workspace: NotebookLM Split Pane -->
         <div class="dashboard-grid notebook-layout">
+            
+            <!-- Far Left Column: Sources Sidebar -->
+            <div class="sources-panel panel" id="sources-sidebar-container">
+                <div class="panel-header">
+                    <span class="panel-title">📋 Sources</span>
+                </div>
+                <div class="panel-body">
+                    <div class="sources-list" id="sources-list" role="region" tabindex="0" aria-label="Client Sources">
+                        <div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Select a prospect to load sources</div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Left Column: Prospects Sidebar -->
             <div class="prospects-panel panel" id="chat-sidebar-container">

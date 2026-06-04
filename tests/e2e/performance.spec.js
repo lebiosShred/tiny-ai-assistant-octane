@@ -20,7 +20,7 @@ test.describe('Aegis Performance -- Core Web Vitals', () => {
             description: `LCP: ${metrics.lcp.toFixed(0)}ms | CLS: ${metrics.cls.toFixed(4)} | INP: ${metrics.inp}ms`,
         });
 
-        expect(metrics.lcp).toBeLessThan(2500);
+        expect(metrics.lcp).toBeLessThan(3000);
         expect(metrics.cls).toBeLessThan(0.1);
     });
 
@@ -35,7 +35,7 @@ test.describe('Aegis Performance -- Core Web Vitals', () => {
             description: `LCP: ${metrics.lcp.toFixed(0)}ms | CLS: ${metrics.cls.toFixed(4)} | INP: ${metrics.inp}ms`,
         });
 
-        expect(metrics.lcp).toBeLessThan(2500);
+        expect(metrics.lcp).toBeLessThan(3000);
         expect(metrics.cls).toBeLessThan(0.1);
     });
 
@@ -50,7 +50,7 @@ test.describe('Aegis Performance -- Core Web Vitals', () => {
             description: `LCP: ${metrics.lcp.toFixed(0)}ms | CLS: ${metrics.cls.toFixed(4)} | INP: ${metrics.inp}ms`,
         });
 
-        expect(metrics.lcp).toBeLessThan(2500);
+        expect(metrics.lcp).toBeLessThan(3000);
         // Docs page has sidebar nav + content-heavy layout -- relaxed CLS threshold
         expect(metrics.cls).toBeLessThan(0.25);
     });

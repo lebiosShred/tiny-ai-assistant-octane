@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // State Variables
     let currentChatId = null;
+    let activeFolderId = null;
     let chatsList = [];
     let chatHistory = [];
     let transitDistance = "Online/Phone call only (Distance unavailable)";
@@ -117,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnNewChat = document.getElementById('btn-new-chat');
     const chatSearch = document.getElementById('chat-search');
     const recentChatsList = document.getElementById('recent-chats-list');
+    const sourcesList = document.getElementById('sources-list');
     const workspaceEmptyState = document.getElementById('workspace-empty-state');
     const workspaceActiveChat = document.getElementById('workspace-active-chat');
 
@@ -283,109 +285,63 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
+                // If activeFolderId is not set, try to find a folder matching metaCompany
+                if (!activeFolderId && metaCompany && metaCompany.value) {
+                    const compName = metaCompany.value.trim().toLowerCase();
+                    const matchingFolder = folders.find(f => f.name.toLowerCase().trim() === compName);
+                    if (matchingFolder) {
+                        activeFolderId = matchingFolder.id;
+                    }
+                }
+                
+                let activeFolderName = "";
                 folders.forEach(folder => {
                     const folderItem = document.createElement('div');
-                    folderItem.className = 'sidebar-folder-item';
-                    
-                    const folderHeader = document.createElement('div');
-                    folderHeader.className = 'sidebar-folder-header';
-                    folderHeader.innerHTML = `
+                    folderItem.className = 'sidebar-folder-header';
+                    folderItem.style.marginBottom = '0.5rem';
+                    if (activeFolderId === folder.id) {
+                        folderItem.classList.add('active');
+                        activeFolderName = folder.name;
+                    }
+                    folderItem.innerHTML = `
                         <div class="sidebar-folder-title">
                             <span>📁</span> ${folder.name}
                         </div>
-                        <span class="sidebar-folder-toggle">▼</span>
                     `;
                     
-                    const folderContents = document.createElement('div');
-                    folderContents.className = 'sidebar-folder-contents collapsed';
-                    
-                    folderHeader.addEventListener('click', async () => {
-                        const isCollapsed = folderContents.classList.contains('collapsed');
+                    folderItem.addEventListener('click', async () => {
+                        document.querySelectorAll('.sidebar-folder-header').forEach(el => el.classList.remove('active'));
+                        folderItem.classList.add('active');
+                        activeFolderId = folder.id;
                         
-                        if (isCollapsed && folderContents.children.length === 0) {
-                            folderContents.innerHTML = '<div style="color: #94a3b8; font-size: 0.7rem; padding: 0.5rem;">Loading files...</div>';
-                            try {
-                                const filesResponse = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`);
-                                if (!filesResponse.ok) throw new Error('Files list failed');
-                                const filesData = await filesResponse.json();
-                                folderContents.innerHTML = '';
-                                
-                                if (filesData.items && filesData.items.length > 0) {
-                                    const files = filesData.items.filter(f => !f.isFolder);
-                                    if (files.length === 0) {
-                                        folderContents.innerHTML = '<div style="color: #94a3b8; font-size: 0.7rem; padding: 0.5rem;">No files in folder</div>';
-                                    } else {
-                                        files.forEach(file => {
-                                            const fileItem = document.createElement('div');
-                                            fileItem.className = 'sidebar-file-item';
-                                            if (sourceGdriveFileId.value === file.id) {
-                                                fileItem.classList.add('active');
-                                            }
-                                            
-                                            fileItem.innerHTML = `
-                                                <div class="sidebar-file-title">
-                                                    <span>📄</span> ${file.name}
-                                                </div>
-                                                <span class="sidebar-file-size">${(file.size / 1024).toFixed(1)} KB</span>
-                                            `;
-                                            
-                                            fileItem.addEventListener('click', (e) => {
-                                                e.stopPropagation();
-                                                document.querySelectorAll('.sidebar-file-item').forEach(el => el.classList.remove('active'));
-                                                fileItem.classList.add('active');
-                                                
-                                                if (metaCompany) {
-                                                    metaCompany.value = folder.name;
-                                                    metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
-                                                    metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
-                                                }
-                                                
-                                                const matchSession = chatsList.find(c => c.company.toLowerCase().trim() === folder.name.toLowerCase().trim());
-                                                if (matchSession) {
-                                                    if (metaName) metaName.value = matchSession.name || '';
-                                                    if (metaTitle) metaTitle.value = matchSession.title || '';
-                                                    if (metaEmail) metaEmail.value = matchSession.email || '';
-                                                    if (metaPhone) metaPhone.value = matchSession.phone || '';
-                                                    if (metaRep) metaRep.value = matchSession.rep || 'Albert';
-                                                    if (metaTrack) metaTrack.value = matchSession.track || 'Planning & Analytics (TM1)';
-                                                    currentChatId = matchSession.id;
-                                                }
-                                                
-                                                setTimeout(async () => {
-                                                    await loadGoogleDriveFiles();
-                                                    sourceGdriveFileSelect.value = file.id;
-                                                    sourceGdriveFileSelect.dispatchEvent(new Event('change'));
-                                                }, 100);
-                                            });
-                                            folderContents.appendChild(fileItem);
-                                        });
-                                    }
-                                } else {
-                                    folderContents.innerHTML = '<div style="color: #94a3b8; font-size: 0.7rem; padding: 0.5rem;">No files in folder</div>';
-                                }
-                            } catch (err) {
-                                console.error('Error loading folder files:', err);
-                                folderContents.innerHTML = '<div style="color: #ef4444; font-size: 0.7rem; padding: 0.5rem;">Failed to load files</div>';
-                            }
+                        if (metaCompany) {
+                            metaCompany.value = folder.name;
+                            metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
+                            metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
                         }
                         
-                        if (isCollapsed) {
-                            folderContents.classList.remove('collapsed');
-                            folderHeader.querySelector('.sidebar-folder-toggle').innerText = '▲';
-                            if (metaCompany) {
-                                metaCompany.value = folder.name;
-                                metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
-                            }
-                        } else {
-                            folderContents.classList.add('collapsed');
-                            folderHeader.querySelector('.sidebar-folder-toggle').innerText = '▼';
+                        const matchSession = chatsList.find(c => c.company.toLowerCase().trim() === folder.name.toLowerCase().trim());
+                        if (matchSession) {
+                            if (metaName) metaName.value = matchSession.name || '';
+                            if (metaTitle) metaTitle.value = matchSession.title || '';
+                            if (metaEmail) metaEmail.value = matchSession.email || '';
+                            if (metaPhone) metaPhone.value = matchSession.phone || '';
+                            if (metaRep) metaRep.value = matchSession.rep || 'Albert';
+                            if (metaTrack) metaTrack.value = matchSession.track || 'Planning & Analytics (TM1)';
+                            currentChatId = matchSession.id;
                         }
+                        
+                        // Load files inside this folder in the leftmost column
+                        await loadSourcesForCompany(folder.id, folder.name);
                     });
                     
-                    folderItem.appendChild(folderHeader);
-                    folderItem.appendChild(folderContents);
                     recentChatsList.appendChild(folderItem);
                 });
+                
+                // Load files for the active folder automatically
+                if (activeFolderId && activeFolderName) {
+                    await loadSourcesForCompany(activeFolderId, activeFolderName);
+                }
             } else {
                 recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">No prospect folders found</div>';
             }
@@ -393,8 +349,57 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error loading prospects tree:', err);
             recentChatsList.innerHTML = '<div style="color: #ef4444; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Error loading folders</div>';
         }
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
+    }
+
+    async function loadSourcesForCompany(folderId, companyName) {
+        if (!sourcesList) return;
+        sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading sources...</div>';
+        try {
+            const response = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folderId)}`);
+            if (!response.ok) throw new Error('Failed to list files');
+            const data = await response.json();
+            sourcesList.innerHTML = '';
+            
+            if (data.items && data.items.length > 0) {
+                const files = data.items.filter(f => !f.isFolder);
+                if (files.length === 0) {
+                    sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">No files inside folder</div>';
+                    return;
+                }
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'sidebar-file-item';
+                    if (sourceGdriveFileId.value === file.id) {
+                        fileItem.classList.add('active');
+                    }
+                    
+                    fileItem.innerHTML = `
+                        <div class="sidebar-file-title">
+                            <span>📄</span> ${file.name}
+                        </div>
+                        <span class="sidebar-file-size">${(file.size / 1024).toFixed(1)} KB</span>
+                    `;
+                    
+                    fileItem.addEventListener('click', () => {
+                        document.querySelectorAll('.sidebar-file-item').forEach(el => el.classList.remove('active'));
+                        fileItem.classList.add('active');
+                        
+                        setTimeout(async () => {
+                            await loadGoogleDriveFiles();
+                            sourceGdriveFileSelect.value = file.id;
+                            sourceGdriveFileSelect.dispatchEvent(new Event('change'));
+                        }, 100);
+                    });
+                    
+                    sourcesList.appendChild(fileItem);
+                });
+            } else {
+                sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">No files inside folder</div>';
+            }
+        } catch (err) {
+            console.error('Error loading company sources:', err);
+            sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load sources</div>';
         }
     }
 
