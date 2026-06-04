@@ -144,17 +144,13 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         expect(reply).toContain('call_log_');
 
         // 2. Verify sidebar contains folder Meridian Logistics
-        await page.waitForFunction(() => {
-            const folder = document.querySelector('.sidebar-folder-header');
-            return folder && folder.innerText.includes('Meridian Logistics');
-        }, null, { timeout: 10000 });
+        const folderHeader = page.locator('.sidebar-folder-header', { hasText: 'Meridian Logistics' });
+        await expect(folderHeader).toBeVisible({ timeout: 15000 });
 
         // 3. Click the folder to expand and verify nested file item
-        await page.click('.sidebar-folder-header');
+        await folderHeader.click();
         
-        await page.waitForFunction(() => {
-            const file = document.querySelector('.sidebar-file-item');
-            return file && file.innerText.includes('call_log_');
-        }, null, { timeout: 10000 });
+        const fileItem = page.locator('.sidebar-file-item', { hasText: 'call_log_' }).first();
+        await expect(fileItem).toBeVisible({ timeout: 15000 });
     });
 });

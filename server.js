@@ -2513,7 +2513,16 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         fields: 'files(id, name)',
                         pageSize: 1
                     });
-                    const clientsFiles = clientsSearch.data.files || [];
+                    let clientsFiles = clientsSearch.data.files || [];
+                    if (clientsFiles.length === 0) {
+                        console.log(`⚠️ Clients folder not found under parents '${rootFolderId}'. Searching globally...`);
+                        const fallbackSearch = await drive.files.list({
+                            q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+                            fields: 'files(id, name)',
+                            pageSize: 1
+                        });
+                        clientsFiles = fallbackSearch.data.files || [];
+                    }
                     if (clientsFiles.length > 0) {
                         folderId = clientsFiles[0].id;
                     }
