@@ -1079,7 +1079,6 @@ OneDrive Screencast Link: [Link if available]`;
 
     // Initial Load
     loadChatsList();
-    loadGoogleDriveFiles();
     updateValidationBadges();
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();

@@ -12,6 +12,9 @@ const PORT = process.env.PORT || 8080;
 const PUBLIC_DIR = __dirname;
 const DEMO_DIR = path.join(__dirname, 'demo');
 
+// In-memory cache for API history list to prevent redundant slow GCS reads
+let historyListCache = null;
+
 // Centralized Pricing Catalog Loader
 let pricingCatalogString = "";
 try {
@@ -2746,6 +2749,13 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
     // API History Routes
     if (pathname === '/api/history') {
         if (req.method === 'GET') {
+            // Return cached list if available to avoid expensive GCS roundtrips
+            if (historyListCache) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(historyListCache));
+                return;
+            }
+
             const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
             if (!fs.existsSync(historyDir)) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -2781,13 +2791,13 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                                     company: parsed.company,
                                     title: parsed.title,
                                     track: parsed.track,
-                                                                        variant: parsed.variant,
+                                    variant: parsed.variant,
                                     score: parsed.score || (parsed.type === 'synthesis' ? extractScore(parsed.content) : null),
                                     rep: parsed.rep,
                                     oneDriveFile: parsed.oneDriveFile || parsed.gDriveFile,
                                     gDriveFile: parsed.gDriveFile || parsed.oneDriveFile,
                                     gDriveFileId: parsed.gDriveFileId || null,
-                                    gDriveFileContent: parsed.gDriveFileContent || null,
+                                    gDriveFileContent: null, // Exclude heavy content from listing payload
                                     phone: parsed.phone,
                                     stage: parsed.stage || (parsed.type === 'synthesis' ? 'reports' : 'prep'),
                                     filename: file
@@ -2798,6 +2808,8 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                         }
                         if (readCount === jsonFiles.length) {
                             items.sort((a, b) => new Date(b.date) - new Date(a.date));
+                            // Store in memory cache
+                            historyListCache = items;
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify(items));
                         }
@@ -2852,6 +2864,8 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                             res.end(JSON.stringify({ error: 'Failed to write history file.' }));
                             return;
                         }
+                        // Invalidate cache
+                        historyListCache = null;
 
                         // Auto-upload the lead intake file to Google Drive if it is a dossier submission
                         if (payload.type === 'dossier' && payload.intakeAnswers) {
@@ -2923,6 +2937,8 @@ ${payload.intakeAnswers || ''}`;
                     res.end(JSON.stringify({ error: 'Failed to delete history item.' }));
                     return;
                 }
+                // Invalidate cache
+                historyListCache = null;
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'success' }));
             });
@@ -3008,6 +3024,8 @@ ${payload.intakeAnswers || ''}`;
                                 res.end(JSON.stringify({ error: 'Failed to save updated stage.' }));
                                 return;
                             }
+                            // Invalidate cache
+                            historyListCache = null;
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ status: 'success', id, stage }));
                         });
