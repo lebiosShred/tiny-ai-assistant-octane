@@ -208,95 +208,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderChatsList() {
-        if (!recentChatsList) return;
-        recentChatsList.innerHTML = '';
-
-        const searchTerm = (chatSearch?.value || '').toLowerCase().trim();
-        const filtered = chatsList.filter(item => {
-            return !searchTerm ||
-                (item.name && item.name.toLowerCase().includes(searchTerm)) ||
-                (item.company && item.company.toLowerCase().includes(searchTerm));
-        });
-
-        if (filtered.length === 0) {
-            recentChatsList.innerHTML = '<div style="font-size:0.8rem;color:#94a3b8;text-align:center;padding:1rem;">No clients found</div>';
-            return;
-        }
-
-        filtered.forEach(item => {
-            const dateStr = new Date(item.date).toLocaleDateString(undefined, {
-                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-            });
-
-            const card = document.createElement('div');
-            card.className = `chat-list-item ${item.id === currentChatId ? 'active' : ''}`;
-            card.innerHTML = `
-                <div class="chat-list-item-title">${escapeHTML(item.company)}</div>
-                <div class="chat-list-item-subtitle">${escapeHTML(item.name)} — ${escapeHTML(item.track || 'TM1 & AI')}</div>
-                <div class="chat-list-item-meta">
-                    <span>${dateStr}</span>
-                    <span>Rep: ${escapeHTML(item.rep || 'Albert')}</span>
-                </div>
-            `;
-
-            card.addEventListener('click', () => selectChat(item.id));
-            recentChatsList.appendChild(card);
-        });
+        // No-op: Prospects sidebar displays Google Drive files directly
     }
 
-    // Tab switching and Search setup
-    const tabProspects = document.getElementById('tab-prospects');
-    const tabGDrive = document.getElementById('tab-gdrive');
-    const tabContentProspects = document.getElementById('tab-content-prospects');
-    const tabContentGDrive = document.getElementById('tab-content-gdrive');
-    const gdriveFilesList = document.getElementById('gdrive-files-list');
-
-    if (tabProspects && tabGDrive) {
-        tabProspects.addEventListener('click', () => {
-            tabProspects.classList.add('active');
-            tabProspects.style.borderBottom = '2px solid var(--cyan-accent)';
-            tabProspects.style.fontWeight = 'bold';
-            tabProspects.style.color = 'var(--text-main)';
-            
-            tabGDrive.classList.remove('active');
-            tabGDrive.style.borderBottom = 'none';
-            tabGDrive.style.fontWeight = 'normal';
-            tabGDrive.style.color = 'var(--text-muted)';
-            
-            tabContentProspects.style.display = 'block';
-            tabContentGDrive.style.display = 'none';
-            if (chatSearch) chatSearch.placeholder = 'Search prospects...';
-        });
-
-        tabGDrive.addEventListener('click', () => {
-            tabGDrive.classList.add('active');
-            tabGDrive.style.borderBottom = '2px solid var(--cyan-accent)';
-            tabGDrive.style.fontWeight = 'bold';
-            tabGDrive.style.color = 'var(--text-main)';
-            
-            tabProspects.classList.remove('active');
-            tabProspects.style.borderBottom = 'none';
-            tabProspects.style.fontWeight = 'normal';
-            tabProspects.style.color = 'var(--text-muted)';
-            
-            tabContentGDrive.style.display = 'block';
-            tabContentProspects.style.display = 'none';
-            if (chatSearch) chatSearch.placeholder = 'Search files...';
-            loadGoogleDriveFiles();
-        });
-    }
-
+    // Sidebar Search setup for GDrive files list
     if (chatSearch) {
         chatSearch.addEventListener('input', () => {
-            if (tabGDrive && tabGDrive.classList.contains('active')) {
-                const query = chatSearch.value.toLowerCase().trim();
-                document.querySelectorAll('.gdrive-file-item').forEach(item => {
-                    const fileName = item.querySelector('.chat-list-item-title').innerText.toLowerCase();
-                    item.style.display = fileName.includes(query) ? 'block' : 'none';
-                });
-            } else {
-                renderChatsList();
-            }
+            const query = chatSearch.value.toLowerCase().trim();
+            document.querySelectorAll('.gdrive-file-item').forEach(item => {
+                const fileName = item.querySelector('.chat-list-item-title').innerText.toLowerCase();
+                item.style.display = fileName.includes(query) ? 'block' : 'none';
+            });
         });
     }
 
@@ -313,8 +235,8 @@ document.addEventListener('DOMContentLoaded', () => {
             sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
             
             // Clear visual list
-            if (gdriveFilesList) {
-                gdriveFilesList.innerHTML = '';
+            if (recentChatsList) {
+                recentChatsList.innerHTML = '';
             }
 
             if (data.items && data.items.length > 0) {
@@ -326,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         sourceGdriveFileSelect.appendChild(opt);
 
                         // Visual row item
-                        if (gdriveFilesList) {
+                        if (recentChatsList) {
                             const fileItem = document.createElement('div');
                             fileItem.className = 'chat-list-item gdrive-file-item';
                             if (sourceGdriveFileId.value === file.id) {
@@ -346,21 +268,21 @@ document.addEventListener('DOMContentLoaded', () => {
                                 sourceGdriveFileSelect.value = file.id;
                                 sourceGdriveFileSelect.dispatchEvent(new Event('change'));
                             });
-                            gdriveFilesList.appendChild(fileItem);
+                            recentChatsList.appendChild(fileItem);
                         }
                     }
                 });
             } else {
                 sourceGdriveFileSelect.innerHTML = '<option value="">No files in client folder</option>';
-                if (gdriveFilesList) {
-                    gdriveFilesList.innerHTML = '<div style="color: #475569; font-size: 0.8rem; padding: 1.5rem; text-align: center;">No files in client folder</div>';
+                if (recentChatsList) {
+                    recentChatsList.innerHTML = '<div style="color: #475569; font-size: 0.8rem; padding: 1.5rem; text-align: center;">No files in client folder</div>';
                 }
             }
         } catch (err) {
             console.error('Error loading Google Drive files:', err);
             sourceGdriveFileSelect.innerHTML = '<option value="">Error loading GDrive files</option>';
-            if (gdriveFilesList) {
-                gdriveFilesList.innerHTML = '<div style="color: #ef4444; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Error loading files</div>';
+            if (recentChatsList) {
+                recentChatsList.innerHTML = '<div style="color: #ef4444; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Error loading files</div>';
             }
         }
         if (typeof lucide !== 'undefined') {
