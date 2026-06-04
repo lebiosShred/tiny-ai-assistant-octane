@@ -3846,13 +3846,19 @@ body {
 /* 3-Column Layout Grid (NotebookLM Style) */
 .dashboard-grid.notebook-layout {
     display: grid !important;
-    grid-template-columns: 1fr 1fr 1fr !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important;
     gap: var(--space-md) !important;
     height: calc(100vh - 140px) !important;
     max-height: calc(100vh - 140px) !important;
     max-width: 100% !important;
     overflow: hidden !important;
     margin-top: 1rem !important;
+}
+
+.dashboard-grid.notebook-layout > .prospects-panel,
+.dashboard-grid.notebook-layout > .chat-workspace,
+.dashboard-grid.notebook-layout > .sources-panel {
+    min-width: 0 !important;
 }
 
 /* Sidebar Panels Styling */
