@@ -537,6 +537,7 @@ body.resizing * {
     align-items: center;
     gap: 0.75rem;
     max-width: 320px;
+    margin: auto;
 }
 
 .empty-state-icon {

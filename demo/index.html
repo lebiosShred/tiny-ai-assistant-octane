@@ -21,7 +21,7 @@
         <!-- Header -->
         <header class="app-header">
             <div class="brand-section">
-                <img src="tiny.png" alt="Tiny" class="brand-icon">
+                <img src="tiny.png" alt="Tiny" class="brand-icon" width="32" height="32">
                 <span class="brand-logo">Tiny AI Assistant</span>
                 <span class="brand-badge">Active</span>
             </div>
@@ -41,7 +41,7 @@
         <div class="dashboard-grid client-chat-layout">
             
             <!-- Left Sidebar (Chats List) -->
-            <div class="chat-sidebar">
+            <div class="chat-sidebar" style="display: none;">
                 <div class="sidebar-header">
                 </div>
                 <div class="sidebar-search">
@@ -54,14 +54,14 @@
             </div>
 
             <!-- Workspace Resizer Splitter -->
-            <div class="gutter-handle" id="workspace-splitter" title="Drag to resize workspace panels, double click to center"></div>
+            <div class="gutter-handle" id="workspace-splitter" title="Drag to resize workspace panels, double click to center" style="display: none;"></div>
 
             <!-- Main Chat Workspace -->
             <div class="chat-workspace">
                 
                 <!-- Empty State (No active chat) -->
-                <div class="empty-state" id="workspace-empty-state">
-                    <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar">
+                <div class="empty-state hidden" id="workspace-empty-state" style="display: none;" hidden>
+                    <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" width="80" height="80">
                     <h3>Tiny AI Assistant</h3>
                     <p>Select a client chat from the sidebar or click <strong>New Client Chat</strong> to get started.</p>
                 </div>
