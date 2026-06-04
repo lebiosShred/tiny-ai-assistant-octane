@@ -75,16 +75,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Dynamically toggle visibility of transcript-dependent quick prompt buttons
-        const promptButtons = document.querySelectorAll('.btn-quick-prompt');
-        if (promptButtons && promptButtons.length > 0) {
-            promptButtons.forEach(btn => {
-                const promptType = btn.getAttribute('data-prompt-type');
-                if (promptType !== 'leadSheet') {
-                    if (hasTranscript) {
-                        btn.classList.remove('hidden');
-                    } else {
-                        btn.classList.add('hidden');
+        // Dynamically generate or remove transcript-dependent quick prompt buttons
+        const container = document.querySelector('.quick-prompts-buttons');
+        if (container) {
+            const dynamicTypes = [
+                { type: 'recapEmail', text: '✉️ Recap Email' },
+                { type: 'migration', text: '📊 Migration' },
+                { type: 'actionItems', text: '✅ Action Items' },
+                { type: 'summarySheet', text: '📄 Summary Sheet' },
+                { type: 'notes', text: '📝 Notes' },
+                { type: 'proposal', text: '💼 Proposal' }
+            ];
+            dynamicTypes.forEach(item => {
+                const existingBtn = container.querySelector(`[data-prompt-type="${item.type}"]`);
+                if (hasTranscript) {
+                    if (!existingBtn) {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-quick-prompt';
+                        btn.setAttribute('data-prompt-type', item.type);
+                        btn.innerText = item.text;
+                        container.appendChild(btn);
+                    }
+                } else {
+                    if (existingBtn) {
+                        existingBtn.remove();
                     }
                 }
             });
@@ -165,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatLoadingIndicator = document.getElementById('chat-loading-indicator');
     const chatUserInput = document.getElementById('chat-user-input');
     const chatSendBtn = document.getElementById('chat-send-btn');
-    const quickPromptButtons = document.querySelectorAll('.btn-quick-prompt');
+    // Predefined prompt buttons are managed dynamically via validation changes and event delegation
 
     // Setup Resizer Splitter
     const resizer = document.getElementById('workspace-splitter');
@@ -827,10 +842,13 @@ Rules:
     }
 
     // --- Quick Prompt Buttons ---
-    quickPromptButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
+    const quickPromptsContainer = document.querySelector('.quick-prompts-buttons');
+    if (quickPromptsContainer) {
+        quickPromptsContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-quick-prompt');
+            if (!btn) return;
             const promptType = btn.getAttribute('data-prompt-type');
-
+ 
             // Client-side source checks to prevent generating empty/dummy reports
             if (promptType === 'leadSheet') {
                 if (!sourceLinkedinText.value.trim() && !sourceIntakeText.value.trim()) {
@@ -843,7 +861,7 @@ Rules:
                     return;
                 }
             }
-
+ 
             let promptText = '';
             if (promptType === 'leadSheet') {
                 promptText = `Generate a Lead Sheet (Pre-Screening Prep Briefing). 
@@ -863,16 +881,16 @@ Format it in plain text without HTML.`;
                 promptText = `Generate a Recap Email to the client.
 Format exactly as:
 Hey [client's name],
-
+ 
 I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
 - [Takeaway 1]
 - [Takeaway 2]
 - [Takeaway 3]
-
+ 
 I have also recorded a video briefing summarizing our discussion, which you can review here: [OneDrive Screencast Link]
-
+ 
 You should have received an invitation confirming our appointment together.
-
+ 
 Kind regards,
 Anthony.`;
             } else if (promptType === 'migration') {
@@ -902,12 +920,12 @@ OneDrive Screencast Link: [Link if available]`;
 4. TEAM & RESOURCES
 5. NEXT STEPS & DISCOVERY OPEN ITEMS`;
             }
-
+ 
             if (promptText) {
                 callTinyAPI(promptText);
             }
         });
-    });
+    }
 
     // --- Load Sample Prospect details ---
     if (btnLoadSample) {
