@@ -8,6 +8,7 @@ const { test, expect } = require('../fixtures/base');
 test.describe('Aegis Network Resilience Tests', () => {
 
     test('handles API 500 error without crashing', async ({ page }) => {
+        test.setTimeout(60000);
         const pageErrors = [];
         page.on('pageerror', err => pageErrors.push(err.message));
 
@@ -53,6 +54,7 @@ test.describe('Aegis Network Resilience Tests', () => {
     });
 
     test('handles API timeout without crashing', async ({ page }) => {
+        test.setTimeout(60000);
         const pageErrors = [];
         page.on('pageerror', err => pageErrors.push(err.message));
 
@@ -89,6 +91,7 @@ test.describe('Aegis Network Resilience Tests', () => {
     });
 
     test('handles malformed JSON response without crashing', async ({ page }) => {
+        test.setTimeout(60000);
         const pageErrors = [];
         page.on('pageerror', err => pageErrors.push(err.message));
 

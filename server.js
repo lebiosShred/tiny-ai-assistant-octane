@@ -1507,22 +1507,40 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             chatDetails.model = payload.model || 'deepseek-chat';
             logAuditEvent(req, chatAction, chatDetails);
 
-            // Trigger web search if this is a pre-screen call preparation request
+            // Trigger web search if this is a pre-screen call preparation request or search-related query
             let webSearchResults = '';
             if (Array.isArray(payload.messages)) {
                 const userMsg = payload.messages.find(m => m.role === 'user');
-                if (userMsg && (userMsg.content.includes('--- GENERATE JSON DOSSIER ---') || userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis'))) {
-                    // Extract client name and company name
-                    const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
-                    const companyMatch = userMsg.content.match(/at\s+([^\n]+)/i);
-                    
+                const systemMsg = payload.messages.find(m => m.role === 'system');
+                const searchKeywords = ['scan', 'website', 'news', 'competitor', 'linkedin', 'industry', 'products', 'services', 'stories', 'revenue', 'headcount', 'dossier', 'lead sheet', 'starter', 'profiles'];
+                const hasSearchKeyword = userMsg && searchKeywords.some(kw => userMsg.content.toLowerCase().includes(kw));
+
+                if (userMsg && (hasSearchKeyword || userMsg.content.includes('--- GENERATE JSON DOSSIER ---') || userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis'))) {
+                    // Try to extract client and company from the system prompt first for robust coverage
                     let prospectName = '';
                     let companyName = '';
-                    if (clientMatch) {
-                        prospectName = clientMatch[1].trim();
+                    
+                    if (systemMsg) {
+                        const nameMatch = systemMsg.content.match(/- Client Name:\s*([^\n\r]*)/i);
+                        const compMatch = systemMsg.content.match(/- Company:\s*([^\n\r]*)/i);
+                        if (nameMatch && nameMatch[1].trim() && nameMatch[1].trim() !== 'Unknown Name') {
+                            prospectName = nameMatch[1].trim();
+                        }
+                        if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
+                            companyName = compMatch[1].trim();
+                        }
                     }
-                    if (companyMatch) {
-                        companyName = companyMatch[1].trim().split('\n')[0].trim();
+
+                    // Fallback to user message extraction if system prompt is missing
+                    if (!prospectName || !companyName) {
+                        const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
+                        const companyMatch = userMsg.content.match(/at\s+([^\n]+)/i);
+                        if (clientMatch) {
+                            prospectName = clientMatch[1].trim();
+                        }
+                        if (companyMatch) {
+                            companyName = companyMatch[1].trim().split('\n')[0].trim();
+                        }
                     }
                     
                     let query = '';
