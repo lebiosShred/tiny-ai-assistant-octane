@@ -3843,10 +3843,10 @@ body {
     box-shadow: 0 0 15px rgba(2, 132, 199, 0.15) !important;
 }
 
-/* 4-Column Layout Grid (NotebookLM Style) */
+/* 3-Column Layout Grid (NotebookLM Style) */
 .dashboard-grid.notebook-layout {
     display: grid !important;
-    grid-template-columns: 240px 240px 1fr 280px !important;
+    grid-template-columns: 240px 1fr 280px !important;
     gap: var(--space-md) !important;
     height: calc(100vh - 140px) !important;
     max-height: calc(100vh - 140px) !important;
@@ -3857,8 +3857,7 @@ body {
 
 /* Sidebar Panels Styling */
 .sources-panel,
-.prospects-panel,
-.right-panel-placeholder {
+.prospects-panel {
     background: rgba(255, 255, 255, 0.55) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
@@ -3965,13 +3964,13 @@ body {
     color: #475569 !important;
 }
 
-/* Responsive Overrides: Hide placeholders on small viewports */
+/* Responsive Overrides: Hide panels on small viewports */
 @media (max-width: 1024px) {
     .dashboard-grid.notebook-layout {
         grid-template-columns: 1fr !important;
     }
     .prospects-panel,
-    .right-panel-placeholder {
+    .sources-panel {
         display: none !important;
     }
 }

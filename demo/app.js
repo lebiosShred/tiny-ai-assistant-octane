@@ -1438,13 +1438,15 @@ OneDrive Screencast Link: [Link if available]`;
         }
     });
 
-    // Initial Load
-    loadChatsList();
-    loadProspectsTree();
-    updateValidationBadges();
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    // Initial Load (Deferred slightly to prioritize first visual paint and improve LCP)
+    setTimeout(() => {
+        loadChatsList();
+        loadProspectsTree();
+        updateValidationBadges();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }, 50);
 
     // Automatically expand advanced options in test runner environment
     if (navigator.webdriver) {

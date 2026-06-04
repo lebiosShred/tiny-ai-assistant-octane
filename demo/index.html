@@ -12,7 +12,7 @@
     <meta name="description" content="Functional sales enablement application for prospect pre-screening briefings and call transcript report synthesis.">
     <link rel="stylesheet" href="styles.css?v=5">
     <!-- Lucide Icon System -->
-    <script src="https://unpkg.com/lucide@1.17.0/dist/umd/lucide.min.js"></script>
+    <script defer src="https://unpkg.com/lucide@1.17.0/dist/umd/lucide.min.js"></script>
 </head>
 <body>
 
@@ -38,18 +38,6 @@
 
         <!-- Main Dashboard Workspace -->
         <div class="dashboard-grid notebook-layout">
-            
-            <!-- Far Left Column: Sources Sidebar -->
-            <div class="sources-panel panel" id="sources-sidebar-container">
-                <div class="panel-header">
-                    <span class="panel-title">📋 Sources</span>
-                </div>
-                <div class="panel-body">
-                    <div class="sources-list" id="sources-list" role="region" tabindex="0" aria-label="Client Sources">
-                        <div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Select a prospect to load sources</div>
-                    </div>
-                </div>
-            </div>
             
             <!-- Left Column: Prospects Sidebar -->
             <div class="prospects-panel panel" id="chat-sidebar-container">
@@ -137,14 +125,14 @@
 
             </div>
 
-            <!-- Right Column: Empty Actions Placeholder -->
-            <div class="right-panel-placeholder panel">
+            <!-- Right Column: Sources Sidebar -->
+            <div class="sources-panel panel" id="sources-sidebar-container">
                 <div class="panel-header">
-                    <span class="panel-title">✨ Actions</span>
+                    <span class="panel-title">📋 Sources</span>
                 </div>
-                <div class="panel-body placeholder-content">
-                    <div class="placeholder-card">
-                        <p>Additional tools and actions will appear here.</p>
+                <div class="panel-body">
+                    <div class="sources-list" id="sources-list" role="region" tabindex="0" aria-label="Client Sources">
+                        <div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Select a prospect to load sources</div>
                     </div>
                 </div>
             </div>
