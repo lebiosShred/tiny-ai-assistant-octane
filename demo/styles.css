@@ -3587,41 +3587,41 @@ body.resizing * {
 }
 
 /* ==========================================================================
-   PREMIUM DARK-GLASSMORPHISM THEME OVERRIDES (Aegis v2.0 Redesign)
+   PREMIUM LIGHT-GLASSMORPHISM THEME OVERRIDES (Aegis v2.5 Light Mode)
    ========================================================================== */
 
 :root {
-    --brand-bg-dark: #070a13;
-    --brand-bg-mid: #0b0f19;
-    --brand-bg-light: #151f32;
+    --brand-bg-dark: #f8fafc;
+    --brand-bg-mid: #f1f5f9;
+    --brand-bg-light: #e2e8f0;
     
-    --cyan-accent: #06b6d4;
-    --blue-accent: #3b82f6;
-    --violet-accent: #8b5cf6;
+    --cyan-accent: #0284c7;
+    --blue-accent: #2563eb;
+    --violet-accent: #7c3aed;
     
     --bg-base: var(--brand-bg-dark);
-    --bg-surface: rgba(11, 15, 25, 0.6);
-    --bg-card: rgba(21, 31, 50, 0.45);
-    --bg-card-hover: rgba(6, 182, 212, 0.06);
-    --border-glow: rgba(6, 182, 212, 0.25);
-    --border-glass: rgba(255, 255, 255, 0.08);
+    --bg-surface: rgba(255, 255, 255, 0.65);
+    --bg-card: rgba(255, 255, 255, 0.7);
+    --bg-card-hover: rgba(2, 132, 199, 0.05);
+    --border-glow: rgba(2, 132, 199, 0.15);
+    --border-glass: rgba(15, 23, 42, 0.08);
     
     --primary: var(--cyan-accent);
-    --primary-glow: rgba(6, 182, 212, 0.2);
+    --primary-glow: rgba(2, 132, 199, 0.1);
     --primary-hover: var(--blue-accent);
     
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --text-dark: #cbd5e1;
-    --glass-bg: rgba(11, 15, 25, 0.45);
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-dark: #1e293b;
+    --glass-bg: rgba(255, 255, 255, 0.5);
     
-    --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-    --shadow-card-hover: 0 12px 40px 0 rgba(6, 182, 212, 0.15);
-    --shadow-elevated: 0 20px 50px 0 rgba(0, 0, 0, 0.5);
+    --shadow-card: 0 8px 32px 0 rgba(15, 23, 42, 0.04);
+    --shadow-card-hover: 0 12px 40px 0 rgba(2, 132, 199, 0.08);
+    --shadow-elevated: 0 20px 50px 0 rgba(15, 23, 42, 0.06);
 }
 
 body {
-    background: radial-gradient(circle at 50% 0%, #17153a 0%, #060811 75%) !important;
+    background: radial-gradient(circle at 50% 0%, #f1f5f9 0%, #cbd5e1 75%) !important;
     color: var(--text-main) !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
 }
@@ -3632,35 +3632,36 @@ body {
     height: 8px !important;
 }
 ::-webkit-scrollbar-track {
-    background: rgba(6, 182, 212, 0.02) !important;
+    background: rgba(2, 132, 199, 0.01) !important;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(6, 182, 212, 0.15) !important;
+    background: rgba(2, 132, 199, 0.12) !important;
     border-radius: 4px !important;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(6, 182, 212, 0.3) !important;
+    background: rgba(2, 132, 199, 0.25) !important;
 }
 
 /* Header Glassmorphism */
 .app-header {
-    background: rgba(11, 15, 25, 0.5) !important;
+    background: rgba(255, 255, 255, 0.7) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
     box-shadow: var(--shadow-card) !important;
 }
 
 .brand-logo {
     font-family: 'Outfit', sans-serif !important;
-    color: #ffffff !important;
-    text-shadow: 0 0 15px rgba(6, 182, 212, 0.2) !important;
+    color: #0f172a !important;
+    text-shadow: none !important;
 }
 
 .brand-badge {
-    background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%) !important;
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
     border: none !important;
-    box-shadow: 0 0 10px rgba(6, 182, 212, 0.3) !important;
+    box-shadow: 0 0 10px rgba(2, 132, 199, 0.2) !important;
+    color: #ffffff !important;
 }
 
 .nav-btn {
@@ -3671,48 +3672,48 @@ body {
 
 .nav-btn:hover,
 .nav-btn.active {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.05) !important;
-    text-shadow: 0 0 8px rgba(6, 182, 212, 0.4) !important;
+    color: #0f172a !important;
+    background: rgba(15, 23, 42, 0.04) !important;
+    text-shadow: none !important;
 }
 
 .btn-secondary.header-admin-btn {
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: rgba(255, 255, 255, 0.8) !important;
     color: var(--text-dark) !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
 }
 
 .btn-secondary.header-admin-btn:hover {
-    background: rgba(6, 182, 212, 0.08) !important;
+    background: rgba(2, 132, 199, 0.05) !important;
     border-color: var(--cyan-accent) !important;
-    color: #ffffff !important;
+    color: #0f172a !important;
 }
 
 /* Chat Workspace Panel Overrides */
 .active-chat-container {
-    background: rgba(11, 15, 25, 0.35) !important;
+    background: rgba(255, 255, 255, 0.5) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
     box-shadow: var(--shadow-elevated) !important;
     border-radius: 16px !important;
 }
 
 .chat-header {
-    background: #0b0f19 !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
     padding: 1.25rem 1.5rem !important;
 }
 
 .chat-client-title {
     font-family: 'Outfit', sans-serif !important;
-    color: #ffffff !important;
+    color: #0f172a !important;
     font-size: 1.4rem !important;
     font-weight: 700 !important;
 }
 
 .chat-client-meta {
-    color: #cbd5e1 !important;
+    color: var(--text-muted) !important;
 }
 
 .chat-console-panel {
@@ -3721,12 +3722,12 @@ body {
 
 /* Message Cards styling */
 .chat-messages-log {
-    background: rgba(6, 8, 15, 0.2) !important;
+    background: rgba(241, 245, 249, 0.5) !important;
 }
 
 .chat-message-card {
     border-radius: 16px !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04) !important;
     max-width: 80% !important;
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
@@ -3743,28 +3744,28 @@ body {
 }
 
 .chat-message-card.assistant {
-    background: rgba(21, 31, 50, 0.75) !important;
-    color: #e2e8f0 !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(15, 23, 42, 0.06) !important;
     border-top-left-radius: 4px !important;
 }
 
 .chat-message-card pre {
-    background: rgba(0, 0, 0, 0.3) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
-    color: #e2e8f0 !important;
+    background: #f8fafc !important;
+    border: 1px solid rgba(15, 23, 42, 0.05) !important;
+    color: #0f172a !important;
     padding: 0.85rem !important;
 }
 
 /* Quick Prompts Bar */
 .quick-prompts-bar {
-    background: #0d121f !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: #f1f5f9 !important;
+    border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
     padding: 1rem 1.5rem !important;
 }
 
 .quick-prompts-label {
-    color: #22d3ee !important;
+    color: #0369a1 !important;
     font-size: 0.75rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.8px !important;
@@ -3772,73 +3773,73 @@ body {
 }
 
 .btn-quick-prompt {
-    background: rgba(21, 31, 50, 0.8) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    color: #cbd5e1 !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    color: #334155 !important;
     font-family: 'Inter', sans-serif !important;
     font-weight: 500 !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .btn-quick-prompt:hover {
-    background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%) !important;
-    border-color: rgba(6, 182, 212, 0.3) !important;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
     color: #ffffff !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3) !important;
+    box-shadow: 0 4px 15px rgba(2, 132, 199, 0.2) !important;
 }
 
 /* Input Area Overrides */
 .chat-input-area {
-    background: rgba(11, 15, 25, 0.85) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: #ffffff !important;
+    border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
     padding: 1.25rem 1.5rem !important;
 }
 
 .chat-input-field {
-    background: rgba(6, 8, 15, 0.6) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    color: #ffffff !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    color: #0f172a !important;
     border-radius: 12px !important;
     transition: all 0.3s ease !important;
 }
 
 .chat-input-field:focus {
     border-color: var(--cyan-accent) !important;
-    box-shadow: 0 0 10px rgba(6, 182, 212, 0.25) !important;
+    box-shadow: 0 0 10px rgba(2, 132, 199, 0.15) !important;
 }
 
 .btn-chat-send {
-    background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%) !important;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
     color: #ffffff !important;
     border-radius: 12px !important;
     transition: all 0.3s ease !important;
 }
 
 .btn-chat-send:hover {
-    background: linear-gradient(135deg, #0891b2 0%, #2563eb 100%) !important;
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.4) !important;
+    background: linear-gradient(135deg, #0270a8 0%, #025988 100%) !important;
+    box-shadow: 0 0 15px rgba(2, 132, 199, 0.3) !important;
     transform: translateY(-1px) !important;
 }
 
 .btn-primary#btn-new-chat {
-    background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%) !important;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 8px !important;
 }
 
 .btn-primary#btn-new-chat:hover {
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.3) !important;
+    box-shadow: 0 0 15px rgba(2, 132, 199, 0.25) !important;
 }
 
 /* Toast Overrides */
 .toast {
-    background: rgba(11, 15, 25, 0.9) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
     backdrop-filter: blur(8px) !important;
-    border: 1px solid rgba(6, 182, 212, 0.3) !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.25) !important;
+    border: 1px solid rgba(2, 132, 199, 0.3) !important;
+    color: #0f172a !important;
+    box-shadow: 0 0 15px rgba(2, 132, 199, 0.15) !important;
 }
 
 /* 3-Column Layout Grid (NotebookLM Style) */
@@ -3846,92 +3847,112 @@ body {
     display: grid !important;
     grid-template-columns: 280px 1fr 300px !important;
     gap: var(--space-md) !important;
-    min-height: calc(100vh - 160px) !important;
+    height: calc(100vh - 140px) !important;
+    max-height: calc(100vh - 140px) !important;
     max-width: 100% !important;
     overflow: hidden !important;
     margin-top: 1rem !important;
 }
 
 /* Sidebar Panels Styling */
-.sources-panel-placeholder,
-.studio-panel-placeholder {
-    background: rgba(11, 15, 25, 0.45) !important;
+.prospects-panel,
+.right-panel-placeholder {
+    background: rgba(255, 255, 255, 0.55) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
     border-radius: 16px !important;
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
 }
 
-.placeholder-content {
+/* Client/Prospect List styling inside Prospects Panel */
+.prospects-panel .panel-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
+    overflow-y: auto !important;
+}
+
+.sidebar-search .search-input {
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    color: #0f172a !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    font-size: 0.85rem !important;
+    outline: none !important;
+}
+
+.sidebar-search .search-input:focus {
+    border-color: #0284c7 !important;
+}
+
+.recent-chats-label {
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    color: #475569 !important;
+    letter-spacing: 0.5px !important;
+}
+
+.chat-list-item {
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.05) !important;
+    border-radius: 8px !important;
+    padding: 0.75rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.chat-list-item:hover {
+    background: rgba(2, 132, 199, 0.04) !important;
+    border-color: rgba(2, 132, 199, 0.15) !important;
+}
+
+.chat-list-item.active {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: #0284c7 !important;
+}
+
+.chat-list-item-title {
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    font-size: 0.85rem !important;
+}
+
+.chat-list-item-subtitle {
+    color: #475569 !important;
+    font-size: 0.75rem !important;
+    margin-top: 0.15rem !important;
+}
+
+.chat-list-item-meta {
+    color: #64748b !important;
+    font-size: 0.65rem !important;
+    margin-top: 0.25rem !important;
+}
+
+/* Empty Right Panel */
+.right-panel-placeholder .placeholder-content {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
     height: 100% !important;
-    gap: 1.5rem !important;
-    padding: var(--space-lg) !important;
+    padding: 1.5rem !important;
 }
 
 .placeholder-card {
-    background: rgba(255, 255, 255, 0.02) !important;
-    border: 1px dashed rgba(255, 255, 255, 0.1) !important;
+    background: rgba(15, 23, 42, 0.02) !important;
+    border: 1px dashed rgba(15, 23, 42, 0.1) !important;
     border-radius: 12px !important;
     padding: 1.5rem !important;
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    color: var(--text-muted) !important;
-}
-
-.placeholder-card h4 {
-    color: #ffffff !important;
-    margin-bottom: 0.25rem !important;
-    font-size: 0.95rem !important;
-    font-family: 'Outfit', sans-serif !important;
-}
-
-.placeholder-card p {
-    font-size: 0.8rem !important;
-}
-
-/* Studio Tiles Grid */
-.studio-tiles-grid {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 0.75rem !important;
-    width: 100% !important;
-}
-
-.studio-tile {
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-    border-radius: 8px !important;
-    padding: 0.75rem 1rem !important;
-    font-size: 0.85rem !important;
-    color: var(--text-dark) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.75rem !important;
-    cursor: not-allowed !important;
-    opacity: 0.75 !important;
-    transition: all 0.2s ease !important;
-}
-
-.studio-tile i,
-.studio-tile svg {
-    width: 16px !important;
-    height: 16px !important;
-    color: var(--cyan-accent) !important;
-}
-
-.studio-tile:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    opacity: 1 !important;
+    color: #475569 !important;
 }
 
 /* Responsive Overrides: Hide placeholders on small viewports */
@@ -3939,10 +3960,8 @@ body {
     .dashboard-grid.notebook-layout {
         grid-template-columns: 1fr !important;
     }
-    .sources-panel-placeholder,
-    .studio-panel-placeholder {
+    .prospects-panel,
+    .right-panel-placeholder {
         display: none !important;
     }
 }
-
-

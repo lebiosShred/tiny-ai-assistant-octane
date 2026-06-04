@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="tiny.png">
     <meta name="description" content="Functional sales enablement application for prospect pre-screening briefings and call transcript report synthesis.">
-    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="stylesheet" href="styles.css?v=5">
     <!-- Lucide Icon System -->
     <script src="https://unpkg.com/lucide@1.17.0/dist/umd/lucide.min.js"></script>
 </head>
@@ -40,16 +40,18 @@
         <!-- Main Dashboard Workspace: NotebookLM Split Pane -->
         <div class="dashboard-grid notebook-layout">
             
-            <!-- Left Column: Sources Panel Placeholder -->
-            <div class="sources-panel-placeholder panel">
+            <!-- Left Column: Prospects Sidebar -->
+            <div class="prospects-panel panel" id="chat-sidebar-container">
                 <div class="panel-header">
-                    <span class="panel-title">📋 Sources</span>
+                    <span class="panel-title">👥 Prospects</span>
                 </div>
-                <div class="panel-body placeholder-content">
-                    <div class="placeholder-card">
-                        <i data-lucide="plus-circle" style="width: 24px; height: 24px; color: var(--cyan-accent); margin-bottom: 0.5rem;"></i>
-                        <h4>Add sources</h4>
-                        <p>Saved sources will appear here.</p>
+                <div class="panel-body">
+                    <div class="sidebar-search">
+                        <input type="text" id="chat-search" class="search-input" placeholder="Search prospects...">
+                    </div>
+                    <div class="recent-chats-label">Recent Prospects</div>
+                    <div class="recent-chats-list" id="recent-chats-list" tabindex="0" aria-label="Recent Prospects">
+                        <!-- Populated dynamically in app.js -->
                     </div>
                 </div>
             </div>
@@ -130,20 +132,14 @@
 
             </div>
 
-            <!-- Right Column: Studio Panel Placeholder -->
-            <div class="studio-panel-placeholder panel">
+            <!-- Right Column: Empty Actions Placeholder -->
+            <div class="right-panel-placeholder panel">
                 <div class="panel-header">
-                    <span class="panel-title">🎨 Studio</span>
+                    <span class="panel-title">✨ Actions</span>
                 </div>
                 <div class="panel-body placeholder-content">
-                    <div class="studio-tiles-grid">
-                        <div class="studio-tile"><i data-lucide="headphones"></i> Audio Overview</div>
-                        <div class="studio-tile"><i data-lucide="file-text"></i> Briefing Doc</div>
-                        <div class="studio-tile"><i data-lucide="git-branch"></i> MindMap</div>
-                        <div class="studio-tile"><i data-lucide="help-circle"></i> Study Guide</div>
-                    </div>
-                    <div class="placeholder-card" style="margin-top: auto;">
-                        <p style="font-size: 0.75rem;">Studio outputs will appear here when sources are analyzed.</p>
+                    <div class="placeholder-card">
+                        <p>Additional tools and actions will appear here.</p>
                     </div>
                 </div>
             </div>

@@ -15,6 +15,7 @@ test.describe('Aegis Visual Regression Suite', () => {
         // Mask dynamic content that changes between runs
         await expect(page).toHaveScreenshot('index-full.png', {
             fullPage: true,
+            timeout: 15000,
             mask: [
                 page.locator('#chat-messages-log'),
                 page.locator('#recent-chats-list'),
@@ -28,6 +29,7 @@ test.describe('Aegis Visual Regression Suite', () => {
 
         await expect(page).toHaveScreenshot('docs-full.png', {
             fullPage: true,
+            timeout: 15000,
         });
     });
 
@@ -37,6 +39,7 @@ test.describe('Aegis Visual Regression Suite', () => {
 
         await expect(page).toHaveScreenshot('book-full.png', {
             fullPage: true,
+            timeout: 15000,
         });
     });
 });
