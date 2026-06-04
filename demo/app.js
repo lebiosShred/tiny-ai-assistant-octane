@@ -177,6 +177,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnLoadSample = document.getElementById('btn-load-sample');
 
+    // PDF/Text Preview Modal Elements & Listeners
+    const pdfPreviewModal = document.getElementById('pdf-preview-modal');
+    const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
+    const pdfModalTitle = document.getElementById('pdf-modal-title');
+    const pdfRenderTarget = document.getElementById('pdf-render-target');
+    const textPreviewTarget = document.getElementById('text-preview-target');
+
+    if (closePdfModalBtn && pdfPreviewModal) {
+        closePdfModalBtn.addEventListener('click', () => {
+            pdfPreviewModal.classList.add('modal-hidden');
+        });
+    }
+    if (pdfPreviewModal) {
+        const backdrop = pdfPreviewModal.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.addEventListener('click', () => {
+                pdfPreviewModal.classList.add('modal-hidden');
+            });
+        }
+    }
+
     // Chat Console Elements
     const chatMessagesLog = document.getElementById('chat-messages-log');
     const chatLoadingIndicator = document.getElementById('chat-loading-indicator');
@@ -402,10 +423,39 @@ document.addEventListener('DOMContentLoaded', () => {
                         document.querySelectorAll('.sidebar-file-item').forEach(el => el.classList.remove('active'));
                         fileItem.classList.add('active');
                         
+                        if (pdfPreviewModal) {
+                            pdfPreviewModal.classList.remove('modal-hidden');
+                        }
+                        if (pdfModalTitle) {
+                            pdfModalTitle.innerText = file.name || 'Document Preview';
+                        }
+                        if (pdfRenderTarget) {
+                            pdfRenderTarget.classList.add('hidden');
+                        }
+                        if (textPreviewTarget) {
+                            textPreviewTarget.classList.remove('hidden');
+                            textPreviewTarget.innerHTML = '<div style="color: #64748b; font-size: 0.9rem; padding: 2rem; text-align: center;">⚡ Reading file content...</div>';
+                        }
+                        
                         setTimeout(async () => {
+                            try {
+                                const response = await fetch(`/api/gdrive/read?fileId=${encodeURIComponent(file.id)}`);
+                                if (!response.ok) throw new Error("GDrive read failed");
+                                const data = await response.json();
+                                if (textPreviewTarget) {
+                                    textPreviewTarget.textContent = data.content || '[Empty File]';
+                                }
+                            } catch (err) {
+                                console.error("Error reading file:", err);
+                                if (textPreviewTarget) {
+                                    textPreviewTarget.innerHTML = `<div style="color: #ef4444; font-size: 0.9rem; padding: 2rem; text-align: center;">❌ Failed to load file content.<br><span style="font-size: 0.8rem; color: #94a3b8;">${err.message}</span></div>`;
+                                }
+                            }
                             await loadGoogleDriveFiles();
-                            sourceGdriveFileSelect.value = file.id;
-                            sourceGdriveFileSelect.dispatchEvent(new Event('change'));
+                            if (sourceGdriveFileSelect) {
+                                sourceGdriveFileSelect.value = file.id;
+                                sourceGdriveFileSelect.dispatchEvent(new Event('change'));
+                            }
                         }, 100);
                     });
                     

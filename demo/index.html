@@ -31,7 +31,6 @@
                     <a href="/docs" class="nav-btn" target="_blank">Documentation</a>
                     <a href="/book" class="nav-btn">Booking Page</a>
                 </nav>
-                <a href="admin_setup.html" class="btn btn-secondary header-admin-btn">⚙ Admin Console</a>
             </div>
         </header>
 
@@ -302,7 +301,8 @@
                 <button type="button" id="close-pdf-modal-btn" aria-label="Close Preview">❌</button>
             </div>
             <div class="canvas-wrapper">
-                <canvas id="pdf-render-target"></canvas>
+                <canvas id="pdf-render-target" class="hidden"></canvas>
+                <div id="text-preview-target" class="hidden"></div>
             </div>
         </div>
     </div>

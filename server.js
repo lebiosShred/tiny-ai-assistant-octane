@@ -1467,6 +1467,103 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         trimmedMsg = trimmedMsg.slice(0, -1).trim();
                     }
 
+                    // Conversational Custom Instructions Settings Interception
+                    const rememberRegex = /^(?:tiny,\s+)?remember\s+to\s+([\s\S]+)$/i;
+                    const showRememberRegex = /^(?:tiny,\s+)?what\s+do\s+you\s+remember\??$/i;
+                    const forgetRegex = /^(?:tiny,\s+)?forget\s+everything$/i;
+
+                    const rememberMatch = trimmedMsg.match(rememberRegex);
+                    const showRememberMatch = trimmedMsg.match(showRememberRegex);
+                    const forgetMatch = trimmedMsg.match(forgetRegex);
+
+                    if (rememberMatch) {
+                        const instruction = rememberMatch[1].trim();
+                        try {
+                            const customInstructionsPath = path.join(__dirname, 'config', 'custom_instructions.json');
+                            let instructions = [];
+                            if (fs.existsSync(customInstructionsPath)) {
+                                const raw = fs.readFileSync(customInstructionsPath, 'utf8');
+                                const data = JSON.parse(raw);
+                                instructions = data.instructions || [];
+                            }
+                            if (!instructions.includes(instruction)) {
+                                instructions.push(instruction);
+                            }
+                            fs.writeFileSync(customInstructionsPath, JSON.stringify({ instructions }, null, 2), 'utf8');
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                choices: [{
+                                    message: {
+                                        role: 'assistant',
+                                        content: `Understood. I have updated my configurations to remember: "${instruction}". This instruction is now persistently configured in the backend.`
+                                    }
+                                }]
+                            }));
+                            return;
+                        } catch (err) {
+                            console.error('❌ Failed to save custom instruction:', err);
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: `Failed to save instruction: ${err.message}` }));
+                            return;
+                        }
+                    }
+
+                    if (showRememberMatch) {
+                        try {
+                            const customInstructionsPath = path.join(__dirname, 'config', 'custom_instructions.json');
+                            let instructions = [];
+                            if (fs.existsSync(customInstructionsPath)) {
+                                const raw = fs.readFileSync(customInstructionsPath, 'utf8');
+                                const data = JSON.parse(raw);
+                                instructions = data.instructions || [];
+                            }
+                            let contentStr = '';
+                            if (instructions.length === 0) {
+                                contentStr = "I do not have any custom instructions configured in my backend settings.";
+                            } else {
+                                contentStr = "Here are the custom instructions currently configured in my backend:\n\n" + 
+                                             instructions.map((inst, index) => `${index + 1}. ${inst}`).join('\n');
+                            }
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                choices: [{
+                                    message: {
+                                        role: 'assistant',
+                                        content: contentStr
+                                    }
+                                }]
+                            }));
+                            return;
+                        } catch (err) {
+                            console.error('❌ Failed to load custom instructions:', err);
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: `Failed to load instructions: ${err.message}` }));
+                            return;
+                        }
+                    }
+
+                    if (forgetMatch) {
+                        try {
+                            const customInstructionsPath = path.join(__dirname, 'config', 'custom_instructions.json');
+                            fs.writeFileSync(customInstructionsPath, JSON.stringify({ instructions: [] }, null, 2), 'utf8');
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                choices: [{
+                                    message: {
+                                        role: 'assistant',
+                                        content: "Understood. I have cleared all custom instructions from my backend settings."
+                                    }
+                                }]
+                            }));
+                            return;
+                        } catch (err) {
+                            console.error('❌ Failed to clear custom instructions:', err);
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: `Failed to clear instructions: ${err.message}` }));
+                            return;
+                        }
+                    }
+
                     const uploadRegex = /^(?:upload|create)\s+(?:file|document|text file)?\s*([a-zA-Z0-9_\-\.]+)\s+(?:with\s+)?content\s+([\s\S]+)$/i;
                     const deleteRegex = /^(?:delete|remove|destroy)\s+(?:file|document)?\s*([a-zA-Z0-9_\-\.:\s]+)$/i;
                     const linkedinRegex = /^(?:upload|register)\s+linkedin\s+(?:for\s+([a-zA-Z0-9_\-\.\s]+))?\s*(?:with)?\s*content\s+([\s\S]+)$/i;
@@ -1972,12 +2069,30 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 `;
                 }
 
+                // Read and inject custom instructions
+                let customInstructionsStr = '';
+                try {
+                    const customInstructionsPath = path.join(__dirname, 'config', 'custom_instructions.json');
+                    if (fs.existsSync(customInstructionsPath)) {
+                        const raw = fs.readFileSync(customInstructionsPath, 'utf8');
+                        const data = JSON.parse(raw);
+                        const instructions = data.instructions || [];
+                        if (instructions.length > 0) {
+                            customInstructionsStr = `\n\n<custom_instructions>\n` + 
+                                instructions.map(inst => `- ${inst}`).join('\n') + 
+                                `\n</custom_instructions>\n`;
+                        }
+                    }
+                } catch (err) {
+                    console.error('⚠️ Failed to load custom instructions for system prompt:', err.message);
+                }
+
                 if (systemMsg) {
-                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + gdriveFilesContext + jsonSchemaInstruction;
+                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + gdriveFilesContext + jsonSchemaInstruction + customInstructionsStr;
                 } else {
                     payload.messages.unshift({
                         role: 'system',
-                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${gdriveFilesContext}${jsonSchemaInstruction}`
+                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${gdriveFilesContext}${jsonSchemaInstruction}${customInstructionsStr}`
                     });
                 }
             }
