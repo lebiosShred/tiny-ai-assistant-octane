@@ -52,12 +52,7 @@ class IndexPage {
    * Open the sources drawer if it is not already visible.
    */
   async openDrawer() {
-    const classes = await this.drawer.getAttribute('class');
-    const isOpen = classes && classes.includes('open');
-    if (!isOpen) {
-      await this.toggleSourcesBtn.click();
-    }
-    // Automatically expand the collapsible advanced section for test automation interaction
+    // No-op for visual drawer, expand advanced section
     await this.page.evaluate(() => {
       const details = document.getElementById('advanced-sources-details');
       if (details) details.open = true;
@@ -68,37 +63,41 @@ class IndexPage {
    * Close the sources drawer if it is visible.
    */
   async closeDrawer() {
-    const classes = await this.drawer.getAttribute('class');
-    const isOpen = classes && classes.includes('open');
-    if (isOpen) {
-      await this.closeDrawerBtn.click();
-    }
+    // No-op
   }
 
   /**
    * Click the sample data loader button inside the drawer.
    */
   async loadSample() {
-    await this.openDrawer();
-    await this.sampleBtn.click();
+    await this.page.evaluate(() => {
+      const btn = document.getElementById('btn-load-sample');
+      if (btn) btn.click();
+    });
   }
 
   /**
    * Fill the metadata form in the drawer.
    */
   async fillMetadata(name, company, email) {
-    await this.openDrawer();
-    await this.nameInput.fill(name);
-    await this.companyInput.fill(company);
-    await this.emailInput.fill(email);
+    await this.page.evaluate(({ name, company, email }) => {
+      const n = document.getElementById('meta-name');
+      const c = document.getElementById('meta-company');
+      const e = document.getElementById('meta-email');
+      if (n) { n.value = name; n.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (c) { c.value = company; c.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (e) { e.value = email; e.dispatchEvent(new Event('input', { bubbles: true })); }
+    }, { name, company, email });
   }
 
   /**
    * Submit the sources form to initialize the session.
    */
   async submitForm() {
-    await this.openDrawer();
-    await this.submitBtn.click();
+    await this.page.evaluate(() => {
+      const btn = document.getElementById('btn-save-sources');
+      if (btn) btn.click();
+    });
   }
 
   /**
@@ -163,11 +162,12 @@ class IndexPage {
    * Retrieve current form values from the drawer.
    */
   async getFormValues() {
-    await this.openDrawer();
-    const name = await this.nameInput.inputValue();
-    const company = await this.companyInput.inputValue();
-    const email = await this.emailInput.inputValue();
-    return { name, company, email };
+    return this.page.evaluate(() => {
+      const name = document.getElementById('meta-name')?.value || '';
+      const company = document.getElementById('meta-company')?.value || '';
+      const email = document.getElementById('meta-email')?.value || '';
+      return { name, company, email };
+    });
   }
 }
 

@@ -471,91 +471,143 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Save Sources / Update client chat ---
-    if (chatSourcesForm) {
-        chatSourcesForm.addEventListener('submit', async (e) => {
+    function parseInitPrompt(text) {
+        let name = '';
+        let company = '';
+        let email = '';
+        
+        // 1. Match email address
+        const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (emailMatch) {
+            email = emailMatch[1].trim();
+        }
+        
+        // 2. Match explicit tags/labels
+        const nameMatch = text.match(/(?:client|name):\s*([^,\n\r]+)/i);
+        const companyMatch = text.match(/(?:company):\s*([^,\n\r]+)/i);
+        
+        if (nameMatch) {
+            name = nameMatch[1].trim();
+        }
+        if (companyMatch) {
+            company = companyMatch[1].trim();
+        }
+        
+        // 3. Match natural language patterns (e.g. Sarah Chen at Meridian Logistics)
+        if (!name || !company) {
+            const atMatch = text.match(/([A-Z][a-zA-Z0-9\s._-]{1,30})\s+at\s+([A-Z][a-zA-Z0-9\s._-]{1,30})/);
+            if (atMatch) {
+                if (!name) name = atMatch[1].trim();
+                if (!company) company = atMatch[2].trim();
+            }
+        }
+        
+        // 4. Default fallbacks if email exists but name/company are missing
+        if (!name && email) {
+            name = email.split('@')[0];
+        }
+        if (!company && email) {
+            company = email.split('@')[1].split('.')[0];
+        }
+        
+        return { name, company, email };
+    }
+
+    async function saveDiscoverySession(name, company, email) {
+        if (metaName) metaName.value = name;
+        if (metaCompany) metaCompany.value = company;
+        if (metaEmail) metaEmail.value = email;
+
+        // Perform distance calculation dynamically
+        try {
+            const distanceRes = await fetch('/api/calculate-distance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ destination: company })
+            });
+            if (distanceRes.ok) {
+                const dData = await distanceRes.json();
+                transitDistance = dData.distanceString || "Online/Phone call only (Distance unavailable)";
+            }
+        } catch (err) {
+            console.warn("API distance check failed:", err.message);
+        }
+
+        const payload = {
+            id: currentChatId || undefined,
+            type: 'synthesis', // Unified type for chat persistence
+            name: name,
+            company: company,
+            title: metaTitle ? metaTitle.value.trim() : '',
+            email: email,
+            phone: metaPhone ? metaPhone.value.trim() : '',
+            rep: metaRep ? metaRep.value : 'Albert',
+            track: metaTrack ? metaTrack.value : 'Planning & Analytics (TM1)',
+            oneDriveFile: sourceGdriveFileSelect ? (sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '') : '',
+            gDriveFile: sourceGdriveFileSelect ? (sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '') : '',
+            gDriveFileId: sourceGdriveFileId ? sourceGdriveFileId.value : '',
+            gDriveFileContent: gdriveFileContent,
+            linkedinInfo: sourceLinkedinText ? sourceLinkedinText.value.trim() : '',
+            intakeAnswers: sourceIntakeText ? sourceIntakeText.value.trim() : '',
+            transcript: sourceTranscriptText ? sourceTranscriptText.value.trim() : '',
+            transitDistance: transitDistance,
+            messages: chatHistory
+        };
+
+        try {
+            const response = await fetch('/api/history', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to save sources');
+
+            showToast('Sources and metadata saved successfully.');
+            
+            // If it was a new chat, update currentChatId
+            if (!currentChatId) {
+                currentChatId = result.id;
+                if (chatHistory.length === 0) {
+                    // Append first assistant welcome message
+                    chatHistory.push({
+                        role: 'assistant',
+                        content: `Chat session initialized for ${payload.name} at ${payload.company}. Sources uploaded!`,
+                        timestamp: new Date().toISOString()
+                    });
+                    payload.id = currentChatId;
+                    payload.messages = chatHistory;
+                    // Re-save with welcome message
+                    await fetch('/api/history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+            }
+            
+            await loadChatsList();
+            // Setup Header Info directly to prevent clearing chat history and race conditions
+            if (activeChatClientTitle) activeChatClientTitle.innerText = `${payload.company} (${payload.name})`;
+            if (activeChatClientMeta) activeChatClientMeta.innerText = `${payload.title || 'No Title'} — Interest: ${payload.track || 'Planning & Analytics (TM1)'}`;
+            renderChatHistory();
+
+        } catch (err) {
+            console.error('Error saving sources:', err);
+            showToast(`Error saving sources: ${err.message}`);
+        }
+    }
+
+    const btnSaveSources = document.getElementById('btn-save-sources');
+    if (btnSaveSources) {
+        btnSaveSources.addEventListener('click', async (e) => {
             e.preventDefault();
-
-            // Perform distance calculation dynamically
-            try {
-                const distanceRes = await fetch('/api/calculate-distance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ destination: metaCompany.value })
-                });
-                if (distanceRes.ok) {
-                    const dData = await distanceRes.json();
-                    transitDistance = dData.distanceString || "Online/Phone call only (Distance unavailable)";
-                }
-            } catch (err) {
-                console.warn("API distance check failed:", err.message);
-            }
-
-            const payload = {
-                id: currentChatId || undefined,
-                type: 'synthesis', // Unified type for chat persistence
-                name: metaName.value.trim(),
-                company: metaCompany.value.trim(),
-                title: metaTitle.value.trim(),
-                email: metaEmail.value.trim(),
-                phone: metaPhone.value.trim(),
-                rep: metaRep.value,
-                track: metaTrack.value,
-                oneDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
-                gDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
-                gDriveFileId: sourceGdriveFileId.value,
-                gDriveFileContent: gdriveFileContent,
-                linkedinInfo: sourceLinkedinText.value.trim(),
-                intakeAnswers: sourceIntakeText.value.trim(),
-                transcript: sourceTranscriptText.value.trim(),
-                transitDistance: transitDistance,
-                messages: chatHistory
-            };
-
-            try {
-                const response = await fetch('/api/history', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || 'Failed to save sources');
-
-                showToast('Sources and metadata saved successfully.');
-                toggleDrawer(false);
-                
-                // If it was a new chat, update currentChatId
-                if (!currentChatId) {
-                    currentChatId = result.id;
-                    if (chatHistory.length === 0) {
-                        // Append first assistant welcome message
-                        chatHistory.push({
-                            role: 'assistant',
-                            content: `Chat session initialized for ${payload.name} at ${payload.company}. Sources uploaded!`,
-                            timestamp: new Date().toISOString()
-                        });
-                        payload.id = currentChatId;
-                        payload.messages = chatHistory;
-                        // Re-save with welcome message
-                        await fetch('/api/history', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                    }
-                }
-                
-                await loadChatsList();
-                // Setup Header Info directly to prevent clearing chat history and race conditions
-                activeChatClientTitle.innerText = `${payload.company} (${payload.name})`;
-                activeChatClientMeta.innerText = `${payload.title || 'No Title'} — Interest: ${payload.track || 'Planning & Analytics (TM1)'}`;
-                renderChatHistory();
-
-            } catch (err) {
-                console.error('Error saving sources:', err);
-                showToast(`Error saving sources: ${err.message}`);
-            }
+            const name = metaName ? metaName.value.trim() : '';
+            const company = metaCompany ? metaCompany.value.trim() : '';
+            const email = metaEmail ? metaEmail.value.trim() : '';
+            await saveDiscoverySession(name, company, email);
         });
     }
 
@@ -602,6 +654,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LLM Interaction Helpers ---
     async function callTinyAPI(promptText) {
+        // Parse metadata on first prompt if session is not yet initialized
+        if (!currentChatId) {
+            const parsed = parseInitPrompt(promptText);
+            if (parsed.name && parsed.company) {
+                await saveDiscoverySession(parsed.name, parsed.company, parsed.email);
+                return; // Stop here, session is now initialized and welcome message is rendered!
+            }
+        }
+
         const leadsSummary = chatsList.map(c => `- ${c.name} at ${c.company} (${c.track || 'TM1 & AI'})`).join('\n') || 'None';
 
         // Compile context and previous history
