@@ -3846,7 +3846,7 @@ body {
 /* 3-Column Layout Grid (NotebookLM Style) */
 .dashboard-grid.notebook-layout {
     display: grid !important;
-    grid-template-columns: 240px 1fr 280px !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
     gap: var(--space-md) !important;
     height: calc(100vh - 140px) !important;
     max-height: calc(100vh - 140px) !important;
