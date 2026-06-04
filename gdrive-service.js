@@ -388,6 +388,31 @@ async function parsePdfBuffer(buffer) {
     }
 }
 
+/**
+ * Deletes a file by ID from Google Drive.
+ * @param {string} fileId Google Drive File ID
+ * @returns {Promise<boolean>} Success status
+ */
+async function deleteFile(fileId) {
+    const drive = getDriveClient();
+    if (!drive) {
+        throw new Error('Google Drive client not initialized. Check credentials.');
+    }
+
+    try {
+        console.log(`🗑️ Deleting GDrive file: ${fileId}`);
+        await drive.files.delete({
+            fileId: fileId,
+            supportsAllDrives: true
+        });
+        console.log(`✅ Google Drive file deleted successfully: ${fileId}`);
+        return true;
+    } catch (err) {
+        console.error(`❌ Error deleting GDrive file ${fileId}:`, err.message);
+        throw err;
+    }
+}
+
 module.exports = {
     getDriveClient,
     listFolder,
@@ -396,6 +421,7 @@ module.exports = {
     createIntakeFile,
     findOrCreateClientFolder,
     uploadFile,
-    parsePdfBuffer
+    parsePdfBuffer,
+    deleteFile
 };
 

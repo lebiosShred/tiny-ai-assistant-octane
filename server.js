@@ -1458,6 +1458,178 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             payload.provider = payload.provider || 'deepseek';
             payload.model = payload.model || 'deepseek-chat';
 
+            // Conversational Google Drive Upload & Delete Interception
+            if (payload.messages.length > 0) {
+                const lastUserMsg = [...payload.messages].reverse().find(m => m.role === 'user');
+                if (lastUserMsg && lastUserMsg.content) {
+                    let trimmedMsg = lastUserMsg.content.trim();
+                    if (trimmedMsg.endsWith('.')) {
+                        trimmedMsg = trimmedMsg.slice(0, -1).trim();
+                    }
+
+                    const uploadRegex = /^(?:upload|create)\s+(?:file|document|text file)?\s*([a-zA-Z0-9_\-\.]+)\s+(?:with\s+)?content\s+([\s\S]+)$/i;
+                    const deleteRegex = /^(?:delete|remove|destroy)\s+(?:file|document)?\s*([a-zA-Z0-9_\-\.:\s]+)$/i;
+
+                    const uploadMatch = trimmedMsg.match(uploadRegex);
+                    const deleteMatch = trimmedMsg.match(deleteRegex);
+
+                    // Extract company name for target folder placement
+                    let companyNameForGDrive = '';
+                    const systemMsgForGDrive = payload.messages.find(m => m.role === 'system');
+                    if (systemMsgForGDrive) {
+                        const compMatch = systemMsgForGDrive.content.match(/- Company:\s*([^\n\r]*)/i);
+                        if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
+                            companyNameForGDrive = compMatch[1].trim();
+                        }
+                    }
+                    if (!companyNameForGDrive) {
+                        const userMsgForGDrive = payload.messages.find(m => m.role === 'user');
+                        if (userMsgForGDrive) {
+                            const companyMatch = userMsgForGDrive.content.match(/at\s+([^\n]+)/i);
+                            if (companyMatch) {
+                                companyNameForGDrive = companyMatch[1].trim().split('\n')[0].trim();
+                            }
+                        }
+                    }
+                    const company = companyNameForGDrive || 'Unknown_Company';
+
+                    if (uploadMatch) {
+                        const fileName = uploadMatch[1].trim();
+                        let contentStr = uploadMatch[2].trim();
+                        if ((contentStr.startsWith("'") && contentStr.endsWith("'")) || (contentStr.startsWith('"') && contentStr.endsWith('"'))) {
+                            contentStr = contentStr.slice(1, -1);
+                        }
+
+                        try {
+                            const fileBuffer = Buffer.from(contentStr, 'utf8');
+                            let driveFile = null;
+                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+
+                            if (gdriveAvailable) {
+                                const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                driveFile = await gdriveService.uploadFile(fileName, 'text/plain', fileBuffer, clientFolderId);
+                            } else {
+                                console.warn('⚠️ Google Drive client not configured. Saving file locally.');
+                                const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                                const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                                if (!fs.existsSync(localFolder)) {
+                                    fs.mkdirSync(localFolder, { recursive: true });
+                                }
+                                const localPath = path.join(localFolder, fileName);
+                                fs.writeFileSync(localPath, fileBuffer);
+                                driveFile = {
+                                    id: `local_${cleanCompany}_${fileName}`,
+                                    name: fileName,
+                                    webViewLink: `file://${localPath}`
+                                };
+                            }
+
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                gdriveAction: true,
+                                choices: [{
+                                    message: {
+                                        role: 'assistant',
+                                        content: `I have successfully uploaded the file "**${fileName}**" (ID: \`${driveFile.id}\`) to Google Drive (Client folder: *${company}*). It is now indexed and available in the client memory context!`
+                                    }
+                                }]
+                            }));
+                            return;
+                        } catch (err) {
+                            console.error('❌ Prompt-driven upload failed:', err);
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: `Prompt-driven upload failed: ${err.message}` }));
+                            return;
+                        }
+                    }
+
+                    if (deleteMatch) {
+                        const fileIdentifier = deleteMatch[1].trim();
+                        try {
+                            let success = false;
+                            let targetFileId = fileIdentifier;
+                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                            const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+
+                            // Resolve fileName to fileId if it contains an extension and is not already a fileId
+                            if (!targetFileId.startsWith('local_') && !targetFileId.startsWith('mock_') && targetFileId.includes('.')) {
+                                if (gdriveAvailable) {
+                                    try {
+                                        const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                        const files = await gdriveService.listFolder(clientFolderId);
+                                        const found = files.find(f => f.name.toLowerCase() === targetFileId.toLowerCase());
+                                        if (found) {
+                                            targetFileId = found.id;
+                                        }
+                                    } catch (err) {
+                                        console.warn('⚠️ Error listing GDrive folder during deletion resolution:', err.message);
+                                    }
+                                } else {
+                                    const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                                    if (fs.existsSync(localFolder)) {
+                                        const localFiles = fs.readdirSync(localFolder);
+                                        const found = localFiles.find(f => f.toLowerCase() === targetFileId.toLowerCase());
+                                        if (found) {
+                                            targetFileId = `local_${cleanCompany}_${found}`;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (targetFileId.startsWith('local_')) {
+                                const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+                                if (fs.existsSync(historyDir)) {
+                                    const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
+                                    for (const subdir of subdirs) {
+                                        const prefix = `local_${subdir}_`;
+                                        if (targetFileId.startsWith(prefix)) {
+                                            const fileName = targetFileId.slice(prefix.length);
+                                            const filePath = path.join(historyDir, subdir, fileName);
+                                            if (fs.existsSync(filePath)) {
+                                                fs.unlinkSync(filePath);
+                                                success = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            } else if (gdriveAvailable) {
+                                success = await gdriveService.deleteFile(targetFileId);
+                            }
+
+                            if (success) {
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({
+                                    gdriveAction: true,
+                                    choices: [{
+                                        message: {
+                                            role: 'assistant',
+                                            content: `I have successfully deleted the file "**${fileIdentifier}**" from Google Drive (Client folder: *${company}*). The file has been removed from active context memory!`
+                                        }
+                                    }]
+                                }));
+                            } else {
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({
+                                    choices: [{
+                                        message: {
+                                            role: 'assistant',
+                                            content: `Could not find file "**${fileIdentifier}**" in Google Drive (Client folder: *${company}*) to delete.`
+                                        }
+                                    }]
+                                }));
+                            }
+                            return;
+                        } catch (err) {
+                            console.error('❌ Prompt-driven deletion failed:', err);
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: `Prompt-driven deletion failed: ${err.message}` }));
+                            return;
+                        }
+                    }
+                }
+            }
+
             // Check if key is the mock decoy or empty
             const isMockKey = apiKey === "N1V4ErGCSlQSLdDrc7vhkSfpf334TgRo";
             let isOpenRouter = false;
@@ -2383,6 +2555,88 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 res.end(JSON.stringify({ error: `File upload failed: ${err.message}` }));
             }
         });
+        return;
+    }
+
+    // API Google Drive Delete Route
+    if ((pathname === '/api/gdrive/delete' || pathname === '/api/gdrive/file') && (req.method === 'DELETE' || req.method === 'POST')) {
+        let fileId = parsedUrl.searchParams.get('fileId');
+        let company = parsedUrl.searchParams.get('company');
+
+        const processDelete = async (fId, comp) => {
+            if (!fId) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Missing required field: fileId.' }));
+                return;
+            }
+
+            try {
+                let success = false;
+                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+
+                if (fId.startsWith('local_')) {
+                    const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+                    if (fs.existsSync(historyDir)) {
+                        const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
+                        for (const subdir of subdirs) {
+                            const prefix = `local_${subdir}_`;
+                            if (fId.startsWith(prefix)) {
+                                const fileName = fId.slice(prefix.length);
+                                const filePath = path.join(historyDir, subdir, fileName);
+                                if (fs.existsSync(filePath)) {
+                                    fs.unlinkSync(filePath);
+                                    console.log(`✅ Deleted local file: ${filePath}`);
+                                    success = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (!success) {
+                        const cleanCompany = comp ? comp.replace(/[^a-zA-Z0-9]/g, '_') : '';
+                        if (cleanCompany) {
+                            const prefix = `local_${cleanCompany}_`;
+                            if (fId.startsWith(prefix)) {
+                                const fileName = fId.slice(prefix.length);
+                                const filePath = path.join(historyDir, cleanCompany, fileName);
+                                if (fs.existsSync(filePath)) {
+                                    fs.unlinkSync(filePath);
+                                    console.log(`✅ Deleted local file: ${filePath}`);
+                                    success = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (gdriveAvailable) {
+                    success = await gdriveService.deleteFile(fId);
+                } else {
+                    console.warn('⚠️ Google Drive client not configured and file is not local-prefixed.');
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: 'File deleted successfully.' }));
+            } catch (err) {
+                console.error('❌ File deletion failed:', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: `File deletion failed: ${err.message}` }));
+            }
+        };
+
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => body += chunk);
+            req.on('end', () => {
+                try {
+                    const payload = JSON.parse(body || '{}');
+                    processDelete(payload.fileId || fileId, payload.company || company);
+                } catch (e) {
+                    processDelete(fileId, company);
+                }
+            });
+        } else {
+            processDelete(fileId, company);
+        }
         return;
     }
 

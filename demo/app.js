@@ -778,6 +778,15 @@ Rules:
 
             const content = data.choices[0].message.content;
 
+            // If a file was uploaded or deleted via chat prompt, refresh files list
+            if (data.gdriveAction) {
+                try {
+                    await loadGoogleDriveFiles();
+                } catch (gdriveErr) {
+                    console.error("Error refreshing GDrive files list:", gdriveErr);
+                }
+            }
+
             // Update local history with response and render
             chatHistory.push({ role: 'assistant', content: content, timestamp: new Date().toISOString() });
             renderChatHistory();

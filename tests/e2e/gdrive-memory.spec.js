@@ -85,4 +85,43 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         expect(reply).toContain('LinkedIn_Profile_Kyle_Fouche.pdf');
         expect(reply).toContain('mock_doc_id_123');
     });
+
+    test('verifies prompt-driven file upload and deletion cycle', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.newChatBtn.click();
+        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.submitForm();
+        await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
+
+        // 1. Send prompt to upload a text file
+        await indexPage.sendMessage("upload file prompt_test.txt with content 'Active prospect verification details'");
+        await indexPage.waitForResponse(20000);
+        let reply = await indexPage.getLastResponseText();
+
+        expect(reply).toContain('successfully uploaded');
+        expect(reply).toContain('prompt_test.txt');
+
+        // Verify the file list dropdown contains the uploaded file
+        await page.waitForFunction(() => {
+            const select = document.getElementById('source-gdrive-file');
+            return select && Array.from(select.options).some(opt => opt.text.includes('prompt_test.txt'));
+        }, null, { timeout: 10000 });
+
+        // 2. Send prompt to delete the file
+        await indexPage.sendMessage("delete file prompt_test.txt");
+        await indexPage.waitForResponse(20000);
+        reply = await indexPage.getLastResponseText();
+
+        expect(reply).toContain('successfully deleted');
+        expect(reply).toContain('prompt_test.txt');
+
+        // Verify the file is no longer in the select options
+        await page.waitForFunction(() => {
+            const select = document.getElementById('source-gdrive-file');
+            return select && !Array.from(select.options).some(opt => opt.text.includes('prompt_test.txt'));
+        }, null, { timeout: 10000 });
+    });
 });
