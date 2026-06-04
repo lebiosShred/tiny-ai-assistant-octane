@@ -3841,4 +3841,108 @@ body {
     box-shadow: 0 0 15px rgba(6, 182, 212, 0.25) !important;
 }
 
+/* 3-Column Layout Grid (NotebookLM Style) */
+.dashboard-grid.notebook-layout {
+    display: grid !important;
+    grid-template-columns: 280px 1fr 300px !important;
+    gap: var(--space-md) !important;
+    min-height: calc(100vh - 160px) !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    margin-top: 1rem !important;
+}
+
+/* Sidebar Panels Styling */
+.sources-panel-placeholder,
+.studio-panel-placeholder {
+    background: rgba(11, 15, 25, 0.45) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}
+
+.placeholder-content {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    height: 100% !important;
+    gap: 1.5rem !important;
+    padding: var(--space-lg) !important;
+}
+
+.placeholder-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    color: var(--text-muted) !important;
+}
+
+.placeholder-card h4 {
+    color: #ffffff !important;
+    margin-bottom: 0.25rem !important;
+    font-size: 0.95rem !important;
+    font-family: 'Outfit', sans-serif !important;
+}
+
+.placeholder-card p {
+    font-size: 0.8rem !important;
+}
+
+/* Studio Tiles Grid */
+.studio-tiles-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+}
+
+.studio-tile {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.85rem !important;
+    color: var(--text-dark) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    cursor: not-allowed !important;
+    opacity: 0.75 !important;
+    transition: all 0.2s ease !important;
+}
+
+.studio-tile i,
+.studio-tile svg {
+    width: 16px !important;
+    height: 16px !important;
+    color: var(--cyan-accent) !important;
+}
+
+.studio-tile:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    opacity: 1 !important;
+}
+
+/* Responsive Overrides: Hide placeholders on small viewports */
+@media (max-width: 1024px) {
+    .dashboard-grid.notebook-layout {
+        grid-template-columns: 1fr !important;
+    }
+    .sources-panel-placeholder,
+    .studio-panel-placeholder {
+        display: none !important;
+    }
+}
+
 
