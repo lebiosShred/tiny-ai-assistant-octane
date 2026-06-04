@@ -237,7 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!sourceGdriveFileSelect) return;
         sourceGdriveFileSelect.innerHTML = '<option value="">-- Loading GDrive files... --</option>';
         try {
-            const response = await fetch('/api/gdrive/list');
+            const company = metaCompany ? metaCompany.value.trim() : '';
+            const url = company ? `/api/gdrive/list?company=${encodeURIComponent(company)}` : '/api/gdrive/list';
+            const response = await fetch(url);
             if (!response.ok) throw new Error('GDrive list failed');
             const data = await response.json();
             sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
@@ -961,28 +963,50 @@ OneDrive Screencast Link: [Link if available]`;
             };
             reader.readAsDataURL(file);
         } else {
-            // Text files or Mock extractor for LinkedIn
-            if (ext === 'txt') {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    targetTextarea.value = event.target.result;
+            // Real uploader for LinkedIn profiles & general documents
+            droptext.innerHTML = `⏳ Uploading and parsing ${escapeHTML(file.name)}...`;
+            
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const base64Data = event.target.result.split(',')[1];
+                const companyName = metaCompany ? metaCompany.value.trim() : 'Unknown_Company';
+                
+                try {
+                    const res = await fetch('/api/gdrive/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            company: companyName || 'Unknown_Company',
+                            fileName: file.name,
+                            mimeType: file.type || 'application/octet-stream',
+                            fileData: base64Data
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || `Upload failed with status ${res.status}`);
+
+                    targetTextarea.value = data.parsedText || '';
                     updateValidationBadges();
-                    droptext.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong>`;
-                    showToast(`Loaded ${file.name} successfully!`);
-                };
-                reader.readAsText(file);
-            } else if (ext === 'pdf' || ext === 'docx') {
-                droptext.innerHTML = `⏳ Extracting text from ${escapeHTML(file.name)}...`;
-                setTimeout(() => {
-                    targetTextarea.value = `Experience:\n- 3+ years experience as Head of Finance / FP&A\n- Led consolidation projects across multi-currency ledgers\n` +
-                        `Education:\n- Bachelor of Business / Commerce`;
-                    updateValidationBadges();
-                    droptext.innerHTML = `📄 Attached: <strong>${escapeHTML(file.name)}</strong>`;
-                    showToast(`Extracted details from ${file.name}`);
-                }, 1000);
-            } else {
-                showToast("Unsupported file type. Please upload a .txt, .pdf, or .docx file.");
-            }
+                    droptext.innerHTML = `📄 Attached & Saved: <strong>${escapeHTML(file.name)}</strong>`;
+                    showToast(`Uploaded and parsed ${file.name} successfully!`);
+                    
+                    // Reload GDrive dropdown list to include this file
+                    await loadGoogleDriveFiles();
+                    if (data.fileId) {
+                        sourceGdriveFileSelect.value = data.fileId;
+                        sourceGdriveFileId.value = data.fileId;
+                        gdriveFileContent = data.parsedText || '';
+                    }
+                } catch (err) {
+                    console.error("Upload processing failed:", err);
+                    droptext.innerHTML = `<span style="color: #ff4d4d;">❌ Upload failed: ${escapeHTML(err.message)}</span>`;
+                    showToast(`Error: ${err.message}`);
+                }
+            };
+            reader.readAsDataURL(file);
         }
     }
 

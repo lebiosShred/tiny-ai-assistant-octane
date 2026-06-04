@@ -262,9 +262,140 @@ async function createIntakeFile(fileName, contentText, parentFolderId) {
     }
 }
 
+/**
+ * Resolves or creates a company-specific folder inside the central "Clients" folder on Google Drive.
+ * @param {string} companyName Name of the company/client
+ * @returns {Promise<string>} Google Drive Folder ID
+ */
+async function findOrCreateClientFolder(companyName) {
+    const drive = getDriveClient();
+    if (!drive) {
+        throw new Error('Google Drive client not initialized. Check credentials.');
+    }
+
+    const cleanCompany = (companyName || 'Unknown_Company').trim().replace(/['"\\/]/g, '');
+    const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+
+    try {
+        // 1. Resolve or create the central "Clients" directory
+        let clientsFolderId = null;
+        const clientsSearch = await drive.files.list({
+            q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+            fields: 'files(id, name)',
+            pageSize: 1
+        });
+        
+        const clientsFiles = clientsSearch.data.files || [];
+        if (clientsFiles.length > 0) {
+            clientsFolderId = clientsFiles[0].id;
+        } else {
+            console.log(`📂 "Clients" folder not found under root. Creating it...`);
+            const clientsCreate = await drive.files.create({
+                resource: {
+                    name: 'Clients',
+                    mimeType: 'application/vnd.google-apps.folder',
+                    parents: [rootFolderId]
+                },
+                fields: 'id'
+            });
+            clientsFolderId = clientsCreate.data.id;
+        }
+
+        // 2. Resolve or create the company-specific directory
+        let clientFolderId = null;
+        const clientSearch = await drive.files.list({
+            q: `name = '${cleanCompany}' and mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
+            fields: 'files(id, name)',
+            pageSize: 1
+        });
+
+        const clientFiles = clientSearch.data.files || [];
+        if (clientFiles.length > 0) {
+            clientFolderId = clientFiles[0].id;
+        } else {
+            console.log(`📂 Client folder "${cleanCompany}" not found. Creating it...`);
+            const clientCreate = await drive.files.create({
+                resource: {
+                    name: cleanCompany,
+                    mimeType: 'application/vnd.google-apps.folder',
+                    parents: [clientsFolderId]
+                },
+                fields: 'id'
+            });
+            clientFolderId = clientCreate.data.id;
+        }
+
+        return clientFolderId;
+    } catch (err) {
+        console.error(`❌ Error finding/creating GDrive client folder for "${cleanCompany}":`, err.message);
+        throw err;
+    }
+}
+
+/**
+ * Uploads a file (from buffer) directly into a target folder on Google Drive.
+ * @param {string} fileName Name of the file
+ * @param {string} mimeType MIME type of the file
+ * @param {Buffer} fileBuffer Buffer containing the file data
+ * @param {string} folderId Parent folder ID
+ * @returns {Promise<Object>} Created file metadata (id, name, webViewLink)
+ */
+async function uploadFile(fileName, mimeType, fileBuffer, folderId) {
+    const drive = getDriveClient();
+    if (!drive) {
+        throw new Error('Google Drive client not initialized. Check credentials.');
+    }
+
+    try {
+        const stream = require('stream').Readable.from(fileBuffer);
+        const fileMetadata = {
+            name: fileName,
+            parents: [folderId]
+        };
+        const media = {
+            mimeType: mimeType,
+            body: stream
+        };
+
+        console.log(`📤 Uploading file "${fileName}" to folder ${folderId}`);
+        const response = await drive.files.create({
+            resource: fileMetadata,
+            media: media,
+            fields: 'id, name, webViewLink',
+            supportsAllDrives: true
+        });
+
+        console.log(`✅ File uploaded successfully: "${response.data.name}" (ID: ${response.data.id})`);
+        return response.data;
+    } catch (err) {
+        console.error(`❌ Error uploading file "${fileName}" to GDrive:`, err.message);
+        throw err;
+    }
+}
+
+/**
+ * Utility to parse PDF buffer into text.
+ * @param {Buffer} buffer 
+ * @returns {Promise<string>}
+ */
+async function parsePdfBuffer(buffer) {
+    try {
+        const data = await pdfParse(buffer);
+        return data.text;
+    } catch (err) {
+        console.warn(`⚠️ PDF parse failed: ${err.message}. Falling back to text decoding...`);
+        return buffer.toString('utf8');
+    }
+}
+
 module.exports = {
+    getDriveClient,
     listFolder,
     getFileContent,
     searchFiles,
-    createIntakeFile
+    createIntakeFile,
+    findOrCreateClientFolder,
+    uploadFile,
+    parsePdfBuffer
 };
+

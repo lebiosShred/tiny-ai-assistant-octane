@@ -1573,6 +1573,72 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 }
             }
 
+            let gdriveFilesContext = '';
+            let companyNameForGDrive = '';
+            
+            if (Array.isArray(payload.messages)) {
+                const systemMsgForGDrive = payload.messages.find(m => m.role === 'system');
+                const userMsgForGDrive = payload.messages.find(m => m.role === 'user');
+                
+                if (systemMsgForGDrive) {
+                    const compMatch = systemMsgForGDrive.content.match(/- Company:\s*([^\n\r]*)/i);
+                    if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
+                        companyNameForGDrive = compMatch[1].trim();
+                    }
+                }
+                
+                if (!companyNameForGDrive && userMsgForGDrive) {
+                    const companyMatch = userMsgForGDrive.content.match(/at\s+([^\n]+)/i);
+                    if (companyMatch) {
+                        companyNameForGDrive = companyMatch[1].trim().split('\n')[0].trim();
+                    }
+                }
+            }
+
+            if (companyNameForGDrive) {
+                try {
+                    const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                    let files = [];
+                    if (gdriveAvailable) {
+                        const clientFolderId = await gdriveService.findOrCreateClientFolder(companyNameForGDrive);
+                        files = await gdriveService.listFolder(clientFolderId);
+                    } else {
+                        const cleanCompany = companyNameForGDrive.replace(/[^a-zA-Z0-9]/g, '_');
+                        const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                        if (fs.existsSync(localFolder)) {
+                            const localFiles = fs.readdirSync(localFolder);
+                            files = localFiles.map(file => {
+                                const stat = fs.statSync(path.join(localFolder, file));
+                                return {
+                                    id: `local_${cleanCompany}_${file}`,
+                                    name: file,
+                                    mimeType: file.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                                    isFolder: false,
+                                    size: stat.size,
+                                    webViewLink: `file://${path.join(localFolder, file)}`
+                                };
+                            });
+                        }
+                    }
+
+                    if (files && files.length > 0) {
+                        gdriveFilesContext = `\n\n<client_uploaded_documents>\n`;
+                        gdriveFilesContext += `The following documents are uploaded specifically for this client (${companyNameForGDrive}) in Google Drive:\n`;
+                        files.forEach(file => {
+                            const sizeKB = (file.size / 1024).toFixed(1);
+                            const url = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
+                            gdriveFilesContext += `- [${file.name}](${url}) (Type: ${file.mimeType || 'Unknown'}, Size: ${sizeKB} KB, ID: ${file.id})\n`;
+                        });
+                        gdriveFilesContext += `\nIf the user asks "Show me the uploaded documents for this client" or similar, you MUST list these documents in your output as clickable markdown links using their exact URLs.\n`;
+                        gdriveFilesContext += `</client_uploaded_documents>\n`;
+                    } else {
+                        gdriveFilesContext = `\n\n<client_uploaded_documents>\nNo documents have been uploaded for this client (${companyNameForGDrive}) yet.\n</client_uploaded_documents>\n`;
+                    }
+                } catch (err) {
+                    console.error(`⚠️ Failed to load client documents for chat context:`, err.message);
+                }
+            }
+
             if (knowledgeBase && Array.isArray(payload.messages)) {
                 const safetyRules = `
 
@@ -1627,11 +1693,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 }
 
                 if (systemMsg) {
-                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + jsonSchemaInstruction;
+                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + gdriveFilesContext + jsonSchemaInstruction;
                 } else {
                     payload.messages.unshift({
                         role: 'system',
-                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${jsonSchemaInstruction}`
+                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${gdriveFilesContext}${jsonSchemaInstruction}`
                     });
                 }
             }
@@ -2152,12 +2218,43 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
     // API Google Drive List Route
     if (pathname === '/api/gdrive/list' && req.method === 'GET') {
-        const folderId = parsedUrl.searchParams.get('folderId');
+        let folderId = parsedUrl.searchParams.get('folderId');
+        const company = parsedUrl.searchParams.get('company');
         try {
-            console.log(`📂 Listing GDrive folder: ${folderId || 'Default Root'}`);
-            const items = await gdriveService.listFolder(folderId);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ items }));
+            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+            
+            if (gdriveAvailable) {
+                if (company && !folderId) {
+                    folderId = await gdriveService.findOrCreateClientFolder(company);
+                }
+                console.log(`📂 Listing GDrive folder: ${folderId || 'Default Root'}`);
+                const items = await gdriveService.listFolder(folderId);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ items }));
+            } else {
+                console.log('⚠️ Google Drive client not configured. Listing local files.');
+                let items = [];
+                if (company) {
+                    const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                    const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                    if (fs.existsSync(localFolder)) {
+                        const localFiles = fs.readdirSync(localFolder);
+                        items = localFiles.map(file => {
+                            const stat = fs.statSync(path.join(localFolder, file));
+                            return {
+                                id: `local_${cleanCompany}_${file}`,
+                                name: file,
+                                mimeType: file.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                                isFolder: false,
+                                size: stat.size,
+                                webViewLink: `file://${path.join(localFolder, file)}`
+                            };
+                        });
+                    }
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ items }));
+            }
         } catch (err) {
             console.error(`❌ GDrive folder list failed:`, err);
             res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -2205,6 +2302,87 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: `Google Drive search failed: ${err.message}` }));
         }
+        return;
+    }
+
+    // API Google Drive Upload Route
+    if (pathname === '/api/gdrive/upload' && req.method === 'POST') {
+        const MAX_PAYLOAD_SIZE = 10 * 1024 * 1024; // 10MB limit
+        let body = '';
+        let bodyLength = 0;
+        req.on('data', chunk => {
+            bodyLength += chunk.length;
+            if (bodyLength > MAX_PAYLOAD_SIZE) {
+                res.writeHead(413, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Payload Too Large. Max size is 10MB.' }));
+                req.destroy();
+                return;
+            }
+            body += chunk;
+        });
+        req.on('end', async () => {
+            let payload;
+            try {
+                payload = JSON.parse(body);
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
+                return;
+            }
+
+            const { company, fileName, mimeType, fileData } = payload;
+            if (!company || !fileName || !mimeType || !fileData) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Missing required fields: company, fileName, mimeType, fileData.' }));
+                return;
+            }
+
+            try {
+                const fileBuffer = Buffer.from(fileData, 'base64');
+                let driveFile = null;
+                let parsedText = '';
+
+                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                
+                if (gdriveAvailable) {
+                    const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                    driveFile = await gdriveService.uploadFile(fileName, mimeType, fileBuffer, clientFolderId);
+                } else {
+                    console.warn('⚠️ Google Drive client not configured. Saving file locally.');
+                    const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                    const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                    if (!fs.existsSync(localFolder)) {
+                        fs.mkdirSync(localFolder, { recursive: true });
+                    }
+                    const localPath = path.join(localFolder, fileName);
+                    fs.writeFileSync(localPath, fileBuffer);
+                    driveFile = {
+                        id: `local_${cleanCompany}_${fileName}`,
+                        name: fileName,
+                        webViewLink: `file://${localPath}`
+                    };
+                }
+
+                if (mimeType === 'application/pdf') {
+                    parsedText = await gdriveService.parsePdfBuffer(fileBuffer);
+                } else if (mimeType.startsWith('text/') || fileName.endsWith('.txt') || fileName.endsWith('.md')) {
+                    parsedText = fileBuffer.toString('utf8');
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    fileId: driveFile.id,
+                    fileName: driveFile.name,
+                    webViewLink: driveFile.webViewLink,
+                    parsedText: parsedText
+                }));
+            } catch (err) {
+                console.error('❌ File upload failed:', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: `File upload failed: ${err.message}` }));
+            }
+        });
         return;
     }
 
