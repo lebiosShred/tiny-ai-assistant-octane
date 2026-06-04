@@ -1599,7 +1599,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     if (!companyNameForGDrive) {
                         const userMsgForGDrive = payload.messages.find(m => m.role === 'user');
                         if (userMsgForGDrive) {
-                            const companyMatch = userMsgForGDrive.content.match(/at\s+([^\n]+)/i);
+                            const companyMatch = userMsgForGDrive.content.match(/\bat\s+([^\n]+)/i);
                             if (companyMatch) {
                                 companyNameForGDrive = companyMatch[1].trim().split('\n')[0].trim();
                             }
@@ -1870,7 +1870,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     if (userMsg.content.includes('--- GENERATE JSON DOSSIER ---') || userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis')) {
                         chatAction = 'GENERATE_DOSSIER';
                         const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
-                        const companyMatch = userMsg.content.match(/at\s+([^\n]+)/i);
+                        const companyMatch = userMsg.content.match(/\bat\s+([^\n]+)/i);
                         chatDetails.prospect = clientMatch ? clientMatch[1].trim() : 'Unknown';
                         chatDetails.company = companyMatch ? companyMatch[1].trim().split('\n')[0].trim() : 'Unknown';
                     } else if (userMsg.content.includes('--- SPEAKER IDENTIFICATION ---') || userMsg.content.includes('Fathom / Jamie AI Call Transcript')) {
@@ -1886,7 +1886,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 
             // Trigger web search if this is a pre-screen call preparation request or search-related query
             let webSearchResults = '';
-            if (Array.isArray(payload.messages)) {
+            if (Array.isArray(payload.messages) && !payload.skipGDrive) {
                 const userMsg = payload.messages.find(m => m.role === 'user');
                 const systemMsg = payload.messages.find(m => m.role === 'system');
                 const searchKeywords = ['scan', 'website', 'news', 'competitor', 'linkedin', 'industry', 'products', 'services', 'stories', 'revenue', 'headcount', 'dossier', 'lead sheet', 'starter', 'profiles'];
@@ -1911,7 +1911,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     // Fallback to user message extraction if system prompt is missing
                     if (!prospectName || !companyName) {
                         const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
-                        const companyMatch = userMsg.content.match(/at\s+([^\n]+)/i);
+                        const companyMatch = userMsg.content.match(/\bat\s+([^\n]+)/i);
                         if (clientMatch) {
                             prospectName = clientMatch[1].trim();
                         }
@@ -1953,7 +1953,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             let gdriveFilesContext = '';
             let companyNameForGDrive = '';
             
-            if (Array.isArray(payload.messages)) {
+            if (Array.isArray(payload.messages) && !payload.skipGDrive) {
                 const systemMsgForGDrive = payload.messages.find(m => m.role === 'system');
                 const userMsgForGDrive = payload.messages.find(m => m.role === 'user');
                 
@@ -1965,7 +1965,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 }
                 
                 if (!companyNameForGDrive && userMsgForGDrive) {
-                    const companyMatch = userMsgForGDrive.content.match(/at\s+([^\n]+)/i);
+                    const companyMatch = userMsgForGDrive.content.match(/\bat\s+([^\n]+)/i);
                     if (companyMatch) {
                         companyNameForGDrive = companyMatch[1].trim().split('\n')[0].trim();
                     }

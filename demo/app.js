@@ -1288,6 +1288,98 @@ OneDrive Screencast Link: [Link if available]`;
                         sourceGdriveFileId.value = data.fileId;
                         gdriveFileContent = data.parsedText || '';
                     }
+
+                    // Check if it is a LinkedIn profile file and needs metadata extraction
+                    const isLinkedIn = (fileInput.id === 'source-linkedin-file');
+                    if (isLinkedIn && data.parsedText) {
+                        showToast("Extracting prospect metadata...");
+                        
+                        const systemPrompt = "You are an expert sales operations analyst. Extract the metadata from the raw LinkedIn profile text. You must output ONLY a valid markdown document with no conversational preamble or code blocks (no ```markdown or ```).";
+                        const userPrompt = `Extract the following fields from the LinkedIn profile text:
+- Full name
+- Company name
+- position (job title)
+- Email (if available, otherwise leave blank or specify Unknown)
+- phone number (if available, otherwise leave blank or specify Unknown)
+- company url (if available, otherwise leave blank or specify Unknown)
+- Area of interest (deduce based on their background and company focus, e.g. Planning Analytics/TM1, AI agents, cloud migration, ERP integration)
+- For discussion (deduce 3 typical high-value discovery discussion topics or specific notes relevant to their role and context)
+
+Format the output strictly as:
+# Prospect Metadata
+- **Full name**: [value]
+- **Company name**: [value]
+- **Position**: [value]
+- **Email**: [value]
+- **Phone number**: [value]
+- **Company URL**: [value]
+- **Area of interest**: [value]
+- **For discussion**:
+  - [discussion topic 1]
+  - [discussion topic 2]
+  - [discussion topic 3]
+
+LinkedIn Profile Text:
+${data.parsedText}`;
+
+                        try {
+                            const chatRes = await fetch('/api/chat', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    model: 'deepseek-chat',
+                                    provider: 'deepseek',
+                                    skipGDrive: true,
+                                    messages: [
+                                        { role: 'system', content: systemPrompt },
+                                        { role: 'user', content: userPrompt }
+                                    ],
+                                    temperature: 0.2
+                                })
+                            });
+
+                            if (!chatRes.ok) throw new Error("Metadata extraction call failed");
+                            const chatData = await chatRes.json();
+                            let markdownContent = chatData.choices[0].message.content || '';
+                            
+                            // Strip any raw markdown code block tags if the model still generated them
+                            markdownContent = markdownContent.replace(/```markdown/gi, '').replace(/```/g, '').trim();
+
+                            let fullName = 'Unknown';
+                            const nameMatch = markdownContent.match(/-\s+\*\*Full name\*\*:\s*([^\n\r]+)/i);
+                            if (nameMatch && nameMatch[1].trim() && nameMatch[1].trim() !== 'Unknown') {
+                                fullName = nameMatch[1].trim().replace(/[^a-zA-Z0-9]/g, '_');
+                            }
+
+                            // Base64 encode the string cleanly handling UTF-8 characters
+                            const base64Markdown = btoa(unescape(encodeURIComponent(markdownContent)));
+
+                            const mdUploadRes = await fetch('/api/gdrive/upload', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    company: companyName || 'Unknown_Company',
+                                    fileName: `Prospect_Metadata_${fullName}.md`,
+                                    mimeType: 'text/markdown',
+                                    fileData: base64Markdown
+                                })
+                            });
+
+                            if (!mdUploadRes.ok) throw new Error("Failed to save prospect metadata file");
+                            
+                            // Refresh file list again to display the newly uploaded metadata file
+                            await loadGoogleDriveFiles();
+                            await loadProspectsTree();
+                            showToast(`✔️ Prospect metadata saved: Prospect_Metadata_${fullName}.md`);
+                        } catch (extractErr) {
+                            console.error("Failed to extract metadata:", extractErr);
+                            showToast("Failed to extract or save prospect metadata.");
+                        }
+                    }
                 } catch (err) {
                     console.error("Upload processing failed:", err);
                     droptext.innerHTML = `<span style="color: #ff4d4d;">❌ Upload failed: ${escapeHTML(err.message)}</span>`;
