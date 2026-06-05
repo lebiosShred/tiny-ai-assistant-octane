@@ -20,6 +20,7 @@
     "test:redteam": "npx promptfoo@latest redteam run"
   },
   "dependencies": {
+    "busboy": "^1.6.0",
     "dotenv": "^16.4.5",
     "exa-js": "^2.13.0",
     "googleapis": "^137.0.0",

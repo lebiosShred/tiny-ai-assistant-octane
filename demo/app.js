@@ -203,6 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatLoadingIndicator = document.getElementById('chat-loading-indicator');
     const chatUserInput = document.getElementById('chat-user-input');
     const chatSendBtn = document.getElementById('chat-send-btn');
+    const chatAttachBtn = document.getElementById('chat-attach-btn');
+    const chatAttachFile = document.getElementById('chat-attach-file');
+    const chatUploadProgress = document.getElementById('chat-upload-progress');
+    const chatUploadProgressBar = document.getElementById('chat-upload-progress-bar');
+    const chatUploadProgressText = document.getElementById('chat-upload-progress-text');
     // Predefined prompt buttons are managed dynamically via validation changes and event delegation
 
     // Setup Resizer Splitter
@@ -1020,6 +1025,164 @@ Rules:
         });
     }
 
+    // --- Chat Attach Button (Multipart Streaming Upload via FormData + XHR) ---
+    if (chatAttachBtn && chatAttachFile) {
+        chatAttachBtn.addEventListener('click', () => {
+            if (!currentChatId) {
+                showToast('Start or select a prospect chat first.');
+                return;
+            }
+            chatAttachFile.click();
+        });
+
+        chatAttachFile.addEventListener('change', async () => {
+            if (!chatAttachFile.files || chatAttachFile.files.length === 0) return;
+            if (!currentChatId) {
+                showToast('Start or select a prospect chat first.');
+                return;
+            }
+
+            const filesArray = Array.from(chatAttachFile.files);
+            const totalFiles = filesArray.length;
+            const companyName = metaCompany ? metaCompany.value.trim() : 'Unknown_Company';
+            const uploadedFileNames = [];
+            let uploadErrors = 0;
+
+            showToast(`Uploading ${totalFiles} file${totalFiles > 1 ? 's' : ''} via streaming...`);
+
+            // Show progress bar
+            if (chatUploadProgress) chatUploadProgress.classList.remove('hidden');
+
+            for (let i = 0; i < totalFiles; i++) {
+                const file = filesArray[i];
+                const fileIndex = i + 1;
+
+                if (file.size > 100 * 1024 * 1024) {
+                    showToast(`File "${file.name}" exceeds 100MB. Skipping.`);
+                    uploadErrors++;
+                    continue;
+                }
+
+                if (chatUploadProgressText) chatUploadProgressText.textContent = `Uploading ${fileIndex}/${totalFiles}: ${file.name}`;
+                if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', '0%');
+
+                try {
+                    const result = await uploadFileStreaming(file, companyName);
+
+                    uploadedFileNames.push(file.name);
+                    showToast(`Uploaded ${file.name} (${fileIndex}/${totalFiles})`);
+
+                    // Push system message to chat history
+                    chatHistory.push({
+                        role: 'assistant',
+                        content: `[SYSTEM: Document Uploaded] I have successfully uploaded and indexed "${file.name}" into the Google Drive memory folder for ${companyName}. I can now search and answer questions based on this file!`,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    // Accumulate gdriveFileContent
+                    if (result.fileId) {
+                        sourceGdriveFileSelect.innerHTML = `<option value="${result.fileId}">${file.name} (Uploaded)</option>`;
+                        sourceGdriveFileSelect.value = result.fileId;
+                        sourceGdriveFileId.value = result.fileId;
+                        if (gdriveFileContent && result.parsedText) {
+                            gdriveFileContent += `\n\n--- [${file.name}] ---\n${result.parsedText}`;
+                        } else {
+                            gdriveFileContent = result.parsedText || '';
+                        }
+                    }
+                } catch (err) {
+                    console.error(`Streaming upload failed for ${file.name}:`, err);
+                    showToast(`Upload failed for ${file.name}: ${err.message}`);
+                    uploadErrors++;
+                }
+            }
+
+            // Hide progress bar
+            if (chatUploadProgress) chatUploadProgress.classList.add('hidden');
+            if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', '0%');
+
+            // Render chat and save
+            renderChatHistory();
+
+            if (currentChatId && uploadedFileNames.length > 0) {
+                const savePayload = {
+                    id: currentChatId,
+                    type: 'synthesis',
+                    name: metaName.value.trim(),
+                    company: metaCompany.value.trim(),
+                    title: metaTitle.value.trim(),
+                    email: metaEmail.value.trim(),
+                    phone: metaPhone.value.trim(),
+                    rep: metaRep.value,
+                    track: metaTrack.value,
+                    oneDriveFile: uploadedFileNames.join(', '),
+                    gDriveFile: uploadedFileNames[uploadedFileNames.length - 1],
+                    gDriveFileId: sourceGdriveFileId.value,
+                    gDriveFileContent: gdriveFileContent,
+                    linkedinInfo: sourceLinkedinText.value.trim(),
+                    intakeAnswers: sourceIntakeText.value.trim(),
+                    transcript: sourceTranscriptText.value.trim(),
+                    transitDistance: transitDistance,
+                    messages: chatHistory
+                };
+
+                await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(savePayload)
+                });
+            }
+
+            await loadGoogleDriveFiles();
+            await loadProspectsTree();
+
+            if (uploadedFileNames.length > 0 && totalFiles > 1) {
+                showToast(`✔️ All ${uploadedFileNames.length} files uploaded and indexed.`);
+            }
+
+            // Reset file input so the same file can be re-selected
+            chatAttachFile.value = '';
+        });
+    }
+
+    // XHR-based FormData upload with progress tracking (no Base64 overhead)
+    function uploadFileStreaming(file, companyName) {
+        return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append('company', companyName || 'Unknown_Company');
+            formData.append('file', file, file.name);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/gdrive/upload-stream', true);
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const percent = Math.round((event.loaded / event.total) * 100);
+                    if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', percent + '%');
+                    if (chatUploadProgressText) chatUploadProgressText.textContent = `${percent}% -- ${file.name}`;
+                }
+            };
+
+            xhr.onload = () => {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (xhr.status >= 200 && xhr.status < 300 && data.success) {
+                        resolve(data);
+                    } else {
+                        reject(new Error(data.error || `HTTP ${xhr.status}`));
+                    }
+                } catch (e) {
+                    reject(new Error(`Invalid server response: ${xhr.status}`));
+                }
+            };
+
+            xhr.onerror = () => reject(new Error('Network error during upload'));
+            xhr.onabort = () => reject(new Error('Upload aborted'));
+
+            xhr.send(formData);
+        });
+    }
+
     // --- Quick Prompt Buttons ---
     const quickPromptsContainer = document.querySelector('.quick-prompts-buttons');
     if (quickPromptsContainer) {
@@ -1168,40 +1331,55 @@ OneDrive Screencast Link: [Link if available]`;
             dropzone.classList.remove('dragover');
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                processFile(files[0], fileInput, droptext, targetTextarea, isAudio);
+                processFiles(Array.from(files), fileInput, droptext, targetTextarea, isAudio);
             }
         });
 
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length > 0) {
-                processFile(fileInput.files[0], fileInput, droptext, targetTextarea, isAudio);
+                processFiles(Array.from(fileInput.files), fileInput, droptext, targetTextarea, isAudio);
             }
         });
     }
 
-    function processFile(file, fileInput, droptext, targetTextarea, isAudio) {
-        if (file.size > 50 * 1024 * 1024) {
-            showToast("File size is too large (max 50MB).");
-            return;
-        }
-
-        const ext = file.name.split('.').pop().toLowerCase();
-
-        if (isAudio) {
-            // Audio call recording transcription flow
-            if (sourceTranscriptProgress) sourceTranscriptProgress.classList.remove('hidden');
-            if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '20%');
-            if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = "Reading audio file...";
-
+    // Reads a File object as a DataURL and returns a Promise resolving to the result string
+    function readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = async (e) => {
-                if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '40%');
-                if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = "Transcribing audio call recording...";
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(new Error(`Failed to read file: ${file.name}`));
+            reader.readAsDataURL(file);
+        });
+    }
 
-                const base64Audio = e.target.result.split(',')[1];
-                const mimeType = file.type || 'audio/wav';
+    // Sequential multi-file upload processor. Processes each file one at a time to prevent
+    // Google Drive folder creation race conditions (duplicate folder names).
+    async function processFiles(filesArray, fileInput, droptext, targetTextarea, isAudio) {
+        const totalFiles = filesArray.length;
+
+        for (let i = 0; i < totalFiles; i++) {
+            const file = filesArray[i];
+            const fileIndex = i + 1;
+
+            if (file.size > 50 * 1024 * 1024) {
+                showToast(`File "${file.name}" is too large (max 50MB). Skipping.`);
+                continue;
+            }
+
+            if (isAudio) {
+                // Audio call recording transcription flow
+                if (sourceTranscriptProgress) sourceTranscriptProgress.classList.remove('hidden');
+                if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '20%');
+                if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = `Reading audio file ${fileIndex} of ${totalFiles}...`;
 
                 try {
+                    const dataUrl = await readFileAsDataURL(file);
+                    const base64Audio = dataUrl.split(',')[1];
+                    const mimeType = file.type || 'audio/wav';
+
+                    if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '40%');
+                    if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = `Transcribing audio ${fileIndex} of ${totalFiles}...`;
+
                     const res = await fetch('/api/sample-loadout', {
                         method: 'POST',
                         headers: {
@@ -1224,41 +1402,39 @@ OneDrive Screencast Link: [Link if available]`;
                     if (!res.ok) throw new Error(data.error || `HTTP error ${res.status}`);
 
                     if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '100%');
-                    if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = "Success! Loaded transcript.";
+                    if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = `Success! Transcribed ${fileIndex} of ${totalFiles}.`;
 
-                    targetTextarea.value = data.transcript;
+                    // Append transcript text (separated by double newline) for multi-file
+                    if (targetTextarea.value.trim()) {
+                        targetTextarea.value += `\n\n--- [Transcript: ${file.name}] ---\n${data.transcript}`;
+                    } else {
+                        targetTextarea.value = data.transcript;
+                    }
                     updateValidationBadges();
 
-                    // Setup audio player
+                    // Setup audio player with the last file
                     if (activeAudioContainer && activeAudioPlayer) {
                         const audioUrl = URL.createObjectURL(file);
                         activeAudioPlayer.src = audioUrl;
                         activeAudioContainer.classList.remove('hidden');
                     }
-                    showToast("✔️ Recording uploaded and transcribed successfully.");
-
-                    setTimeout(() => {
-                        sourceTranscriptProgress.classList.add('hidden');
-                    }, 2000);
+                    showToast(`✔️ Recording ${fileIndex}/${totalFiles} transcribed: ${file.name}`);
 
                 } catch (err) {
-                    console.error("Transcription upload failed:", err);
+                    console.error(`Transcription upload failed for ${file.name}:`, err);
                     if (sourceTranscriptProgressBar) sourceTranscriptProgressBar.style.setProperty('--progress', '0%');
-                    if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = `Error: ${err.message}`;
-                    showToast("Transcription failed.");
+                    if (sourceTranscriptStatus) sourceTranscriptStatus.innerText = `Error on ${file.name}: ${err.message}`;
+                    showToast(`Transcription failed for ${file.name}.`);
                 }
-            };
-            reader.readAsDataURL(file);
-        } else {
-            // Real uploader for LinkedIn profiles & general documents
-            droptext.innerHTML = `⏳ Uploading and parsing ${escapeHTML(file.name)}...`;
-            
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                const base64Data = event.target.result.split(',')[1];
-                const companyName = metaCompany ? metaCompany.value.trim() : 'Unknown_Company';
-                
+            } else {
+                // Document uploader for LinkedIn profiles & general documents
+                droptext.innerHTML = `⏳ Uploading ${fileIndex} of ${totalFiles}: ${escapeHTML(file.name)}...`;
+
                 try {
+                    const dataUrl = await readFileAsDataURL(file);
+                    const base64Data = dataUrl.split(',')[1];
+                    const companyName = metaCompany ? metaCompany.value.trim() : 'Unknown_Company';
+
                     const res = await fetch('/api/gdrive/upload', {
                         method: 'POST',
                         headers: {
@@ -1275,14 +1451,16 @@ OneDrive Screencast Link: [Link if available]`;
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || `Upload failed with status ${res.status}`);
 
-                    targetTextarea.value = data.parsedText || '';
+                    // Append parsed text (separated by double newline) for multi-file
+                    if (targetTextarea.value.trim() && data.parsedText) {
+                        targetTextarea.value += `\n\n--- [${file.name}] ---\n${data.parsedText}`;
+                    } else {
+                        targetTextarea.value = data.parsedText || '';
+                    }
                     updateValidationBadges();
-                    droptext.innerHTML = `📄 Attached & Saved: <strong>${escapeHTML(file.name)}</strong>`;
-                    showToast(`Uploaded and parsed ${file.name} successfully!`);
-                    
-                    // Reload GDrive dropdown list to include this file
-                    await loadGoogleDriveFiles();
-                    await loadProspectsTree();
+                    droptext.innerHTML = `📄 Uploaded ${fileIndex} of ${totalFiles}: <strong>${escapeHTML(file.name)}</strong>`;
+                    showToast(`Uploaded ${file.name} (${fileIndex}/${totalFiles})`);
+
                     if (data.fileId) {
                         sourceGdriveFileSelect.value = data.fileId;
                         sourceGdriveFileId.value = data.fileId;
@@ -1293,7 +1471,7 @@ OneDrive Screencast Link: [Link if available]`;
                     const isLinkedIn = (fileInput.id === 'source-linkedin-file');
                     if (isLinkedIn && data.parsedText) {
                         showToast("Extracting prospect metadata...");
-                        
+
                         const systemPrompt = "You are an expert sales operations analyst. Extract the metadata from the raw LinkedIn profile text. You must output ONLY a valid markdown document with no conversational preamble or code blocks (no ```markdown or ```).";
                         const userPrompt = `Extract the following fields from the LinkedIn profile text:
 - Full name
@@ -1343,7 +1521,7 @@ ${data.parsedText}`;
                             if (!chatRes.ok) throw new Error("Metadata extraction call failed");
                             const chatData = await chatRes.json();
                             let markdownContent = chatData.choices[0].message.content || '';
-                            
+
                             // Strip any raw markdown code block tags if the model still generated them
                             markdownContent = markdownContent.replace(/```markdown/gi, '').replace(/```/g, '').trim();
 
@@ -1370,10 +1548,6 @@ ${data.parsedText}`;
                             });
 
                             if (!mdUploadRes.ok) throw new Error("Failed to save prospect metadata file");
-                            
-                            // Refresh file list again to display the newly uploaded metadata file
-                            await loadGoogleDriveFiles();
-                            await loadProspectsTree();
                             showToast(`✔️ Prospect metadata saved: Prospect_Metadata_${fullName}.md`);
                         } catch (extractErr) {
                             console.error("Failed to extract metadata:", extractErr);
@@ -1381,13 +1555,24 @@ ${data.parsedText}`;
                         }
                     }
                 } catch (err) {
-                    console.error("Upload processing failed:", err);
-                    droptext.innerHTML = `<span style="color: #ff4d4d;">❌ Upload failed: ${escapeHTML(err.message)}</span>`;
-                    showToast(`Error: ${err.message}`);
+                    console.error(`Upload processing failed for ${file.name}:`, err);
+                    droptext.innerHTML = `<span style="color: #ff4d4d;">❌ Upload failed for ${escapeHTML(file.name)}: ${escapeHTML(err.message)}</span>`;
+                    showToast(`Error uploading ${file.name}: ${err.message}`);
                 }
-            };
-            reader.readAsDataURL(file);
+            }
         }
+
+        // Final UI refresh after all files have been processed
+        if (totalFiles > 1) {
+            droptext.innerHTML = `📄 All ${totalFiles} files uploaded successfully.`;
+        }
+        if (sourceTranscriptProgress && isAudio) {
+            setTimeout(() => {
+                sourceTranscriptProgress.classList.add('hidden');
+            }, 2000);
+        }
+        await loadGoogleDriveFiles();
+        await loadProspectsTree();
     }
 
     // Initialize dropzones
@@ -1426,89 +1611,113 @@ ${data.parsedText}`;
             e.preventDefault();
             chatDragOverlay.classList.remove('dragover');
             if (!currentChatId) return;
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const file = files[0];
-                showToast(`Uploading ${file.name} to client folder...`);
-                
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    const base64Data = event.target.result.split(',')[1];
-                    const companyName = metaCompany ? metaCompany.value.trim() : 'Unknown_Company';
-                    
-                    try {
-                        const res = await fetch('/api/gdrive/upload', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                company: companyName || 'Unknown_Company',
-                                fileName: file.name,
-                                mimeType: file.type || 'application/octet-stream',
-                                fileData: base64Data
-                            })
-                        });
+            const droppedFiles = Array.from(e.dataTransfer.files);
+            if (droppedFiles.length === 0) return;
 
-                        const data = await res.json();
-                        if (!res.ok) throw new Error(data.error || `Upload failed with status ${res.status}`);
-                        
-                        showToast(`Uploaded and indexed ${file.name} successfully!`);
-                        
-                        // Add a system notification in the chat log
-                        chatHistory.push({
-                            role: 'assistant',
-                            content: `[SYSTEM: Document Uploaded] I have successfully uploaded and indexed "${file.name}" into the Google Drive memory folder for ${companyName}. I can now search and answer questions based on this file!`,
-                            timestamp: new Date().toISOString()
-                        });
-                        renderChatHistory();
+            const totalFiles = droppedFiles.length;
+            const companyName = metaCompany ? metaCompany.value.trim() : 'Unknown_Company';
+            const uploadedFileNames = [];
+            let uploadErrors = 0;
 
-                        // Automatically load the content of this file to gdriveFileContent for active context RAG retry loop
-                        if (data.fileId) {
-                            sourceGdriveFileSelect.innerHTML = `<option value="${data.fileId}">${file.name} (Uploaded)</option>`;
-                            sourceGdriveFileSelect.value = data.fileId;
-                            sourceGdriveFileId.value = data.fileId;
+            showToast(`Uploading ${totalFiles} file${totalFiles > 1 ? 's' : ''} to client folder...`);
+
+            for (let i = 0; i < totalFiles; i++) {
+                const file = droppedFiles[i];
+                const fileIndex = i + 1;
+
+                if (file.size > 50 * 1024 * 1024) {
+                    showToast(`File "${file.name}" is too large (max 50MB). Skipping.`);
+                    uploadErrors++;
+                    continue;
+                }
+
+                try {
+                    const dataUrl = await readFileAsDataURL(file);
+                    const base64Data = dataUrl.split(',')[1];
+
+                    const res = await fetch('/api/gdrive/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            company: companyName || 'Unknown_Company',
+                            fileName: file.name,
+                            mimeType: file.type || 'application/octet-stream',
+                            fileData: base64Data
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || `Upload failed with status ${res.status}`);
+
+                    uploadedFileNames.push(file.name);
+                    showToast(`Uploaded ${file.name} (${fileIndex}/${totalFiles})`);
+
+                    // Add a system notification in the chat log for each file
+                    chatHistory.push({
+                        role: 'assistant',
+                        content: `[SYSTEM: Document Uploaded] I have successfully uploaded and indexed "${file.name}" into the Google Drive memory folder for ${companyName}. I can now search and answer questions based on this file!`,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    // Accumulate gdriveFileContent from all uploaded files
+                    if (data.fileId) {
+                        sourceGdriveFileSelect.innerHTML = `<option value="${data.fileId}">${file.name} (Uploaded)</option>`;
+                        sourceGdriveFileSelect.value = data.fileId;
+                        sourceGdriveFileId.value = data.fileId;
+                        if (gdriveFileContent && data.parsedText) {
+                            gdriveFileContent += `\n\n--- [${file.name}] ---\n${data.parsedText}`;
+                        } else {
                             gdriveFileContent = data.parsedText || '';
                         }
-
-                        // Save conversation log back to backend
-                        if (currentChatId) {
-                            const savePayload = {
-                                id: currentChatId,
-                                type: 'synthesis',
-                                name: metaName.value.trim(),
-                                company: metaCompany.value.trim(),
-                                title: metaTitle.value.trim(),
-                                email: metaEmail.value.trim(),
-                                phone: metaPhone.value.trim(),
-                                rep: metaRep.value,
-                                track: metaTrack.value,
-                                oneDriveFile: file.name,
-                                gDriveFile: file.name,
-                                gDriveFileId: sourceGdriveFileId.value,
-                                gDriveFileContent: gdriveFileContent,
-                                linkedinInfo: sourceLinkedinText.value.trim(),
-                                intakeAnswers: sourceIntakeText.value.trim(),
-                                transcript: sourceTranscriptText.value.trim(),
-                                transitDistance: transitDistance,
-                                messages: chatHistory
-                            };
-
-                            await fetch('/api/history', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(savePayload)
-                            });
-                        }
-                        
-                        await loadGoogleDriveFiles();
-                        await loadProspectsTree();
-                    } catch (err) {
-                        console.error("Direct drop upload failed:", err);
-                        showToast(`File upload failed: ${err.message}`);
                     }
+                } catch (err) {
+                    console.error(`Direct drop upload failed for ${file.name}:`, err);
+                    showToast(`Upload failed for ${file.name}: ${err.message}`);
+                    uploadErrors++;
+                }
+            }
+
+            // Render all chat history notifications at once
+            renderChatHistory();
+
+            // Save conversation log back to backend (single save after all files)
+            if (currentChatId && uploadedFileNames.length > 0) {
+                const lastUploadedFile = uploadedFileNames[uploadedFileNames.length - 1];
+                const savePayload = {
+                    id: currentChatId,
+                    type: 'synthesis',
+                    name: metaName.value.trim(),
+                    company: metaCompany.value.trim(),
+                    title: metaTitle.value.trim(),
+                    email: metaEmail.value.trim(),
+                    phone: metaPhone.value.trim(),
+                    rep: metaRep.value,
+                    track: metaTrack.value,
+                    oneDriveFile: uploadedFileNames.join(', '),
+                    gDriveFile: lastUploadedFile,
+                    gDriveFileId: sourceGdriveFileId.value,
+                    gDriveFileContent: gdriveFileContent,
+                    linkedinInfo: sourceLinkedinText.value.trim(),
+                    intakeAnswers: sourceIntakeText.value.trim(),
+                    transcript: sourceTranscriptText.value.trim(),
+                    transitDistance: transitDistance,
+                    messages: chatHistory
                 };
-                reader.readAsDataURL(file);
+
+                await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(savePayload)
+                });
+            }
+
+            await loadGoogleDriveFiles();
+            await loadProspectsTree();
+
+            if (uploadedFileNames.length > 0 && totalFiles > 1) {
+                showToast(`✔️ All ${uploadedFileNames.length} files uploaded and indexed.`);
             }
         });
     }

@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const gdriveService = require('./gdrive-service');
 const emailService = require('./email-service');
 const Exa = require('exa-js').default;
+const Busboy = require('busboy');
 
 
 const PORT = process.env.PORT || 8080;
@@ -2742,6 +2743,112 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: `Google Drive search failed: ${err.message}` }));
         }
+        return;
+    }
+
+    // API Google Drive Streaming Upload Route (Multipart/FormData -- no Base64 overhead)
+    if (pathname === '/api/gdrive/upload-stream' && req.method === 'POST') {
+        const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB per-file cap
+
+        let bb;
+        try {
+            bb = Busboy({ headers: req.headers, limits: { fileSize: MAX_FILE_SIZE } });
+        } catch (err) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Invalid multipart request: ${err.message}` }));
+            return;
+        }
+
+        let company = 'Unknown_Company';
+        const fields = {};
+
+        bb.on('field', (name, val) => {
+            fields[name] = val;
+            if (name === 'company') company = val.trim() || 'Unknown_Company';
+        });
+
+        bb.on('file', async (fieldname, fileStream, info) => {
+            const { filename, mimeType } = info;
+            let truncated = false;
+            const chunks = [];
+            let totalSize = 0;
+
+            fileStream.on('data', (chunk) => {
+                totalSize += chunk.length;
+                chunks.push(chunk);
+            });
+
+            fileStream.on('limit', () => {
+                truncated = true;
+            });
+
+            fileStream.on('end', async () => {
+                if (truncated) {
+                    res.writeHead(413, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: `File "${filename}" exceeds 100MB limit.` }));
+                    return;
+                }
+
+                const fileBuffer = Buffer.concat(chunks);
+
+                try {
+                    let driveFile = null;
+                    let parsedText = '';
+
+                    const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+
+                    if (gdriveAvailable) {
+                        const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                        driveFile = await gdriveService.uploadFile(filename, mimeType, fileBuffer, clientFolderId);
+                    } else {
+                        console.warn('⚠️ Google Drive client not configured. Saving file locally.');
+                        const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                        const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                        if (!fs.existsSync(localFolder)) {
+                            fs.mkdirSync(localFolder, { recursive: true });
+                        }
+                        const localPath = path.join(localFolder, filename);
+                        fs.writeFileSync(localPath, fileBuffer);
+                        driveFile = {
+                            id: `local_${cleanCompany}_${filename}`,
+                            name: filename,
+                            webViewLink: `file://${localPath}`
+                        };
+                    }
+
+                    if (mimeType === 'application/pdf') {
+                        parsedText = await gdriveService.parsePdfBuffer(fileBuffer);
+                    } else if (mimeType.startsWith('text/') || filename.endsWith('.txt') || filename.endsWith('.md')) {
+                        parsedText = fileBuffer.toString('utf8');
+                    }
+
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: true,
+                        fileId: driveFile.id,
+                        fileName: driveFile.name,
+                        webViewLink: driveFile.webViewLink,
+                        parsedText: parsedText
+                    }));
+                } catch (err) {
+                    console.error(`❌ Streaming upload failed for "${filename}":`, err);
+                    if (!res.writableEnded) {
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: `Upload failed: ${err.message}` }));
+                    }
+                }
+            });
+        });
+
+        bb.on('error', (err) => {
+            console.error('❌ Busboy parse error:', err);
+            if (!res.writableEnded) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: `Multipart parse error: ${err.message}` }));
+            }
+        });
+
+        req.pipe(bb);
         return;
     }
 

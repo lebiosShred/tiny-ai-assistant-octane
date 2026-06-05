@@ -3514,6 +3514,72 @@ body.resizing * {
     background: #004b87 !important;
 }
 
+/* Chat Attach Button (Paperclip) */
+.btn-chat-attach {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.5rem !important;
+    border: none !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    transition: color 0.2s ease, background 0.2s ease !important;
+    flex-shrink: 0 !important;
+}
+
+.btn-chat-attach:hover {
+    color: #0284c7 !important;
+    background: rgba(2, 132, 199, 0.08) !important;
+}
+
+.btn-chat-attach:active {
+    background: rgba(2, 132, 199, 0.15) !important;
+}
+
+/* Chat Upload Progress Bar (Inline below input) */
+.chat-upload-progress {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.5rem 1.5rem 0.75rem !important;
+    background: #ffffff !important;
+}
+
+.chat-upload-progress.hidden {
+    display: none !important;
+}
+
+.chat-upload-progress-bar {
+    flex: 1 !important;
+    height: 4px !important;
+    background: rgba(226, 232, 240, 0.8) !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+.chat-upload-progress-bar::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100% !important;
+    width: var(--upload-progress, 0%) !important;
+    background: linear-gradient(90deg, #0284c7, #0ea5e9) !important;
+    border-radius: 4px !important;
+    transition: width 0.3s ease !important;
+}
+
+.chat-upload-progress-text {
+    font-size: 0.72rem !important;
+    color: #64748b !important;
+    white-space: nowrap !important;
+    min-width: 80px !important;
+    text-align: right !important;
+}
+
 /* Validation Badges inside Sources Drawer */
 .validation-badge {
     font-size: 0.65rem !important;
@@ -3840,6 +3906,20 @@ body {
     background: linear-gradient(135deg, #0270a8 0%, #025988 100%) !important;
     box-shadow: 0 0 15px rgba(2, 132, 199, 0.3) !important;
     transform: translateY(-1px) !important;
+}
+
+.btn-chat-attach:hover {
+    color: var(--cyan-accent) !important;
+    background: rgba(2, 132, 199, 0.06) !important;
+}
+
+.chat-upload-progress {
+    background: #ffffff !important;
+    border-top: 1px solid rgba(15, 23, 42, 0.04) !important;
+}
+
+.chat-upload-progress-bar::after {
+    background: linear-gradient(90deg, var(--cyan-accent), #0ea5e9) !important;
 }
 
 .btn-primary#btn-new-chat {

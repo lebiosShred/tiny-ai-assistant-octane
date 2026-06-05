@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="tiny.png">
     <meta name="description" content="Functional sales enablement application for prospect pre-screening briefings and call transcript report synthesis.">
-    <link rel="stylesheet" href="styles.css?v=5">
+    <link rel="stylesheet" href="styles.css?v=6">
     <!-- Lucide Icon System -->
     <script defer src="https://unpkg.com/lucide@1.17.0/dist/umd/lucide.min.js"></script>
 </head>
@@ -116,7 +116,15 @@
                             <!-- User Input Area -->
                             <div class="chat-input-area">
                                 <textarea id="chat-user-input" class="chat-input-field" rows="2" placeholder="Ask Tiny anything about this prospect..."></textarea>
+                                <button type="button" class="btn btn-chat-attach" id="chat-attach-btn" aria-label="Attach files" title="Attach audio, video, documents...">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                </button>
+                                <input type="file" id="chat-attach-file" multiple style="display: none;">
                                 <button type="button" class="btn btn-primary btn-chat-send" id="chat-send-btn">⚡ Send</button>
+                            </div>
+                            <div class="chat-upload-progress hidden" id="chat-upload-progress">
+                                <div class="chat-upload-progress-bar" id="chat-upload-progress-bar"></div>
+                                <span class="chat-upload-progress-text" id="chat-upload-progress-text">Uploading...</span>
                             </div>
                         </div>
 
@@ -258,7 +266,7 @@
                     <textarea id="source-linkedin-text" placeholder="LinkedIn info"></textarea>
                     
                     <div id="source-linkedin-dropzone"></div>
-                    <input type="file" id="source-linkedin-file" aria-label="LinkedIn profile text or PDF">
+                    <input type="file" id="source-linkedin-file" aria-label="LinkedIn profile text or PDF" multiple>
                     <span id="linkedin-status-badge"></span>
                     <span id="source-linkedin-droptext"></span>
 
@@ -271,7 +279,7 @@
                     <span id="transcript-status-badge"></span>
 
                     <div id="source-transcript-dropzone"></div>
-                    <input type="file" id="source-transcript-file" aria-label="Call transcript or recording">
+                    <input type="file" id="source-transcript-file" aria-label="Call transcript or recording" multiple>
                     <span id="source-transcript-droptext"></span>
 
                     <div id="source-transcript-progress">
