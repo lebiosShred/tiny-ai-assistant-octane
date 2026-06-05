@@ -19,4 +19,4 @@ __pycache__/
 *.tgz
 video_pipeline/
 tests/
-
+!demo/tiny.png
