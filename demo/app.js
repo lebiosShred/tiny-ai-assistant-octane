@@ -877,10 +877,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function callTinyAPI(promptText) {
         // Parse metadata on first prompt if session is not yet initialized
         if (!currentChatId) {
-            const parsed = parseInitPrompt(promptText);
-            if (parsed.name && parsed.company) {
-                await saveDiscoverySession(parsed.name, parsed.company, parsed.email);
-                return; // Stop here, session is now initialized and welcome message is rendered!
+            // Bypass metadata parser if the prompt is a file/folder creation command
+            const isCreationCommand = /(?:create|make|generate|add)\s+(?:a\s+)?(folder|directory|file|readme)/i.test(promptText) ||
+                                      /(?:create|make|generate|add)\s+.*?\s+at\s+/i.test(promptText);
+            if (!isCreationCommand) {
+                const parsed = parseInitPrompt(promptText);
+                if (parsed.name && parsed.company) {
+                    await saveDiscoverySession(parsed.name, parsed.company, parsed.email);
+                    return; // Stop here, session is now initialized and welcome message is rendered!
+                }
             }
         }
 
