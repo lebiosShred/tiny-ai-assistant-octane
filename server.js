@@ -1628,12 +1628,14 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 
                     const uploadRegex = /^(?:upload|create)\s+(?:file|document|text file)?\s*([a-zA-Z0-9_\-\.]+)\s+(?:with\s+)?content\s+([\s\S]+)$/i;
                     const deleteRegex = /^(?:delete|remove|destroy)\s+(?:file|document)?\s*([a-zA-Z0-9_\-\.]+)\s*$/i;
+                    const deleteFolderRegex = /^(?:delete|remove|destroy)\s+(?:prospect|client|lead|company|folder)\s+([a-zA-Z0-9_\-\.\s]+)\s*$/i;
                     const linkedinRegex = /^(?:upload|register)\s+linkedin\s+(?:for\s+([a-zA-Z0-9_\-\.\s]+))?\s*(?:with)?\s*content\s+([\s\S]+)$/i;
                     const briefRegex = /^(?:upload|register)\s+(?:sales\s+)?brief\s+(?:for\s+([a-zA-Z0-9_\-\.\s]+))?\s*(?:with)?\s*content\s+([\s\S]+)$/i;
                     const callRegex = /^(?:register\s+(?:a\s+)?call|made\s+call|I\s+made\s+call\s+to\s+this\s+lead\s+right\s+now):?\s*([\s\S]+)$/i;
 
                     const uploadMatch = trimmedMsg.match(uploadRegex);
                     const deleteMatch = trimmedMsg.match(deleteRegex);
+                    const deleteFolderMatch = trimmedMsg.match(deleteFolderRegex);
                     const linkedinMatch = trimmedMsg.match(linkedinRegex);
                     const briefMatch = trimmedMsg.match(briefRegex);
                     const callMatch = trimmedMsg.match(callRegex);
@@ -1752,6 +1754,102 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                             console.error('❌ Conversational call registration failed:', err);
                             res.writeHead(500, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ error: `Conversational call registration failed: ${err.message}` }));
+                            return;
+                        }
+                    }
+
+                    if (deleteFolderMatch) {
+                        const targetCompany = deleteFolderMatch[1].trim();
+                        try {
+                            let success = false;
+                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                            
+                            // 1. Google Drive Deletion
+                            if (gdriveAvailable) {
+                                try {
+                                    const drive = gdriveService.getDriveClient();
+                                    const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+                                    const clientsSearch = await drive.files.list({
+                                        q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                                        fields: 'files(id)',
+                                        pageSize: 1
+                                    });
+                                    const clientsFiles = clientsSearch.data.files || [];
+                                    if (clientsFiles.length > 0) {
+                                        const clientsFolderId = clientsFiles[0].id;
+                                        const cleanCompany = targetCompany.trim().replace(/['"\\/]/g, '');
+                                        const clientSearch = await drive.files.list({
+                                            q: `name = '${cleanCompany}' and mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
+                                            fields: 'files(id)',
+                                            pageSize: 1
+                                        });
+                                        const clientFiles = clientSearch.data.files || [];
+                                        if (clientFiles.length > 0) {
+                                            const folderId = clientFiles[0].id;
+                                            await gdriveService.deleteFile(folderId);
+                                            success = true;
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.warn('⚠️ GDrive folder deletion failed in conversational match:', err.message);
+                                }
+                            }
+
+                            // 2. Always clean up local folder if it exists
+                            const cleanCompany = targetCompany.replace(/[^a-zA-Z0-9]/g, '_');
+                            const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                            if (fs.existsSync(localFolder)) {
+                                fs.rmSync(localFolder, { recursive: true, force: true });
+                                success = true;
+                            }
+
+                            // 3. Clean up local conversation history files associated with this company
+                            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+                            if (fs.existsSync(historyDir)) {
+                                const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+                                for (const file of files) {
+                                    const filePath = path.join(historyDir, file);
+                                    try {
+                                        const fileContent = fs.readFileSync(filePath, 'utf8');
+                                        const data = JSON.parse(fileContent);
+                                        if (data.company && data.company.toLowerCase().trim() === targetCompany.toLowerCase().trim()) {
+                                            fs.unlinkSync(filePath);
+                                            console.log(`🗑️ Deleted local history file matching company "${targetCompany}": ${filePath}`);
+                                            success = true;
+                                        }
+                                    } catch (e) {
+                                        console.warn(`⚠️ Error reading history file during conversational folder deletion:`, e.message);
+                                    }
+                                }
+                            }
+
+                            if (success) {
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({
+                                    gdriveAction: true,
+                                    choices: [{
+                                        message: {
+                                            role: 'assistant',
+                                            content: `I have successfully deleted the folder and all memory files for the prospect "**${targetCompany}**".`
+                                        }
+                                    }]
+                                }));
+                            } else {
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({
+                                    choices: [{
+                                        message: {
+                                            role: 'assistant',
+                                            content: `Could not find or delete the folder for prospect "**${targetCompany}**".`
+                                        }
+                                    }]
+                                }));
+                            }
+                            return;
+                        } catch (err) {
+                            console.error('❌ Conversational folder deletion failed:', err);
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: `Conversational folder deletion failed: ${err.message}` }));
                             return;
                         }
                     }
@@ -2351,6 +2449,23 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         {
                             type: 'function',
                             function: {
+                                name: 'delete_prospect_folder',
+                                description: 'Deletes/removes a prospect folder and all its files from Google Drive (e.g. Acme Corp, Sample). Use this when asked to delete, remove, or destroy a prospect, lead, client, or company folder.',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {
+                                        company: {
+                                            type: 'string',
+                                            description: 'The company or prospect name'
+                                        }
+                                    },
+                                    required: ['company']
+                                }
+                            }
+                        },
+                        {
+                            type: 'function',
+                            function: {
                                 name: 'create_prospect_file',
                                 description: 'Creates or uploads a file into the prospect\'s folder on Google Drive. Automatically creates the folder if it does not exist. Use this when asked to create or write a file (e.g., README.md).',
                                 parameters: {
@@ -2515,6 +2630,75 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             await gdriveService.findOrCreateClientFolder(company);
                                             gdriveAction = true;
                                             toolResponses.push(`I have successfully created a Google Drive folder for the prospect **${company}**.`);
+                                        }
+                                    } else if (name === 'delete_prospect_folder') {
+                                        const company = args.company;
+                                        if (company) {
+                                            console.log(`🗑️ Tool Call: Deleting folder and history for ${company}`);
+                                            let success = false;
+                                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                                            if (gdriveAvailable) {
+                                                try {
+                                                    const drive = gdriveService.getDriveClient();
+                                                    const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+                                                    const clientsSearch = await drive.files.list({
+                                                        q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                                                        fields: 'files(id)',
+                                                        pageSize: 1
+                                                    });
+                                                    const clientsFiles = clientsSearch.data.files || [];
+                                                    if (clientsFiles.length > 0) {
+                                                        const clientsFolderId = clientsFiles[0].id;
+                                                        const cleanCompany = company.trim().replace(/['"\\/]/g, '');
+                                                        const clientSearch = await drive.files.list({
+                                                            q: `name = '${cleanCompany}' and mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
+                                                            fields: 'files(id)',
+                                                            pageSize: 1
+                                                        });
+                                                        const clientFiles = clientSearch.data.files || [];
+                                                        if (clientFiles.length > 0) {
+                                                            const folderId = clientFiles[0].id;
+                                                            await gdriveService.deleteFile(folderId);
+                                                            success = true;
+                                                        }
+                                                    }
+                                                } catch (err) {
+                                                    console.warn('⚠️ GDrive folder deletion failed in tool call:', err.message);
+                                                }
+                                            }
+                                            
+                                            const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                                            const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                                            if (fs.existsSync(localFolder)) {
+                                                fs.rmSync(localFolder, { recursive: true, force: true });
+                                                success = true;
+                                            }
+
+                                            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+                                            if (fs.existsSync(historyDir)) {
+                                                const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+                                                for (const file of files) {
+                                                    const filePath = path.join(historyDir, file);
+                                                    try {
+                                                        const fileContent = fs.readFileSync(filePath, 'utf8');
+                                                        const data = JSON.parse(fileContent);
+                                                        if (data.company && data.company.toLowerCase().trim() === company.toLowerCase().trim()) {
+                                                            fs.unlinkSync(filePath);
+                                                            console.log(`🗑️ Deleted local history file matching company "${company}": ${filePath}`);
+                                                            success = true;
+                                                        }
+                                                    } catch (e) {
+                                                        console.warn(`⚠️ Error reading history file during folder deletion:`, e.message);
+                                                    }
+                                                }
+                                            }
+
+                                            if (success) {
+                                                gdriveAction = true;
+                                                toolResponses.push(`I have successfully deleted the folder and all memory files for the prospect **${company}**.`);
+                                            } else {
+                                                toolResponses.push(`I could not find or delete the folder/history for the prospect **${company}**.`);
+                                            }
                                         }
                                     } else if (name === 'create_prospect_file') {
                                         const { company, filename, content } = args;
