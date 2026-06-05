@@ -1459,6 +1459,67 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             payload.provider = payload.provider || 'deepseek';
             payload.model = payload.model || 'deepseek-chat';
 
+            // Extract CRM metadata and target company folder placement (scoped to the entire request handler)
+            let companyNameForGDrive = '';
+            let clientNameForGDrive = 'Unknown Name';
+            let clientEmailForGDrive = '';
+            
+            const systemMsgForGDrive = payload.messages.find(m => m.role === 'system');
+            if (systemMsgForGDrive) {
+                const compMatch = systemMsgForGDrive.content.match(/- Company:[ \t]*([^\n\r]*)/i);
+                if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
+                    companyNameForGDrive = compMatch[1].trim();
+                }
+                const nameMatch = systemMsgForGDrive.content.match(/- Client Name:[ \t]*([^\n\r]*)/i);
+                if (nameMatch && nameMatch[1].trim()) {
+                    clientNameForGDrive = nameMatch[1].trim();
+                }
+                const emailMatch = systemMsgForGDrive.content.match(/- Email:[ \t]*([^\n\r]*)/i);
+                if (emailMatch && emailMatch[1].trim() && emailMatch[1].trim() !== 'Unknown Email') {
+                    clientEmailForGDrive = emailMatch[1].trim();
+                }
+            }
+            if (!companyNameForGDrive) {
+                const userMsgForGDrive = payload.messages.find(m => m.role === 'user');
+                if (userMsgForGDrive) {
+                    const companyMatch = userMsgForGDrive.content.match(/\bat\s+([^\n]+)/i);
+                    if (companyMatch) {
+                        let tempComp = companyMatch[1].trim().split('\n')[0].trim();
+                        tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
+                        companyNameForGDrive = tempComp;
+                    }
+                }
+            }
+            const company = companyNameForGDrive || 'Unknown_Company';
+
+            // Handler helper function for uploading/saving files (scoped to the entire request handler)
+            const handleFileUpload = async (fileName, content, targetCompany) => {
+                const activeCompany = targetCompany || 'Unknown_Company';
+                const fileBuffer = Buffer.from(content, 'utf8');
+                let driveFile = null;
+                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+
+                if (gdriveAvailable) {
+                    const clientFolderId = await gdriveService.findOrCreateClientFolder(activeCompany);
+                    driveFile = await gdriveService.uploadFile(fileName, 'text/plain', fileBuffer, clientFolderId);
+                } else {
+                    console.warn('⚠️ Google Drive client not configured. Saving file locally.');
+                    const cleanCompany = activeCompany.replace(/[^a-zA-Z0-9]/g, '_');
+                    const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                    if (!fs.existsSync(localFolder)) {
+                        fs.mkdirSync(localFolder, { recursive: true });
+                    }
+                    const localPath = path.join(localFolder, fileName);
+                    fs.writeFileSync(localPath, fileBuffer);
+                    driveFile = {
+                        id: `local_${cleanCompany}_${fileName}`,
+                        name: fileName,
+                        webViewLink: `file://${localPath}`
+                    };
+                }
+                return driveFile;
+            };
+
             // Conversational Google Drive Upload & Delete Interception
             if (payload.messages.length > 0) {
                 const lastUserMsg = [...payload.messages].reverse().find(m => m.role === 'user');
@@ -1566,7 +1627,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     }
 
                     const uploadRegex = /^(?:upload|create)\s+(?:file|document|text file)?\s*([a-zA-Z0-9_\-\.]+)\s+(?:with\s+)?content\s+([\s\S]+)$/i;
-                    const deleteRegex = /^(?:delete|remove|destroy)\s+(?:file|document)?\s*([a-zA-Z0-9_\-\.:\s]+)$/i;
+                    const deleteRegex = /^(?:delete|remove|destroy)\s+(?:file|document)?\s*([a-zA-Z0-9_\-\.]+)\s*$/i;
                     const linkedinRegex = /^(?:upload|register)\s+linkedin\s+(?:for\s+([a-zA-Z0-9_\-\.\s]+))?\s*(?:with)?\s*content\s+([\s\S]+)$/i;
                     const briefRegex = /^(?:upload|register)\s+(?:sales\s+)?brief\s+(?:for\s+([a-zA-Z0-9_\-\.\s]+))?\s*(?:with)?\s*content\s+([\s\S]+)$/i;
                     const callRegex = /^(?:register\s+(?:a\s+)?call|made\s+call|I\s+made\s+call\s+to\s+this\s+lead\s+right\s+now):?\s*([\s\S]+)$/i;
@@ -1577,65 +1638,9 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     const briefMatch = trimmedMsg.match(briefRegex);
                     const callMatch = trimmedMsg.match(callRegex);
 
-                    // Extract company name for target folder placement
-                    let companyNameForGDrive = '';
-                    let clientNameForGDrive = 'Unknown Name';
-                    let clientEmailForGDrive = '';
-                    
-                    const systemMsgForGDrive = payload.messages.find(m => m.role === 'system');
-                    if (systemMsgForGDrive) {
-                        const compMatch = systemMsgForGDrive.content.match(/- Company:[ \t]*([^\n\r]*)/i);
-                        if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
-                            companyNameForGDrive = compMatch[1].trim();
-                        }
-                        const nameMatch = systemMsgForGDrive.content.match(/- Client Name:[ \t]*([^\n\r]*)/i);
-                        if (nameMatch && nameMatch[1].trim()) {
-                            clientNameForGDrive = nameMatch[1].trim();
-                        }
-                        const emailMatch = systemMsgForGDrive.content.match(/- Email:[ \t]*([^\n\r]*)/i);
-                        if (emailMatch && emailMatch[1].trim() && emailMatch[1].trim() !== 'Unknown Email') {
-                            clientEmailForGDrive = emailMatch[1].trim();
-                        }
-                    }
-                    if (!companyNameForGDrive) {
-                        const userMsgForGDrive = payload.messages.find(m => m.role === 'user');
-                        if (userMsgForGDrive) {
-                            const companyMatch = userMsgForGDrive.content.match(/\bat\s+([^\n]+)/i);
-                            if (companyMatch) {
-                                let tempComp = companyMatch[1].trim().split('\n')[0].trim();
-                                tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
-                                companyNameForGDrive = tempComp;
-                            }
-                        }
-                    }
-                    const company = companyNameForGDrive || 'Unknown_Company';
+                    // Extraction of companyNameForGDrive, clientNameForGDrive, clientEmailForGDrive, and company has been lifted to the outer scope of the request handler.
 
-                    // Handler helper function for uploading/saving files
-                    const handleFileUpload = async (fileName, content) => {
-                        const fileBuffer = Buffer.from(content, 'utf8');
-                        let driveFile = null;
-                        const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
-
-                        if (gdriveAvailable) {
-                            const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
-                            driveFile = await gdriveService.uploadFile(fileName, 'text/plain', fileBuffer, clientFolderId);
-                        } else {
-                            console.warn('⚠️ Google Drive client not configured. Saving file locally.');
-                            const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                            const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
-                            if (!fs.existsSync(localFolder)) {
-                                fs.mkdirSync(localFolder, { recursive: true });
-                            }
-                            const localPath = path.join(localFolder, fileName);
-                            fs.writeFileSync(localPath, fileBuffer);
-                            driveFile = {
-                                id: `local_${cleanCompany}_${fileName}`,
-                                name: fileName,
-                                webViewLink: `file://${localPath}`
-                            };
-                        }
-                        return driveFile;
-                    };
+                    // Handler helper function for uploading/saving files has been lifted to the outer scope of the request handler.
 
                     if (uploadMatch || linkedinMatch || briefMatch) {
                         let fileName = '';
@@ -1657,7 +1662,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         }
 
                         try {
-                            const driveFile = await handleFileUpload(fileName, contentStr);
+                            const driveFile = await handleFileUpload(fileName, contentStr, company);
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({
                                 gdriveAction: true,
@@ -1686,7 +1691,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         const fileName = `call_log_${Date.now()}.txt`;
                         try {
                             // 1. Save call log to Google Drive (RAG context memory)
-                            const driveFile = await handleFileUpload(fileName, callText);
+                            const driveFile = await handleFileUpload(fileName, callText, company);
                             let hubspotLogged = false;
 
                             // 2. Log call to HubSpot contact if email is resolved
@@ -1960,7 +1965,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             }
 
             let gdriveFilesContext = '';
-            let companyNameForGDrive = '';
+            companyNameForGDrive = '';
             
             if (Array.isArray(payload.messages) && !payload.skipGDrive) {
                 const systemMsgForGDrive = payload.messages.find(m => m.role === 'system');
@@ -2367,6 +2372,90 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                     required: ['company', 'filename', 'content']
                                 }
                             }
+                        },
+                        {
+                            type: 'function',
+                            function: {
+                                name: 'delete_prospect_file',
+                                description: 'Deletes/removes a specific file from the prospect\'s Google Drive folder.',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {
+                                        company: {
+                                            type: 'string',
+                                            description: 'The company or prospect name'
+                                        },
+                                        filename: {
+                                            type: 'string',
+                                            description: 'The name of the file to delete (e.g. README.md)'
+                                        }
+                                    },
+                                    required: ['company', 'filename']
+                                }
+                            }
+                        },
+                        {
+                            type: 'function',
+                            function: {
+                                name: 'upload_linkedin_profile',
+                                description: 'Registers/uploads LinkedIn profile bio text information for a prospect.',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {
+                                        company: {
+                                            type: 'string',
+                                            description: 'The company or prospect name'
+                                        },
+                                        content: {
+                                            type: 'string',
+                                            description: 'The LinkedIn profile text content'
+                                        }
+                                    },
+                                    required: ['company', 'content']
+                                }
+                            }
+                        },
+                        {
+                            type: 'function',
+                            function: {
+                                name: 'upload_sales_brief',
+                                description: 'Registers/uploads a sales brief document for a prospect.',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {
+                                        company: {
+                                            type: 'string',
+                                            description: 'The company or prospect name'
+                                        },
+                                        content: {
+                                            type: 'string',
+                                            description: 'The sales brief document content'
+                                        }
+                                    },
+                                    required: ['company', 'content']
+                                }
+                            }
+                        },
+                        {
+                            type: 'function',
+                            function: {
+                                name: 'register_call_log',
+                                description: 'Registers/logs call notes or transcripts for a call made to a prospect and logs to HubSpot CRM if possible.',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {
+                                        company: {
+                                            type: 'string',
+                                            description: 'The company or prospect name'
+                                        },
+                                        content: {
+                                            type: 'string',
+                                            description: 'The call notes or transcript text'
+                                        }
+                                    },
+                                    required: ['company', 'content']
+                                }
+                            }
                         }
                     ],
                     tool_choice: 'auto'
@@ -2436,6 +2525,109 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             await gdriveService.uploadFile(filename, 'text/plain', fileBuffer, clientFolderId);
                                             gdriveAction = true;
                                             toolResponses.push(`I have successfully created and uploaded the file "**${filename}**" into the folder for **${company}**.`);
+                                        }
+                                    } else if (name === 'delete_prospect_file') {
+                                        const { company, filename } = args;
+                                        if (company && filename) {
+                                            console.log(`🗑️ Tool Call: Deleting file ${filename} for ${company}`);
+                                            let success = false;
+                                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                                            if (gdriveAvailable) {
+                                                try {
+                                                    const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                    const files = await gdriveService.listFolder(clientFolderId);
+                                                    const found = files.find(f => f.name.toLowerCase() === filename.toLowerCase());
+                                                    if (found) {
+                                                        await gdriveService.deleteFile(found.id);
+                                                        success = true;
+                                                    }
+                                                } catch (err) {
+                                                    console.warn('⚠️ GDrive deletion failed in tool call:', err.message);
+                                                }
+                                            } else {
+                                                const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                                                const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                                                const filePath = path.join(localFolder, filename);
+                                                if (fs.existsSync(filePath)) {
+                                                    fs.unlinkSync(filePath);
+                                                    success = true;
+                                                }
+                                            }
+                                            if (success) {
+                                                gdriveAction = true;
+                                                toolResponses.push(`I have successfully deleted the file "**${filename}**" from the folder for **${company}**.`);
+                                            } else {
+                                                toolResponses.push(`I could not find or delete the file "**${filename}**" in the folder for **${company}**.`);
+                                            }
+                                        }
+                                    } else if (name === 'upload_linkedin_profile') {
+                                        const { company, content } = args;
+                                        if (company && content) {
+                                            console.log(`📤 Tool Call: Uploading LinkedIn profile for ${company}`);
+                                            const driveFile = await handleFileUpload('linkedin_profile.txt', content, company);
+                                            gdriveAction = true;
+                                            toolResponses.push(`I have successfully uploaded the LinkedIn profile bio for **${company}** (File ID: \`${driveFile.id}\`).`);
+                                        }
+                                    } else if (name === 'upload_sales_brief') {
+                                        const { company, content } = args;
+                                        if (company && content) {
+                                            console.log(`📤 Tool Call: Uploading sales brief for ${company}`);
+                                            const driveFile = await handleFileUpload('sales_brief.txt', content, company);
+                                            gdriveAction = true;
+                                            toolResponses.push(`I have successfully uploaded the sales brief for **${company}** (File ID: \`${driveFile.id}\`).`);
+                                        }
+                                    } else if (name === 'register_call_log') {
+                                        const { company, content } = args;
+                                        if (company && content) {
+                                            console.log(`📞 Tool Call: Registering call log for ${company}`);
+                                            const fileName = `call_log_${Date.now()}.txt`;
+                                            const driveFile = await handleFileUpload(fileName, content, company);
+                                            let hubspotLogged = false;
+
+                                            if (clientEmailForGDrive && clientEmailForGDrive.includes('@')) {
+                                                try {
+                                                    const searchResponse = await makeHubSpotRequest('POST', '/crm/v3/objects/contacts/search', {
+                                                        filterGroups: [{
+                                                            filters: [{
+                                                                propertyName: 'email',
+                                                                operator: 'EQ',
+                                                                value: clientEmailForGDrive
+                                                            }]
+                                                        }]
+                                                    });
+                                                    
+                                                    if (searchResponse && searchResponse.results && searchResponse.results.length > 0) {
+                                                        const contactId = searchResponse.results[0].id;
+                                                        await makeHubSpotRequest('POST', '/crm/v3/objects/calls', {
+                                                            properties: {
+                                                                hs_call_title: `Call Note - ${clientNameForGDrive}`,
+                                                                hs_call_body: content,
+                                                                hs_timestamp: new Date().toISOString(),
+                                                                hs_call_direction: 'OUTBOUND'
+                                                            },
+                                                            associations: [{
+                                                                to: { id: contactId },
+                                                                types: [{
+                                                                    associationCategory: 'HUBSPOT_DEFINED',
+                                                                    associationTypeId: 194
+                                                                }]
+                                                            }]
+                                                        });
+                                                        console.log(`✅ Tool Call: Logged call to HubSpot Contact ID: ${contactId}`);
+                                                        hubspotLogged = true;
+                                                    }
+                                                } catch (hsErr) {
+                                                    console.error('⚠️ HubSpot CRM tool-call registration failed:', hsErr.message);
+                                                }
+                                            }
+
+                                            const trackingDest = driveFile.id.startsWith('local_') ? 'Local History Storage' : 'Google Drive';
+                                            const hsStatus = hubspotLogged 
+                                                ? `automatically logged this call under contact **${clientEmailForGDrive}** in HubSpot CRM`
+                                                : `stored it in **${trackingDest}** context memory (HubSpot CRM log skipped or client email unassociated)`;
+
+                                            gdriveAction = true;
+                                            toolResponses.push(`I have successfully registered the new call! I saved the call notes as "**${fileName}**" (ID: \`${driveFile.id}\`) in Google Drive and ${hsStatus}.`);
                                         }
                                     }
                                 }
