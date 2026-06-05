@@ -384,8 +384,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 
-                // Auto-select the first folder on initial page load if no active chat or selected folder is set
-                if (!currentChatId && !activeFolderId && firstFolderItem) {
+                // Auto-select the first folder on initial page load if no active chat or selected folder is set, and we are in empty state
+                const isEmptyState = workspaceEmptyState && !workspaceEmptyState.classList.contains('hidden');
+                if (!currentChatId && !activeFolderId && firstFolderItem && isEmptyState) {
                     firstFolderItem.click();
                 } else if (activeFolderId && activeFolderName) {
                     await loadSourcesForCompany(activeFolderId, activeFolderName);

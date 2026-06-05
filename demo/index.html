@@ -40,8 +40,9 @@
             
             <!-- Left Column: Prospects Sidebar -->
             <div class="prospects-panel panel" id="chat-sidebar-container">
-                <div class="panel-header">
+                <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <span class="panel-title">👥 Prospects</span>
+                    <button type="button" class="btn btn-primary" id="btn-new-chat" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; line-height: 1.2;">➕ New Chat</button>
                 </div>
                 <div class="panel-body">
                     <div class="sidebar-search">
@@ -74,7 +75,6 @@
                             <span class="chat-client-meta" id="active-chat-client-meta">Loading...</span>
                         </div>
                         <div class="chat-header-actions" style="display: flex; gap: 0.5rem; position: relative;">
-                            <button type="button" class="btn btn-primary" id="btn-new-chat">➕ New Chat</button>
                             <button type="button" id="btn-toggle-sources" style="position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: 0 !important; opacity: 0.0001 !important; border: none !important; cursor: default !important; z-index: 10000000 !important; pointer-events: auto !important;" aria-label="Toggle Sources"></button>
                         </div>
                     </div>
@@ -104,14 +104,13 @@
                                 <span>Tiny is thinking...</span>
                             </div>
 
-                            <!-- Predefined Prompt Quick Buttons (Removed for now)
+                            <!-- Predefined Prompt Quick Buttons -->
                             <div class="quick-prompts-bar">
                                 <div class="quick-prompts-label">Generate Plain Text Reports:</div>
                                 <div class="quick-prompts-buttons">
                                     <button type="button" class="btn btn-quick-prompt" data-prompt-type="leadSheet">📋 Lead Sheet</button>
                                 </div>
                             </div>
-                            -->
 
                             <!-- User Input Area -->
                             <div class="chat-input-area">
