@@ -321,7 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 let activeFolderName = "";
-                folders.forEach(folder => {
+                let firstFolderItem = null;
+                folders.forEach((folder, index) => {
                     const folderItem = document.createElement('div');
                     folderItem.className = 'sidebar-folder-header';
                     folderItem.style.marginBottom = '0.5rem';
@@ -378,10 +379,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     
                     recentChatsList.appendChild(folderItem);
+                    if (index === 0) {
+                        firstFolderItem = folderItem;
+                    }
                 });
                 
-                // Load files for the active folder automatically
-                if (activeFolderId && activeFolderName) {
+                // Auto-select the first folder on initial page load if no active chat or selected folder is set
+                if (!currentChatId && !activeFolderId && firstFolderItem) {
+                    firstFolderItem.click();
+                } else if (activeFolderId && activeFolderName) {
                     await loadSourcesForCompany(activeFolderId, activeFolderName);
                 }
             } else {
@@ -1643,8 +1649,7 @@ ${data.parsedText}`;
     // --- Active Chat Drag & Drop Memory Ingestion ---
     if (chatActiveConsole && chatDragOverlay) {
         window.addEventListener('dragenter', (e) => {
-            const companyName = metaCompany ? metaCompany.value.trim() : '';
-            if (companyName) {
+            if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
                 e.preventDefault();
                 chatDragOverlay.classList.add('dragover');
             }
@@ -1887,12 +1892,16 @@ ${data.parsedText}`;
     });
 
     // Initial Load (Deferred slightly to prioritize first visual paint and improve LCP)
-    setTimeout(() => {
-        loadChatsList();
-        loadProspectsTree();
-        updateValidationBadges();
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
+    setTimeout(async () => {
+        try {
+            await loadChatsList();
+            await loadProspectsTree();
+            updateValidationBadges();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        } catch (err) {
+            console.error('Error during initial load:', err);
         }
     }, 50);
 
@@ -1902,10 +1911,5 @@ ${data.parsedText}`;
         if (details) {
             details.setAttribute('open', '');
         }
-    }
-
-    // Automatically initialize a new chat session on load for a pure chat layout
-    if (!currentChatId && btnNewChat && !window.__perfMetrics) {
-        btnNewChat.click();
     }
 });

@@ -743,7 +743,8 @@ body.resizing * {
     z-index: 9999;
 }
 
-.toast.active {
+.toast.active,
+.toast.show {
     opacity: 1;
     transform: translateY(0);
 }
