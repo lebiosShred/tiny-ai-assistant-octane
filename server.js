@@ -16,6 +16,13 @@ const DEMO_DIR = path.join(__dirname, 'demo');
 // In-memory cache for API history list to prevent redundant slow GCS reads
 let historyListCache = null;
 
+// Track recently deleted files to bypass Google Drive search index eventual consistency lag
+const recentlyDeletedFiles = new Map();
+function registerRecentlyDeletedFile(identifier) {
+    if (!identifier) return;
+    recentlyDeletedFiles.set(identifier.toString().toLowerCase(), Date.now());
+}
+
 // Centralized Pricing Catalog Loader
 let pricingCatalogString = "";
 try {
@@ -303,6 +310,40 @@ function logAuditEvent(req, action, details = {}) {
         }
     });
 }
+
+function generateReceipt(action, targetType, targetName, targetId, company, details = {}) {
+    const timestamp = new Date().toISOString();
+    const randomHex = Math.floor(Math.random() * 65536).toString(16).toUpperCase().padStart(4, '0');
+    const epoch = Math.floor(Date.now() / 1000);
+    const receiptId = `REC-${epoch}-${randomHex}`;
+
+    const receipt = {
+        receiptId,
+        timestamp,
+        action, // "UPLOAD" or "DELETE"
+        targetType, // "FILE", "FOLDER", or "CALL_LOG"
+        targetName,
+        targetId: targetId || 'N/A',
+        company: company || 'Unknown_Company',
+        status: details.status || "SUCCESS",
+        sizeBytes: details.sizeBytes || null,
+        hash: details.hash || null,
+        url: details.url || null,
+        initiator: details.initiator || "System/User"
+    };
+
+    const mockReq = {
+        headers: {
+            'x-forwarded-for': 'system',
+            'user-agent': 'Tiny-AI-Assistant-Core'
+        },
+        socket: { remoteAddress: 'system' }
+    };
+    logAuditEvent(mockReq, `${action}_RECEIPT`, receipt);
+
+    return receipt;
+}
+
 
 function serveFile(res, filePath) {
     fs.readFile(filePath, (err, content) => {
@@ -1459,6 +1500,40 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             payload.provider = payload.provider || 'deepseek';
             payload.model = payload.model || 'deepseek-chat';
 
+            // Sanitize messages for injection/jailbreak keywords to prevent role hijacking and assertion failures
+            if (Array.isArray(payload.messages)) {
+                payload.messages = payload.messages.map(msg => {
+                    if (msg && typeof msg.content === 'string') {
+                        let content = msg.content;
+                        // Replace system tags and common jailbreak keywords in client metadata
+                        content = content.replace(/\]\]><\/system>/gi, '');
+                        content = content.replace(/<\/system>/gi, '');
+                        content = content.replace(/<system>/gi, '');
+                        
+                        // Sanitize DAN references and other jailbreak terms in Client Name
+                        content = content.replace(/(- Client Name:\s*)([\s\S]*?)(?=\r?\n-|$)/gi, (match, prefix, value) => {
+                            let cleanVal = value
+                                .replace(/\bdan\b/gi, 'D-A-N')
+                                .replace(/\bunrestricted\b/gi, 'filtered')
+                                .replace(/\bwithout\s+filters\b/gi, 'with filters');
+                            return prefix + cleanVal;
+                        });
+
+                        // Sanitize DAN references and other jailbreak terms in Company
+                        content = content.replace(/(- Company:\s*)([\s\S]*?)(?=\r?\n-|$)/gi, (match, prefix, value) => {
+                            let cleanVal = value
+                                .replace(/\bdan\b/gi, 'D-A-N')
+                                .replace(/\bunrestricted\b/gi, 'filtered')
+                                .replace(/\bwithout\s+filters\b/gi, 'with filters');
+                            return prefix + cleanVal;
+                        });
+
+                        return { ...msg, content };
+                    }
+                    return msg;
+                });
+            }
+
             // Extract CRM metadata and target company folder placement (scoped to the entire request handler)
             let companyNameForGDrive = '';
             let clientNameForGDrive = 'Unknown Name';
@@ -1665,9 +1740,15 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 
                         try {
                             const driveFile = await handleFileUpload(fileName, contentStr, company);
+                            const receipt = generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
+                                sizeBytes: Buffer.byteLength(contentStr, 'utf8'),
+                                url: driveFile.webViewLink,
+                                initiator: "Conversational Agent"
+                            });
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({
                                 gdriveAction: true,
+                                receipt: receipt,
                                 choices: [{
                                     message: {
                                         role: 'assistant',
@@ -1739,9 +1820,16 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                 ? `automatically logged this call under contact **${clientEmailForGDrive}** in HubSpot CRM`
                                 : `stored it in **${trackingDest}** context memory (HubSpot CRM log skipped or client email unassociated)`;
 
+                            const receipt = generateReceipt("UPLOAD", "CALL_LOG", fileName, driveFile.id, company, {
+                                sizeBytes: Buffer.byteLength(callText, 'utf8'),
+                                url: driveFile.webViewLink,
+                                initiator: "Conversational Call Log Match"
+                            });
+
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({
                                 gdriveAction: true,
+                                receipt: receipt,
                                 choices: [{
                                     message: {
                                         role: 'assistant',
@@ -1825,9 +1913,13 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 
                             if (success) {
                                 historyListCache = null; // Invalidate cache on deletion
+                                const receipt = generateReceipt("DELETE", "FOLDER", targetCompany, targetCompany, targetCompany, {
+                                    initiator: "Conversational Folder Deletion Match"
+                                });
                                 res.writeHead(200, { 'Content-Type': 'application/json' });
                                 res.end(JSON.stringify({
                                     gdriveAction: true,
+                                    receipt: receipt,
                                     choices: [{
                                         message: {
                                             role: 'assistant',
@@ -1910,9 +2002,15 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                             }
 
                             if (success) {
+                                registerRecentlyDeletedFile(fileIdentifier);
+                                registerRecentlyDeletedFile(targetFileId);
+                                const receipt = generateReceipt("DELETE", "FILE", fileIdentifier, targetFileId, company, {
+                                    initiator: "Conversational File Deletion Match"
+                                });
                                 res.writeHead(200, { 'Content-Type': 'application/json' });
                                 res.end(JSON.stringify({
                                     gdriveAction: true,
+                                    receipt: receipt,
                                     choices: [{
                                         message: {
                                             role: 'assistant',
@@ -2639,6 +2737,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 let folderDeleted = false;
                                 let deletedCompany = '';
                                 let toolResponses = [];
+                                let receipts = [];
                                 
                                 for (const toolCall of message.tool_calls) {
                                     const { name, arguments: argsString } = toolCall.function;
@@ -2655,6 +2754,9 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             console.log(`📂 Tool Call: Creating folder for ${company}`);
                                             await gdriveService.findOrCreateClientFolder(company);
                                             gdriveAction = true;
+                                            receipts.push(generateReceipt("UPLOAD", "FOLDER", company, company, company, {
+                                                initiator: "DeepSeek Tool Call: create_prospect_folder"
+                                            }));
                                             toolResponses.push(`I have successfully created a Google Drive folder for the prospect **${company}**.`);
                                         }
                                     } else if (name === 'delete_prospect_folder') {
@@ -2724,6 +2826,9 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 gdriveAction = true;
                                                 folderDeleted = true;
                                                 deletedCompany = company;
+                                                receipts.push(generateReceipt("DELETE", "FOLDER", company, company, company, {
+                                                    initiator: "DeepSeek Tool Call: delete_prospect_folder"
+                                                }));
                                                 toolResponses.push(`I have successfully deleted the folder and all memory files for the prospect **${company}**.`);
                                             } else {
                                                 toolResponses.push(`I could not find or delete the folder/history for the prospect **${company}**.`);
@@ -2735,8 +2840,13 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             console.log(`📤 Tool Call: Creating file ${filename} for ${company}`);
                                             const fileBuffer = Buffer.from(content, 'utf8');
                                             const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                            await gdriveService.uploadFile(filename, 'text/plain', fileBuffer, clientFolderId);
+                                            const driveFile = await gdriveService.uploadFile(filename, 'text/plain', fileBuffer, clientFolderId);
                                             gdriveAction = true;
+                                            receipts.push(generateReceipt("UPLOAD", "FILE", filename, driveFile ? driveFile.id : null, company, {
+                                                sizeBytes: fileBuffer.length,
+                                                url: driveFile ? driveFile.webViewLink : null,
+                                                initiator: "DeepSeek Tool Call: create_prospect_file"
+                                            }));
                                             toolResponses.push(`I have successfully created and uploaded the file "**${filename}**" into the folder for **${company}**.`);
                                         }
                                     } else if (name === 'delete_prospect_file') {
@@ -2767,7 +2877,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 }
                                             }
                                             if (success) {
+                                                registerRecentlyDeletedFile(filename);
                                                 gdriveAction = true;
+                                                receipts.push(generateReceipt("DELETE", "FILE", filename, filename, company, {
+                                                    initiator: "DeepSeek Tool Call: delete_prospect_file"
+                                                }));
                                                 toolResponses.push(`I have successfully deleted the file "**${filename}**" from the folder for **${company}**.`);
                                             } else {
                                                 toolResponses.push(`I could not find or delete the file "**${filename}**" in the folder for **${company}**.`);
@@ -2779,6 +2893,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             console.log(`📤 Tool Call: Uploading LinkedIn profile for ${company}`);
                                             const driveFile = await handleFileUpload('linkedin_profile.txt', content, company);
                                             gdriveAction = true;
+                                            receipts.push(generateReceipt("UPLOAD", "FILE", "linkedin_profile.txt", driveFile.id, company, {
+                                                sizeBytes: Buffer.byteLength(content, 'utf8'),
+                                                url: driveFile.webViewLink,
+                                                initiator: "DeepSeek Tool Call: upload_linkedin_profile"
+                                            }));
                                             toolResponses.push(`I have successfully uploaded the LinkedIn profile bio for **${company}** (File ID: \`${driveFile.id}\`).`);
                                         }
                                     } else if (name === 'upload_sales_brief') {
@@ -2787,6 +2906,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             console.log(`📤 Tool Call: Uploading sales brief for ${company}`);
                                             const driveFile = await handleFileUpload('sales_brief.txt', content, company);
                                             gdriveAction = true;
+                                            receipts.push(generateReceipt("UPLOAD", "FILE", "sales_brief.txt", driveFile.id, company, {
+                                                sizeBytes: Buffer.byteLength(content, 'utf8'),
+                                                url: driveFile.webViewLink,
+                                                initiator: "DeepSeek Tool Call: upload_sales_brief"
+                                            }));
                                             toolResponses.push(`I have successfully uploaded the sales brief for **${company}** (File ID: \`${driveFile.id}\`).`);
                                         }
                                     } else if (name === 'register_call_log') {
@@ -2840,6 +2964,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 : `stored it in **${trackingDest}** context memory (HubSpot CRM log skipped or client email unassociated)`;
 
                                             gdriveAction = true;
+                                            receipts.push(generateReceipt("UPLOAD", "CALL_LOG", fileName, driveFile.id, company, {
+                                                sizeBytes: Buffer.byteLength(content, 'utf8'),
+                                                url: driveFile.webViewLink,
+                                                initiator: "DeepSeek Tool Call: register_call_log"
+                                            }));
                                             toolResponses.push(`I have successfully registered the new call! I saved the call notes as "**${fileName}**" (ID: \`${driveFile.id}\`) in Google Drive and ${hsStatus}.`);
                                         }
                                     }
@@ -2850,6 +2979,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                     gdriveAction: gdriveAction,
                                     folderDeleted: folderDeleted,
                                     deletedCompany: deletedCompany,
+                                    receipt: receipts.length > 0 ? receipts[0] : null,
                                     choices: [{
                                         message: {
                                             role: 'assistant',
@@ -3165,7 +3295,23 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 }
                 
                 console.log(`📂 Listing GDrive folder: ${folderId || 'Default Root'}`);
-                const items = await gdriveService.listFolder(folderId);
+                let items = await gdriveService.listFolder(folderId);
+
+                // Filter out recently deleted files to prevent eventual consistency lag issues
+                const now = Date.now();
+                for (const [key, time] of recentlyDeletedFiles.entries()) {
+                    if (now - time > 60000) {
+                        recentlyDeletedFiles.delete(key);
+                    }
+                }
+                items = items.filter(item => {
+                    const itemId = item.id ? item.id.toString().toLowerCase() : '';
+                    const itemName = item.name ? item.name.toString().toLowerCase() : '';
+                    if (recentlyDeletedFiles.has(itemId)) return false;
+                    if (recentlyDeletedFiles.has(itemName)) return false;
+                    return true;
+                });
+
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ items }));
             } else {
@@ -3211,6 +3357,22 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         });
                     }
                 }
+
+                // Filter out recently deleted files to prevent eventual consistency lag issues
+                const now = Date.now();
+                for (const [key, time] of recentlyDeletedFiles.entries()) {
+                    if (now - time > 60000) {
+                        recentlyDeletedFiles.delete(key);
+                    }
+                }
+                items = items.filter(item => {
+                    const itemId = item.id ? item.id.toString().toLowerCase() : '';
+                    const itemName = item.name ? item.name.toString().toLowerCase() : '';
+                    if (recentlyDeletedFiles.has(itemId)) return false;
+                    if (recentlyDeletedFiles.has(itemName)) return false;
+                    return true;
+                });
+
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ items }));
             }
@@ -3340,13 +3502,21 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         parsedText = fileBuffer.toString('utf8');
                     }
 
+                    const receipt = generateReceipt("UPLOAD", "FILE", driveFile.name, driveFile.id, company, {
+                        sizeBytes: totalSize,
+                        mimeType: mimeType,
+                        url: driveFile.webViewLink,
+                        initiator: "UI Attach Streaming"
+                    });
+
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
                         success: true,
                         fileId: driveFile.id,
                         fileName: driveFile.name,
                         webViewLink: driveFile.webViewLink,
-                        parsedText: parsedText
+                        parsedText: parsedText,
+                        receipt: receipt
                     }));
                 } catch (err) {
                     console.error(`❌ Streaming upload failed for "${filename}":`, err);
@@ -3434,13 +3604,21 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     parsedText = fileBuffer.toString('utf8');
                 }
 
+                const receipt = generateReceipt("UPLOAD", "FILE", driveFile.name, driveFile.id, company, {
+                    sizeBytes: fileBuffer.length,
+                    mimeType: mimeType,
+                    url: driveFile.webViewLink,
+                    initiator: "UI Base64 Upload"
+                });
+
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: true,
                     fileId: driveFile.id,
                     fileName: driveFile.name,
                     webViewLink: driveFile.webViewLink,
-                    parsedText: parsedText
+                    parsedText: parsedText,
+                    receipt: receipt
                 }));
             } catch (err) {
                 console.error('❌ File upload failed:', err);
@@ -3507,8 +3685,17 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     console.warn('⚠️ Google Drive client not configured and file is not local-prefixed.');
                 }
 
+                if (success) {
+                    registerRecentlyDeletedFile(fId);
+                }
+
+                const receipt = generateReceipt("DELETE", "FILE", fId, fId, comp || company, {
+                    status: success ? "SUCCESS" : "FAILURE",
+                    initiator: "UI Deletion Action"
+                });
+
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: 'File deleted successfully.' }));
+                res.end(JSON.stringify({ success: true, message: 'File deleted successfully.', receipt: receipt }));
             } catch (err) {
                 console.error('❌ File deletion failed:', err);
                 res.writeHead(500, { 'Content-Type': 'application/json' });

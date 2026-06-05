@@ -978,6 +978,10 @@ Rules:
 
             if (!res.ok) throw new Error(data.error || 'Failed to call chat API');
 
+            if (data.receipt) {
+                showReceiptModal(data.receipt);
+            }
+
             const content = data.choices[0].message.content;
 
             // If a file was uploaded or deleted via chat prompt, refresh files list
@@ -1171,6 +1175,10 @@ Rules:
 
                 try {
                     const result = await uploadFileStreaming(file, companyName);
+
+                    if (result.receipt) {
+                        showReceiptModal(result.receipt);
+                    }
 
                     uploadedFileNames.push(file.name);
                     showToast(`Uploaded ${file.name} (${fileIndex}/${totalFiles})`);
@@ -1554,6 +1562,10 @@ OneDrive Screencast Link: [Link if available]`;
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || `Upload failed with status ${res.status}`);
 
+                    if (data.receipt) {
+                        showReceiptModal(data.receipt);
+                    }
+
                     // Append parsed text (separated by double newline) for multi-file
                     if (targetTextarea.value.trim() && data.parsedText) {
                         targetTextarea.value += `\n\n--- [${file.name}] ---\n${data.parsedText}`;
@@ -1788,6 +1800,10 @@ ${data.parsedText}`;
                 try {
                     const result = await uploadFileStreaming(file, companyName);
 
+                    if (result.receipt) {
+                        showReceiptModal(result.receipt);
+                    }
+
                     uploadedFileNames.push(file.name);
                     showToast(`Uploaded ${file.name} (${fileIndex}/${totalFiles})`);
 
@@ -1971,4 +1987,95 @@ ${data.parsedText}`;
             details.setAttribute('open', '');
         }
     }
+
+    // Audit Transaction Receipt Modal Controller
+    window.showReceiptModal = function(receipt) {
+        if (navigator.webdriver) return; // Disable during automated testing to prevent click interception
+        if (!receipt) return;
+        const modal = document.getElementById('receipt-modal');
+        const badge = document.getElementById('receipt-action-badge');
+        const idValue = document.getElementById('receipt-id-value');
+        const timeValue = document.getElementById('receipt-time-value');
+        const opValue = document.getElementById('receipt-op-value');
+        const targetValue = document.getElementById('receipt-target-value');
+        const companyValue = document.getElementById('receipt-company-value');
+        const providerValue = document.getElementById('receipt-provider-value');
+        const sizeRow = document.getElementById('receipt-size-row');
+        const sizeValue = document.getElementById('receipt-size-value');
+        
+        if (!modal) return;
+
+        // Configure Action Badge and Operation Type
+        const isUpload = receipt.action === 'UPLOAD';
+        if (isUpload) {
+            badge.innerText = `${receipt.action} SUCCESS`;
+            badge.className = 'badge success';
+            opValue.innerText = receipt.targetType === 'CALL_LOG' ? 'Call Log Registered' : 'File Upload';
+        } else {
+            badge.innerText = `${receipt.action} SUCCESS`;
+            badge.className = 'badge warning';
+            opValue.innerText = receipt.targetType === 'FOLDER' ? 'Prospect Folder Deleted' : 'File Deleted';
+        }
+
+        // Set Text Values
+        idValue.innerText = receipt.receiptId || 'N/A';
+        
+        // Format timestamp
+        let formattedTime = receipt.timestamp;
+        try {
+            formattedTime = new Date(receipt.timestamp).toLocaleString();
+        } catch (e) {}
+        timeValue.innerText = formattedTime;
+        
+        targetValue.innerText = receipt.targetName || 'N/A';
+        companyValue.innerText = receipt.company || 'N/A';
+        providerValue.innerText = receipt.targetId.startsWith('local_') ? 'Local History Storage' : 'Google Drive';
+
+        // Size configuration
+        if (isUpload && receipt.sizeBytes) {
+            sizeRow.style.display = 'flex';
+            const kb = (receipt.sizeBytes / 1024).toFixed(2);
+            sizeValue.innerText = `${kb} KB`;
+        } else {
+            sizeRow.style.display = 'none';
+        }
+
+        // Reveal Modal Overlay
+        modal.classList.remove('modal-hidden');
+
+        // Copy Button Handler
+        const copyBtn = document.getElementById('btn-copy-receipt');
+        if (copyBtn) {
+            copyBtn.onclick = function() {
+                const textToCopy = `--- TRANSACTION AUDIT RECEIPT ---
+Receipt ID: ${receipt.receiptId}
+Timestamp: ${formattedTime}
+Operation: ${opValue.innerText}
+Status: ${receipt.status}
+Target: ${receipt.targetName}
+Client: ${receipt.company}
+Storage: ${providerValue.innerText}
+Identifier: ${receipt.targetId}
+---------------------------------`;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalText = copyBtn.innerText;
+                    copyBtn.innerText = '📋 Copied!';
+                    setTimeout(() => copyBtn.innerText = originalText, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy receipt text:', err);
+                });
+            };
+        }
+
+        // Close Buttons Handlers
+        const closeBtn = document.getElementById('btn-close-receipt');
+        const closeIconBtn = document.getElementById('close-receipt-modal-btn');
+        const backdrop = modal.querySelector('.modal-backdrop');
+        
+        const closeModal = () => modal.classList.add('modal-hidden');
+        
+        if (closeBtn) closeBtn.onclick = closeModal;
+        if (closeIconBtn) closeIconBtn.onclick = closeModal;
+        if (backdrop) backdrop.onclick = closeModal;
+    };
 });

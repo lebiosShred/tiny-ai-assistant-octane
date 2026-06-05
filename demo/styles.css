@@ -2947,6 +2947,223 @@ body.resizing * {
     color: #4daeeb;
 }
 
+/* Audit Transaction Receipt Modal Styles */
+#receipt-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10010;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.receipt-modal-content {
+    position: relative;
+    background: rgba(15, 23, 42, 0.85); /* Dark slate glassmorphism */
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 90%;
+    max-width: 460px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    z-index: 10011;
+    color: #e2e8f0;
+    animation: receiptSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes receiptSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.receipt-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.receipt-modal-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f8fafc;
+    letter-spacing: -0.01em;
+}
+
+.btn-close-receipt {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-close-receipt:hover {
+    color: #f1f5f9;
+}
+
+.receipt-modal-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.receipt-badge-container {
+    margin-bottom: 16px;
+}
+
+.receipt-badge-container .badge {
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+}
+
+/* Status variants */
+.receipt-badge-container .badge.success {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.receipt-badge-container .badge.warning {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.receipt-id-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.receipt-id-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.receipt-id-value {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #38bdf8; /* sky-400 */
+    letter-spacing: 0.02em;
+}
+
+.receipt-divider {
+    width: 100%;
+    height: 1px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.12);
+    margin: 8px 0;
+}
+
+.receipt-details-grid {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.receipt-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.85rem;
+}
+
+.receipt-detail-label {
+    color: #94a3b8;
+}
+
+.receipt-detail-value {
+    font-weight: 500;
+    color: #f1f5f9;
+    text-align: right;
+    max-width: 65%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.receipt-footer-note {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-align: center;
+    margin-top: 12px;
+}
+
+.receipt-modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 18px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.4);
+    width: 100%;
+}
+
+.receipt-modal-footer .btn {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.receipt-modal-footer .btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+}
+
+.receipt-modal-footer .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+}
+
+.receipt-modal-footer .btn-primary {
+    background: #0284c7; /* sky-600 */
+    color: #ffffff;
+}
+
+.receipt-modal-footer .btn-primary:hover {
+    background: #0369a1; /* sky-700 */
+}
+
 /* PDF Preview Modal Styles */
 .modal-hidden {
     display: none !important;

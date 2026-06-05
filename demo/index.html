@@ -300,6 +300,61 @@
     -->
 
 
+    <!-- Audit Transaction Receipt Modal -->
+    <div id="receipt-modal" class="modal-hidden">
+        <div class="modal-backdrop"></div>
+        <div class="receipt-modal-content">
+            <div class="receipt-modal-header">
+                <span class="receipt-modal-title">🧾 Audit Transaction Receipt</span>
+                <button type="button" id="close-receipt-modal-btn" aria-label="Close Receipt" class="btn-close-receipt">✕</button>
+            </div>
+            <div class="receipt-modal-body">
+                <div class="receipt-badge-container">
+                    <span id="receipt-action-badge" class="badge">UPLOAD SUCCESS</span>
+                </div>
+                <div class="receipt-id-section">
+                    <span class="receipt-id-label">Receipt ID</span>
+                    <span id="receipt-id-value" class="receipt-id-value">REC-1780668033-A2F8</span>
+                </div>
+                <div class="receipt-divider"></div>
+                <div class="receipt-details-grid">
+                    <div class="receipt-detail-row">
+                        <span class="receipt-detail-label">Timestamp</span>
+                        <span id="receipt-time-value" class="receipt-detail-value">2026-06-05 14:03:13</span>
+                    </div>
+                    <div class="receipt-detail-row">
+                        <span class="receipt-detail-label">Operation</span>
+                        <span id="receipt-op-value" class="receipt-detail-value">File Upload</span>
+                    </div>
+                    <div class="receipt-detail-row">
+                        <span class="receipt-detail-label">Target Name</span>
+                        <span id="receipt-target-value" class="receipt-detail-value">filename.txt</span>
+                    </div>
+                    <div class="receipt-detail-row">
+                        <span class="receipt-detail-label">Client / Prospect</span>
+                        <span id="receipt-company-value" class="receipt-detail-value">Meridian Logistics</span>
+                    </div>
+                    <div class="receipt-detail-row">
+                        <span class="receipt-detail-label">Storage Provider</span>
+                        <span id="receipt-provider-value" class="receipt-detail-value">Google Drive</span>
+                    </div>
+                    <div class="receipt-detail-row" id="receipt-size-row">
+                        <span class="receipt-detail-label">File Size</span>
+                        <span id="receipt-size-value" class="receipt-detail-value">12.5 KB</span>
+                    </div>
+                </div>
+                <div class="receipt-divider"></div>
+                <div class="receipt-footer-note">
+                    <span>🔒 Cryptographically logged to persistent audit store</span>
+                </div>
+            </div>
+            <div class="receipt-modal-footer">
+                <button type="button" id="btn-copy-receipt" class="btn btn-secondary">📋 Copy Details</button>
+                <button type="button" id="btn-close-receipt" class="btn btn-primary">Done</button>
+            </div>
+        </div>
+    </div>
+
     <!-- PDF Preview Modal -->
     <div id="pdf-preview-modal" class="modal-hidden">
         <div class="modal-backdrop"></div>
