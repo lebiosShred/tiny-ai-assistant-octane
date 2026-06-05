@@ -1824,6 +1824,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                             }
 
                             if (success) {
+                                historyListCache = null; // Invalidate cache on deletion
                                 res.writeHead(200, { 'Content-Type': 'application/json' });
                                 res.end(JSON.stringify({
                                     gdriveAction: true,
@@ -2717,6 +2718,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             }
 
                                             if (success) {
+                                                historyListCache = null; // Invalidate cache on deletion
                                                 gdriveAction = true;
                                                 toolResponses.push(`I have successfully deleted the folder and all memory files for the prospect **${company}**.`);
                                             } else {
