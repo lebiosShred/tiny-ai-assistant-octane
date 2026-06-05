@@ -2636,6 +2636,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             console.log('🤖 DeepSeek message:', JSON.stringify(message));
                             if (message && message.tool_calls && message.tool_calls.length > 0) {
                                 let gdriveAction = false;
+                                let folderDeleted = false;
+                                let deletedCompany = '';
                                 let toolResponses = [];
                                 
                                 for (const toolCall of message.tool_calls) {
@@ -2720,6 +2722,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             if (success) {
                                                 historyListCache = null; // Invalidate cache on deletion
                                                 gdriveAction = true;
+                                                folderDeleted = true;
+                                                deletedCompany = company;
                                                 toolResponses.push(`I have successfully deleted the folder and all memory files for the prospect **${company}**.`);
                                             } else {
                                                 toolResponses.push(`I could not find or delete the folder/history for the prospect **${company}**.`);
@@ -2844,6 +2848,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 res.writeHead(200, { 'Content-Type': 'application/json' });
                                 res.end(JSON.stringify({
                                     gdriveAction: gdriveAction,
+                                    folderDeleted: folderDeleted,
+                                    deletedCompany: deletedCompany,
                                     choices: [{
                                         message: {
                                             role: 'assistant',

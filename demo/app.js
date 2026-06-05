@@ -982,6 +982,49 @@ Rules:
             // If a file was uploaded or deleted via chat prompt, refresh files list
             if (data.gdriveAction) {
                 try {
+                    if (data.folderDeleted && data.deletedCompany) {
+                        const activeCompany = metaCompany ? metaCompany.value.trim().toLowerCase() : '';
+                        const deletedCo = data.deletedCompany.trim().toLowerCase();
+                        if (activeCompany === deletedCo) {
+                            console.log(`🧹 Active prospect folder "${data.deletedCompany}" was deleted. Clearing active state.`);
+                            
+                            // Reset state parameters
+                            currentChatId = null;
+                            activeFolderId = null;
+                            
+                            // Reset form fields
+                            if (metaName) metaName.value = '';
+                            if (metaCompany) metaCompany.value = '';
+                            if (metaTitle) metaTitle.value = '';
+                            if (metaEmail) metaEmail.value = '';
+                            if (metaPhone) metaPhone.value = '';
+                            if (metaRep) metaRep.value = 'Albert';
+                            if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
+                            
+                            // Clear source fields
+                            if (sourceGdriveFileSelect) {
+                                sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
+                            }
+                            if (sourceGdriveFileId) sourceGdriveFileId.value = '';
+                            gdriveFileContent = '';
+                            if (sourceLinkedinText) sourceLinkedinText.value = '';
+                            if (sourceIntakeText) sourceIntakeText.value = '';
+                            if (sourceTranscriptText) sourceTranscriptText.value = '';
+                            if (activeAudioContainer) activeAudioContainer.classList.add('hidden');
+                            if (activeAudioPlayer) activeAudioPlayer.src = '';
+                            
+                            if (activeChatClientTitle) activeChatClientTitle.innerText = "New Chat";
+                            if (activeChatClientMeta) activeChatClientMeta.innerText = "Add client sources and save to start conversation with Tiny";
+                            
+                            chatHistory = [];
+                            if (chatMessagesLog) {
+                                chatMessagesLog.innerHTML = `<div style="font-size:0.95rem;color:#64748b;text-align:center;padding:2rem;">Add client details and click <strong>Save Sources</strong> to begin.</div>`;
+                            }
+                            
+                            // Update sidebar tree & badges
+                            updateValidationBadges();
+                        }
+                    }
                     await loadGoogleDriveFiles();
                     await loadProspectsTree();
                 } catch (gdriveErr) {
