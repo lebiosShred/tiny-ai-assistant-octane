@@ -1602,7 +1602,9 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         if (userMsgForGDrive) {
                             const companyMatch = userMsgForGDrive.content.match(/\bat\s+([^\n]+)/i);
                             if (companyMatch) {
-                                companyNameForGDrive = companyMatch[1].trim().split('\n')[0].trim();
+                                let tempComp = companyMatch[1].trim().split('\n')[0].trim();
+                                tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
+                                companyNameForGDrive = tempComp;
                             }
                         }
                     }
@@ -1873,7 +1875,11 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
                         const companyMatch = userMsg.content.match(/\bat\s+([^\n]+)/i);
                         chatDetails.prospect = clientMatch ? clientMatch[1].trim() : 'Unknown';
-                        chatDetails.company = companyMatch ? companyMatch[1].trim().split('\n')[0].trim() : 'Unknown';
+                        let tempComp = companyMatch ? companyMatch[1].trim().split('\n')[0].trim() : 'Unknown';
+                        if (tempComp !== 'Unknown') {
+                            tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
+                        }
+                        chatDetails.company = tempComp;
                     } else if (userMsg.content.includes('--- SPEAKER IDENTIFICATION ---') || userMsg.content.includes('Fathom / Jamie AI Call Transcript')) {
                         chatAction = 'SYNTHESIZE_CALL';
                         const companyMatch = userMsg.content.match(/SUMMARY:\s*([^—\n]+)/i);
@@ -1917,7 +1923,9 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                             prospectName = clientMatch[1].trim();
                         }
                         if (companyMatch) {
-                            companyName = companyMatch[1].trim().split('\n')[0].trim();
+                            let tempComp = companyMatch[1].trim().split('\n')[0].trim();
+                            tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
+                            companyName = tempComp;
                         }
                     }
                     
@@ -1968,7 +1976,9 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 if (!companyNameForGDrive && userMsgForGDrive) {
                     const companyMatch = userMsgForGDrive.content.match(/\bat\s+([^\n]+)/i);
                     if (companyMatch) {
-                        companyNameForGDrive = companyMatch[1].trim().split('\n')[0].trim();
+                        let tempComp = companyMatch[1].trim().split('\n')[0].trim();
+                        tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
+                        companyNameForGDrive = tempComp;
                     }
                 }
             }
@@ -2314,7 +2324,52 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 const dsPayload = JSON.stringify({
                     model: payload.model || 'deepseek-chat',
                     messages: payload.messages || [],
-                    temperature: payload.temperature !== undefined ? payload.temperature : 0.2
+                    temperature: payload.temperature !== undefined ? payload.temperature : 0.2,
+                    tools: [
+                        {
+                            type: 'function',
+                            function: {
+                                name: 'create_prospect_folder',
+                                description: 'Creates a new shared folder for a prospect on Google Drive. Use this only when explicitly asked to create a folder/directory itself, not when creating files.',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {
+                                        company: {
+                                            type: 'string',
+                                            description: 'The company or prospect name'
+                                        }
+                                    },
+                                    required: ['company']
+                                }
+                            }
+                        },
+                        {
+                            type: 'function',
+                            function: {
+                                name: 'create_prospect_file',
+                                description: 'Creates or uploads a file into the prospect\'s folder on Google Drive. Automatically creates the folder if it does not exist. Use this when asked to create or write a file (e.g., README.md).',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {
+                                        company: {
+                                            type: 'string',
+                                            description: 'The company or prospect name'
+                                        },
+                                        filename: {
+                                            type: 'string',
+                                            description: 'The name of the file (e.g. README.md)'
+                                        },
+                                        content: {
+                                            type: 'string',
+                                            description: 'The text content to save in the file'
+                                        }
+                                    },
+                                    required: ['company', 'filename', 'content']
+                                }
+                            }
+                        }
+                    ],
+                    tool_choice: 'auto'
                 });
                 
                 const dsOptions = {
@@ -2345,6 +2400,62 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             }
                             return;
                         }
+                        
+                        try {
+                            const data = JSON.parse(resBody);
+                            const choice = data.choices && data.choices[0];
+                            const message = choice && choice.message;
+                            console.log('🤖 DeepSeek message:', JSON.stringify(message));
+                            if (message && message.tool_calls && message.tool_calls.length > 0) {
+                                let gdriveAction = false;
+                                let toolResponses = [];
+                                
+                                for (const toolCall of message.tool_calls) {
+                                    const { name, arguments: argsString } = toolCall.function;
+                                    let args = {};
+                                    try {
+                                        args = JSON.parse(argsString);
+                                    } catch (e) {
+                                        console.error('Failed to parse tool call arguments:', argsString);
+                                    }
+                                    
+                                    if (name === 'create_prospect_folder') {
+                                        const company = args.company;
+                                        if (company) {
+                                            console.log(`📂 Tool Call: Creating folder for ${company}`);
+                                            await gdriveService.findOrCreateClientFolder(company);
+                                            gdriveAction = true;
+                                            toolResponses.push(`I have successfully created a Google Drive folder for the prospect **${company}**.`);
+                                        }
+                                    } else if (name === 'create_prospect_file') {
+                                        const { company, filename, content } = args;
+                                        if (company && filename && content) {
+                                            console.log(`📤 Tool Call: Creating file ${filename} for ${company}`);
+                                            const fileBuffer = Buffer.from(content, 'utf8');
+                                            const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                            await gdriveService.uploadFile(filename, 'text/plain', fileBuffer, clientFolderId);
+                                            gdriveAction = true;
+                                            toolResponses.push(`I have successfully created and uploaded the file "**${filename}**" into the folder for **${company}**.`);
+                                        }
+                                    }
+                                }
+                                
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({
+                                    gdriveAction: gdriveAction,
+                                    choices: [{
+                                        message: {
+                                            role: 'assistant',
+                                            content: toolResponses.join('\n')
+                                        }
+                                    }]
+                                }));
+                                return;
+                            }
+                        } catch (err) {
+                            console.warn('⚠️ Error parsing or executing DeepSeek tool response:', err.message);
+                        }
+                        
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(resBody);
                     });
