@@ -2424,9 +2424,32 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     return;
                 }
                 
+                // Map messages to explicitly instruct the model to use the tools provided
+                const dsMessages = [];
+                let hasSystem = false;
+                if (Array.isArray(payload.messages)) {
+                    for (const msg of payload.messages) {
+                        if (msg.role === 'system') {
+                            hasSystem = true;
+                            dsMessages.push({
+                                role: 'system',
+                                content: msg.content + '\n\nIMPORTANT: You have tools available to create/delete prospect folders and files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions (e.g. "delete prospect sample", "create file readme.md at AECOM", "Please delete the folder for prospect Meridian Logistics"), you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.'
+                            });
+                        } else {
+                            dsMessages.push(msg);
+                        }
+                    }
+                }
+                if (!hasSystem) {
+                    dsMessages.unshift({
+                        role: 'system',
+                        content: 'You have tools available to create/delete prospect folders and files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions, you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.'
+                    });
+                }
+
                 const dsPayload = JSON.stringify({
                     model: payload.model || 'deepseek-chat',
-                    messages: payload.messages || [],
+                    messages: dsMessages,
                     temperature: payload.temperature !== undefined ? payload.temperature : 0.2,
                     tools: [
                         {
