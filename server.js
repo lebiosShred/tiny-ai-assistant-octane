@@ -1534,38 +1534,106 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 });
             }
 
-            // Extract CRM metadata and target company folder placement (scoped to the entire request handler)
-            let companyNameForGDrive = '';
-            let clientNameForGDrive = 'Unknown Name';
-            let clientEmailForGDrive = '';
-            
-            const systemMsgForGDrive = payload.messages.find(m => m.role === 'system');
-            if (systemMsgForGDrive) {
-                const compMatch = systemMsgForGDrive.content.match(/- Company:[ \t]*([^\n\r]*)/i);
-                if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
-                    companyNameForGDrive = compMatch[1].trim();
-                }
-                const nameMatch = systemMsgForGDrive.content.match(/- Client Name:[ \t]*([^\n\r]*)/i);
-                if (nameMatch && nameMatch[1].trim()) {
-                    clientNameForGDrive = nameMatch[1].trim();
-                }
-                const emailMatch = systemMsgForGDrive.content.match(/- Email:[ \t]*([^\n\r]*)/i);
-                if (emailMatch && emailMatch[1].trim() && emailMatch[1].trim() !== 'Unknown Email') {
-                    clientEmailForGDrive = emailMatch[1].trim();
-                }
-            }
-            if (!companyNameForGDrive) {
-                const userMsgForGDrive = payload.messages.find(m => m.role === 'user');
-                if (userMsgForGDrive) {
-                    const companyMatch = userMsgForGDrive.content.match(/\bat\s+([^\n]+)/i);
-                    if (companyMatch) {
-                        let tempComp = companyMatch[1].trim().split('\n')[0].trim();
-                        tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
-                        companyNameForGDrive = tempComp;
+            // Helper function to extract metadata across the conversation history (scans newest to oldest user message first)
+            const extractMetadata = (messages) => {
+                let company = '';
+                let name = '';
+                let email = '';
+
+                if (Array.isArray(messages)) {
+                    for (let i = messages.length - 1; i >= 0; i--) {
+                        const msg = messages[i];
+                        if (msg.role === 'user') {
+                            if (!company) {
+                                const compMatch = msg.content.match(/(?:\bcompany(?:\s+name)?\s*(?:[:=-]|\bis\b)\s*|\bat\s+)([^\n\r]+)/i);
+                                if (compMatch) {
+                                    let tempComp = compMatch[1].trim().split('\n')[0].trim();
+                                    tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim().replace(/[.,!?;:]+$/, '').trim();
+                                    if (tempComp && !/^(unknown|none|na|n\/a)$/i.test(tempComp)) {
+                                        company = tempComp;
+                                    }
+                                }
+                            }
+                            if (!name) {
+                                let nameMatch = msg.content.match(/(?:\bclient(?:\s+name)?\s*(?:[:=-]|\bis\b)\s*|(?<!\b(?:company|business)\s+)\bname\s*(?:[:=-]|\bis\b)\s*)([^\n\r]+)/i);
+                                if (!nameMatch) {
+                                    nameMatch = msg.content.match(/\b(?:save|register|create|add|new)(?:\s+(?:this|a|an|the|new))?\s+client(?:\s+for\s+me)?\s+(?:named\s+)?([^\n\r.]+)/i);
+                                }
+                                if (nameMatch) {
+                                    let tempName = nameMatch[1].trim();
+                                    tempName = tempName.split(/\b(at|with|for|from|of)\b/i)[0].trim().replace(/[.,!?;:]+$/, '').trim();
+                                    if (tempName && !/^(unknown|none|na|n\/a)$/i.test(tempName)) {
+                                        name = tempName;
+                                    }
+                                }
+                            }
+                            if (!email) {
+                                const emailMatch = msg.content.match(/(?:\bemail\s*(?:[:=-]|\bis\b)\s*)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+                                if (emailMatch) {
+                                    email = emailMatch[1].trim();
+                                }
+                            }
+                        }
+                    }
+
+                    // Fallback to system message if still missing
+                    const systemMsg = messages.find(m => m.role === 'system');
+                    if (systemMsg) {
+                        if (!company) {
+                            const compMatch = systemMsg.content.match(/- Company:[ \t]*([^\n\r]*)/i);
+                            if (compMatch && compMatch[1].trim() && !/^(Unknown Company|Unknown_Company|Unknown)$/i.test(compMatch[1].trim())) {
+                                company = compMatch[1].trim();
+                            }
+                        }
+                        if (!name) {
+                            const nameMatch = systemMsg.content.match(/- Client Name:[ \t]*([^\n\r]*)/i);
+                            if (nameMatch && nameMatch[1].trim() && !/^(Unknown Name|Unknown_Name|Unknown)$/i.test(nameMatch[1].trim())) {
+                                name = nameMatch[1].trim();
+                            }
+                        }
+                        if (!email) {
+                            const emailMatch = systemMsg.content.match(/- Email:[ \t]*([^\n\r]*)/i);
+                            if (emailMatch && emailMatch[1].trim() && !/^(Unknown Email|Unknown_Email|Unknown)$/i.test(emailMatch[1].trim())) {
+                                email = emailMatch[1].trim();
+                            }
+                        }
                     }
                 }
-            }
+                return { company, name, email };
+            };
+
+            const extracted = extractMetadata(payload.messages);
+            let companyNameForGDrive = extracted.company;
+            let clientNameForGDrive = extracted.name || 'Unknown Name';
+            let clientEmailForGDrive = extracted.email;
             const company = companyNameForGDrive || 'Unknown_Company';
+
+            // Universal responder helper to inject metadata
+            const injectMetadataAndSend = (res, responseBody) => {
+                let parsed;
+                if (typeof responseBody === 'string') {
+                    try {
+                        parsed = JSON.parse(responseBody);
+                    } catch (e) {
+                        parsed = null;
+                    }
+                } else if (typeof responseBody === 'object' && responseBody !== null) {
+                    parsed = responseBody;
+                }
+
+                if (parsed) {
+                    parsed.metadata = {
+                        company: companyNameForGDrive,
+                        name: clientNameForGDrive === 'Unknown Name' ? '' : clientNameForGDrive,
+                        email: clientEmailForGDrive
+                    };
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(parsed));
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody));
+                }
+            };
 
             // Handler helper function for uploading/saving files (scoped to the entire request handler)
             const handleFileUpload = async (fileName, content, targetCompany) => {
@@ -1702,7 +1770,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     }
 
                     const uploadRegex = /^(?:upload|create)\s+(?:file|document|text file)?\s*([a-zA-Z0-9_\-\.]+)\s+(?:with\s+)?content\s+([\s\S]+)$/i;
-                    const deleteRegex = /^(?:delete|remove|destroy)\s+(?:file|document)?\s*([a-zA-Z0-9_\-\.]+)\s*$/i;
+                    const deleteRegex = /^(?:delete|remove|destroy)\s+(?:file|document)\s+([a-zA-Z0-9_\-\.]+)\s*$/i;
                     const deleteFolderRegex = /^(?:delete|remove|destroy)\s+(?:prospect|client|lead|company|folder)\s+([a-zA-Z0-9_\-\.\s]+)\s*$/i;
                     const linkedinRegex = /^(?:upload|register)\s+linkedin\s+(?:for\s+([a-zA-Z0-9_\-\.\s]+))?\s*(?:with)?\s*content\s+([\s\S]+)$/i;
                     const briefRegex = /^(?:upload|register)\s+(?:sales\s+)?brief\s+(?:for\s+([a-zA-Z0-9_\-\.\s]+))?\s*(?:with)?\s*content\s+([\s\S]+)$/i;
@@ -1998,7 +2066,12 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                     }
                                 }
                             } else if (gdriveAvailable) {
-                                success = await gdriveService.deleteFile(targetFileId);
+                                try {
+                                    success = await gdriveService.deleteFile(targetFileId);
+                                } catch (driveErr) {
+                                    console.warn(`⚠️ Google Drive file deletion API failed for file "${targetFileId}":`, driveErr.message);
+                                    success = false;
+                                }
                             }
 
                             if (success) {
@@ -2163,26 +2236,9 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 
             let gdriveFilesContext = '';
             companyNameForGDrive = '';
-            
             if (Array.isArray(payload.messages) && !payload.skipGDrive) {
-                const systemMsgForGDrive = payload.messages.find(m => m.role === 'system');
-                const userMsgForGDrive = payload.messages.find(m => m.role === 'user');
-                
-                if (systemMsgForGDrive) {
-                    const compMatch = systemMsgForGDrive.content.match(/- Company:[ \t]*([^\n\r]*)/i);
-                    if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
-                        companyNameForGDrive = compMatch[1].trim();
-                    }
-                }
-                
-                if (!companyNameForGDrive && userMsgForGDrive) {
-                    const companyMatch = userMsgForGDrive.content.match(/\bat\s+([^\n]+)/i);
-                    if (companyMatch) {
-                        let tempComp = companyMatch[1].trim().split('\n')[0].trim();
-                        tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
-                        companyNameForGDrive = tempComp;
-                    }
-                }
+                const extractedForGDrive = extractMetadata(payload.messages);
+                companyNameForGDrive = extractedForGDrive.company;
             }
 
             if (companyNameForGDrive) {
@@ -2532,7 +2588,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             hasSystem = true;
                             dsMessages.push({
                                 role: 'system',
-                                content: msg.content + '\n\nIMPORTANT: You have tools available to create/delete prospect folders and files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions (e.g. "delete prospect sample", "create file readme.md at AECOM", "Please delete the folder for prospect Meridian Logistics"), you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.'
+                                content: msg.content + '\n\nIMPORTANT: You have tools available to create/delete prospect folders and files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions (e.g. "delete prospect sample", "create file readme.md at AECOM", "Please delete the folder for prospect Meridian Logistics"), you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.\n\nAdditionally, when gathering required client/company details (e.g. Client Name, Company Name) in a multi-turn conversation, once you have successfully gathered both the Client Name and Company Name, you MUST call the `create_prospect_folder` tool immediately to create the client folder. Do not claim to have saved or created the folder in plain text without invoking the tool.'
                             });
                         } else {
                             dsMessages.push(msg);
@@ -2542,7 +2598,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 if (!hasSystem) {
                     dsMessages.unshift({
                         role: 'system',
-                        content: 'You have tools available to create/delete prospect folders and files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions, you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.'
+                        content: 'You have tools available to create/delete prospect folders and files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions, you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.\n\nAdditionally, when gathering required client/company details (e.g. Client Name, Company Name) in a multi-turn conversation, once you have successfully gathered both the Client Name and Company Name, you MUST call the `create_prospect_folder` tool immediately to create the client folder. Do not claim to have saved or created the folder in plain text without invoking the tool.'
                     });
                 }
 
@@ -2974,8 +3030,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                     }
                                 }
                                 
-                                res.writeHead(200, { 'Content-Type': 'application/json' });
-                                res.end(JSON.stringify({
+                                injectMetadataAndSend(res, {
                                     gdriveAction: gdriveAction,
                                     folderDeleted: folderDeleted,
                                     deletedCompany: deletedCompany,
@@ -2986,15 +3041,14 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             content: toolResponses.join('\n')
                                         }
                                     }]
-                                }));
+                                });
                                 return;
                             }
                         } catch (err) {
                             console.warn('⚠️ Error parsing or executing DeepSeek tool response:', err.message);
                         }
                         
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(resBody);
+                        injectMetadataAndSend(res, resBody);
                     });
                 });
                 
@@ -3002,8 +3056,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     console.warn(`⚠️ DeepSeek connection error: ${err.message}. Attempting Gemini failover...`);
                     try {
                         const text = await executeGeminiFailover(payload);
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content: text } }] }));
+                        injectMetadataAndSend(res, { choices: [{ message: { role: 'assistant', content: text } }] });
                     } catch (geminiError) {
                         res.writeHead(502, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: `DeepSeek failed: ${err.message}. Gemini failover failed: ${geminiError.message}` }));
@@ -3018,8 +3071,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             if (payload.provider === 'gemini') {
                 try {
                     const text = await executeGeminiFailover(payload);
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content: text } }] }));
+                    injectMetadataAndSend(res, { choices: [{ message: { role: 'assistant', content: text } }] });
                 } catch (err) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: `Gemini API failed: ${err.message}` }));
@@ -3059,8 +3111,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 proxyRes.on('data', chunk => resBody += chunk);
                 proxyRes.on('end', async () => {
                     if (proxyRes.statusCode === 200) {
-                        res.writeHead(200, proxyRes.headers);
-                        res.end(resBody);
+                        injectMetadataAndSend(res, resBody);
                         return;
                     }
 
@@ -3077,8 +3128,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 }
                             ]
                         };
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify(mistralData));
+                        injectMetadataAndSend(res, mistralData);
                     } catch (geminiError) {
                         console.error("❌ Gemini failover failed:", geminiError.message);
                         res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
@@ -3101,8 +3151,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             }
                         ]
                     };
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify(mistralData));
+                    injectMetadataAndSend(res, mistralData);
                 } catch (geminiError) {
                     console.error("❌ Gemini failover failed:", geminiError.message);
                     res.writeHead(502, { 'Content-Type': 'application/json' });

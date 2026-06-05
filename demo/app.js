@@ -238,11 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Loading & Loading Chats list ---
-    async function loadChatsList() {
+    // --- Loading & Loading Chats list ---
+    async function loadChatsList(preFetchedData = null) {
         try {
-            const response = await fetch('/api/history');
-            if (!response.ok) throw new Error('Failed to fetch history');
-            chatsList = await response.json();
+            chatsList = preFetchedData || await (await fetch('/api/history')).json();
             renderChatsList();
         } catch (err) {
             console.error('Error loading chats:', err);
@@ -265,9 +264,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Google Drive Explorer Loader ---
-    async function loadGoogleDriveFiles() {
+    // Dropdown population helper to prevent redundant file lists
+    function populateGdriveDropdown(files) {
         if (!sourceGdriveFileSelect) return;
+        sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
+        if (files && files.length > 0) {
+            files.forEach(file => {
+                const opt = document.createElement('option');
+                opt.value = file.id;
+                opt.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                sourceGdriveFileSelect.appendChild(opt);
+            });
+        } else {
+            sourceGdriveFileSelect.innerHTML = '<option value="">No files in client folder</option>';
+        }
+    }
+
+    // --- Google Drive Explorer Loader ---
+    async function loadGoogleDriveFiles(preFetchedData = null) {
+        if (!sourceGdriveFileSelect) return;
+        if (preFetchedData) {
+            const files = preFetchedData.items ? preFetchedData.items.filter(f => !f.isFolder) : [];
+            populateGdriveDropdown(files);
+            return;
+        }
+
         sourceGdriveFileSelect.innerHTML = '<option value="">-- Loading GDrive files... --</option>';
         try {
             const company = metaCompany ? metaCompany.value.trim() : '';
@@ -275,33 +296,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(url);
             if (!response.ok) throw new Error('GDrive list failed');
             const data = await response.json();
-            sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
-            
-            if (data.items && data.items.length > 0) {
-                data.items.forEach(file => {
-                    if (!file.isFolder) {
-                        const opt = document.createElement('option');
-                        opt.value = file.id;
-                        opt.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-                        sourceGdriveFileSelect.appendChild(opt);
-                    }
-                });
-            } else {
-                sourceGdriveFileSelect.innerHTML = '<option value="">No files in client folder</option>';
-            }
+            const files = data.items ? data.items.filter(f => !f.isFolder) : [];
+            populateGdriveDropdown(files);
         } catch (err) {
             console.error('Error loading Google Drive files:', err);
             sourceGdriveFileSelect.innerHTML = '<option value="">Error loading GDrive files</option>';
         }
     }
 
-    async function loadProspectsTree() {
+    async function loadProspectsTree(preFetchedData = null) {
         if (!recentChatsList) return;
         recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Loading folders...</div>';
         try {
-            const response = await fetch('/api/gdrive/list');
-            if (!response.ok) throw new Error('Failed to list folders');
-            const data = await response.json();
+            const data = preFetchedData || await (await fetch('/api/gdrive/list')).json();
             recentChatsList.innerHTML = '';
             
             if (data.items && data.items.length > 0) {
@@ -348,34 +355,59 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         
                         const matchSession = chatsList.find(c => c.company.toLowerCase().trim() === folder.name.toLowerCase().trim());
-                        if (matchSession) {
-                            await selectChat(matchSession.id);
-                        } else {
-                            // Start a new chat session for this company folder
-                            currentChatId = null;
-                            workspaceEmptyState.classList.add('hidden');
-                            workspaceActiveChat.classList.remove('hidden');
-                            chatMessagesLog.innerHTML = '';
-                            chatHistory = [];
-                            
-                            // Initialize with welcoming message
-                            chatHistory.push({
-                                role: 'assistant',
-                                content: `Welcome! I've loaded the Google Drive folder for **${folder.name}**. You can drag files here or click the paperclip to upload documents to this prospect's memory.`,
-                                timestamp: new Date().toISOString()
-                            });
-                            renderChatHistory();
-                            
-                            if (metaName) metaName.value = '';
-                            if (metaTitle) metaTitle.value = '';
-                            if (metaEmail) metaEmail.value = '';
-                            if (metaPhone) metaPhone.value = '';
-                            if (metaRep) metaRep.value = 'Albert';
-                            if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
-                        }
+                        sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
                         
-                        // Load files inside this folder in the leftmost column
-                        await loadSourcesForCompany(folder.id, folder.name);
+                        try {
+                            if (matchSession) {
+                                // Run history details fetch and Google Drive folder listing in parallel
+                                const [detailRes, filesRes] = await Promise.all([
+                                    fetch(`/api/history/detail?id=${encodeURIComponent(matchSession.id)}`),
+                                    fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`)
+                                ]);
+                                
+                                if (!detailRes.ok) throw new Error('Failed to load chat details');
+                                if (!filesRes.ok) throw new Error('Failed to list files');
+                                
+                                const detailData = await detailRes.json();
+                                const filesData = await filesRes.json();
+                                
+                                // Render both sections synchronously with the pre-fetched datasets
+                                await selectChat(matchSession.id, detailData, filesData);
+                                await loadSourcesForCompany(folder.id, folder.name, filesData);
+                            } else {
+                                // Start a new chat session for this company folder and fetch files in parallel
+                                currentChatId = null;
+                                workspaceEmptyState.classList.add('hidden');
+                                workspaceActiveChat.classList.remove('hidden');
+                                chatMessagesLog.innerHTML = '';
+                                chatHistory = [];
+                                
+                                // Initialize with welcoming message
+                                chatHistory.push({
+                                    role: 'assistant',
+                                    content: `Welcome! I've loaded the Google Drive folder for **${folder.name}**. You can drag files here or click the paperclip to upload documents to this prospect's memory.`,
+                                    timestamp: new Date().toISOString()
+                                });
+                                renderChatHistory();
+                                
+                                if (metaName) metaName.value = '';
+                                if (metaTitle) metaTitle.value = '';
+                                if (metaEmail) metaEmail.value = '';
+                                if (metaPhone) metaPhone.value = '';
+                                if (metaRep) metaRep.value = 'Albert';
+                                if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
+                                
+                                const filesRes = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`);
+                                if (!filesRes.ok) throw new Error('Failed to list files');
+                                const filesData = await filesRes.json();
+                                
+                                await loadSourcesForCompany(folder.id, folder.name, filesData);
+                            }
+                        } catch (err) {
+                            console.error('Error loading prospect data on click:', err);
+                            showToast('Failed to load prospect data.');
+                            sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load files</div>';
+                        }
                     });
                     
                     recentChatsList.appendChild(folderItem);
@@ -400,13 +432,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function loadSourcesForCompany(folderId, companyName) {
+    async function loadSourcesForCompany(folderId, companyName, preFetchedFiles = null) {
         if (!sourcesList) return;
         sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
         try {
-            const response = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folderId)}`);
-            if (!response.ok) throw new Error('Failed to list files');
-            const data = await response.json();
+            const data = preFetchedFiles || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folderId)}`)).json();
             sourcesList.innerHTML = '';
             
             // Look up associated client name from chatsList, or default to currently entered metaName
@@ -425,6 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.items && data.items.length > 0) {
                 const files = data.items.filter(f => !f.isFolder);
+                populateGdriveDropdown(files);
                 if (files.length === 0) {
                     const noFilesMsg = document.createElement('div');
                     noFilesMsg.style.cssText = 'color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;';
@@ -473,16 +504,18 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (textPreviewTarget) {
                                     textPreviewTarget.textContent = data.content || '[Empty File]';
                                 }
+                                gdriveFileContent = data.content || '';
+                                sourceGdriveFileId.value = file.id;
+                                if (sourceGdriveFileSelect) {
+                                    sourceGdriveFileSelect.value = file.id;
+                                }
+                                updateValidationBadges();
+                                triggerAutoSave();
                             } catch (err) {
                                 console.error("Error reading file:", err);
                                 if (textPreviewTarget) {
                                     textPreviewTarget.innerHTML = `<div style="color: #ef4444; font-size: 0.9rem; padding: 2rem; text-align: center;">❌ Failed to load file content.<br><span style="font-size: 0.8rem; color: #94a3b8;">${err.message}</span></div>`;
                                 }
-                            }
-                            await loadGoogleDriveFiles();
-                            if (sourceGdriveFileSelect) {
-                                sourceGdriveFileSelect.value = file.id;
-                                sourceGdriveFileSelect.dispatchEvent(new Event('change'));
                             }
                         }, 100);
                     });
@@ -490,6 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     sourcesList.appendChild(fileItem);
                 });
             } else {
+                populateGdriveDropdown([]);
                 const noFilesMsg = document.createElement('div');
                 noFilesMsg.style.cssText = 'color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;';
                 noFilesMsg.innerText = 'No files inside folder';
@@ -502,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Select Chat ---
-    async function selectChat(id) {
+    async function selectChat(id, preFetchedDetail = null, preFetchedFiles = null) {
         currentChatId = id;
         renderChatsList();
         toggleDrawer(false);
@@ -512,9 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessagesLog.innerHTML = '';
  
         try {
-            const response = await fetch(`/api/history/detail?id=${encodeURIComponent(id)}`);
-            if (!response.ok) throw new Error('Failed to load chat details');
-            const data = await response.json();
+            const data = preFetchedDetail || await (await fetch(`/api/history/detail?id=${encodeURIComponent(id)}`)).json();
  
             // Populate metadata
             metaName.value = data.name || '';
@@ -527,7 +559,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             gdriveFileContent = data.gDriveFileContent || '';
             sourceGdriveFileId.value = data.gDriveFileId || '';
-            await loadGoogleDriveFiles();
+            
+            if (preFetchedFiles) {
+                const files = preFetchedFiles.items ? preFetchedFiles.items.filter(f => !f.isFolder) : [];
+                populateGdriveDropdown(files);
+            } else {
+                await loadGoogleDriveFiles();
+            }
             if (data.gDriveFileId) {
                 sourceGdriveFileSelect.value = data.gDriveFileId;
             } else if (data.gDriveFile || data.oneDriveFile) {
@@ -867,9 +905,14 @@ document.addEventListener('DOMContentLoaded', () => {
             chatHistory = [];
             chatMessagesLog.innerHTML = `<div style="font-size:0.95rem;color:#64748b;text-align:center;padding:2rem;">Add client details and click <strong>Save Sources</strong> to begin.</div>`;
             
-            // Reload Google Drive files list to populate select dropdown and tree
-            loadGoogleDriveFiles();
-            loadProspectsTree();
+            // Clear active file selection state and reload file tree and files list in parallel
+            if (sourceGdriveFileId) sourceGdriveFileId.value = '';
+            gdriveFileContent = '';
+            
+            Promise.all([
+                loadGoogleDriveFiles(),
+                loadProspectsTree()
+            ]);
             updateValidationBadges();
         });
     }
@@ -982,6 +1025,30 @@ Rules:
                 showReceiptModal(data.receipt);
             }
 
+            // Real-time metadata sync from chat conversation history to UI state
+            if (data.metadata && data.metadata.company) {
+                const currentCo = metaCompany ? metaCompany.value.trim() : '';
+                const currentName = metaName ? metaName.value.trim() : '';
+                const currentEmail = metaEmail ? metaEmail.value.trim() : '';
+                
+                const newCo = data.metadata.company.trim();
+                const newName = data.metadata.name ? data.metadata.name.trim() : currentName;
+                const newEmail = data.metadata.email ? data.metadata.email.trim() : currentEmail;
+                
+                if (newCo && (!currentCo || currentCo.toLowerCase() !== newCo.toLowerCase())) {
+                    console.log(`🔄 Intercepted metadata from chat response: Name: "${newName}", Company: "${newCo}", Email: "${newEmail}". Syncing UI and Google Drive...`);
+                    await saveDiscoverySession(newName, newCo, newEmail);
+                    try {
+                        await Promise.all([
+                            loadGoogleDriveFiles(),
+                            loadProspectsTree()
+                        ]);
+                    } catch (syncErr) {
+                        console.error("Error refreshing GDrive files/tree post-sync:", syncErr);
+                    }
+                }
+            }
+
             const content = data.choices[0].message.content;
 
             // If a file was uploaded or deleted via chat prompt, refresh files list
@@ -1030,8 +1097,10 @@ Rules:
                             updateValidationBadges();
                         }
                     }
-                    await loadGoogleDriveFiles();
-                    await loadProspectsTree();
+                    await Promise.all([
+                        loadGoogleDriveFiles(),
+                        loadProspectsTree()
+                    ]);
                 } catch (gdriveErr) {
                     console.error("Error refreshing GDrive files list/tree:", gdriveErr);
                 }
@@ -1244,8 +1313,10 @@ Rules:
                 });
             }
 
-            await loadGoogleDriveFiles();
-            await loadProspectsTree();
+            await Promise.all([
+                loadGoogleDriveFiles(),
+                loadProspectsTree()
+            ]);
 
             if (uploadedFileNames.length > 0 && totalFiles > 1) {
                 showToast(`✔️ All ${uploadedFileNames.length} files uploaded and indexed.`);
@@ -1686,8 +1757,10 @@ ${data.parsedText}`;
                 sourceTranscriptProgress.classList.add('hidden');
             }, 2000);
         }
-        await loadGoogleDriveFiles();
-        await loadProspectsTree();
+        await Promise.all([
+            loadGoogleDriveFiles(),
+            loadProspectsTree()
+        ]);
     }
 
     // Initialize dropzones
@@ -1870,8 +1943,10 @@ ${data.parsedText}`;
                 });
             }
 
-            await loadGoogleDriveFiles();
-            await loadProspectsTree();
+            await Promise.all([
+                loadGoogleDriveFiles(),
+                loadProspectsTree()
+            ]);
 
             if (uploadedFileNames.length > 0 && totalFiles > 1) {
                 showToast(`✔️ All ${uploadedFileNames.length} files uploaded and indexed.`);
@@ -1909,8 +1984,10 @@ ${data.parsedText}`;
 
     if (btnRefreshGdrive) {
         btnRefreshGdrive.addEventListener('click', () => {
-            loadGoogleDriveFiles();
-            loadProspectsTree();
+            Promise.all([
+                loadGoogleDriveFiles(),
+                loadProspectsTree()
+            ]);
         });
     }
 
@@ -1969,8 +2046,21 @@ ${data.parsedText}`;
     // Initial Load (Deferred slightly to prioritize first visual paint and improve LCP)
     setTimeout(async () => {
         try {
-            await loadChatsList();
-            await loadProspectsTree();
+            // Fetch chats list and prospects tree in parallel to eliminate sequential roundtrip latency
+            const [chatsRes, prospectsRes] = await Promise.all([
+                fetch('/api/history'),
+                fetch('/api/gdrive/list')
+            ]);
+            
+            if (!chatsRes.ok) throw new Error('Failed to fetch history');
+            if (!prospectsRes.ok) throw new Error('Failed to list folders');
+            
+            const chatsData = await chatsRes.json();
+            const prospectsData = await prospectsRes.json();
+            
+            await loadChatsList(chatsData);
+            await loadProspectsTree(prospectsData);
+            
             updateValidationBadges();
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
