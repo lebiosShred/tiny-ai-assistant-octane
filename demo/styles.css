@@ -4045,24 +4045,31 @@ body {
 }
 
 .chat-message-card.user {
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(14, 165, 233, 0.15) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    color: #0369a1 !important;
+    border: 1px solid rgba(14, 165, 233, 0.25) !important;
     border-top-right-radius: 4px !important;
 }
 
 .chat-message-card.assistant {
-    background: #ffffff !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
     color: #0f172a !important;
     border: 1px solid rgba(15, 23, 42, 0.06) !important;
     border-top-left-radius: 4px !important;
 }
 
 .chat-message-card pre {
-    background: #f8fafc !important;
-    border: 1px solid rgba(15, 23, 42, 0.05) !important;
-    color: #0f172a !important;
-    padding: 0.85rem !important;
+    background: transparent !important;
+    border: none !important;
+    color: inherit !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    white-space: pre-wrap !important;
+    font-family: inherit !important;
 }
 
 /* Quick Prompts Bar */
