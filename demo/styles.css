@@ -3650,6 +3650,10 @@ body.resizing * {
     display: flex !important;
 }
 
+.chat-drag-overlay * {
+    pointer-events: none !important;
+}
+
 .chat-drag-overlay-card {
     text-align: center !important;
     padding: 2.5rem !important;
@@ -3959,6 +3963,8 @@ body {
 .dashboard-grid.notebook-layout > .chat-workspace,
 .dashboard-grid.notebook-layout > .sources-panel {
     min-width: 0 !important;
+    min-height: 0 !important;
+    height: 100% !important;
 }
 
 /* Sidebar Panels Styling */

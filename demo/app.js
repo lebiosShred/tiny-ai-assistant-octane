@@ -1212,7 +1212,7 @@ Rules:
             formData.append('file', file, file.name);
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/gdrive/upload-stream', true);
+            xhr.open('POST', 'https://tiny-ai-assistant-351972137415.us-central1.run.app/api/gdrive/upload-stream', true);
 
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
@@ -1657,6 +1657,16 @@ ${data.parsedText}`;
             if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
                 e.preventDefault();
                 chatDragOverlay.classList.add('dragover');
+            }
+        });
+        window.addEventListener('dragover', (e) => {
+            if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+                e.preventDefault();
+            }
+        });
+        window.addEventListener('drop', (e) => {
+            if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+                e.preventDefault();
             }
         });
         chatDragOverlay.addEventListener('dragover', (e) => {
