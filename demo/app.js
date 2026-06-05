@@ -348,13 +348,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         const matchSession = chatsList.find(c => c.company.toLowerCase().trim() === folder.name.toLowerCase().trim());
                         if (matchSession) {
-                            if (metaName) metaName.value = matchSession.name || '';
-                            if (metaTitle) metaTitle.value = matchSession.title || '';
-                            if (metaEmail) metaEmail.value = matchSession.email || '';
-                            if (metaPhone) metaPhone.value = matchSession.phone || '';
-                            if (metaRep) metaRep.value = matchSession.rep || 'Albert';
-                            if (metaTrack) metaTrack.value = matchSession.track || 'Planning & Analytics (TM1)';
-                            currentChatId = matchSession.id;
+                            await selectChat(matchSession.id);
+                        } else {
+                            // Start a new chat session for this company folder
+                            currentChatId = null;
+                            workspaceEmptyState.classList.add('hidden');
+                            workspaceActiveChat.classList.remove('hidden');
+                            chatMessagesLog.innerHTML = '';
+                            chatHistory = [];
+                            
+                            // Initialize with welcoming message
+                            chatHistory.push({
+                                role: 'assistant',
+                                content: `Welcome! I've loaded the Google Drive folder for **${folder.name}**. You can drag files here or click the paperclip to upload documents to this prospect's memory.`,
+                                timestamp: new Date().toISOString()
+                            });
+                            renderChatHistory();
+                            
+                            if (metaName) metaName.value = '';
+                            if (metaTitle) metaTitle.value = '';
+                            if (metaEmail) metaEmail.value = '';
+                            if (metaPhone) metaPhone.value = '';
+                            if (metaRep) metaRep.value = 'Albert';
+                            if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
                         }
                         
                         // Load files inside this folder in the leftmost column
@@ -1028,7 +1044,8 @@ Rules:
     // --- Chat Attach Button (Multipart Streaming Upload via FormData + XHR) ---
     if (chatAttachBtn && chatAttachFile) {
         chatAttachBtn.addEventListener('click', () => {
-            if (!currentChatId) {
+            const companyName = metaCompany ? metaCompany.value.trim() : '';
+            if (!companyName) {
                 showToast('Start or select a prospect chat first.');
                 return;
             }
@@ -1037,14 +1054,45 @@ Rules:
 
         chatAttachFile.addEventListener('change', async () => {
             if (!chatAttachFile.files || chatAttachFile.files.length === 0) return;
-            if (!currentChatId) {
+            
+            const companyName = metaCompany ? metaCompany.value.trim() : '';
+            if (!companyName) {
                 showToast('Start or select a prospect chat first.');
                 return;
             }
 
+            // Auto-initialize session if currentChatId is null
+            if (!currentChatId) {
+                try {
+                    const initPayload = {
+                        type: 'synthesis',
+                        name: metaName.value.trim() || `${companyName} Lead`,
+                        company: companyName,
+                        title: metaTitle.value.trim(),
+                        email: metaEmail.value.trim(),
+                        phone: metaPhone.value.trim(),
+                        rep: metaRep.value,
+                        track: metaTrack.value,
+                        messages: chatHistory
+                    };
+                    const initRes = await fetch('/api/history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(initPayload)
+                    });
+                    const initResult = await initRes.json();
+                    if (!initRes.ok) throw new Error(initResult.error || 'Failed to initialize session');
+                    currentChatId = initResult.id;
+                    await loadChatsList();
+                } catch (initErr) {
+                    console.error('Failed to auto-initialize chat session on file select:', initErr);
+                    showToast(`Failed to initialize session: ${initErr.message}`);
+                    return;
+                }
+            }
+
             const filesArray = Array.from(chatAttachFile.files);
             const totalFiles = filesArray.length;
-            const companyName = metaCompany ? metaCompany.value.trim() : 'Unknown_Company';
             const uploadedFileNames = [];
             let uploadErrors = 0;
 
@@ -1108,8 +1156,8 @@ Rules:
                 const savePayload = {
                     id: currentChatId,
                     type: 'synthesis',
-                    name: metaName.value.trim(),
-                    company: metaCompany.value.trim(),
+                    name: metaName.value.trim() || `${companyName} Lead`,
+                    company: companyName,
                     title: metaTitle.value.trim(),
                     email: metaEmail.value.trim(),
                     phone: metaPhone.value.trim(),
@@ -1595,7 +1643,8 @@ ${data.parsedText}`;
     // --- Active Chat Drag & Drop Memory Ingestion ---
     if (chatActiveConsole && chatDragOverlay) {
         window.addEventListener('dragenter', (e) => {
-            if (currentChatId) {
+            const companyName = metaCompany ? metaCompany.value.trim() : '';
+            if (companyName) {
                 e.preventDefault();
                 chatDragOverlay.classList.add('dragover');
             }
@@ -1610,46 +1659,70 @@ ${data.parsedText}`;
         chatDragOverlay.addEventListener('drop', async (e) => {
             e.preventDefault();
             chatDragOverlay.classList.remove('dragover');
-            if (!currentChatId) return;
+            
+            const companyName = metaCompany ? metaCompany.value.trim() : '';
+            if (!companyName) {
+                showToast('Please select a prospect or enter a company name first.');
+                return;
+            }
+
             const droppedFiles = Array.from(e.dataTransfer.files);
             if (droppedFiles.length === 0) return;
 
+            // Auto-initialize session if currentChatId is null
+            if (!currentChatId) {
+                try {
+                    const initPayload = {
+                        type: 'synthesis',
+                        name: metaName.value.trim() || `${companyName} Lead`,
+                        company: companyName,
+                        title: metaTitle.value.trim(),
+                        email: metaEmail.value.trim(),
+                        phone: metaPhone.value.trim(),
+                        rep: metaRep.value,
+                        track: metaTrack.value,
+                        messages: chatHistory
+                    };
+                    const initRes = await fetch('/api/history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(initPayload)
+                    });
+                    const initResult = await initRes.json();
+                    if (!initRes.ok) throw new Error(initResult.error || 'Failed to initialize session');
+                    currentChatId = initResult.id;
+                    await loadChatsList();
+                } catch (initErr) {
+                    console.error('Failed to auto-initialize chat session on drop:', initErr);
+                    showToast(`Failed to initialize session: ${initErr.message}`);
+                    return;
+                }
+            }
+
             const totalFiles = droppedFiles.length;
-            const companyName = metaCompany ? metaCompany.value.trim() : 'Unknown_Company';
             const uploadedFileNames = [];
             let uploadErrors = 0;
 
-            showToast(`Uploading ${totalFiles} file${totalFiles > 1 ? 's' : ''} to client folder...`);
+            showToast(`Uploading ${totalFiles} file${totalFiles > 1 ? 's' : ''} to client folder via streaming...`);
+
+            // Show progress bar
+            if (chatUploadProgress) chatUploadProgress.classList.remove('hidden');
 
             for (let i = 0; i < totalFiles; i++) {
                 const file = droppedFiles[i];
                 const fileIndex = i + 1;
 
-                if (file.size > 50 * 1024 * 1024) {
-                    showToast(`File "${file.name}" is too large (max 50MB). Skipping.`);
+                if (file.size > 100 * 1024 * 1024) {
+                    showToast(`File "${file.name}" exceeds 100MB. Skipping.`);
                     uploadErrors++;
                     continue;
                 }
 
+                if (chatUploadProgressText) chatUploadProgressText.textContent = `Uploading ${fileIndex}/${totalFiles}: ${file.name}`;
+                if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', '0%');
+
                 try {
-                    const dataUrl = await readFileAsDataURL(file);
-                    const base64Data = dataUrl.split(',')[1];
-
-                    const res = await fetch('/api/gdrive/upload', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            company: companyName || 'Unknown_Company',
-                            fileName: file.name,
-                            mimeType: file.type || 'application/octet-stream',
-                            fileData: base64Data
-                        })
-                    });
-
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || `Upload failed with status ${res.status}`);
+                    const result = await uploadFileStreaming(file, companyName);
 
                     uploadedFileNames.push(file.name);
                     showToast(`Uploaded ${file.name} (${fileIndex}/${totalFiles})`);
@@ -1662,14 +1735,14 @@ ${data.parsedText}`;
                     });
 
                     // Accumulate gdriveFileContent from all uploaded files
-                    if (data.fileId) {
-                        sourceGdriveFileSelect.innerHTML = `<option value="${data.fileId}">${file.name} (Uploaded)</option>`;
-                        sourceGdriveFileSelect.value = data.fileId;
-                        sourceGdriveFileId.value = data.fileId;
-                        if (gdriveFileContent && data.parsedText) {
-                            gdriveFileContent += `\n\n--- [${file.name}] ---\n${data.parsedText}`;
+                    if (result.fileId) {
+                        sourceGdriveFileSelect.innerHTML = `<option value="${result.fileId}">${file.name} (Uploaded)</option>`;
+                        sourceGdriveFileSelect.value = result.fileId;
+                        sourceGdriveFileId.value = result.fileId;
+                        if (gdriveFileContent && result.parsedText) {
+                            gdriveFileContent += `\n\n--- [${file.name}] ---\n${result.parsedText}`;
                         } else {
-                            gdriveFileContent = data.parsedText || '';
+                            gdriveFileContent = result.parsedText || '';
                         }
                     }
                 } catch (err) {
@@ -1678,6 +1751,10 @@ ${data.parsedText}`;
                     uploadErrors++;
                 }
             }
+
+            // Hide progress bar
+            if (chatUploadProgress) chatUploadProgress.classList.add('hidden');
+            if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', '0%');
 
             // Render all chat history notifications at once
             renderChatHistory();
@@ -1688,8 +1765,8 @@ ${data.parsedText}`;
                 const savePayload = {
                     id: currentChatId,
                     type: 'synthesis',
-                    name: metaName.value.trim(),
-                    company: metaCompany.value.trim(),
+                    name: metaName.value.trim() || `${companyName} Lead`,
+                    company: companyName,
                     title: metaTitle.value.trim(),
                     email: metaEmail.value.trim(),
                     phone: metaPhone.value.trim(),
