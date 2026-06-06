@@ -42,7 +42,6 @@
             <div class="prospects-panel panel" id="chat-sidebar-container">
                 <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <span class="panel-title">👥 Prospects</span>
-                    <button type="button" class="btn btn-primary" id="btn-new-chat" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; line-height: 1.2;">➕ New Chat</button>
                 </div>
                 <div class="panel-body">
                     <div class="sidebar-search">
@@ -63,6 +62,7 @@
                     <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" width="80" height="80">
                     <h3>Tiny AI Assistant</h3>
                     <p>Select a client chat from the sidebar or click <strong>New Client Chat</strong> to get started.</p>
+                    <button type="button" class="btn btn-primary" id="btn-new-chat" style="margin-top: 1rem;">➕ New Client Chat</button>
                 </div>
 
                 <!-- Active Chat view (Hidden by default) -->
@@ -74,7 +74,8 @@
                             <span class="chat-client-title" id="active-chat-client-title">Loading...</span>
                             <span class="chat-client-meta" id="active-chat-client-meta">Loading...</span>
                         </div>
-                        <div class="chat-header-actions" style="display: flex; gap: 0.5rem; position: relative;">
+                        <div class="chat-header-actions" style="display: flex; gap: 0.5rem; align-items: center; position: relative;">
+                            <button type="button" class="btn btn-primary" id="btn-new-chat-active" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; line-height: 1.2;">➕ New Chat</button>
                             <button type="button" id="btn-toggle-sources" style="position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: 0 !important; opacity: 0.0001 !important; border: none !important; cursor: default !important; z-index: 10000000 !important; pointer-events: auto !important;" aria-label="Toggle Sources"></button>
                         </div>
                     </div>

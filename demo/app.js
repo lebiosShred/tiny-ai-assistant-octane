@@ -117,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM Elements
     const btnNewChat = document.getElementById('btn-new-chat');
+    const btnNewChatActive = document.getElementById('btn-new-chat-active');
     const chatSearch = document.getElementById('chat-search');
     const recentChatsList = document.getElementById('recent-chats-list');
     const sourcesList = document.getElementById('sources-list');
@@ -899,50 +900,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Create New Chat ---
+    const handleNewChat = () => {
+        currentChatId = null;
+        renderChatsList();
+
+        workspaceEmptyState.classList.add('hidden');
+        workspaceActiveChat.classList.remove('hidden');
+        chatMessagesLog.innerHTML = '';
+
+        toggleDrawer(true);
+
+        // Clear inputs
+        metaName.value = '';
+        metaCompany.value = '';
+        metaTitle.value = '';
+        metaEmail.value = '';
+        metaPhone.value = '';
+        metaRep.value = 'Albert';
+        metaTrack.value = 'Planning & Analytics (TM1)';
+        sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
+        sourceGdriveFileId.value = '';
+        gdriveFileContent = '';
+        sourceLinkedinText.value = '';
+        sourceIntakeText.value = '';
+        sourceTranscriptText.value = '';
+        activeAudioContainer.classList.add('hidden');
+        activeAudioPlayer.src = '';
+
+        activeChatClientTitle.innerText = "New Chat";
+        activeChatClientMeta.innerText = "Add client sources and save to start conversation with Tiny";
+
+        chatHistory = [];
+        chatMessagesLog.innerHTML = `<div style="font-size:0.95rem;color:#64748b;text-align:center;padding:2rem;">Add client details and click <strong>Save Sources</strong> to begin.</div>`;
+        
+        // Clear active file selection state and reload file tree and files list in parallel
+        if (sourceGdriveFileId) sourceGdriveFileId.value = '';
+        gdriveFileContent = '';
+        
+        Promise.all([
+            loadGoogleDriveFiles(),
+            loadProspectsTree()
+        ]);
+        updateValidationBadges();
+    };
+
     if (btnNewChat) {
-        btnNewChat.addEventListener('click', () => {
-            currentChatId = null;
-            renderChatsList();
-
-            workspaceEmptyState.classList.add('hidden');
-            workspaceActiveChat.classList.remove('hidden');
-            chatMessagesLog.innerHTML = '';
-
-            toggleDrawer(true);
-
-            // Clear inputs
-            metaName.value = '';
-            metaCompany.value = '';
-            metaTitle.value = '';
-            metaEmail.value = '';
-            metaPhone.value = '';
-            metaRep.value = 'Albert';
-            metaTrack.value = 'Planning & Analytics (TM1)';
-            sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
-            sourceGdriveFileId.value = '';
-            gdriveFileContent = '';
-            sourceLinkedinText.value = '';
-            sourceIntakeText.value = '';
-            sourceTranscriptText.value = '';
-            activeAudioContainer.classList.add('hidden');
-            activeAudioPlayer.src = '';
-
-            activeChatClientTitle.innerText = "New Chat";
-            activeChatClientMeta.innerText = "Add client sources and save to start conversation with Tiny";
-
-            chatHistory = [];
-            chatMessagesLog.innerHTML = `<div style="font-size:0.95rem;color:#64748b;text-align:center;padding:2rem;">Add client details and click <strong>Save Sources</strong> to begin.</div>`;
-            
-            // Clear active file selection state and reload file tree and files list in parallel
-            if (sourceGdriveFileId) sourceGdriveFileId.value = '';
-            gdriveFileContent = '';
-            
-            Promise.all([
-                loadGoogleDriveFiles(),
-                loadProspectsTree()
-            ]);
-            updateValidationBadges();
-        });
+        btnNewChat.addEventListener('click', handleNewChat);
+    }
+    if (btnNewChatActive) {
+        btnNewChatActive.addEventListener('click', handleNewChat);
     }
 
     // --- LLM Interaction Helpers ---

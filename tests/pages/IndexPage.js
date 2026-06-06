@@ -8,7 +8,7 @@ class IndexPage {
     this.page = page;
 
     // Sidebar and Navigation
-    this.newChatBtn = page.locator('#btn-new-chat');
+    this.newChatBtn = page.locator('#btn-new-chat, #btn-new-chat-active').filter({ visible: true });
     this.chatSearchInput = page.locator('#chat-search');
     this.recentChatsList = page.locator('#recent-chats-list');
 

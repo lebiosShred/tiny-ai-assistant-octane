@@ -1,5 +1,7 @@
 const { test, expect } = require('../fixtures/base');
 const { IndexPage } = require('../pages/IndexPage');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Aegis Adversarial Prompt Injection Test Suite
@@ -8,6 +10,30 @@ const { IndexPage } = require('../pages/IndexPage');
  * injection attacks submitted through user-facing form fields.
  */
 test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
+
+    test.afterEach(async () => {
+        const historyDir = path.join(__dirname, '..', '..', 'knowledge', 'history');
+        if (fs.existsSync(historyDir)) {
+            const files = fs.readdirSync(historyDir);
+            const testCompanies = ['Meridian_Logistics', 'Test_Corp', 'Acme_Corp', 'SecureCorp', 'Normal_Corp', 'Adversary_Inc'];
+            for (const file of files) {
+                const filePath = path.join(historyDir, file);
+                try {
+                    const isDir = fs.statSync(filePath).isDirectory();
+                    const matchesCompany = testCompanies.some(co => file.includes(co));
+                    if (matchesCompany) {
+                        if (isDir) {
+                            fs.rmSync(filePath, { recursive: true, force: true });
+                        } else {
+                            fs.unlinkSync(filePath);
+                        }
+                    }
+                } catch (err) {
+                    console.error(`Failed to clean up test resource ${file}:`, err.message);
+                }
+            }
+        }
+    });
 
     test('rejects direct instruction override via intake notes', async ({ page }) => {
         test.setTimeout(60000);
