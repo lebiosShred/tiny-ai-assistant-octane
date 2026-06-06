@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let chatHistory = [];
     let transitDistance = "Online/Phone call only (Distance unavailable)";
     let gdriveFileContent = "";
+    let gdriveFolders = [];
 
     // DOM Elements
     const btnNewChat = document.getElementById('btn-new-chat');
@@ -313,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.items && data.items.length > 0) {
                 const folders = data.items.filter(item => item.isFolder);
+                gdriveFolders = folders;
                 if (folders.length === 0) {
                     recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">No prospect folders found</div>';
                     return;
@@ -958,7 +960,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const leadsSummary = chatsList.map(c => `- ${c.name} at ${c.company} (${c.track || 'TM1 & AI'})`).join('\n') || 'None';
+        // Combine chat history sessions and Google Drive client folders
+        const activeLeads = [];
+        const seenCompanies = new Set();
+        
+        // Add existing chats from chatsList first
+        chatsList.forEach(c => {
+            if (c.company) {
+                const normalizedCo = c.company.toLowerCase().trim();
+                activeLeads.push(`- ${c.name || 'Unknown Name'} at ${c.company} (${c.track || 'TM1 & AI'})`);
+                seenCompanies.add(normalizedCo);
+            }
+        });
+        
+        // Add any remaining Google Drive folders that don't have local chat history files
+        gdriveFolders.forEach(folder => {
+            if (folder.name) {
+                const normalizedCo = folder.name.toLowerCase().trim();
+                if (!seenCompanies.has(normalizedCo)) {
+                    activeLeads.push(`- Unknown Name at ${folder.name} (TM1 & AI)`);
+                    seenCompanies.add(normalizedCo);
+                }
+            }
+        });
+        
+        const leadsSummary = activeLeads.join('\n') || 'None';
 
         // Compile context and previous history
         const systemPrompt = `You are "Tiny", a helpful, conversational AI sales assistant for Octane Software Solutions.
@@ -1177,19 +1203,43 @@ Rules:
         }
     }
 
+    // --- Helper for parsing conversational deletion queries ---
+    function parseDeleteQuery(query) {
+        const deletePattern = /^(?:tiny,?\s+)?(?:delete|remove|destroy)\s+(.*)$/i;
+        const match = query.match(deletePattern);
+        if (!match) return null;
+        
+        let target = match[1].trim();
+        if (!target) return null;
+        
+        const folderNounPattern = /^(?:prospect|client|lead|company|folder)\s+(.*)$/i;
+        const folderNounMatch = target.match(folderNounPattern);
+        if (folderNounMatch) {
+            return { type: 'folder', name: folderNounMatch[1].trim() };
+        }
+        
+        const fileNounPattern = /^(?:file|document)\s+(.*)$/i;
+        const fileNounMatch = target.match(fileNounPattern);
+        if (fileNounMatch) {
+            return { type: 'file', name: fileNounMatch[1].trim() };
+        }
+        
+        if (target.includes('.')) {
+            return { type: 'file', name: target };
+        } else {
+            return { type: 'folder', name: target };
+        }
+    }
+
     // --- Custom Chat Prompt send ---
     async function sendUserQuery() {
         const queryText = chatUserInput.value.trim();
         if (!queryText) return;
 
-        const deleteFolderRegex = /^(?:delete|remove|destroy)\s+(?:prospect|client|lead|company|folder)\s+([a-zA-Z0-9_\-\.\s]+)\s*$/i;
-        const deleteFileRegex = /^(?:delete|remove|destroy)\s+(?:file|document)\s+([a-zA-Z0-9_\-\.]+)\s*$/i;
+        const parsedDelete = parseDeleteQuery(queryText);
 
-        const deleteFolderMatch = queryText.match(deleteFolderRegex);
-        const deleteFileMatch = queryText.match(deleteFileRegex);
-
-        if (deleteFolderMatch) {
-            const targetCompany = deleteFolderMatch[1].trim();
+        if (parsedDelete && parsedDelete.type === 'folder') {
+            const targetCompany = parsedDelete.name;
             chatUserInput.value = '';
             const confirmed = await showConfirmModal({
                 title: 'Delete Prospect Folder',
@@ -1206,8 +1256,8 @@ Rules:
             return;
         }
 
-        if (deleteFileMatch) {
-            const fileName = deleteFileMatch[1].trim();
+        if (parsedDelete && parsedDelete.type === 'file') {
+            const fileName = parsedDelete.name;
             chatUserInput.value = '';
             const confirmed = await showConfirmModal({
                 title: 'Delete File',

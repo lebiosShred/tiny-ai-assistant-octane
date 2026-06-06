@@ -1784,19 +1784,46 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         }
                     }
 
+                    const parseDeleteQuery = (query) => {
+                        const deletePattern = /^(?:tiny,?\s+)?(?:delete|remove|destroy)\s+(.*)$/i;
+                        const match = query.match(deletePattern);
+                        if (!match) return null;
+                        
+                        let target = match[1].trim();
+                        if (!target) return null;
+                        
+                        const folderNounPattern = /^(?:prospect|client|lead|company|folder)\s+(.*)$/i;
+                        const folderNounMatch = target.match(folderNounPattern);
+                        if (folderNounMatch) {
+                            return { type: 'folder', name: folderNounMatch[1].trim() };
+                        }
+                        
+                        const fileNounPattern = /^(?:file|document)\s+(.*)$/i;
+                        const fileNounMatch = target.match(fileNounPattern);
+                        if (fileNounMatch) {
+                            return { type: 'file', name: fileNounMatch[1].trim() };
+                        }
+                        
+                        if (target.includes('.')) {
+                            return { type: 'file', name: target };
+                        } else {
+                            return { type: 'folder', name: target };
+                        }
+                    };
+
                     const uploadRegex = /^(?:upload|create)\s+(?:file|document|text file)?\s*([a-zA-Z0-9_\-\.]+)\s+(?:with\s+)?content\s+([\s\S]+)$/i;
-                    const deleteRegex = /^(?:delete|remove|destroy)\s+(?:file|document)\s+([a-zA-Z0-9_\-\.]+)\s*$/i;
-                    const deleteFolderRegex = /^(?:delete|remove|destroy)\s+(?:prospect|client|lead|company|folder)\s+([a-zA-Z0-9_\-\.\s]+)\s*$/i;
                     const linkedinRegex = /^(?:upload|register)\s+linkedin\s+(?:for\s+([a-zA-Z0-9_\-\.\s]+))?\s*(?:with)?\s*content\s+([\s\S]+)$/i;
                     const briefRegex = /^(?:upload|register)\s+(?:sales\s+)?brief\s+(?:for\s+([a-zA-Z0-9_\-\.\s]+))?\s*(?:with)?\s*content\s+([\s\S]+)$/i;
                     const callRegex = /^(?:register\s+(?:a\s+)?call|made\s+call|I\s+made\s+call\s+to\s+this\s+lead\s+right\s+now):?\s*([\s\S]+)$/i;
 
                     const uploadMatch = trimmedMsg.match(uploadRegex);
-                    const deleteMatch = trimmedMsg.match(deleteRegex);
-                    const deleteFolderMatch = trimmedMsg.match(deleteFolderRegex);
                     const linkedinMatch = trimmedMsg.match(linkedinRegex);
                     const briefMatch = trimmedMsg.match(briefRegex);
                     const callMatch = trimmedMsg.match(callRegex);
+
+                    const parsedDelete = parseDeleteQuery(trimmedMsg);
+                    const deleteFolderMatch = parsedDelete && parsedDelete.type === 'folder' ? [trimmedMsg, parsedDelete.name] : null;
+                    const deleteMatch = parsedDelete && parsedDelete.type === 'file' ? [trimmedMsg, parsedDelete.name] : null;
 
                     // Extraction of companyNameForGDrive, clientNameForGDrive, clientEmailForGDrive, and company has been lifted to the outer scope of the request handler.
 
