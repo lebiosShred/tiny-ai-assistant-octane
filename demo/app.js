@@ -1390,16 +1390,20 @@ Rules:
             if (promptType === 'leadSheet') {
                 promptText = `Generate a Lead Sheet (Pre-Screening Prep Briefing). 
 It must follow this structured outline and guidelines:
-1. LinkedIn profile analysis -- role history, tenure, seniority, network signals.
-2. Recent social media activity (if visible in sources).
-3. Company overview -- products, services, revenue signals.
-4. Octane services relevant to this prospect.
-5. Key competitors they may be evaluating.
-6. Competing applications they may already use.
-7. Complementary applications in their stack.
-8. TM1 or AI applications relevant to their industry/role.
+1. Analysis of the client's LinkedIn profile and recent social media activity (role history, tenure, seniority, network signals, recent activity).
+2. Overview of the company's products and services.
+3. Octane's services relevant to this prospect.
+4. Octane's competitors (key enterprise planning and AI system vendors).
+5. Competing applications they may already use.
+6. Complementary applications in their stack.
+7. TM1 and AI applications relevant to their industry/role.
+8. Assessment of how TM1 or AI may be relevant to this client (relevance assessment).
 9. Likely pain points.
-10. High-impact openers -- 3 specific openers that demonstrate relevance from the first sentence.
+10. Conversation starters -- enabling the sales person to demonstrate relevance from the first moment, without needing to ask basic discovery questions.
+11. Octane's customer profiles (classify against Octane's target customer profiles playbook).
+12. Octane's brand guideline (visual brand identity, color tokens, layout, typography, slants, and contrast rules).
+13. Examples of Octane's brand guideline (styling blocks or layout markup).
+14. Travel distance.
 Format it in plain text without HTML.`;
             } else if (promptType === 'recapEmail') {
                 promptText = `Generate a Recap Email to the client.

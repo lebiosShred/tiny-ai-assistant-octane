@@ -871,7 +871,7 @@ You are strictly forbidden from using the words 'likely', 'probably', 'standard'
 Use these delimiters:
 
 === LINKEDIN ANALYSIS ===
-Extract the exact names of the prospect's 3 most recent companies, their exact job titles, and their university/education. If none are found in the RAG context, output exactly: 'NO DATA'. Do not summarize. List the hard facts.
+Extract the exact names of the prospect's 3 most recent companies, their exact job titles, their university/education, and recent social media activity (if visible in sources). If none are found in the RAG context, output exactly: 'NO DATA'. Do not summarize. List the hard facts.
 
 === COMPANY OVERVIEW ===
 Company overview: Extract specific products, services, and recent corporate news or triggers from the RAG context. If none found, output 'NO DATA'.
@@ -890,11 +890,17 @@ Specify the exact recommended package with pricing (e.g. DevOps Blue Support at 
 === PEER CREDIBILITY STORY ===
 Map this prospect's exact sector and stack to 1-2 relevant Octane historical clients (Steric, GreyOrange, mycar, Iqony, Shift, News Corp, McPherson's). Explain how Octane resolved a similar pain point.
 
+=== OCTANE'S COMPETITORS ===
+Detail Octane's competitors relevant to this segment (e.g. key enterprise planning and AI system vendors).
+
 === COMPETING APPLICATIONS ===
 Detail competing systems they are evaluating. Only list systems explicitly mentioned in the RAG or highly specific to their exact niche. If unknown, output 'UNKNOWN'. Do not guess.
 
 === COMPLEMENTARY STACK APPLICATIONS ===
 Detail ERP systems (SAP, Oracle, Dynamics) and BI tools (Power BI, Tableau) present in their RAG technographics. If unknown, output 'UNKNOWN'. Do not guess.
+
+=== TM1 AND AI APPLICATIONS ===
+Detail TM1 and AI applications relevant to the client's specific industry/role.
 
 === RELEVANCE ASSESSMENT ===
 Qualify their business size and revenue markers against Octane's core products.
@@ -903,7 +909,16 @@ Qualify their business size and revenue markers against Octane's core products.
 3 specific pain points mapped explicitly to their job title. If the title is CFO, list 3 financial metrics they care about. If the title is IT, list 3 technical bottlenecks. Do not use generic spreadsheet examples unless they are Variant A.
 
 === HIGH-IMPACT OPENERS ===
-3 concrete conversation openers. Combine a specific fact from their career history or company news with a target metric question.
+3 concrete conversation openers (conversation starters) enabling the sales person to demonstrate relevance from the first moment without needing to ask basic discovery questions. Combine a specific fact from their career history or company news with a target metric question.
+
+=== OCTANE CUSTOMER PROFILES ===
+Classify the prospect against Octane's standard target customer profiles playbook (e.g. Large TM1 Shops, Mid Size TM1 Shops, Small TM1 Shops, TM1 Shops still On-Premise, etc.).
+
+=== OCTANE'S BRAND GUIDELINE ===
+Detail Octane's visual brand identity and layout/typography rules (such as primary accent colors like #4daeeb, black backgrounds #000000, white backgrounds #ffffff, no gray text on dark backgrounds, alternating dark/light slides, and contrast protocols).
+
+=== EXAMPLES OF OCTANE'S BRAND GUIDELINE ===
+Provide specific styling examples applying the brand guidelines (such as CSS styling blocks, computed-contrast overrides, or grid/flex layouts matching slide rules).
 
 === TRAVEL DISTANCE ===
 Estimate the travel distance/time for an in-person meeting. The travel origin is Amendra's home address (Richmond, Melbourne, VIC 3121). Based on the prospect's company address or office location (e.g., if Australian/Melbourne, compute drive/transit time, if interstate or international, indicate 'Online/Phone only'). Output only a brief string, e.g., '~45 min from Amendra's location' or 'Online/Phone call only'.`;
@@ -2320,17 +2335,22 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 You MUST return ONLY a valid, raw JSON object. Do NOT wrap it in markdown formatting (no \`\`\`json).
 The JSON object must EXACTLY match the following keys and output structure:
 {
-  "LINKEDIN ANALYSIS": "Extract exact names of prospect's 3 most recent companies, exact job titles, and university/education.",
+  "LINKEDIN ANALYSIS": "Extract exact names of prospect's 3 most recent companies, exact job titles, university/education, and recent social media activity.",
   "COMPANY OVERVIEW": "Extract specific products, services, and recent corporate news or triggers.",
   "DISCOVERY TRACK CLASS": "Output exactly 'Variant A (First-Time TM1 / Planning Analytics User)' if they consolidate data manually in Excel, OR 'Variant B (Existing TM1 / Planning Analytics User)' if they already run IBM PA/TM1 but face support/migration bottlenecks.",
   "TAILORED PLAYBOOK QUESTIONS": "Provide 4-5 specific open-ended discovery questions mapped explicitly to their exact job title and industry.",
   "RELEVANT OCTANE SERVICES & PRICING": "Specify the exact recommended package with pricing if available. If pricing is not explicitly provided in the catalog, output '[PRICING_TBD_BY_DISCOVERY]'.",
   "PEER CREDIBILITY STORY": "Map this prospect's sector to relevant Octane historical clients and explain how Octane resolved a similar pain point.",
+  "OCTANE'S COMPETITORS": "Detail Octane's competitors relevant to this segment (e.g. key enterprise planning and AI system vendors).",
   "COMPETING APPLICATIONS": "Detail competing systems they are evaluating. Only list systems explicitly mentioned in the inputs. If no specific competitors are explicitly found in the context, construct a targeted assessment of the most typical competitors they are likely evaluating based on their identified track (e.g. for TM1 track: 'Anaplan, Workday Adaptive Planning, Board'; for AI track: 'Microsoft Copilot Studio, Salesforce Agentforce'). Prefix this estimation with '[ESTIMATED MARKET COMPETITORS]: '.",
   "COMPLEMENTARY STACK APPLICATIONS": "Detail ERP systems and BI tools present in their technographics. If no specific stack is found in the search context, provide a standard enterprise stack mapping typical for their industry and business size (e.g. NetSuite/SAP/Dynamics for ERP; Power BI/Tableau for BI). Prefix this estimation with '[ESTIMATED TYPICAL STACK]: '.",
+  "TM1 AND AI APPLICATIONS": "Detail TM1 and AI applications relevant to the client's industry/role.",
   "RELEVANCE ASSESSMENT": "Qualify their business size and revenue markers against Octane's core products.",
   "LIKELY PAIN POINTS": "3 specific pain points mapped explicitly to their job title.",
-  "HIGH-IMPACT OPENERS": "3 concrete conversation openers combining a specific fact with a target metric question.",
+  "HIGH-IMPACT OPENERS": "3 concrete conversation openers (conversation starters) combining a specific fact with a target metric question.",
+  "OCTANE CUSTOMER PROFILES": "Classify the prospect against Octane's target customer profiles playbook (e.g. Large TM1 Shops, Mid Size TM1 Shops, Small TM1 Shops, TM1 Shops still On-Premise, etc.).",
+  "OCTANE'S BRAND GUIDELINE": "Detail Octane's visual brand identity and layout/typography rules (such as primary accent colors, backgrounds, slide rules, and contrast protocols).",
+  "EXAMPLES OF OCTANE'S BRAND GUIDELINE": "Provide specific styling examples applying the brand guidelines (such as CSS styling blocks or grid/flex layouts).",
   "TRAVEL DISTANCE": "Extract from prompt or use 'Online/Phone call only (Distance unavailable)'."
 }
 If the RAG context is insufficient to confidently answer any field (excluding COMPETING APPLICATIONS and COMPLEMENTARY STACK APPLICATIONS where estimated fallbacks are requested), you MUST output '[PROSPECT_DATA_INSUFFICIENT]' for that field. Do NOT hallucinate data or historical client references.
@@ -4206,7 +4226,7 @@ Historical Files Found:
 You have been provided with a prospect's LinkedIn profile, historical Google Drive context, and a live meeting transcript.
 Generate a strictly formatted Pre-Screen Dossier summarizing the background and pain points.
 You MUST output a valid JSON object. Do not include any conversational text or markdown formatting blocks like \`\`\`json outside the JSON object.
-Use exactly these 12 keys:
+Use exactly these 17 keys:
 {
   "LINKEDIN ANALYSIS": "...",
   "COMPANY OVERVIEW": "...",
@@ -4214,11 +4234,16 @@ Use exactly these 12 keys:
   "TAILORED PLAYBOOK QUESTIONS": "...",
   "RELEVANT OCTANE SERVICES & PRICING": "...",
   "PEER CREDIBILITY STORY": "...",
+  "OCTANE'S COMPETITORS": "...",
   "COMPETING APPLICATIONS": "...",
   "COMPLEMENTARY STACK APPLICATIONS": "...",
+  "TM1 AND AI APPLICATIONS": "...",
   "RELEVANCE ASSESSMENT": "...",
   "LIKELY PAIN POINTS": "...",
   "HIGH-IMPACT OPENERS": "...",
+  "OCTANE CUSTOMER PROFILES": "...",
+  "OCTANE'S BRAND GUIDELINE": "...",
+  "EXAMPLES OF OCTANE'S BRAND GUIDELINE": "...",
   "TRAVEL DISTANCE": "..."
 }
 If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
