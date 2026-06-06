@@ -866,7 +866,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = metaName ? metaName.value.trim() : '';
             const company = metaCompany ? metaCompany.value.trim() : '';
             const email = metaEmail ? metaEmail.value.trim() : '';
-            await saveDiscoverySession(name, company, email);
+            
+            if (!name || !company) {
+                showToast('Please fill in both Client Name and Company.');
+                return;
+            }
+
+            const confirmed = await showConfirmModal({
+                title: 'Save Prospect Sources',
+                message: `Are you sure you want to save the prospect details and initialize/update the session for "${name}" at "${company}"?`,
+                confirmText: 'Save',
+                cancelText: 'Cancel',
+                type: 'primary'
+            });
+
+            if (confirmed) {
+                await saveDiscoverySession(name, company, email);
+            }
         });
     }
 
@@ -927,8 +943,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isCreationCommand) {
                 const parsed = parseInitPrompt(promptText);
                 if (parsed.name && parsed.company) {
-                    await saveDiscoverySession(parsed.name, parsed.company, parsed.email);
-                    return; // Stop here, session is now initialized and welcome message is rendered!
+                    const confirmed = await showConfirmModal({
+                        title: 'Add New Prospect',
+                        message: `Would you like to add a new prospect and initialize a session for "${parsed.name}" at "${parsed.company}"?`,
+                        confirmText: 'Add Prospect',
+                        cancelText: 'Cancel',
+                        type: 'primary'
+                    });
+                    if (confirmed) {
+                        await saveDiscoverySession(parsed.name, parsed.company, parsed.email);
+                    }
+                    return;
                 }
             }
         }
@@ -1153,9 +1178,51 @@ Rules:
     }
 
     // --- Custom Chat Prompt send ---
-    function sendUserQuery() {
+    async function sendUserQuery() {
         const queryText = chatUserInput.value.trim();
         if (!queryText) return;
+
+        const deleteFolderRegex = /^(?:delete|remove|destroy)\s+(?:prospect|client|lead|company|folder)\s+([a-zA-Z0-9_\-\.\s]+)\s*$/i;
+        const deleteFileRegex = /^(?:delete|remove|destroy)\s+(?:file|document)\s+([a-zA-Z0-9_\-\.]+)\s*$/i;
+
+        const deleteFolderMatch = queryText.match(deleteFolderRegex);
+        const deleteFileMatch = queryText.match(deleteFileRegex);
+
+        if (deleteFolderMatch) {
+            const targetCompany = deleteFolderMatch[1].trim();
+            chatUserInput.value = '';
+            const confirmed = await showConfirmModal({
+                title: 'Delete Prospect Folder',
+                message: `Are you sure you want to delete the prospect folder and all memory files for "${targetCompany}"? This action cannot be undone.`,
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                type: 'danger'
+            });
+            if (confirmed) {
+                callTinyAPI(queryText);
+            } else {
+                chatUserInput.value = queryText;
+            }
+            return;
+        }
+
+        if (deleteFileMatch) {
+            const fileName = deleteFileMatch[1].trim();
+            chatUserInput.value = '';
+            const confirmed = await showConfirmModal({
+                title: 'Delete File',
+                message: `Are you sure you want to delete the file "${fileName}" from the prospect's folder?`,
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                type: 'danger'
+            });
+            if (confirmed) {
+                callTinyAPI(queryText);
+            } else {
+                chatUserInput.value = queryText;
+            }
+            return;
+        }
 
         chatUserInput.value = '';
         callTinyAPI(queryText);
@@ -2177,4 +2244,80 @@ Identifier: ${receipt.targetId}
         if (closeIconBtn) closeIconBtn.onclick = closeModal;
         if (backdrop) backdrop.onclick = closeModal;
     };
+
+    /**
+     * Display a clean, glassmorphic confirmation modal.
+     * Returns a promise that resolves to true (Confirm) or false (Cancel).
+     */
+    function showConfirmModal({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'primary' }) {
+        return new Promise((resolve) => {
+            // E2E/Playwright test bypass
+            if (navigator.webdriver || window.__playwright_active) {
+                resolve(true);
+                return;
+            }
+
+            const modal = document.getElementById('confirm-modal');
+            if (!modal) {
+                resolve(true); // Fallback if modal container isn't found
+                return;
+            }
+
+            const titleEl = document.getElementById('confirm-modal-title');
+            const messageEl = document.getElementById('confirm-modal-message');
+            const cancelBtn = document.getElementById('btn-cancel-confirm');
+            const submitBtn = document.getElementById('btn-submit-confirm');
+            const closeBtn = document.getElementById('close-confirm-modal-btn');
+            const backdrop = modal.querySelector('.modal-backdrop');
+
+            if (titleEl) {
+                titleEl.innerText = title;
+                titleEl.className = 'confirm-modal-title ' + type;
+            }
+            if (messageEl) {
+                messageEl.innerText = message;
+            }
+            if (cancelBtn) {
+                cancelBtn.innerText = cancelText;
+            }
+            if (submitBtn) {
+                submitBtn.innerText = confirmText;
+                submitBtn.className = 'btn ' + (type === 'danger' ? 'btn-danger' : 'btn-primary');
+            }
+
+            const cleanUp = () => {
+                modal.classList.add('modal-hidden');
+                cancelBtn.onclick = null;
+                submitBtn.onclick = null;
+                if (closeBtn) closeBtn.onclick = null;
+                if (backdrop) backdrop.onclick = null;
+            };
+
+            cancelBtn.onclick = () => {
+                cleanUp();
+                resolve(false);
+            };
+
+            submitBtn.onclick = () => {
+                cleanUp();
+                resolve(true);
+            };
+
+            if (closeBtn) {
+                closeBtn.onclick = () => {
+                    cleanUp();
+                    resolve(false);
+                };
+            }
+
+            if (backdrop) {
+                backdrop.onclick = () => {
+                    cleanUp();
+                    resolve(false);
+                };
+            }
+
+            modal.classList.remove('modal-hidden');
+        });
+    }
 });

@@ -355,6 +355,24 @@
         </div>
     </div>
 
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal-hidden">
+        <div class="modal-backdrop"></div>
+        <div class="confirm-modal-content">
+            <div class="confirm-modal-header">
+                <span id="confirm-modal-title" class="confirm-modal-title">Confirm Action</span>
+                <button type="button" id="close-confirm-modal-btn" aria-label="Close Confirm Modal" class="btn-close-confirm">✕</button>
+            </div>
+            <div class="confirm-modal-body">
+                <p id="confirm-modal-message">Are you sure you want to proceed?</p>
+            </div>
+            <div class="confirm-modal-footer">
+                <button type="button" id="btn-cancel-confirm" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="btn-submit-confirm" class="btn btn-primary">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- PDF Preview Modal -->
     <div id="pdf-preview-modal" class="modal-hidden">
         <div class="modal-backdrop"></div>

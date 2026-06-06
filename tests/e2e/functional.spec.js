@@ -120,4 +120,43 @@ test.describe('Aegis Functional E2E Suite', () => {
         const logoText = await page.locator('.logo-text').first().innerText();
         expect(logoText).toContain('Tiny AI Assistant');
     });
+
+    test('verifies glassmorphic confirmation modal pops up and blocks until confirmed', async ({ page }) => {
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.newChatBtn.click();
+
+        // Override Playwright active flag and navigator.webdriver to test modal interaction
+        await page.evaluate(() => {
+            window.__playwright_active = false;
+            Object.defineProperty(navigator, 'webdriver', { get: () => false, configurable: true });
+        });
+
+        // Fill metadata
+        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+
+        // Click Save Sources button
+        await indexPage.submitForm();
+
+        // Verify the modal is visible
+        const modal = page.locator('#confirm-modal');
+        await expect(modal).not.toHaveClass(/modal-hidden/);
+
+        // Verify title
+        const title = await page.locator('#confirm-modal-title').innerText();
+        expect(title).toContain('Save Prospect Sources');
+
+        // Click Cancel
+        await page.click('#btn-cancel-confirm');
+        await expect(modal).toHaveClass(/modal-hidden/);
+
+        // Click Save Sources again, then confirm
+        await indexPage.submitForm();
+        await expect(modal).not.toHaveClass(/modal-hidden/);
+        await page.click('#btn-submit-confirm');
+
+        // Verify modal is hidden and session successfully initializes
+        await expect(modal).toHaveClass(/modal-hidden/);
+        await indexPage.waitForChatInit();
+    });
 });

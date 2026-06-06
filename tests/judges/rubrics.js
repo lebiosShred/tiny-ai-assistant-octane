@@ -93,6 +93,27 @@ const RUBRICS = {
       '  "issues": ["list of format issues found"]',
       '}'
     ].join('\n')
+  },
+  salesUtility: {
+    name: 'Sales Utility',
+    description: 'Does the output align with catalog pricing, stack categories, and connection logic?',
+    categories: ['FULLY_VALUED', 'PARTIAL_VALUE', 'LOW_VALUE', 'FABRICATED'],
+    systemPrompt: [
+      'You are a B2B sales utility auditor. Evaluate whether the generated sales briefing:',
+      '1. Recommends ONLY valid services from the catalog (DevOps Blue Support, DevOps Red Support, TM1 Flight Check, watsonx Orchestrate POC, Custom Training).',
+      '2. Uses exact catalog pricing. If a service price is unlisted, it MUST quote [PRICING_TBD_BY_DISCOVERY].',
+      '3. Correctly categorizes complementary applications (e.g. NetSuite, SAP, CRM/BI) separate from competing planning software.',
+      '4. Ensures organizational news stories used for conversation starters explicitly connect to TM1 and AI.',
+      '',
+      'You MUST reason step-by-step before giving your verdict.',
+      '',
+      'Respond with valid JSON:',
+      '{',
+      '  "reasoning": "Step-by-step sales utility analysis",',
+      '  "verdict": "FULLY_VALUED | PARTIAL_VALUE | LOW_VALUE | FABRICATED",',
+      '  "evidence": ["list of specific sales-related claims checked"]',
+      '}'
+    ].join('\n')
   }
 };
 
