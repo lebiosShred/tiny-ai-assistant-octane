@@ -1995,6 +1995,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                         const matchedFolders = clientFiles.filter(f => normalizeString(f.name) === targetNorm);
                                         for (const folder of matchedFolders) {
                                             await gdriveService.deleteFile(folder.id);
+                                            gdriveService.invalidateFolderCache(folder.id);
                                             success = true;
                                         }
                                     }
@@ -2964,6 +2965,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                         const matchedFolders = clientFiles.filter(f => normalizeString(f.name) === targetNorm);
                                                         for (const folder of matchedFolders) {
                                                             await gdriveService.deleteFile(folder.id);
+                                                            gdriveService.invalidateFolderCache(folder.id);
                                                             success = true;
                                                         }
                                                     }
