@@ -3817,6 +3817,11 @@ body.resizing * {
     color: #166534 !important;
     border: 1px solid #bbf7d0 !important;
 }
+.validation-badge.warning {
+    background-color: #fef9c3 !important;
+    color: #854d0e !important;
+    border: 1px solid #fef08a !important;
+}
 
 /* Styled Error Card for Insufficient Data */
 .insufficient-data-card {

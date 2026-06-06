@@ -29,11 +29,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const intakeBadge = document.getElementById('intake-status-badge');
         const transcriptBadge = document.getElementById('transcript-status-badge');
 
+        const companyName = metaCompany ? metaCompany.value.trim() : '';
+        const normalizedCo = companyName ? companyName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '';
+
         if (gdriveBadge) {
             const val = sourceGdriveFileSelect ? sourceGdriveFileSelect.value : '';
             if (val) {
-                gdriveBadge.innerText = 'Ready';
-                gdriveBadge.className = 'validation-badge ready';
+                const normalizedContent = (gdriveFileContent || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                if (normalizedCo && !normalizedContent.includes(normalizedCo)) {
+                    gdriveBadge.innerText = 'Mismatch Warning';
+                    gdriveBadge.className = 'validation-badge warning';
+                } else {
+                    gdriveBadge.innerText = 'Ready';
+                    gdriveBadge.className = 'validation-badge ready';
+                }
             } else {
                 gdriveBadge.innerText = 'None';
                 gdriveBadge.className = 'validation-badge missing';
@@ -43,8 +52,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (linkedinBadge) {
             const val = sourceLinkedinText ? sourceLinkedinText.value.trim() : '';
             if (val) {
-                linkedinBadge.innerText = 'Ready';
-                linkedinBadge.className = 'validation-badge ready';
+                const normalizedContent = val.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                if (normalizedCo && !normalizedContent.includes(normalizedCo)) {
+                    linkedinBadge.innerText = 'Mismatch Warning';
+                    linkedinBadge.className = 'validation-badge warning';
+                } else {
+                    linkedinBadge.innerText = 'Ready';
+                    linkedinBadge.className = 'validation-badge ready';
+                }
             } else {
                 linkedinBadge.innerText = 'Missing';
                 linkedinBadge.className = 'validation-badge missing';

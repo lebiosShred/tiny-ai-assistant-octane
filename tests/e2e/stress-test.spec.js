@@ -14,7 +14,7 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         const historyDir = path.join(__dirname, '..', '..', 'knowledge', 'history');
         if (fs.existsSync(historyDir)) {
             const files = fs.readdirSync(historyDir);
-            const testCompanies = ['Stress_Corp', 'Meridian_Logistics'];
+            const testCompanies = ['Stress_Corp', 'Meridian_Logistics', 'Acme_Corp', 'Acme Corp'];
             for (const file of files) {
                 const filePath = path.join(historyDir, file);
                 try {
@@ -98,5 +98,44 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         
         const responseText = await indexPage.getLastResponseText();
         expect(responseText.length).toBeGreaterThan(10);
+    });
+
+    test('Step 4: Mismatched Identity Collision', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.newChatBtn.click();
+
+        // 1. Fill metadata with Acme Corp lead details
+        await indexPage.fillMetadata('Sarah Chen', 'Acme Corp', 'sarah.chen@acmecorp.com');
+
+        // 2. Set mismatched LinkedIn profile bio text (pointing to NSW EPA organics officer)
+        await page.fill('#source-linkedin-text', 'Sarah Chen is Senior Project Officer Organics at NSW EPA. Pushing waste recycling limits and circular economy initiatives across NSW.');
+        await page.fill('#source-transcript-text', 'We discussed TM1 DevOps support options for Acme Corp.');
+
+        // 3. Verify the LinkedIn status badge changes dynamically to "Mismatch Warning"
+        const badge = page.locator('#linkedin-status-badge');
+        await expect(badge).toHaveText('Mismatch Warning');
+        await expect(badge).toHaveClass(/warning/);
+
+        // 4. Save and initialize the chat
+        await indexPage.submitForm();
+        await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
+
+        // 5. Send message asking for a personalization focus or recap to verify safety boundary
+        await indexPage.sendMessage('Hi Tiny, suggest some high-impact conversation starters for Sarah Chen at Acme Corp.');
+        await indexPage.waitForResponse(20000);
+
+        const responseText = await indexPage.getLastResponseText();
+
+        // 6. Assert that the AI ignored the mismatched NSW EPA/recycling/waste context and focuses on Acme Corp/FP&A
+        expect(responseText.toLowerCase()).not.toContain('nsw epa');
+        expect(responseText.toLowerCase()).not.toContain('recycling');
+        expect(responseText.toLowerCase()).not.toContain('waste');
+        expect(responseText.toLowerCase()).not.toContain('organics');
+        
+        // Confirm the response correctly references Acme Corp
+        expect(responseText).toContain('Acme Corp');
     });
 });

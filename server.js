@@ -1492,6 +1492,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             body += chunk;
         });
         req.on('end', async () => {
+            let isMismatch = false;
             // Determine API Key: prefer custom Authorization header from client, fallback to server process.env.MISTRAL_API_KEY
             let apiKey = '';
             const authHeader = req.headers['authorization'];
@@ -1640,8 +1641,10 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     parsed.metadata = {
                         company: companyNameForGDrive,
                         name: clientNameForGDrive === 'Unknown Name' ? '' : clientNameForGDrive,
-                        email: clientEmailForGDrive
+                        email: clientEmailForGDrive,
+                        isMismatch: isMismatch
                     };
+                    parsed.isMismatch = isMismatch;
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify(parsed));
                 } else {
@@ -1966,6 +1969,9 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                             let success = false;
                             const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
                             
+                            const normalizeString = (str) => (str || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
+                            const targetNorm = normalizeString(targetCompany);
+
                             // 1. Google Drive Deletion
                             if (gdriveAvailable) {
                                 try {
@@ -1979,15 +1985,16 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                     const clientsFiles = clientsSearch.data.files || [];
                                     if (clientsFiles.length > 0) {
                                         const clientsFolderId = clientsFiles[0].id;
-                                        const cleanCompany = targetCompany.trim().replace(/['"\\/]/g, '');
+                                        // Fetch all folders inside Clients and filter locally with normalized strings
                                         const clientSearch = await drive.files.list({
-                                            q: `name = '${cleanCompany}' and mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
-                                            fields: 'files(id)',
-                                            pageSize: 1
+                                            q: `mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
+                                            fields: 'files(id, name)',
+                                            pageSize: 100
                                         });
                                         const clientFiles = clientSearch.data.files || [];
-                                        if (clientFiles.length > 0) {
-                                            const folderId = clientFiles[0].id;
+                                        const matchedFolder = clientFiles.find(f => normalizeString(f.name) === targetNorm);
+                                        if (matchedFolder) {
+                                            const folderId = matchedFolder.id;
                                             await gdriveService.deleteFile(folderId);
                                             success = true;
                                         }
@@ -1998,15 +2005,26 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                             }
 
                             // 2. Always clean up local folder if it exists
+                            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+                            if (fs.existsSync(historyDir)) {
+                                const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
+                                for (const subdir of subdirs) {
+                                    if (normalizeString(subdir) === targetNorm) {
+                                        const localFolder = path.join(historyDir, subdir);
+                                        fs.rmSync(localFolder, { recursive: true, force: true });
+                                        success = true;
+                                    }
+                                }
+                            }
+                            
                             const cleanCompany = targetCompany.replace(/[^a-zA-Z0-9]/g, '_');
-                            const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                            const localFolder = path.join(historyDir, cleanCompany);
                             if (fs.existsSync(localFolder)) {
                                 fs.rmSync(localFolder, { recursive: true, force: true });
                                 success = true;
                             }
 
                             // 3. Clean up local conversation history files associated with this company
-                            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                             if (fs.existsSync(historyDir)) {
                                 const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
                                 for (const file of files) {
@@ -2014,7 +2032,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                     try {
                                         const fileContent = fs.readFileSync(filePath, 'utf8');
                                         const data = JSON.parse(fileContent);
-                                        if (data.company && data.company.toLowerCase().trim() === targetCompany.toLowerCase().trim()) {
+                                        if (data.company && normalizeString(data.company) === targetNorm) {
                                             fs.unlinkSync(filePath);
                                             console.log(`🗑️ Deleted local history file matching company "${targetCompany}": ${filePath}`);
                                             success = true;
@@ -2287,6 +2305,36 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 companyNameForGDrive = extractedForGDrive.company;
             }
 
+            // Check for cross-source integrity mismatches
+            if (Array.isArray(payload.messages)) {
+                const systemMsgForMismatch = payload.messages.find(m => m.role === 'system');
+                if (systemMsgForMismatch) {
+                    const compMatch = systemMsgForMismatch.content.match(/- Company:[ \t]*([^\n\r]*)/i);
+                    const gdriveMatch = systemMsgForMismatch.content.match(/- Google Drive SOW Content:[ \t]*([\s\S]*?)(?=\r?\n-\s+[A-Za-z]|\r?\nActive Leads|$)/i);
+                    const linkedinMatch = systemMsgForMismatch.content.match(/- LinkedIn Profile Bio:[ \t]*([\s\S]*?)(?=\r?\n-\s+[A-Za-z]|\r?\nActive Leads|$)/i);
+
+                    const companyName = compMatch ? compMatch[1].trim() : '';
+                    const normalizeString = (str) => (str || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
+                    const normalizedCo = normalizeString(companyName);
+
+                    if (normalizedCo && !/^(unknowncompany|unknown_company|unknown|none|na|n\/a)$/i.test(normalizedCo)) {
+                        const gdriveContent = gdriveMatch ? gdriveMatch[1].trim() : '';
+                        const linkedinContent = linkedinMatch ? linkedinMatch[1].trim() : '';
+
+                        const normalizedGdrive = normalizeString(gdriveContent);
+                        const normalizedLinkedin = normalizeString(linkedinContent);
+
+                        const hasGdrive = gdriveContent.length > 0 && !/^(none|sample google drive file content\.\.\.|\s*)$/i.test(gdriveContent) && !gdriveContent.includes('[PROSPECT_DATA_INSUFFICIENT]');
+                        const hasLinkedin = linkedinContent.length > 0 && !/^(missing|none|\s*)$/i.test(linkedinContent);
+
+                        if ((hasGdrive && !normalizedGdrive.includes(normalizedCo)) || 
+                            (hasLinkedin && !normalizedLinkedin.includes(normalizedCo))) {
+                            isMismatch = true;
+                        }
+                    }
+                }
+            }
+
             if (companyNameForGDrive) {
                 try {
                     const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
@@ -2407,12 +2455,18 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     console.error('⚠️ Failed to load custom instructions for system prompt:', err.message);
                 }
 
+                let mismatchWarning = '';
+                if (isMismatch) {
+                    const extractedCo = companyNameForGDrive || 'the specified company';
+                    mismatchWarning = `\n\nCRITICAL SYSTEM WARNING: An uploaded source document (LinkedIn profile bio or Google Drive SOW document) does NOT match the lead metadata company ("${extractedCo}"). This indicates a mismatch of identity. You are strictly forbidden from conflating the two identities or personalizing deliverables for the lead company using any of the mismatched document content. Ignore the mismatched document details entirely when personalizing support or packages for "${extractedCo}".`;
+                }
+
                 if (systemMsg) {
-                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + gdriveFilesContext + jsonSchemaInstruction + customInstructionsStr;
+                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + gdriveFilesContext + jsonSchemaInstruction + customInstructionsStr + mismatchWarning;
                 } else {
                     payload.messages.unshift({
                         role: 'system',
-                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${gdriveFilesContext}${jsonSchemaInstruction}${customInstructionsStr}`
+                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${gdriveFilesContext}${jsonSchemaInstruction}${customInstructionsStr}${mismatchWarning}`
                     });
                 }
             }
@@ -2872,6 +2926,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             console.log(`🗑️ Tool Call: Deleting folder and history for ${company}`);
                                             let success = false;
                                             const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                                            
+                                            const normalizeString = (str) => (str || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
+                                            const targetNorm = normalizeString(company);
+
                                             if (gdriveAvailable) {
                                                 try {
                                                     const drive = gdriveService.getDriveClient();
@@ -2884,15 +2942,16 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     const clientsFiles = clientsSearch.data.files || [];
                                                     if (clientsFiles.length > 0) {
                                                         const clientsFolderId = clientsFiles[0].id;
-                                                        const cleanCompany = company.trim().replace(/['"\\/]/g, '');
+                                                        // Fetch all folders inside Clients and filter locally with normalized strings
                                                         const clientSearch = await drive.files.list({
-                                                            q: `name = '${cleanCompany}' and mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
-                                                            fields: 'files(id)',
-                                                            pageSize: 1
+                                                            q: `mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
+                                                            fields: 'files(id, name)',
+                                                            pageSize: 100
                                                         });
                                                         const clientFiles = clientSearch.data.files || [];
-                                                        if (clientFiles.length > 0) {
-                                                            const folderId = clientFiles[0].id;
+                                                        const matchedFolder = clientFiles.find(f => normalizeString(f.name) === targetNorm);
+                                                        if (matchedFolder) {
+                                                            const folderId = matchedFolder.id;
                                                             await gdriveService.deleteFile(folderId);
                                                             success = true;
                                                         }
@@ -2902,14 +2961,25 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 }
                                             }
                                             
+                                            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+                                            if (fs.existsSync(historyDir)) {
+                                                const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
+                                                for (const subdir of subdirs) {
+                                                    if (normalizeString(subdir) === targetNorm) {
+                                                        const localFolder = path.join(historyDir, subdir);
+                                                        fs.rmSync(localFolder, { recursive: true, force: true });
+                                                        success = true;
+                                                    }
+                                                }
+                                            }
+
                                             const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                                            const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                                            const localFolder = path.join(historyDir, cleanCompany);
                                             if (fs.existsSync(localFolder)) {
                                                 fs.rmSync(localFolder, { recursive: true, force: true });
                                                 success = true;
                                             }
 
-                                            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                                             if (fs.existsSync(historyDir)) {
                                                 const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
                                                 for (const file of files) {
@@ -2917,7 +2987,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     try {
                                                         const fileContent = fs.readFileSync(filePath, 'utf8');
                                                         const data = JSON.parse(fileContent);
-                                                        if (data.company && data.company.toLowerCase().trim() === company.toLowerCase().trim()) {
+                                                        if (data.company && normalizeString(data.company) === targetNorm) {
                                                             fs.unlinkSync(filePath);
                                                             console.log(`🗑️ Deleted local history file matching company "${company}": ${filePath}`);
                                                             success = true;
