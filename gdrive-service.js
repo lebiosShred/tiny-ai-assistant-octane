@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { google } = require('googleapis');
-const pdfParse = require('pdf-parse');
+const pdf2md = require('@opendocsg/pdf2md');
 const PDFDocument = require('pdfkit');
 
 // Load environment variables if dotenv is available (local dev)
@@ -146,8 +146,8 @@ async function getFileContent(fileId) {
 
             const buffer = Buffer.from(downloadResponse.data);
             try {
-                const data = await pdfParse(buffer);
-                return data.text;
+                const markdown = await pdf2md(buffer);
+                return markdown;
             } catch (pdfErr) {
                 console.warn(`⚠️ PDF parse failed for ${name} (${pdfErr.message}). Falling back to text decoding...`);
                 return buffer.toString('utf8');
@@ -413,8 +413,8 @@ async function uploadFile(fileName, mimeType, fileBuffer, folderId) {
  */
 async function parsePdfBuffer(buffer) {
     try {
-        const data = await pdfParse(buffer);
-        return data.text;
+        const markdown = await pdf2md(buffer);
+        return markdown;
     } catch (err) {
         console.warn(`⚠️ PDF parse failed: ${err.message}. Falling back to text decoding...`);
         return buffer.toString('utf8');
