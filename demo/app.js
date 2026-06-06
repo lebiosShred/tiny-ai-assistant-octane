@@ -970,13 +970,18 @@ Rules:
 3. Be concise and factual. Do not make up facts. Use the client details provided.
 4. If the required input data for the requested report or query is missing from the sources (e.g., LinkedIn and Intake are both empty when generating a Lead Sheet, or the transcript is empty when generating a recap email, migration assessment, action items, summary sheet, notes, or proposal), you MUST output exactly '[INSUFFICIENT_DATA_FOR_REPORT]'. Do NOT fabricate, placeholder, or assume any information.
 5. If the user asks for focus prompts or query sections, resolve them using these specific guidelines:
-   - "Show me the list of leads": Output a clean markdown table of the active leads listed in the system.
-   - "Identify the type of sale / Are we selling them TM1 planning analytics or artificial intelligence?": Determine the track from the Service Track field and booking details.
-   - "Business activity": Scan the context or search results. State industry sector, description of business, estimate revenue and headcount, and list core products and services with one sentence for each.
-   - "Customer match": Map the company's sector and pain points to the playbook customer profiles (Large/Mid/Small TM1 Shops, etc.). Check if we served a similar active client in the past (e.g., Steric, Shift, GreyOrange, mycar).
-   - "Assessment": Explain how their activity relates to TM1 or AI. Recommend the exact services aligned to their needs and catalog pricing, and detail 3 likely pain points.
-   - "Conversation starter": Look at their LinkedIn bio and website. Provide 3 specific personal-level stories if available. Cite previous Octane work if their working history has matching organizations. Otherwise, offer organization-level stories connected to TM1/AI from corporate news.
-   - "Complementary applications / Competing applications / Competing consulting firms": Identify ERP/planning applications in their stack, and check if they mentioned any competing firms.`;
+    - "Show me the list of leads": Output a clean markdown table of the active leads listed in the system.
+    - "Identify the type of sale / Are we selling them TM1 planning analytics or artificial intelligence?": Determine the track from the Service Track field and booking details.
+    - "Business activity": Scan the client's website and context. State the industry sector they belong to, estimate their revenue and headcount size, give a brief description of their business, and list specifically each of their products and services with exactly one sentence for each.
+    - "Customer match": Map the company's sector and pain points to the playbook customer profiles (Large/Mid/Small TM1 Shops, etc.). Check how well this customer matches our profiles and state if we have served this organization or a similar organization in the past (e.g. Steric, Shift, GreyOrange, mycar).
+    - "Assessment": Explain how their business activity relates to TM1 or AI. Recommend the exact services we should offer them with catalog pricing, and detail their likely pain points we need to address.
+    - "Conversation starter": Scan the client's website and LinkedIn profile. Find news or interesting stories for personal-level connection:
+      * Provide three stories at a personal level.
+      * Look at their past working history and cite previous Octane work if they worked at organizations we served.
+      * If personal-level stories are not available, offer stories involving the organization from their news/press releases on their website. These stories regarding the organization MUST connect to our subject matter TM1 and AI. Otherwise, they are not relevant.
+    - "Complementary applications": In the customer's current stack, identify applications they are using that are complementary with us (e.g. NetSuite, SAP, Dynamics, Power BI, Tableau).
+    - "Competing applications": In the customer's current stack, identify applications they are using that are competing with us (e.g. Anaplan, Workday Adaptive Planning, Board).
+    - "Competing consulting firms": Did the client mention they are working with a firm competing with us?`;
 
         // Format history for Mistral API proxy `/api/chat`
         const messages = [
