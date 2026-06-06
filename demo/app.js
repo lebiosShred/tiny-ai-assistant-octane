@@ -384,6 +384,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         folderItem.classList.add('active');
                         activeFolderId = folder.id;
                         
+                        // Clear inputs immediately to avoid displaying stale data from prior active chats
+                        if (metaName) metaName.value = '';
+                        if (metaTitle) metaTitle.value = '';
+                        if (metaEmail) metaEmail.value = '';
+                        if (metaPhone) metaPhone.value = '';
+                        
                         if (metaCompany) {
                             metaCompany.value = folder.name;
                             metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
@@ -468,6 +474,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function extractNameFromFiles(files) {
+        if (!files || files.length === 0) return null;
+        const stopWords = new Set(['linkedin', 'profile', 'lead', 'capture', 'form', 'sow', 'statement', 'of', 'work', 'call', 'log', 'pdf', 'txt', 'docx', 'doc', 'ics', 'calendar', 'booking', 'confirmation', 'topics', 'discussion']);
+        for (const file of files) {
+            const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+            const parts = nameWithoutExt.toLowerCase().split(/[-_\s]+/);
+            const nameParts = parts.filter(p => p.length > 0 && !stopWords.has(p) && isNaN(p));
+            if (nameParts.length >= 2 && nameParts.length <= 3) {
+                return nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+            }
+        }
+        return null;
+    }
+
     async function loadSourcesForCompany(folderId, companyName, preFetchedFiles = null) {
         if (!sourcesList) return;
         sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
@@ -477,7 +497,26 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Look up associated client name from chatsList, or default to currently entered metaName
             const matchSession = chatsList.find(c => c.company.toLowerCase().trim() === companyName.toLowerCase().trim());
-            const clientName = matchSession ? (matchSession.name || 'Unknown Name') : (metaName && metaName.value ? metaName.value : 'Unknown Name');
+            let clientName = 'Unknown Name';
+            
+            const files = data.items ? data.items.filter(f => !f.isFolder) : [];
+            
+            if (matchSession) {
+                clientName = matchSession.name || 'Unknown Name';
+            } else {
+                // Try to extract from file names in the folder
+                const extractedName = extractNameFromFiles(files);
+                if (extractedName) {
+                    clientName = extractedName;
+                    if (metaName && metaName.value !== extractedName) {
+                        metaName.value = extractedName;
+                        metaName.dispatchEvent(new Event('input', { bubbles: true }));
+                        metaName.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                } else {
+                    clientName = (metaName && metaName.value) ? metaName.value : 'Unknown Name';
+                }
+            }
             
             // Construct and render metadata context header at the top
             const headerInfo = document.createElement('div');
