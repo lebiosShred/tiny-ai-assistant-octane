@@ -1785,8 +1785,12 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     }
 
                     const parseDeleteQuery = (query) => {
+                        let cleaned = query.trim();
+                        if (cleaned.endsWith('.')) {
+                            cleaned = cleaned.slice(0, -1).trim();
+                        }
                         const deletePattern = /^(?:tiny,?\s+)?(?:delete|remove|destroy)\s+(.*)$/i;
-                        const match = query.match(deletePattern);
+                        const match = cleaned.match(deletePattern);
                         if (!match) return null;
                         
                         let target = match[1].trim();
