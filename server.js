@@ -3686,6 +3686,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
                     if (mimeType === 'application/pdf') {
                         parsedText = await gdriveService.parsePdfBuffer(fileBuffer);
+                    } else if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || (filename && filename.toLowerCase().endsWith('.docx'))) {
+                        parsedText = await gdriveService.parseDocxBuffer(fileBuffer);
                     } else if (mimeType.startsWith('text/') || filename.endsWith('.txt') || filename.endsWith('.md')) {
                         parsedText = fileBuffer.toString('utf8');
                     }
@@ -3791,6 +3793,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
                 if (mimeType === 'application/pdf') {
                     parsedText = await gdriveService.parsePdfBuffer(fileBuffer);
+                } else if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || (fileName && fileName.toLowerCase().endsWith('.docx'))) {
+                    parsedText = await gdriveService.parseDocxBuffer(fileBuffer);
                 } else if (mimeType.startsWith('text/') || fileName.endsWith('.txt') || fileName.endsWith('.md')) {
                     parsedText = fileBuffer.toString('utf8');
                 }

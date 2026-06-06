@@ -538,7 +538,26 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (!response.ok) throw new Error("GDrive read failed");
                                 const data = await response.json();
                                 if (textPreviewTarget) {
-                                    textPreviewTarget.textContent = data.content || '[Empty File]';
+                                    try {
+                                        const markdown = data.content || '';
+                                        const parsedHtml = (window.marked && typeof window.marked.parse === 'function')
+                                            ? window.marked.parse(markdown)
+                                            : (window.marked && typeof window.marked === 'function')
+                                                ? window.marked(markdown)
+                                                : null;
+                                        
+                                        if (parsedHtml !== null) {
+                                            const cleanHtml = (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function')
+                                                ? window.DOMPurify.sanitize(parsedHtml)
+                                                : parsedHtml;
+                                            textPreviewTarget.innerHTML = cleanHtml || '[Empty File]';
+                                        } else {
+                                            textPreviewTarget.textContent = markdown || '[Empty File]';
+                                        }
+                                    } catch (renderErr) {
+                                        console.warn("Markdown rendering failed:", renderErr);
+                                        textPreviewTarget.textContent = data.content || '[Empty File]';
+                                    }
                                 }
                                 gdriveFileContent = data.content || '';
                                 sourceGdriveFileId.value = file.id;

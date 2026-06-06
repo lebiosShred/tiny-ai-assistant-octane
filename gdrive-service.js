@@ -3,6 +3,8 @@ const path = require('path');
 const { google } = require('googleapis');
 const pdf2md = require('@opendocsg/pdf2md');
 const PDFDocument = require('pdfkit');
+const mammoth = require('mammoth');
+const TurndownService = require('turndown');
 
 // Load environment variables if dotenv is available (local dev)
 if (fs.existsSync(path.join(__dirname, '.env'))) {
@@ -150,6 +152,23 @@ async function getFileContent(fileId) {
                 return markdown;
             } catch (pdfErr) {
                 console.warn(`⚠️ PDF parse failed for ${name} (${pdfErr.message}). Falling back to text decoding...`);
+                return buffer.toString('utf8');
+            }
+        }
+
+        if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || (name && name.endsWith('.docx'))) {
+            // DOCX file: download as arrayBuffer, then parse text using mammoth + turndown
+            const downloadResponse = await drive.files.get({
+                fileId: fileId,
+                alt: 'media'
+            }, { responseType: 'arraybuffer' });
+
+            const buffer = Buffer.from(downloadResponse.data);
+            try {
+                const markdown = await parseDocxBuffer(buffer);
+                return markdown;
+            } catch (docxErr) {
+                console.warn(`⚠️ DOCX parse failed for ${name} (${docxErr.message}). Falling back to text decoding...`);
                 return buffer.toString('utf8');
             }
         }
@@ -422,6 +441,24 @@ async function parsePdfBuffer(buffer) {
 }
 
 /**
+ * Utility to parse DOCX buffer into Markdown text.
+ * @param {Buffer} buffer 
+ * @returns {Promise<string>}
+ */
+async function parseDocxBuffer(buffer) {
+    try {
+        const mammothResult = await mammoth.convertToHtml({ buffer: buffer });
+        const html = mammothResult.value;
+        const turndownService = new TurndownService();
+        const markdown = turndownService.turndown(html);
+        return markdown;
+    } catch (err) {
+        console.warn(`⚠️ DOCX parse failed: ${err.message}. Falling back to text decoding...`);
+        return buffer.toString('utf8');
+    }
+}
+
+/**
  * Deletes a file by ID from Google Drive.
  * @param {string} fileId Google Drive File ID
  * @returns {Promise<boolean>} Success status
@@ -497,6 +534,7 @@ module.exports = {
     findOrCreateClientFolder,
     uploadFile,
     parsePdfBuffer,
+    parseDocxBuffer,
     deleteFile,
     renameFolder,
     folderIdCache,
