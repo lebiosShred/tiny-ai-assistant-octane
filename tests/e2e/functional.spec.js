@@ -159,4 +159,37 @@ test.describe('Aegis Functional E2E Suite', () => {
         await expect(modal).toHaveClass(/modal-hidden/);
         await indexPage.waitForChatInit();
     });
+
+    test('verifies confirmation modal pops up for conversational add prospect folder command', async ({ page }) => {
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.newChatBtn.click();
+
+        // Override Playwright active flag to test modal interaction
+        await page.evaluate(() => {
+            window.__playwright_active = false;
+            Object.defineProperty(navigator, 'webdriver', { get: () => false, configurable: true });
+        });
+
+        await indexPage.closeDrawer();
+
+        // Send create prospect command
+        await indexPage.sendMessage('add a prospect name "NewlyCreated"\\');
+
+        // Verify the modal is visible
+        const modal = page.locator('#confirm-modal');
+        await expect(modal).not.toHaveClass(/modal-hidden/);
+
+        // Verify title
+        const title = await page.locator('#confirm-modal-title').innerText();
+        expect(title).toContain('Add New Prospect');
+
+        // Click Cancel
+        await page.click('#btn-cancel-confirm');
+        await expect(modal).toHaveClass(/modal-hidden/);
+
+        // Verify original command text is restored in input
+        const inputText = await page.inputValue('#chat-user-input');
+        expect(inputText).toBe('add a prospect name "NewlyCreated"\\');
+    });
 });

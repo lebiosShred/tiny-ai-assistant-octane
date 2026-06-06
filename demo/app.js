@@ -956,7 +956,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Parse metadata on first prompt if session is not yet initialized
         if (!currentChatId) {
             // Bypass metadata parser if the prompt is a file/folder creation command
-            const isCreationCommand = /(?:create|make|generate|add)\s+(?:a\s+)?(folder|directory|file|readme)/i.test(promptText) ||
+            const isCreationCommand = /(?:create|make|generate|add)\s+(?:a\s+)?(folder|directory|file|readme|prospect|client|lead|company)/i.test(promptText) ||
                                       /(?:create|make|generate|add)\s+.*?\s+at\s+/i.test(promptText);
             if (!isCreationCommand) {
                 const parsed = parseInitPrompt(promptText);
@@ -1251,10 +1251,65 @@ Rules:
         }
     }
 
+    // --- Helper for parsing conversational creation queries ---
+    function parseCreateQuery(query) {
+        let cleaned = query.trim();
+        if (cleaned.endsWith('.')) {
+            cleaned = cleaned.slice(0, -1).trim();
+        }
+        if (cleaned.endsWith('\\')) {
+            cleaned = cleaned.slice(0, -1).trim();
+        }
+        const createPattern = /^(?:tiny,?\s+)?(?:create|make|add|new|register)\s+(.*)$/i;
+        const match = cleaned.match(createPattern);
+        if (!match) return null;
+        
+        let target = match[1].trim();
+        if (!target) return null;
+        
+        target = target.replace(/^(?:a|the)\s+/i, '').trim();
+        
+        const folderNounPattern = /^(?:prospect\s+name|prospect\s+folder|client\s+folder|company\s+folder|prospect|client|lead|company|folder|directory)\s+(.*)$/i;
+        const folderNounMatch = target.match(folderNounPattern);
+        if (folderNounMatch) {
+            let name = folderNounMatch[1].trim().replace(/^["']|["']$/g, '');
+            return { type: 'folder', name };
+        }
+        
+        const folderForPattern = /^(?:prospect\s+folder|client\s+folder|company\s+folder|folder|directory)\s+for\s+(.*)$/i;
+        const folderForMatch = target.match(folderForPattern);
+        if (folderForMatch) {
+            let name = folderForMatch[1].trim().replace(/^["']|["']$/g, '');
+            return { type: 'folder', name };
+        }
+        
+        return null;
+    }
+
     // --- Custom Chat Prompt send ---
     async function sendUserQuery() {
         const queryText = chatUserInput.value.trim();
         if (!queryText) return;
+
+        const parsedCreate = parseCreateQuery(queryText);
+
+        if (parsedCreate && parsedCreate.type === 'folder') {
+            const targetCompany = parsedCreate.name;
+            chatUserInput.value = '';
+            const confirmed = await showConfirmModal({
+                title: 'Add New Prospect',
+                message: `Are you sure you want to create a new prospect folder for "${targetCompany}"?`,
+                confirmText: 'Create',
+                cancelText: 'Cancel',
+                type: 'primary'
+            });
+            if (confirmed) {
+                callTinyAPI(queryText);
+            } else {
+                chatUserInput.value = queryText;
+            }
+            return;
+        }
 
         const parsedDelete = parseDeleteQuery(queryText);
 
