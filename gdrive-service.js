@@ -10,6 +10,20 @@ if (fs.existsSync(path.join(__dirname, '.env'))) {
 }
 
 let driveClient = null;
+const folderIdCache = new Map();
+let cachedClientsFolderId = null;
+
+function invalidateFolderCache(folderId) {
+    if (cachedClientsFolderId === folderId) {
+        cachedClientsFolderId = null;
+    }
+    for (const [key, value] of folderIdCache.entries()) {
+        if (value === folderId) {
+            folderIdCache.delete(key);
+            console.log(`🗑️ Invalidated folder ID cache for company: "${key}"`);
+        }
+    }
+}
 
 // Initialize Google Drive API client
 function getDriveClient() {
@@ -75,6 +89,9 @@ async function listFolder(folderId) {
         }));
     } catch (err) {
         console.error(`❌ Error listing folder ${targetFolderId}:`, err.message);
+        if (err.code === 404 || err.status === 404 || err.message.includes('not found') || err.message.includes('Not Found')) {
+            invalidateFolderCache(targetFolderId);
+        }
         throw err;
     }
 }
@@ -274,31 +291,42 @@ async function findOrCreateClientFolder(companyName) {
     }
 
     const cleanCompany = (companyName || 'Unknown_Company').trim().replace(/['"\\/]/g, '');
+    const cacheKey = cleanCompany.toLowerCase();
+    
+    if (folderIdCache.has(cacheKey)) {
+        console.log(`⚡ Folder ID cache hit for "${cleanCompany}": ${folderIdCache.get(cacheKey)}`);
+        return folderIdCache.get(cacheKey);
+    }
+
     const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
 
     try {
         // 1. Resolve or create the central "Clients" directory
-        let clientsFolderId = null;
-        const clientsSearch = await drive.files.list({
-            q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
-            fields: 'files(id, name)',
-            pageSize: 1
-        });
-        
-        const clientsFiles = clientsSearch.data.files || [];
-        if (clientsFiles.length > 0) {
-            clientsFolderId = clientsFiles[0].id;
-        } else {
-            console.log(`📂 "Clients" folder not found under root. Creating it...`);
-            const clientsCreate = await drive.files.create({
-                resource: {
-                    name: 'Clients',
-                    mimeType: 'application/vnd.google-apps.folder',
-                    parents: [rootFolderId]
-                },
-                fields: 'id'
+        let clientsFolderId = cachedClientsFolderId;
+        if (!clientsFolderId) {
+            const clientsSearch = await drive.files.list({
+                q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                fields: 'files(id, name)',
+                pageSize: 1
             });
-            clientsFolderId = clientsCreate.data.id;
+            
+            const clientsFiles = clientsSearch.data.files || [];
+            if (clientsFiles.length > 0) {
+                clientsFolderId = clientsFiles[0].id;
+                cachedClientsFolderId = clientsFolderId;
+            } else {
+                console.log(`📂 "Clients" folder not found under root. Creating it...`);
+                const clientsCreate = await drive.files.create({
+                    resource: {
+                        name: 'Clients',
+                        mimeType: 'application/vnd.google-apps.folder',
+                        parents: [rootFolderId]
+                    },
+                    fields: 'id'
+                });
+                clientsFolderId = clientsCreate.data.id;
+                cachedClientsFolderId = clientsFolderId;
+            }
         }
 
         // 2. Resolve or create the company-specific directory
@@ -325,6 +353,8 @@ async function findOrCreateClientFolder(companyName) {
             clientFolderId = clientCreate.data.id;
         }
 
+        // Cache the result
+        folderIdCache.set(cacheKey, clientFolderId);
         return clientFolderId;
     } catch (err) {
         console.error(`❌ Error finding/creating GDrive client folder for "${cleanCompany}":`, err.message);
@@ -369,6 +399,9 @@ async function uploadFile(fileName, mimeType, fileBuffer, folderId) {
         return response.data;
     } catch (err) {
         console.error(`❌ Error uploading file "${fileName}" to GDrive:`, err.message);
+        if (err.code === 404 || err.status === 404 || err.message.includes('not found') || err.message.includes('Not Found')) {
+            invalidateFolderCache(folderId);
+        }
         throw err;
     }
 }
@@ -409,6 +442,48 @@ async function deleteFile(fileId) {
         return true;
     } catch (err) {
         console.error(`❌ Error deleting GDrive file ${fileId}:`, err.message);
+        if (err.code === 404 || err.status === 404 || err.message.includes('not found') || err.message.includes('Not Found')) {
+            invalidateFolderCache(fileId);
+        }
+        throw err;
+    }
+}
+
+/**
+ * Renames a folder or file by ID in Google Drive.
+ * @param {string} fileId Google Drive File/Folder ID
+ * @param {string} newName New name
+ * @returns {Promise<boolean>} Success status
+ */
+async function renameFolder(fileId, newName) {
+    const drive = getDriveClient();
+    if (!drive) {
+        throw new Error('Google Drive client not initialized. Check credentials.');
+    }
+
+    try {
+        console.log(`📂 Renaming GDrive item ${fileId} to "${newName}"`);
+        await drive.files.update({
+            fileId: fileId,
+            resource: { name: newName },
+            supportsAllDrives: true
+        });
+        console.log(`✅ Google Drive item renamed successfully: ${fileId}`);
+        
+        // Update memory cache mapping
+        const cleanName = newName.trim().replace(/['"\\/]/g, '');
+        for (const [key, value] of folderIdCache.entries()) {
+            if (value === fileId) {
+                folderIdCache.delete(key);
+            }
+        }
+        folderIdCache.set(cleanName.toLowerCase(), fileId);
+        return true;
+    } catch (err) {
+        console.error(`❌ Error renaming GDrive item ${fileId}:`, err.message);
+        if (err.code === 404 || err.status === 404 || err.message.includes('not found') || err.message.includes('Not Found')) {
+            invalidateFolderCache(fileId);
+        }
         throw err;
     }
 }
@@ -422,6 +497,9 @@ module.exports = {
     findOrCreateClientFolder,
     uploadFile,
     parsePdfBuffer,
-    deleteFile
+    deleteFile,
+    renameFolder,
+    folderIdCache,
+    invalidateFolderCache
 };
 

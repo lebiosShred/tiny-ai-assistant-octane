@@ -3540,11 +3540,13 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
         }
 
         let company = 'Unknown_Company';
+        let folderId = null;
         const fields = {};
 
         bb.on('field', (name, val) => {
             fields[name] = val;
             if (name === 'company') company = val.trim() || 'Unknown_Company';
+            if (name === 'folderId') folderId = val.trim() || null;
         });
 
         bb.on('file', async (fieldname, fileStream, info) => {
@@ -3578,7 +3580,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
 
                     if (gdriveAvailable) {
-                        const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                        let clientFolderId = folderId;
+                        if (!clientFolderId && company) {
+                            clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                        }
                         driveFile = await gdriveService.uploadFile(filename, mimeType, fileBuffer, clientFolderId);
                     } else {
                         console.warn('⚠️ Google Drive client not configured. Saving file locally.');
@@ -3680,7 +3685,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
                 
                 if (gdriveAvailable) {
-                    const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                    let clientFolderId = payload.folderId;
+                    if (!clientFolderId && company) {
+                        clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                    }
                     driveFile = await gdriveService.uploadFile(fileName, mimeType, fileBuffer, clientFolderId);
                 } else {
                     console.warn('⚠️ Google Drive client not configured. Saving file locally.');
@@ -4423,6 +4431,9 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                         if (!readErr) {
                             try {
                                 const parsed = JSON.parse(data);
+                                if (parsed.company && parsed.gDriveFolderId) {
+                                    gdriveService.folderIdCache.set(parsed.company.toLowerCase(), parsed.gDriveFolderId);
+                                }
                                 items.push({
                                     id: parsed.id,
                                     type: parsed.type,
@@ -4437,6 +4448,7 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                                     oneDriveFile: parsed.oneDriveFile || parsed.gDriveFile,
                                     gDriveFile: parsed.gDriveFile || parsed.oneDriveFile,
                                     gDriveFileId: parsed.gDriveFileId || null,
+                                    gDriveFolderId: parsed.gDriveFolderId || null,
                                     gDriveFileContent: null, // Exclude heavy content from listing payload
                                     phone: parsed.phone,
                                     stage: parsed.stage || (parsed.type === 'synthesis' ? 'reports' : 'prep'),
@@ -4498,6 +4510,59 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                         fs.mkdirSync(historyDir, { recursive: true });
                     }
                     const filePath = path.join(historyDir, `${id}.json`);
+
+                    // Try to resolve folder ID from cache if company is present
+                    if (payload.company) {
+                        const cleanCo = payload.company.replace(/['"\\/]/g, '').trim().toLowerCase();
+                        if (gdriveService.folderIdCache.has(cleanCo)) {
+                            payload.gDriveFolderId = gdriveService.folderIdCache.get(cleanCo);
+                        }
+                    }
+
+                    // Read old file if exists to check for company renaming and pull old folder ID
+                    let oldCompany = null;
+                    let oldFolderId = null;
+                    if (fs.existsSync(filePath)) {
+                        try {
+                            const oldData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                            oldCompany = oldData.company;
+                            oldFolderId = oldData.gDriveFolderId;
+                            if (oldFolderId && !payload.gDriveFolderId) {
+                                payload.gDriveFolderId = oldFolderId;
+                            }
+                        } catch (e) {}
+                    }
+
+                    // If company name has changed, rename the Google Drive folder
+                    if (payload.company && oldCompany && payload.company !== oldCompany && payload.gDriveFolderId) {
+                        const renameFolderId = payload.gDriveFolderId;
+                        const newCoName = payload.company;
+                        (async () => {
+                            try {
+                                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                                if (gdriveAvailable) {
+                                    await gdriveService.renameFolder(renameFolderId, newCoName);
+                                }
+                            } catch (err) {
+                                console.warn('⚠️ Google Drive folder renaming failed:', err.message);
+                            }
+                        })();
+                    }
+
+                    // Async folder resolution if missing
+                    if (payload.company && !payload.gDriveFolderId) {
+                        const writeCo = payload.company;
+                        (async () => {
+                            try {
+                                const folderId = await gdriveService.findOrCreateClientFolder(writeCo);
+                                payload.gDriveFolderId = folderId;
+                                fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', () => {});
+                            } catch (e) {
+                                console.warn('⚠️ Async folder ID resolution failed during history save:', e.message);
+                            }
+                        })();
+                    }
+
                     fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', async (writeErr) => {
                         if (writeErr) {
                             res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -4699,6 +4764,12 @@ ${payload.intakeAnswers || ''}`;
                 res.end(JSON.stringify({ error: 'History item not found.' }));
                 return;
             }
+            try {
+                const parsed = JSON.parse(data);
+                if (parsed.company && parsed.gDriveFolderId) {
+                    gdriveService.folderIdCache.set(parsed.company.toLowerCase(), parsed.gDriveFolderId);
+                }
+            } catch (e) {}
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(data);
         });

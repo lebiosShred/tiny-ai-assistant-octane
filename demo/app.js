@@ -293,7 +293,13 @@ document.addEventListener('DOMContentLoaded', () => {
         sourceGdriveFileSelect.innerHTML = '<option value="">-- Loading GDrive files... --</option>';
         try {
             const company = metaCompany ? metaCompany.value.trim() : '';
-            const url = company ? `/api/gdrive/list?company=${encodeURIComponent(company)}` : '/api/gdrive/list';
+            let url = '/api/gdrive/list';
+            if (activeFolderId) {
+                url = `/api/gdrive/list?folderId=${encodeURIComponent(activeFolderId)}`;
+                if (company) url += `&company=${encodeURIComponent(company)}`;
+            } else if (company) {
+                url = `/api/gdrive/list?company=${encodeURIComponent(company)}`;
+            }
             const response = await fetch(url);
             if (!response.ok) throw new Error('GDrive list failed');
             const data = await response.json();
@@ -559,6 +565,9 @@ document.addEventListener('DOMContentLoaded', () => {
             metaRep.value = data.rep || 'Albert';
             metaTrack.value = data.track || 'Planning & Analytics (TM1)';
             
+            // Set folder ID
+            activeFolderId = data.gDriveFolderId || null;
+            
             gdriveFileContent = data.gDriveFileContent || '';
             sourceGdriveFileId.value = data.gDriveFileId || '';
             
@@ -812,6 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
             intakeAnswers: sourceIntakeText ? sourceIntakeText.value.trim() : '',
             transcript: sourceTranscriptText ? sourceTranscriptText.value.trim() : '',
             transitDistance: transitDistance,
+            gDriveFolderId: activeFolderId || undefined,
             messages: chatHistory
         };
 
@@ -1458,6 +1468,9 @@ Rules:
         return new Promise((resolve, reject) => {
             const formData = new FormData();
             formData.append('company', companyName || 'Unknown_Company');
+            if (activeFolderId) {
+                formData.append('folderId', activeFolderId);
+            }
             formData.append('file', file, file.name);
 
             const xhr = new XMLHttpRequest();
@@ -1754,6 +1767,7 @@ OneDrive Screencast Link: [Link if available]`;
                         },
                         body: JSON.stringify({
                             company: companyName || 'Unknown_Company',
+                            folderId: activeFolderId || undefined,
                             fileName: file.name,
                             mimeType: file.type || 'application/octet-stream',
                             fileData: base64Data
@@ -1857,6 +1871,7 @@ ${data.parsedText}`;
                                 },
                                 body: JSON.stringify({
                                     company: companyName || 'Unknown_Company',
+                                    folderId: activeFolderId || undefined,
                                     fileName: `Prospect_Metadata_${fullName}.md`,
                                     mimeType: 'text/markdown',
                                     fileData: base64Markdown
