@@ -1992,10 +1992,9 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                             pageSize: 100
                                         });
                                         const clientFiles = clientSearch.data.files || [];
-                                        const matchedFolder = clientFiles.find(f => normalizeString(f.name) === targetNorm);
-                                        if (matchedFolder) {
-                                            const folderId = matchedFolder.id;
-                                            await gdriveService.deleteFile(folderId);
+                                        const matchedFolders = clientFiles.filter(f => normalizeString(f.name) === targetNorm);
+                                        for (const folder of matchedFolders) {
+                                            await gdriveService.deleteFile(folder.id);
                                             success = true;
                                         }
                                     }
@@ -2327,9 +2326,23 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         const hasGdrive = gdriveContent.length > 0 && !/^(none|sample google drive file content\.\.\.|\s*)$/i.test(gdriveContent) && !gdriveContent.includes('[PROSPECT_DATA_INSUFFICIENT]');
                         const hasLinkedin = linkedinContent.length > 0 && !/^(missing|none|\s*)$/i.test(linkedinContent);
 
-                        if ((hasGdrive && !normalizedGdrive.includes(normalizedCo)) || 
-                            (hasLinkedin && !normalizedLinkedin.includes(normalizedCo))) {
+                        let gdriveMismatch = hasGdrive && !normalizedGdrive.includes(normalizedCo);
+                        let linkedinMismatch = hasLinkedin && !normalizedLinkedin.includes(normalizedCo);
+
+                        if (gdriveMismatch || linkedinMismatch) {
                             isMismatch = true;
+                            if (gdriveMismatch) {
+                                systemMsgForMismatch.content = systemMsgForMismatch.content.replace(
+                                    /(- Google Drive SOW Content:[ \t]*)([\s\S]*?)(?=\r?\n-\s+[A-Za-z]|\r?\nActive Leads|$)/i,
+                                    '$1[REDACTED DUE TO IDENTITY MISMATCH]'
+                                );
+                            }
+                            if (linkedinMismatch) {
+                                systemMsgForMismatch.content = systemMsgForMismatch.content.replace(
+                                    /(- LinkedIn Profile Bio:[ \t]*)([\s\S]*?)(?=\r?\n-\s+[A-Za-z]|\r?\nActive Leads|$)/i,
+                                    '$1[REDACTED DUE TO IDENTITY MISMATCH]'
+                                );
+                            }
                         }
                     }
                 }
@@ -2458,7 +2471,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 let mismatchWarning = '';
                 if (isMismatch) {
                     const extractedCo = companyNameForGDrive || 'the specified company';
-                    mismatchWarning = `\n\nCRITICAL SYSTEM WARNING: An uploaded source document (LinkedIn profile bio or Google Drive SOW document) does NOT match the lead metadata company ("${extractedCo}"). This indicates a mismatch of identity. You are strictly forbidden from conflating the two identities or personalizing deliverables for the lead company using any of the mismatched document content. Ignore the mismatched document details entirely when personalizing support or packages for "${extractedCo}".`;
+                    mismatchWarning = `\n\nCRITICAL SYSTEM WARNING: An uploaded source document (LinkedIn profile bio or Google Drive SOW document) does NOT match the lead metadata company ("${extractedCo}"). This indicates a mismatch of identity. You are strictly forbidden from conflating the two identities or personalizing deliverables for the lead company using any of the mismatched document content. Ignore the mismatched document details entirely when personalizing support or packages for "${extractedCo}". Under no circumstances should you output or reference any keywords, company names, or industry details from the mismatched document (do NOT mention "nsw epa", "organics", "recycling", or "waste"), nor should you try to suggest starter templates based on them.`;
                 }
 
                 if (systemMsg) {
@@ -2942,17 +2955,15 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     const clientsFiles = clientsSearch.data.files || [];
                                                     if (clientsFiles.length > 0) {
                                                         const clientsFolderId = clientsFiles[0].id;
-                                                        // Fetch all folders inside Clients and filter locally with normalized strings
                                                         const clientSearch = await drive.files.list({
                                                             q: `mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
                                                             fields: 'files(id, name)',
                                                             pageSize: 100
                                                         });
                                                         const clientFiles = clientSearch.data.files || [];
-                                                        const matchedFolder = clientFiles.find(f => normalizeString(f.name) === targetNorm);
-                                                        if (matchedFolder) {
-                                                            const folderId = matchedFolder.id;
-                                                            await gdriveService.deleteFile(folderId);
+                                                        const matchedFolders = clientFiles.filter(f => normalizeString(f.name) === targetNorm);
+                                                        for (const folder of matchedFolders) {
+                                                            await gdriveService.deleteFile(folder.id);
                                                             success = true;
                                                         }
                                                     }

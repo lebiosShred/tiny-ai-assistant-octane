@@ -336,8 +336,20 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.items && data.items.length > 0) {
                 const folders = data.items.filter(item => item.isFolder);
-                gdriveFolders = folders;
-                if (folders.length === 0) {
+                // Deduplicate folders by name (case-insensitive) to prevent sidebar UI duplicates
+                const seenNames = new Set();
+                const uniqueFolders = [];
+                folders.forEach(folder => {
+                    if (folder.name) {
+                        const normName = folder.name.trim().toLowerCase();
+                        if (!seenNames.has(normName)) {
+                            seenNames.add(normName);
+                            uniqueFolders.push(folder);
+                        }
+                    }
+                });
+                gdriveFolders = uniqueFolders;
+                if (uniqueFolders.length === 0) {
                     recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">No prospect folders found</div>';
                     return;
                 }
@@ -345,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If activeFolderId is not set, try to find a folder matching metaCompany
                 if (!activeFolderId && metaCompany && metaCompany.value) {
                     const compName = metaCompany.value.trim().toLowerCase();
-                    const matchingFolder = folders.find(f => f.name.toLowerCase().trim() === compName);
+                    const matchingFolder = uniqueFolders.find(f => f.name.toLowerCase().trim() === compName);
                     if (matchingFolder) {
                         activeFolderId = matchingFolder.id;
                     }
@@ -353,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 let activeFolderName = "";
                 let firstFolderItem = null;
-                folders.forEach((folder, index) => {
+                uniqueFolders.forEach((folder, index) => {
                     const folderItem = document.createElement('div');
                     folderItem.className = 'sidebar-folder-header';
                     folderItem.style.marginBottom = '0.5rem';
