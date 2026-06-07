@@ -3477,6 +3477,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     const itemName = item.name ? item.name.toString().toLowerCase() : '';
                     if (recentlyDeletedFiles.has(itemId)) return false;
                     if (recentlyDeletedFiles.has(itemName)) return false;
+                    const isTestEnv = process.env.HISTORY_DIR === 'knowledge/history_test';
+                    if (!isTestEnv && (itemName.startsWith('qa_') || itemName.startsWith('local_qa_') || itemId.startsWith('qa_') || itemId.startsWith('local_qa_'))) {
+                        return false;
+                    }
                     return true;
                 });
 
@@ -3537,6 +3541,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     const itemName = item.name ? item.name.toString().toLowerCase() : '';
                     if (recentlyDeletedFiles.has(itemId)) return false;
                     if (recentlyDeletedFiles.has(itemName)) return false;
+                    const isTestEnv = process.env.HISTORY_DIR === 'knowledge/history_test';
+                    if (!isTestEnv && (itemName.startsWith('qa_') || itemName.startsWith('local_qa_') || itemId.startsWith('qa_') || itemId.startsWith('local_qa_'))) {
+                        return false;
+                    }
                     return true;
                 });
 
@@ -4498,29 +4506,36 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                         if (!readErr) {
                             try {
                                 const parsed = JSON.parse(data);
-                                if (parsed.company && parsed.gDriveFolderId) {
-                                    gdriveService.folderIdCache.set(parsed.company.toLowerCase(), parsed.gDriveFolderId);
+                                const isTestEnv = process.env.HISTORY_DIR === 'knowledge/history_test';
+                                const companyName = parsed.company ? parsed.company.toLowerCase() : '';
+                                const leadName = parsed.name ? parsed.name.toLowerCase() : '';
+                                if (!isTestEnv && (companyName.startsWith('qa_') || leadName.startsWith('qa_'))) {
+                                    // Skip E2E test history entries in non-test mode
+                                } else {
+                                    if (parsed.company && parsed.gDriveFolderId) {
+                                        gdriveService.folderIdCache.set(parsed.company.toLowerCase(), parsed.gDriveFolderId);
+                                    }
+                                    items.push({
+                                        id: parsed.id,
+                                        type: parsed.type,
+                                        date: parsed.date,
+                                        name: parsed.name,
+                                        company: parsed.company,
+                                        title: parsed.title,
+                                        track: parsed.track,
+                                        variant: parsed.variant,
+                                        score: parsed.score || (parsed.type === 'synthesis' ? extractScore(parsed.content) : null),
+                                        rep: parsed.rep,
+                                        oneDriveFile: parsed.oneDriveFile || parsed.gDriveFile,
+                                        gDriveFile: parsed.gDriveFile || parsed.oneDriveFile,
+                                        gDriveFileId: parsed.gDriveFileId || null,
+                                        gDriveFolderId: parsed.gDriveFolderId || null,
+                                        gDriveFileContent: null, // Exclude heavy content from listing payload
+                                        phone: parsed.phone,
+                                        stage: parsed.stage || (parsed.type === 'synthesis' ? 'reports' : 'prep'),
+                                        filename: file
+                                    });
                                 }
-                                items.push({
-                                    id: parsed.id,
-                                    type: parsed.type,
-                                    date: parsed.date,
-                                    name: parsed.name,
-                                    company: parsed.company,
-                                    title: parsed.title,
-                                    track: parsed.track,
-                                    variant: parsed.variant,
-                                    score: parsed.score || (parsed.type === 'synthesis' ? extractScore(parsed.content) : null),
-                                    rep: parsed.rep,
-                                    oneDriveFile: parsed.oneDriveFile || parsed.gDriveFile,
-                                    gDriveFile: parsed.gDriveFile || parsed.oneDriveFile,
-                                    gDriveFileId: parsed.gDriveFileId || null,
-                                    gDriveFolderId: parsed.gDriveFolderId || null,
-                                    gDriveFileContent: null, // Exclude heavy content from listing payload
-                                    phone: parsed.phone,
-                                    stage: parsed.stage || (parsed.type === 'synthesis' ? 'reports' : 'prep'),
-                                    filename: file
-                                });
                             } catch (e) {
                                 console.error(`Error parsing history file ${file}:`, e);
                             }
