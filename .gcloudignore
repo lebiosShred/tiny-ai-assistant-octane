@@ -12,11 +12,16 @@ chrome-debug-profile/
 demo/screencast/output/
 demo/screencast/audio/
 demo/screencast/images/
-__pycache__/
 *.mkv
 *.png
 *.zip
 *.tgz
+*.mp4
+*.wav
+*.mp3
+*.webm
+*.ogg
 video_pipeline/
 tests/
 !demo/tiny.png
+
