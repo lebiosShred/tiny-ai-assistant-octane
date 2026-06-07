@@ -4756,17 +4756,17 @@ body {
     border: none !important;
     padding: 2px 4px !important;
     cursor: pointer !important;
-    color: inherit !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+    color: #94a3b8 !important;
+    opacity: 0.5 !important;
+    pointer-events: auto !important;
     transition: opacity 0.2s ease, color 0.2s ease !important;
     font-size: 0.75rem !important;
     line-height: 1 !important;
+    margin-left: 0.5rem !important;
 }
 
 .sidebar-session-item:hover .btn-delete-session {
-    opacity: 0.6 !important;
-    pointer-events: auto !important;
+    opacity: 0.8 !important;
 }
 
 .sidebar-session-item .btn-delete-session:hover {
@@ -4784,6 +4784,14 @@ body {
     color: #ffffff !important;
     font-weight: 500 !important;
     box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25) !important;
+}
+
+.sidebar-session-item.active .btn-delete-session {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.sidebar-session-item.active .btn-delete-session:hover {
+    color: #ff8a8a !important;
 }
 
 .sidebar-new-session-btn {
