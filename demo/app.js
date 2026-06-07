@@ -1253,6 +1253,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * Parse simple Markdown inline code, bolding, and lists into HTML.
+     */
+    function formatMessageContent(content) {
+        if (!content) return '';
+        let escaped = content
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        // Parse inline code
+        escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Parse bold markdown
+        escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+        // Parse lists
+        const lines = escaped.split('\n');
+        let inList = false;
+        const processedLines = lines.map(line => {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                const liContent = trimmed.substring(2);
+                let listHtml = '';
+                if (!inList) {
+                    listHtml += '<ul class="chat-message-list">';
+                    inList = true;
+                }
+                listHtml += `<li>${liContent}</li>`;
+                return listHtml;
+            } else {
+                let suffix = '';
+                if (inList) {
+                    suffix = '</ul>';
+                    inList = false;
+                }
+                return suffix + line;
+            }
+        });
+        if (inList) {
+            processedLines.push('</ul>');
+        }
+        
+        let htmlResult = processedLines.join('\n');
+        htmlResult = htmlResult.replace(/\n/g, '<br>');
+        return htmlResult;
+    }
+
     function renderChatHistory() {
         chatMessagesLog.innerHTML = '';
         chatHistory.forEach((msg, idx) => {
@@ -1276,9 +1326,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             } else {
-                // Render plain text but preserve lines
                 const pre = document.createElement('pre');
-                pre.innerText = msg.content;
+                pre.className = 'chat-message-content';
+                pre.innerHTML = formatMessageContent(msg.content);
                 card.appendChild(pre);
             }
 

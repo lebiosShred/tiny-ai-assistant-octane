@@ -4885,3 +4885,42 @@ body {
     transform: translateY(0) !important;
 }
 
+/* Parsed Markdown Typography & Layout Overrides */
+.chat-message-card pre.chat-message-content {
+    background: transparent !important;
+    border: none !important;
+    color: inherit !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    white-space: pre-wrap !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.92rem !important;
+    line-height: 1.6 !important;
+}
+
+.chat-message-content strong {
+    font-weight: 700 !important;
+    color: inherit !important;
+}
+
+.chat-message-content code {
+    background: rgba(15, 23, 42, 0.06) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    border-radius: 4px !important;
+    padding: 0.15rem 0.35rem !important;
+    font-family: 'Fira Code', 'Courier New', Courier, monospace !important;
+    font-size: 0.85em !important;
+    color: #0ea5e9 !important; /* Beautiful highlight for code blocks */
+}
+
+.chat-message-list {
+    margin: 0.5rem 0 0.5rem 1.25rem !important;
+    padding: 0 !important;
+    list-style-type: disc !important;
+}
+
+.chat-message-list li {
+    margin-bottom: 0.35rem !important;
+    line-height: 1.5 !important;
+}
+
