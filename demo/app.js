@@ -583,7 +583,23 @@ document.addEventListener('DOMContentLoaded', () => {
                                 } catch (e) {}
                                 
                                 const titleText = session.title || 'Untitled Session';
-                                sessionItem.innerText = `💬 ${titleText} (${displayDate})`;
+                                
+                                const textSpan = document.createElement('span');
+                                textSpan.className = 'session-text';
+                                textSpan.innerText = `💬 ${titleText} (${displayDate})`;
+                                sessionItem.appendChild(textSpan);
+                                
+                                const delBtn = document.createElement('button');
+                                delBtn.className = 'btn-delete-session';
+                                delBtn.type = 'button';
+                                delBtn.innerText = '🗑️';
+                                delBtn.title = 'Delete Session';
+                                delBtn.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    confirmDeleteSession(session.id, titleText);
+                                });
+                                sessionItem.appendChild(delBtn);
+
                                 sessionItem.title = `${titleText} (${new Date(session.date).toLocaleString()})`;
                                 
                                 sessionItem.addEventListener('click', (e) => {
@@ -729,6 +745,81 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
+    function updateNextBestAction(files) {
+        const banner = document.getElementById('chat-nba-banner');
+        const msgText = document.getElementById('nba-message-text');
+        const execBtn = document.getElementById('btn-nba-execute');
+        if (!banner || !msgText || !execBtn) return;
+
+        if (!activeFolderId) {
+            banner.classList.add('hidden');
+            return;
+        }
+
+        const fileList = files || [];
+
+        // Heuristic: check presence of file names
+        let hasLinkedIn = false;
+        let hasIntake = false;
+        let hasTranscript = false;
+        let hasProposalOrBrief = false;
+
+        fileList.forEach(f => {
+            const name = f.name.toLowerCase();
+            if (name.includes('linkedin') || name.includes('metadata')) {
+                hasLinkedIn = true;
+            } else if (name.includes('intake')) {
+                hasIntake = true;
+            } else if (name.includes('transcript') || name.includes('call_log') || name.includes('recording')) {
+                hasTranscript = true;
+            } else if (name.includes('proposal') || name.includes('brief') || name.includes('lead_sheet') || name.includes('sow')) {
+                hasProposalOrBrief = true;
+            }
+        });
+
+        let stage = 'NO_DATA';
+        if (hasProposalOrBrief) {
+            stage = 'PROPOSAL_SENT';
+        } else if (hasLinkedIn && hasIntake && hasTranscript) {
+            stage = 'PROPOSAL_SENT';
+        } else if (hasLinkedIn && hasIntake) {
+            stage = 'TRANSCRIPT_LOADED';
+        } else if (hasLinkedIn) {
+            stage = 'INTAKE_LOADED';
+        } else {
+            stage = 'NO_DATA';
+        }
+
+        banner.classList.remove('hidden');
+
+        if (stage === 'NO_DATA') {
+            msgText.innerHTML = `<strong>LinkedIn:</strong> Analyze the prospect's LinkedIn profile to gather background context.`;
+            execBtn.innerText = 'Analyze LinkedIn';
+            execBtn.style.display = 'block';
+            execBtn.onclick = () => runNBAPrompt("Analysis of the client's LinkedIn profile");
+        } else if (stage === 'INTAKE_LOADED') {
+            msgText.innerHTML = `<strong>Intake:</strong> Synthesize client intake responses to identify business needs.`;
+            execBtn.innerText = 'Synthesize Intake';
+            execBtn.style.display = 'block';
+            execBtn.onclick = () => runNBAPrompt("Synthesis of intake answers");
+        } else if (stage === 'TRANSCRIPT_LOADED') {
+            msgText.innerHTML = `<strong>Transcript:</strong> Synthesize the call transcript to extract pain points and key solutions.`;
+            execBtn.innerText = 'Synthesize Transcript';
+            execBtn.style.display = 'block';
+            execBtn.onclick = () => runNBAPrompt("Analysis of call transcripts");
+        } else if (stage === 'PROPOSAL_SENT') {
+            msgText.innerHTML = `All pipeline documents have been synthesized. Ready to proceed!`;
+            execBtn.style.display = 'none';
+            execBtn.onclick = null;
+        }
+    }
+
+    function runNBAPrompt(promptText) {
+        if (!chatUserInput) return;
+        chatUserInput.value = promptText;
+        sendUserQuery();
+    }
+
     async function loadSourcesForCompany(folderId, companyName, preFetchedFiles = null) {
         if (!sourcesList) return;
         sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
@@ -809,7 +900,23 @@ document.addEventListener('DOMContentLoaded', () => {
                             } catch (e) {}
                             
                             const titleText = session.title || 'Untitled Session';
-                            sessionItem.innerText = `💬 ${titleText} (${displayDate})`;
+                            
+                            const textSpan = document.createElement('span');
+                            textSpan.className = 'session-text';
+                            textSpan.innerText = `💬 ${titleText} (${displayDate})`;
+                            sessionItem.appendChild(textSpan);
+                            
+                            const delBtn = document.createElement('button');
+                            delBtn.className = 'btn-delete-session';
+                            delBtn.type = 'button';
+                            delBtn.innerText = '🗑️';
+                            delBtn.title = 'Delete Session';
+                            delBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                confirmDeleteSession(session.id, titleText);
+                            });
+                            sessionItem.appendChild(delBtn);
+
                             sessionItem.title = `${titleText} (${new Date(session.date).toLocaleString()})`;
                             
                             sessionItem.addEventListener('click', (e) => {
@@ -867,6 +974,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 noFilesMsg.style.cssText = 'color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;';
                 noFilesMsg.innerText = 'No files inside folder';
                 sourcesList.appendChild(noFilesMsg);
+                updateNextBestAction(filteredFiles);
                 return;
             }
             
@@ -947,6 +1055,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     sourcesList.appendChild(fileItem);
                 });
+                updateNextBestAction(filteredFiles);
         } catch (err) {
             console.error('Error loading company files:', err);
             sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load files</div>';
@@ -1000,6 +1109,48 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Re-render the sidebar to reflect new active state
         renderChatsList();
+    }
+
+    // --- Delete Chat Session ---
+    async function confirmDeleteSession(sessionId, sessionTitle) {
+        const confirmed = await showConfirmModal({
+            title: 'Delete Chat Session',
+            message: `Are you sure you want to delete the chat session "${sessionTitle || 'Untitled Session'}"? This action cannot be undone.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            type: 'danger'
+        });
+        if (confirmed) {
+            try {
+                const res = await fetch(`/api/history?id=${encodeURIComponent(sessionId)}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) throw new Error(`HTTP status ${res.status}`);
+                showToast('Chat session deleted successfully.');
+                
+                // If the deleted session was the active one, clear active workspace state
+                if (currentChatId === sessionId) {
+                    currentChatId = null;
+                    chatHistory = [];
+                    chatMessagesLog.innerHTML = '';
+                    
+                    // Re-select the active prospect to load folder details or fall back to empty state
+                    const activeFolder = gdriveFolders.find(f => f.id === activeFolderId);
+                    if (activeFolder && activeProspectName) {
+                        selectProspect(activeFolder, activeProspectName);
+                    } else {
+                        workspaceEmptyState.classList.remove('hidden');
+                        workspaceActiveChat.classList.add('hidden');
+                    }
+                }
+                
+                // Reload list from server and update UI
+                await loadChatsList();
+            } catch (err) {
+                console.error('Failed to delete session:', err);
+                showToast(`Failed to delete session: ${err.message}`);
+            }
+        }
     }
 
     // --- Select Chat ---
@@ -1512,7 +1663,8 @@ Rules:
       * If personal-level stories are not available, offer stories involving the organization from their news/press releases on their website. These stories regarding the organization MUST connect to our subject matter TM1 and AI. Otherwise, they are not relevant.
     - "Complementary applications": In the customer's current stack, identify applications they are using that are complementary with us (e.g. NetSuite, SAP, Dynamics, Power BI, Tableau).
     - "Competing applications": In the customer's current stack, identify applications they are using that are competing with us (e.g. Anaplan, Workday Adaptive Planning, Board).
-    - "Competing consulting firms": Did the client mention they are working with a firm competing with us?`;
+    - "Competing consulting firms": Did the client mention they are working with a firm competing with us?
+6. If a source field (such as the LinkedIn Profile Bio or Booking Intake Answers) is empty or contains placeholder text, you MUST explain the missing data to the user rather than calling the upload tool. Do not call any upload tools unless you are explicitly given new profile/content data to upload.`;
 
         // Format history for Mistral API proxy `/api/chat`
         const messages = [

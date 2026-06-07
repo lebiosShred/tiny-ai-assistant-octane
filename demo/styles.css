@@ -4730,6 +4730,9 @@ body {
 }
 
 .sidebar-session-item {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
     font-size: 0.78rem !important;
     padding: 0.35rem 0.5rem !important;
     border-radius: 4px !important;
@@ -4739,6 +4742,36 @@ body {
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+}
+
+.sidebar-session-item .session-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-session-item .btn-delete-session {
+    background: none !important;
+    border: none !important;
+    padding: 2px 4px !important;
+    cursor: pointer !important;
+    color: inherit !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.2s ease, color 0.2s ease !important;
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+}
+
+.sidebar-session-item:hover .btn-delete-session {
+    opacity: 0.6 !important;
+    pointer-events: auto !important;
+}
+
+.sidebar-session-item .btn-delete-session:hover {
+    opacity: 1 !important;
+    color: #ef4444 !important;
 }
 
 .sidebar-session-item:hover {
@@ -4769,5 +4802,78 @@ body {
 .sidebar-new-session-btn:hover {
     background: rgba(5, 150, 105, 0.06) !important;
     border-color: #059669 !important;
+}
+
+/* Glassmorphic Next Best Action (NBA) Banner */
+.chat-nba-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    margin: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+}
+
+.chat-nba-banner.hidden {
+    display: none !important;
+}
+
+.nba-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    overflow: hidden;
+}
+
+.nba-badge {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #0369a1;
+    background: #e0f2fe;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    border: 1px solid #bae6fd;
+}
+
+.nba-message {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-nba {
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    padding: 0.4rem 1rem !important;
+    border-radius: 8px !important;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 3px 8px rgba(2, 132, 199, 0.2) !important;
+    white-space: nowrap;
+}
+
+.btn-nba:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 5px 12px rgba(2, 132, 199, 0.3) !important;
+}
+
+.btn-nba:active {
+    transform: translateY(0) !important;
 }
 
