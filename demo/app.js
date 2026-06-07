@@ -449,7 +449,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 uniqueFolders.forEach((folder, index) => {
                     const prospects = getProspectsForCompany(folder.name);
-                    const hasMultiple = prospects.length >= 2;
                     
                     const folderItem = document.createElement('div');
                     folderItem.className = 'sidebar-folder-item';
@@ -463,10 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         folderHeader.classList.add('active');
                     }
                     
-                    let toggleHtml = '';
-                    if (hasMultiple) {
-                        toggleHtml = `<span class="sidebar-folder-toggle" style="display:inline-block; transition:transform 0.2s ease;">▼</span>`;
-                    }
+                    const toggleHtml = `<span class="sidebar-folder-toggle" style="display:inline-block; transition:transform 0.2s ease;">▼</span>`;
                     
                     folderHeader.innerHTML = `
                         <div class="sidebar-folder-title">
@@ -479,14 +475,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const contents = document.createElement('div');
                     contents.className = 'sidebar-folder-contents';
-                    if (hasMultiple) {
-                        if (activeFolderId === folder.id) {
-                            contents.classList.remove('collapsed');
-                        } else {
-                            contents.classList.add('collapsed');
-                            const toggleSpan = folderHeader.querySelector('.sidebar-folder-toggle');
-                            if (toggleSpan) toggleSpan.style.transform = 'rotate(-90deg)';
-                        }
+                    if (activeFolderId === folder.id) {
+                        contents.classList.remove('collapsed');
+                    } else {
+                        contents.classList.add('collapsed');
+                        const toggleSpan = folderHeader.querySelector('.sidebar-folder-toggle');
+                        if (toggleSpan) toggleSpan.style.transform = 'rotate(-90deg)';
                     }
                     
                     if (prospects.length > 0) {
@@ -524,18 +518,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     folderItem.appendChild(contents);
                     
                     folderHeader.addEventListener('click', async () => {
-                        if (hasMultiple) {
-                            const isCollapsed = contents.classList.toggle('collapsed');
-                            const toggleSpan = folderHeader.querySelector('.sidebar-folder-toggle');
-                            if (toggleSpan) {
-                                toggleSpan.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
-                            }
-                            const firstP = prospects[0];
-                            await selectProspect(folder, firstP);
-                        } else {
-                            const resolvedName = prospects[0] || 'Unknown Name';
-                            await selectProspect(folder, resolvedName);
+                        const isCollapsed = contents.classList.toggle('collapsed');
+                        const toggleSpan = folderHeader.querySelector('.sidebar-folder-toggle');
+                        if (toggleSpan) {
+                            toggleSpan.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
                         }
+                        const firstP = prospects[0] || 'Unknown Name';
+                        await selectProspect(folder, firstP);
                     });
                     
                     recentChatsList.appendChild(folderItem);
