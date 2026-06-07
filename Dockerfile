@@ -14,6 +14,7 @@ COPY gdrive-service.js ./
 COPY email-service.js ./
 COPY openapi.json ./
 COPY credentials/ ./credentials/
+COPY config/ ./config/
 COPY demo/ ./demo/
 COPY knowledge/ ./knowledge/
 COPY knowledge_backup/ ./knowledge_backup/

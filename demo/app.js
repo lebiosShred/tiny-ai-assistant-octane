@@ -1750,7 +1750,8 @@ Rules:
     - "Complementary applications": In the customer's current stack, identify applications they are using that are complementary with us (e.g. NetSuite, SAP, Dynamics, Power BI, Tableau).
     - "Competing applications": In the customer's current stack, identify applications they are using that are competing with us (e.g. Anaplan, Workday Adaptive Planning, Board).
     - "Competing consulting firms": Did the client mention they are working with a firm competing with us?
-6. If a source field (such as the LinkedIn Profile Bio or Booking Intake Answers) is empty or contains placeholder text, you MUST explain the missing data to the user rather than calling the upload tool. Do not call any upload tools unless you are explicitly given new profile/content data to upload.`;
+6. If a source field (such as the LinkedIn Profile Bio or Booking Intake Answers) is empty or contains placeholder text, you MUST explain the missing data to the user rather than calling the upload tool. Do not call any upload tools unless you are explicitly given new profile/content data to upload.
+7. If the user asks you to analyze, search, read, or retrieve information from a prospect's files (such as a LinkedIn profile PDF, call transcript, or intake document) and the corresponding source fields above are empty or incomplete, you MUST call 'search_prospect_files' or 'read_prospect_file' to dynamically query and fetch the content. When a prospect's name (e.g. Sarah Chen) is provided in the query, refer to the "Active Leads in System" list to map them to their correct company name (e.g. Meridian Logistics) so you can pass the correct company argument to the tool.`;
 
         // Format history for Mistral API proxy `/api/chat`
         const messages = [
@@ -1773,6 +1774,25 @@ Rules:
         chatHistory.push({ role: 'user', content: promptText, timestamp: new Date().toISOString() });
         renderChatHistory();
 
+        let loadingText = "Tiny is thinking...";
+        const lowerPrompt = promptText.toLowerCase();
+        if (lowerPrompt.includes('search') || lowerPrompt.includes('find') || lowerPrompt.includes('information') || lowerPrompt.includes('info') || lowerPrompt.includes('tell me')) {
+            loadingText = "Tiny is searching files on Google Drive...";
+        } else if (lowerPrompt.includes('read') || lowerPrompt.includes('open') || lowerPrompt.includes('show') || lowerPrompt.includes('analyze') || lowerPrompt.includes('linkedin') || lowerPrompt.includes('pdf')) {
+            loadingText = "Tiny is reading Google Drive documents...";
+        } else if (lowerPrompt.includes('email') || lowerPrompt.includes('recap') || lowerPrompt.includes('send')) {
+            loadingText = "Tiny is preparing to send email recap...";
+        } else if (lowerPrompt.includes('stage') || lowerPrompt.includes('status') || lowerPrompt.includes('hubspot')) {
+            loadingText = "Tiny is syncing HubSpot CRM deal status...";
+        } else if (lowerPrompt.includes('task') || lowerPrompt.includes('schedule') || lowerPrompt.includes('remind')) {
+            loadingText = "Tiny is logging follow-up tasks in HubSpot...";
+        } else if (lowerPrompt.includes('proposal') || lowerPrompt.includes('generate') || lowerPrompt.includes('draft')) {
+            loadingText = "Tiny is generating client SOW proposal...";
+        }
+        const spinnerSpan = chatLoadingIndicator.querySelector('span');
+        if (spinnerSpan) {
+            spinnerSpan.innerText = loadingText;
+        }
         chatLoadingIndicator.classList.remove('hidden');
         chatMessagesLog.scrollTop = chatMessagesLog.scrollHeight;
 
@@ -1792,6 +1812,10 @@ Rules:
 
             const data = await res.json();
             chatLoadingIndicator.classList.add('hidden');
+            const spinnerResetSpan = chatLoadingIndicator.querySelector('span');
+            if (spinnerResetSpan) {
+                spinnerResetSpan.innerText = "Tiny is thinking...";
+            }
 
             if (!res.ok) throw new Error(data.error || 'Failed to call chat API');
 
@@ -1916,6 +1940,10 @@ Rules:
 
         } catch (err) {
             chatLoadingIndicator.classList.add('hidden');
+            const spinnerResetSpan = chatLoadingIndicator.querySelector('span');
+            if (spinnerResetSpan) {
+                spinnerResetSpan.innerText = "Tiny is thinking...";
+            }
             console.error('Chat error:', err);
             showToast(`Error getting response: ${err.message}`);
         }
@@ -2237,7 +2265,7 @@ Rules:
             formData.append('file', file, file.name);
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', 'https://tiny-ai-assistant-351972137415.us-central1.run.app/api/gdrive/upload-stream', true);
+            xhr.open('POST', '/api/gdrive/upload-stream', true);
 
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {

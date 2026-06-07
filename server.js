@@ -194,7 +194,7 @@ function searchWeb(query) {
             resolve("");
         });
 
-        req.setTimeout(1500, () => {
+        req.setTimeout(8000, () => {
             console.warn("⚠️ Tavily searchWeb request timed out.");
             req.destroy();
             resolve("");
@@ -2991,6 +2991,152 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 required: ['company', 'content']
                             }
                         }
+                    },
+                    {
+                        type: 'function',
+                        function: {
+                            name: 'read_prospect_file',
+                            description: 'Reads/fetches the full text content of a specific file inside the prospect\'s folder on Google Drive.',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    company: {
+                                        type: 'string',
+                                        description: 'The company or prospect name'
+                                    },
+                                    filename: {
+                                        type: 'string',
+                                        description: 'The name of the file to read (e.g. requirements.pdf, notes.docx, brief.txt)'
+                                    }
+                                },
+                                required: ['company', 'filename']
+                            }
+                        }
+                    },
+                    {
+                        type: 'function',
+                        function: {
+                            name: 'search_prospect_files',
+                            description: 'Searches for files matching a keyword/query inside the prospect\'s Google Drive folder.',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    company: {
+                                        type: 'string',
+                                        description: 'The company or prospect name'
+                                    },
+                                    query: {
+                                        type: 'string',
+                                        description: 'The search term or keyword to look for in file names or contents'
+                                    }
+                                },
+                                required: ['company', 'query']
+                            }
+                        }
+                    },
+                    {
+                        type: 'function',
+                        function: {
+                            name: 'send_recap_email',
+                            description: 'Dispatches a synthesized recap email directly to the prospect.',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    email: {
+                                        type: 'string',
+                                        description: 'The recipient email address'
+                                    },
+                                    name: {
+                                        type: 'string',
+                                        description: 'The recipient name'
+                                    },
+                                    company: {
+                                        type: 'string',
+                                        description: 'The company name'
+                                    },
+                                    recapText: {
+                                        type: 'string',
+                                        description: 'The email body text containing the discussion summary'
+                                    },
+                                    rep: {
+                                        type: 'string',
+                                        description: 'The sales representative name sending the email'
+                                    }
+                                },
+                                required: ['email', 'name', 'company', 'recapText']
+                            }
+                        }
+                    },
+                    {
+                        type: 'function',
+                        function: {
+                            name: 'update_hubspot_deal_stage',
+                            description: 'Updates the deal/ticket stage in the HubSpot CRM. Stages: 1 (Lead Captured), 2 (MQL), 3 (Prescreen Booked), 4 (Prescreen Completed), 5 (Discovery Booked), 6 (Discovery Completed), 7 (Positioning Meeting).',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    email: {
+                                        type: 'string',
+                                        description: 'The prospect email address to find the contact and ticket'
+                                    },
+                                    stage: {
+                                        type: 'integer',
+                                        description: 'The pipeline stage number (1-7)'
+                                    }
+                                },
+                                required: ['email', 'stage']
+                            }
+                        }
+                    },
+                    {
+                        type: 'function',
+                        function: {
+                            name: 'create_hubspot_task',
+                            description: 'Creates a task or follow-up reminder in HubSpot CRM associated with the prospect.',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    email: {
+                                        type: 'string',
+                                        description: 'The prospect email address to associate the task with'
+                                    },
+                                    taskTitle: {
+                                        type: 'string',
+                                        description: 'The title or description of the task'
+                                    },
+                                    dueDate: {
+                                        type: 'string',
+                                        description: 'The due date for the task in YYYY-MM-DD format'
+                                    }
+                                },
+                                required: ['email', 'taskTitle']
+                            }
+                        }
+                    },
+                    {
+                        type: 'function',
+                        function: {
+                            name: 'generate_proposal_file',
+                            description: 'Generates a preliminary proposal document and uploads it directly to the prospect\'s folder on Google Drive.',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    company: {
+                                        type: 'string',
+                                        description: 'The company or prospect name'
+                                    },
+                                    filename: {
+                                        type: 'string',
+                                        description: 'The proposal filename (e.g. Proposal_Draft.md)'
+                                    },
+                                    proposalContent: {
+                                        type: 'string',
+                                        description: 'The text content of the proposal'
+                                    }
+                                },
+                                required: ['company', 'filename', 'proposalContent']
+                            }
+                        }
                     }
                 ];
 
@@ -3335,8 +3481,337 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     initiator: "DeepSeek Tool Call: register_call_log"
                                                 }));
                                                 toolResult = `I have successfully registered the new call! I saved the call notes as "**${fileName}**" (ID: \`${driveFile.id}\`) in Google Drive and ${hsStatus}.`;
+                                            }
+                                        } else if (name === 'read_prospect_file') {
+                                            let { company, filename } = args;
+                                            if (company && filename) {
+                                                // Dynamic name-to-company auto-resolution
+                                                if (fs.existsSync(historyDir)) {
+                                                    try {
+                                                        const historyFiles = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+                                                        for (const hFile of historyFiles) {
+                                                            const hData = fs.readFileSync(path.join(historyDir, hFile), 'utf8');
+                                                            const hParsed = JSON.parse(hData);
+                                                            if (hParsed.name && hParsed.name.toLowerCase().trim() === company.toLowerCase().trim()) {
+                                                                if (hParsed.company) {
+                                                                    console.log(`🔄 Resolved prospect name "${company}" to company "${hParsed.company}"`);
+                                                                    company = hParsed.company;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    } catch (resolveErr) {
+                                                        console.warn('⚠️ Name-to-company resolution failed:', resolveErr.message);
+                                                    }
+                                                }
+                                                console.log(`📄 Tool Call: Reading file ${filename} for ${company}`);
+                                                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                                                let files = [];
+                                                let resolvedFileContent = '';
+                                                let foundFile = null;
+
+                                                if (gdriveAvailable) {
+                                                    try {
+                                                        const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                        files = await gdriveService.listFolder(clientFolderId);
+                                                        foundFile = files.find(f => f.name.toLowerCase() === filename.toLowerCase());
+                                                        if (foundFile) {
+                                                            resolvedFileContent = await gdriveService.getFileContent(foundFile.id);
+                                                        }
+                                                    } catch (err) {
+                                                        console.warn('⚠️ GDrive file reading failed in tool call:', err.message);
+                                                    }
+                                                } else {
+                                                    const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                                                    const localFolder = path.join(historyDir, cleanCompany);
+                                                    if (fs.existsSync(localFolder)) {
+                                                        const localFiles = fs.readdirSync(localFolder);
+                                                        const matchedName = localFiles.find(f => f.toLowerCase() === filename.toLowerCase());
+                                                        if (matchedName) {
+                                                            foundFile = { name: matchedName };
+                                                            const localFilePath = path.join(localFolder, matchedName);
+                                                            try {
+                                                                if (matchedName.endsWith('.pdf')) {
+                                                                    const pdfBuffer = fs.readFileSync(localFilePath);
+                                                                    resolvedFileContent = await gdriveService.parsePdfBuffer(pdfBuffer);
+                                                                } else if (matchedName.endsWith('.docx')) {
+                                                                    const docxBuffer = fs.readFileSync(localFilePath);
+                                                                    resolvedFileContent = await gdriveService.parseDocxBuffer(docxBuffer);
+                                                                } else {
+                                                                    resolvedFileContent = fs.readFileSync(localFilePath, 'utf8');
+                                                                }
+                                                            } catch (readErr) {
+                                                                console.warn('⚠️ Local file reading failed:', readErr.message);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                if (foundFile) {
+                                                    const CONTENT_BUDGET_BYTES = 50 * 1024; // 50KB cap
+                                                    let text = resolvedFileContent || '';
+                                                    if (Buffer.byteLength(text, 'utf8') > CONTENT_BUDGET_BYTES) {
+                                                        text = text.substring(0, CONTENT_BUDGET_BYTES) + '\n[...TRUNCATED due to content budget limit]';
+                                                    }
+                                                    toolResult = text;
+                                                } else {
+                                                    toolResult = `Error: File "${filename}" not found in prospect "${company}" folder.`;
+                                                }
                                             } else {
-                                                toolResult = `Error: Missing required parameters 'company' or 'content'.`;
+                                                toolResult = `Error: Missing required parameters 'company' or 'filename'.`;
+                                            }
+                                        } else if (name === 'search_prospect_files') {
+                                            let { company, query } = args;
+                                            if (company && query) {
+                                                // Dynamic name-to-company auto-resolution
+                                                if (fs.existsSync(historyDir)) {
+                                                    try {
+                                                        const historyFiles = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+                                                        for (const hFile of historyFiles) {
+                                                            const hData = fs.readFileSync(path.join(historyDir, hFile), 'utf8');
+                                                            const hParsed = JSON.parse(hData);
+                                                            if (hParsed.name && hParsed.name.toLowerCase().trim() === company.toLowerCase().trim()) {
+                                                                if (hParsed.company) {
+                                                                    console.log(`🔄 Resolved prospect name "${company}" to company "${hParsed.company}"`);
+                                                                    company = hParsed.company;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    } catch (resolveErr) {
+                                                        console.warn('⚠️ Name-to-company resolution failed:', resolveErr.message);
+                                                    }
+                                                }
+                                                console.log(`🔍 Tool Call: Searching files in ${company} folder for: "${query}"`);
+                                                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                                                let matchedFiles = [];
+                                                const searchLower = query.toLowerCase();
+
+                                                if (gdriveAvailable) {
+                                                    try {
+                                                        const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                        const files = await gdriveService.listFolder(clientFolderId);
+                                                        
+                                                        for (const file of files) {
+                                                            if (file.isFolder) continue;
+                                                            if (file.name.toLowerCase().includes(searchLower)) {
+                                                                matchedFiles.push(file);
+                                                                continue;
+                                                            }
+                                                            try {
+                                                                const content = await gdriveService.getFileContent(file.id);
+                                                                if (content && content.toLowerCase().includes(searchLower)) {
+                                                                    matchedFiles.push(file);
+                                                                }
+                                                            } catch (e) {
+                                                                console.warn(`Search failed parsing file ${file.name}:`, e.message);
+                                                            }
+                                                        }
+                                                    } catch (err) {
+                                                        console.warn('⚠️ GDrive search failed in tool call:', err.message);
+                                                    }
+                                                } else {
+                                                    const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                                                    const localFolder = path.join(historyDir, cleanCompany);
+                                                    if (fs.existsSync(localFolder)) {
+                                                        const localFiles = fs.readdirSync(localFolder);
+                                                        for (const file of localFiles) {
+                                                            if (file.toLowerCase().includes(searchLower)) {
+                                                                matchedFiles.push({ name: file, id: `local_${cleanCompany}_${file}` });
+                                                                continue;
+                                                            }
+                                                            try {
+                                                                const filePath = path.join(localFolder, file);
+                                                                let content = '';
+                                                                if (file.endsWith('.pdf')) {
+                                                                    const pdfBuffer = fs.readFileSync(filePath);
+                                                                    content = await gdriveService.parsePdfBuffer(pdfBuffer);
+                                                                } else if (file.endsWith('.docx')) {
+                                                                    const docxBuffer = fs.readFileSync(filePath);
+                                                                    content = await gdriveService.parseDocxBuffer(docxBuffer);
+                                                                } else {
+                                                                    content = fs.readFileSync(filePath, 'utf8');
+                                                                }
+                                                                if (content && content.toLowerCase().includes(searchLower)) {
+                                                                    matchedFiles.push({ name: file, id: `local_${cleanCompany}_${file}` });
+                                                                }
+                                                            } catch (e) {
+                                                                console.warn(`Local search failed parsing file ${file}:`, e.message);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                if (matchedFiles.length > 0) {
+                                                    toolResult = `I found ${matchedFiles.length} file(s) matching "${query}" in the folder for **${company}**:\n` +
+                                                        matchedFiles.map(f => `- **${f.name}** (ID: \`${f.id}\`)`).join('\n');
+                                                } else {
+                                                    toolResult = `No files matching "${query}" were found in the folder for **${company}**.`;
+                                                }
+                                            } else {
+                                                toolResult = `Error: Missing required parameters 'company' or 'query'.`;
+                                            }
+                                        } else if (name === 'send_recap_email') {
+                                            const { email, name: clientName, company, recapText, rep } = args;
+                                            if (email && clientName && company && recapText) {
+                                                console.log(`✉️ Tool Call: Sending recap email to ${email}`);
+                                                try {
+                                                    const success = await emailService.sendRecapEmail(email, clientName, company, recapText, rep);
+                                                    if (success) {
+                                                        toolResult = `Successfully sent the recap email to **${clientName}** (${email}) for company **${company}**.`;
+                                                    } else {
+                                                        toolResult = `Failed to send the recap email. Check SMTP configuration settings.`;
+                                                    }
+                                                } catch (err) {
+                                                    console.error('⚠️ Recap email dispatch failed:', err.message);
+                                                    toolResult = `Error sending recap email: ${err.message}`;
+                                                }
+                                            } else {
+                                                toolResult = `Error: Missing required parameters 'email', 'name', 'company', or 'recapText'.`;
+                                            }
+                                        } else if (name === 'update_hubspot_deal_stage') {
+                                            const { email, stage } = args;
+                                            if (email && stage !== undefined) {
+                                                console.log(`📈 Tool Call: Updating HubSpot deal stage to ${stage} for ${email}`);
+                                                let contactId = null;
+                                                try {
+                                                    const searchResponse = await makeHubSpotRequest('POST', '/crm/v3/objects/contacts/search', {
+                                                        filterGroups: [{
+                                                            filters: [{
+                                                                propertyName: 'email',
+                                                                operator: 'EQ',
+                                                                value: email
+                                                            }]
+                                                        }]
+                                                    });
+                                                    if (searchResponse && searchResponse.results && searchResponse.results.length > 0) {
+                                                        contactId = searchResponse.results[0].id;
+                                                    }
+                                                } catch (e) {
+                                                    console.warn('Failed to find contact for deal/ticket stage update:', e.message);
+                                                }
+
+                                                if (contactId) {
+                                                    const stageNames = {
+                                                        1: 'Lead Captured',
+                                                        2: 'MQL',
+                                                        3: 'Prescreen Booked',
+                                                        4: 'Prescreen Completed',
+                                                        5: 'Discovery Booked',
+                                                        6: 'Discovery Completed',
+                                                        7: 'Positioning Meeting'
+                                                    };
+                                                    const stageName = stageNames[stage] || 'Lead Captured';
+                                                    let dealUpdated = false;
+                                                    let ticketUpdated = false;
+
+                                                    // Try updating associated Deals
+                                                    try {
+                                                        const dealAssociations = await makeHubSpotRequest('GET', `/crm/v3/objects/contacts/${contactId}/associations/deals`);
+                                                        if (dealAssociations && dealAssociations.results && dealAssociations.results.length > 0) {
+                                                            for (const deal of dealAssociations.results) {
+                                                                await makeHubSpotRequest('PATCH', `/crm/v3/objects/deals/${deal.id}`, {
+                                                                    properties: {
+                                                                        dealstage: stageName.toLowerCase().replace(/\s+/g, '_')
+                                                                    }
+                                                                });
+                                                                dealUpdated = true;
+                                                            }
+                                                        }
+                                                    } catch (e) {
+                                                        console.warn('Failed to update associated HubSpot deals stage:', e.message);
+                                                    }
+
+                                                    // Try updating associated Tickets
+                                                    try {
+                                                        const ticketAssociations = await makeHubSpotRequest('GET', `/crm/v3/objects/contacts/${contactId}/associations/tickets`);
+                                                        if (ticketAssociations && ticketAssociations.results && ticketAssociations.results.length > 0) {
+                                                            for (const ticket of ticketAssociations.results) {
+                                                                await makeHubSpotRequest('PATCH', `/crm/v3/objects/tickets/${ticket.id}`, {
+                                                                    properties: {
+                                                                        hs_pipeline_stage: stageName.toLowerCase().replace(/\s+/g, '_')
+                                                                    }
+                                                                });
+                                                                ticketUpdated = true;
+                                                            }
+                                                        }
+                                                    } catch (e) {
+                                                        console.warn('Failed to update associated HubSpot tickets stage:', e.message);
+                                                    }
+
+                                                    if (dealUpdated || ticketUpdated) {
+                                                        toolResult = `Successfully updated HubSpot stage to "${stageName}" (${stage}) for prospect contact ${email}.`;
+                                                    } else {
+                                                        toolResult = `Found contact ${email} (ID: ${contactId}) but no associated deals or tickets were found to update.`;
+                                                    }
+                                                } else {
+                                                    toolResult = `Could not find a HubSpot contact record matching "${email}" to update stages.`;
+                                                }
+                                            } else {
+                                                toolResult = `Error: Missing required parameters 'email' or 'stage'.`;
+                                            }
+                                        } else if (name === 'create_hubspot_task') {
+                                            const { email, taskTitle, dueDate } = args;
+                                            if (email && taskTitle) {
+                                                console.log(`📝 Tool Call: Creating HubSpot task for ${email}`);
+                                                let contactId = null;
+                                                try {
+                                                    const searchResponse = await makeHubSpotRequest('POST', '/crm/v3/objects/contacts/search', {
+                                                        filterGroups: [{
+                                                            filters: [{
+                                                                propertyName: 'email',
+                                                                operator: 'EQ',
+                                                                value: email
+                                                            }]
+                                                        }]
+                                                    });
+                                                    if (searchResponse && searchResponse.results && searchResponse.results.length > 0) {
+                                                        contactId = searchResponse.results[0].id;
+                                                    }
+                                                } catch (e) {
+                                                    console.warn('Failed to find contact for task association:', e.message);
+                                                }
+
+                                                try {
+                                                    const properties = {
+                                                        hs_task_subject: taskTitle,
+                                                        hs_task_status: 'NOT_STARTED',
+                                                        hs_timestamp: new Date().toISOString()
+                                                    };
+                                                    if (dueDate) {
+                                                        properties.hs_task_remind_date = new Date(dueDate).toISOString();
+                                                    }
+                                                    const assoc = contactId ? [{
+                                                        to: { id: contactId },
+                                                        types: [{
+                                                            associationCategory: 'HUBSPOT_DEFINED',
+                                                            associationTypeId: 204
+                                                        }]
+                                                    }] : [];
+                                                    await makeHubSpotRequest('POST', '/crm/v3/objects/tasks', {
+                                                        properties,
+                                                        associations: assoc
+                                                    });
+                                                    toolResult = `Successfully created HubSpot task "${taskTitle}" associated with contact ${email}.`;
+                                                } catch (taskErr) {
+                                                    console.error('Failed to create HubSpot task:', taskErr.message);
+                                                    toolResult = `Error creating HubSpot task: ${taskErr.message}`;
+                                                }
+                                            } else {
+                                                toolResult = `Error: Missing required parameters 'email' or 'taskTitle'.`;
+                                            }
+                                        } else if (name === 'generate_proposal_file') {
+                                            const { company, filename, proposalContent } = args;
+                                            if (company && filename && proposalContent) {
+                                                console.log(`📤 Tool Call: Generating proposal ${filename} for ${company}`);
+                                                const driveFile = await handleFileUpload(filename, proposalContent, company);
+                                                gdriveAction = true;
+                                                receipts.push(generateReceipt("UPLOAD", "FILE", filename, driveFile ? driveFile.id : null, company, {
+                                                    sizeBytes: Buffer.byteLength(proposalContent, 'utf8'),
+                                                    url: driveFile ? driveFile.webViewLink : null,
+                                                    initiator: "DeepSeek Tool Call: generate_proposal_file"
+                                                }));
+                                                toolResult = `I have successfully generated and uploaded the proposal file "**${filename}**" (ID: \`${driveFile.id}\`) to the folder for **${company}**.`;
                                             }
                                         }
 

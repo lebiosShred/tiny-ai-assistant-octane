@@ -132,7 +132,7 @@ function formatICSDate(dateObj) {
  * Sends a calendar confirmation email directly to the prospect.
  */
 async function sendProspectConfirmationEmail(lead) {
-    const recipient = 'amiel.lebios@octanesolutions.com.au';
+    const recipient = lead.email;
     if (!recipient) {
         console.warn('⚠️ No prospect email provided for confirmation.');
         return false;

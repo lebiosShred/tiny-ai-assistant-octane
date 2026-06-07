@@ -125,7 +125,38 @@ async function getFileContent(fileId) {
     }
 
     try {
-        const content = await fetchContentInternal(fileId);
+        let content;
+        if (fileId && fileId.startsWith('local_')) {
+            const withoutPrefix = fileId.slice(6);
+            const historyDir = process.env.HISTORY_DIR || 'knowledge/history';
+            if (fs.existsSync(historyDir)) {
+                const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
+                for (const subdir of subdirs) {
+                    const companyPrefix = `${subdir}_`;
+                    if (withoutPrefix.startsWith(companyPrefix)) {
+                        const filename = withoutPrefix.slice(companyPrefix.length);
+                        const filePath = path.join(historyDir, subdir, filename);
+                        if (fs.existsSync(filePath)) {
+                            if (filename.endsWith('.pdf')) {
+                                const pdfBuffer = fs.readFileSync(filePath);
+                                content = await parsePdfBuffer(pdfBuffer);
+                            } else if (filename.endsWith('.docx')) {
+                                const docxBuffer = fs.readFileSync(filePath);
+                                content = await parseDocxBuffer(docxBuffer);
+                            } else {
+                                content = fs.readFileSync(filePath, 'utf8');
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!content) {
+                throw new Error(`Local file not found for ID: ${fileId}`);
+            }
+        } else {
+            content = await fetchContentInternal(fileId);
+        }
         fileContentCache.set(fileId, content);
         return content;
     } catch (err) {
