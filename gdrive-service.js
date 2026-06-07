@@ -418,8 +418,41 @@ async function findOrCreateClientFolder(companyName) {
     const cacheKey = cleanCompany.toLowerCase();
     
     if (folderIdCache.has(cacheKey)) {
-        console.log(`⚡ Folder ID cache hit for "${cleanCompany}": ${folderIdCache.get(cacheKey)}`);
-        return folderIdCache.get(cacheKey);
+        const cachedId = folderIdCache.get(cacheKey);
+        console.log(`⚡ Folder ID cache hit for "${cleanCompany}": ${cachedId}`);
+        try {
+            const folderMeta = await drive.files.get({
+                fileId: cachedId,
+                fields: 'id, trashed, parents',
+                supportsAllDrives: true
+            });
+            if (folderMeta && folderMeta.data && !folderMeta.data.trashed) {
+                const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+                let clientsFolderId = cachedClientsFolderId;
+                if (!clientsFolderId) {
+                    const clientsSearch = await drive.files.list({
+                        q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                        fields: 'files(id, name)',
+                        pageSize: 1
+                    });
+                    const clientsFiles = clientsSearch.data.files || [];
+                    if (clientsFiles.length > 0) {
+                        clientsFolderId = clientsFiles[0].id;
+                        cachedClientsFolderId = clientsFolderId;
+                    }
+                }
+                const parents = folderMeta.data.parents || [];
+                if (!clientsFolderId || parents.includes(clientsFolderId)) {
+                    return cachedId;
+                }
+                console.log(`🗑️ Cached folder ID ${cachedId} for "${cleanCompany}" is not in the current Clients directory (${clientsFolderId}). Invalidating cache...`);
+            } else {
+                console.log(`🗑️ Cached folder ID ${cachedId} for "${cleanCompany}" is trashed. Invalidating cache...`);
+            }
+        } catch (verifyErr) {
+            console.log(`⚠️ Cached folder ID ${cachedId} for "${cleanCompany}" is invalid or inaccessible (${verifyErr.message}). Invalidating cache...`);
+        }
+        folderIdCache.delete(cacheKey);
     }
 
     if (activeResolutions.has(cacheKey)) {
