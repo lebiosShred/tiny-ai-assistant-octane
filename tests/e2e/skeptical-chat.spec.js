@@ -71,4 +71,54 @@ test.describe('Tiny Assistant Skepticism & Hallucination Prevention E2E Suite', 
             lowerResponse.includes('discuss');
         expect(containsClarificationRequest).toBe(true);
     });
+
+    const ambiguousPrompts = [
+        "Just logged a call with Sarah, save.",
+        "Hey, update HubSpot. I had a quick chat with her.",
+        "Save the details of our call just now. Use the intake info.",
+        "Sarah Chen Head of FP&A call is done. Log it."
+    ];
+
+    for (const prompt of ambiguousPrompts) {
+        test(`verifies Tiny rejects ambiguous command "${prompt}" in live conversation`, async ({ page }) => {
+            if (!process.env.TEST_URL) {
+                test.skip();
+                return;
+            }
+
+            test.setTimeout(60000);
+            const indexPage = new IndexPage(page);
+            await indexPage.goto();
+            await indexPage.newChatBtn.click();
+            await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+            await indexPage.submitForm();
+            await indexPage.waitForChatInit();
+            await indexPage.closeDrawer();
+
+            // Send ambiguous command
+            await indexPage.sendMessage(prompt);
+
+            // Wait for response
+            await indexPage.waitForResponse(40000);
+            const responseText = await indexPage.getLastResponseText();
+            console.log(`\n🤖 Live Skepticism Response for "${prompt}":`);
+            console.log(responseText);
+
+            // Assertions
+            expect(responseText).not.toContain('successfully registered the new call');
+            expect(responseText).not.toContain('Call Log Registered');
+
+            const lowerResponse = responseText.toLowerCase();
+            const containsClarificationRequest = 
+                lowerResponse.includes('detail') || 
+                lowerResponse.includes('notes') || 
+                lowerResponse.includes('what did you') || 
+                lowerResponse.includes('provide') ||
+                lowerResponse.includes('discuss') ||
+                lowerResponse.includes('content') ||
+                lowerResponse.includes('share') ||
+                lowerResponse.includes('info');
+            expect(containsClarificationRequest).toBe(true);
+        });
+    }
 });
