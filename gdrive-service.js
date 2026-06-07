@@ -14,6 +14,7 @@ if (fs.existsSync(path.join(__dirname, '.env'))) {
 let driveClient = null;
 const folderIdCache = new Map();
 let cachedClientsFolderId = null;
+const activeResolutions = new Map();
 
 function invalidateFolderCache(folderId) {
     if (cachedClientsFolderId === folderId) {
@@ -317,68 +318,118 @@ async function findOrCreateClientFolder(companyName) {
         return folderIdCache.get(cacheKey);
     }
 
-    const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+    if (activeResolutions.has(cacheKey)) {
+        console.log(`⏳ Waiting for active folder resolution/creation for "${cleanCompany}"...`);
+        return activeResolutions.get(cacheKey);
+    }
 
-    try {
-        // 1. Resolve or create the central "Clients" directory
-        let clientsFolderId = cachedClientsFolderId;
-        if (!clientsFolderId) {
-            const clientsSearch = await drive.files.list({
-                q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+    const resolutionPromise = (async () => {
+        const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+
+        try {
+            // 1. Resolve or create the central "Clients" directory
+            let clientsFolderId = cachedClientsFolderId;
+            if (!clientsFolderId) {
+                const clientsSearch = await drive.files.list({
+                    q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                    fields: 'files(id, name)',
+                    pageSize: 1
+                });
+                
+                const clientsFiles = clientsSearch.data.files || [];
+                if (clientsFiles.length > 0) {
+                    clientsFolderId = clientsFiles[0].id;
+                    cachedClientsFolderId = clientsFolderId;
+                } else {
+                    console.log(`📂 "Clients" folder not found under root. Creating it...`);
+                    const clientsCreate = await drive.files.create({
+                        resource: {
+                            name: 'Clients',
+                            mimeType: 'application/vnd.google-apps.folder',
+                            parents: [rootFolderId]
+                        },
+                        fields: 'id'
+                    });
+                    clientsFolderId = clientsCreate.data.id;
+                    cachedClientsFolderId = clientsFolderId;
+                }
+            }
+
+            // 2. Resolve or create the company-specific directory
+            let clientFolderId = null;
+            const clientSearch = await drive.files.list({
+                q: `name = '${cleanCompany}' and mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
                 fields: 'files(id, name)',
-                pageSize: 1
+                pageSize: 10
             });
-            
-            const clientsFiles = clientsSearch.data.files || [];
-            if (clientsFiles.length > 0) {
-                clientsFolderId = clientsFiles[0].id;
-                cachedClientsFolderId = clientsFolderId;
+
+            const clientFiles = clientSearch.data.files || [];
+            if (clientFiles.length > 0) {
+                clientFolderId = clientFiles[0].id;
+                console.log(`📂 Found client folder "${cleanCompany}" (ID: ${clientFolderId})`);
+                
+                // Active deduplication if multiple folders are found on Drive
+                if (clientFiles.length > 1) {
+                    console.warn(`⚠️ Warning: Found ${clientFiles.length} duplicate folders for "${cleanCompany}". Starting deduplication...`);
+                    for (let i = 1; i < clientFiles.length; i++) {
+                        const duplicateId = clientFiles[i].id;
+                        try {
+                            // List all files in the duplicate folder
+                            const filesSearch = await drive.files.list({
+                                q: `'${duplicateId}' in parents and trashed = false`,
+                                fields: 'files(id, name)',
+                                pageSize: 100
+                            });
+                            const files = filesSearch.data.files || [];
+                            
+                            // Move files to primary folder
+                            for (const file of files) {
+                                console.log(`🔄 Moving file "${file.name}" (ID: ${file.id}) to primary folder`);
+                                await drive.files.update({
+                                    fileId: file.id,
+                                    addParents: clientFolderId,
+                                    removeParents: duplicateId,
+                                    fields: 'id'
+                                });
+                            }
+                            
+                            // Delete empty duplicate folder
+                            console.log(`🗑️ Deleting empty duplicate folder "${cleanCompany}" (ID: ${duplicateId})`);
+                            await drive.files.delete({
+                                fileId: duplicateId,
+                                supportsAllDrives: true
+                            });
+                        } catch (dedupErr) {
+                            console.error(`❌ Failed to deduplicate folder "${duplicateId}":`, dedupErr.message);
+                        }
+                    }
+                }
             } else {
-                console.log(`📂 "Clients" folder not found under root. Creating it...`);
-                const clientsCreate = await drive.files.create({
+                console.log(`📂 Client folder "${cleanCompany}" not found. Creating it...`);
+                const clientCreate = await drive.files.create({
                     resource: {
-                        name: 'Clients',
+                        name: cleanCompany,
                         mimeType: 'application/vnd.google-apps.folder',
-                        parents: [rootFolderId]
+                        parents: [clientsFolderId]
                     },
                     fields: 'id'
                 });
-                clientsFolderId = clientsCreate.data.id;
-                cachedClientsFolderId = clientsFolderId;
+                clientFolderId = clientCreate.data.id;
             }
+
+            // Cache the result
+            folderIdCache.set(cacheKey, clientFolderId);
+            return clientFolderId;
+        } catch (err) {
+            console.error(`❌ Error finding/creating GDrive client folder for "${cleanCompany}":`, err.message);
+            throw err;
+        } finally {
+            activeResolutions.delete(cacheKey);
         }
+    })();
 
-        // 2. Resolve or create the company-specific directory
-        let clientFolderId = null;
-        const clientSearch = await drive.files.list({
-            q: `name = '${cleanCompany}' and mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
-            fields: 'files(id, name)',
-            pageSize: 1
-        });
-
-        const clientFiles = clientSearch.data.files || [];
-        if (clientFiles.length > 0) {
-            clientFolderId = clientFiles[0].id;
-        } else {
-            console.log(`📂 Client folder "${cleanCompany}" not found. Creating it...`);
-            const clientCreate = await drive.files.create({
-                resource: {
-                    name: cleanCompany,
-                    mimeType: 'application/vnd.google-apps.folder',
-                    parents: [clientsFolderId]
-                },
-                fields: 'id'
-            });
-            clientFolderId = clientCreate.data.id;
-        }
-
-        // Cache the result
-        folderIdCache.set(cacheKey, clientFolderId);
-        return clientFolderId;
-    } catch (err) {
-        console.error(`❌ Error finding/creating GDrive client folder for "${cleanCompany}":`, err.message);
-        throw err;
-    }
+    activeResolutions.set(cacheKey, resolutionPromise);
+    return resolutionPromise;
 }
 
 /**
