@@ -4678,3 +4678,96 @@ body {
     box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
 }
 
+/* Multi-session sidebar styling modifications */
+.sidebar-prospect-wrapper {
+    margin-bottom: 0.25rem !important;
+}
+
+.sidebar-prospect-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 6px !important;
+    color: #475569 !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.sidebar-prospect-header:hover {
+    background: rgba(15, 23, 42, 0.04) !important;
+    color: #0f172a !important;
+}
+
+.sidebar-prospect-header.active {
+    background: rgba(3, 105, 161, 0.06) !important;
+    color: #0369a1 !important;
+    font-weight: 600 !important;
+}
+
+.sidebar-prospect-toggle {
+    font-size: 0.7rem !important;
+    color: #94a3b8 !important;
+    transition: transform 0.2s ease !important;
+}
+
+.sidebar-prospect-sessions {
+    margin-left: 1rem !important;
+    border-left: 1px solid rgba(15, 23, 42, 0.08) !important;
+    padding-left: 0.5rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.25rem !important;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.5rem !important;
+    transition: max-height 0.3s ease-in-out, opacity 0.2s ease !important;
+}
+
+.sidebar-prospect-sessions.collapsed {
+    display: none !important;
+}
+
+.sidebar-session-item {
+    font-size: 0.78rem !important;
+    padding: 0.35rem 0.5rem !important;
+    border-radius: 4px !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.sidebar-session-item:hover {
+    background: rgba(15, 23, 42, 0.03) !important;
+    color: #334155 !important;
+}
+
+.sidebar-session-item.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25) !important;
+}
+
+.sidebar-new-session-btn {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 0.35rem 0.5rem !important;
+    border-radius: 4px !important;
+    color: #059669 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    border: 1px dashed rgba(5, 150, 105, 0.3) !important;
+    text-align: center !important;
+    margin-bottom: 0.25rem !important;
+}
+
+.sidebar-new-session-btn:hover {
+    background: rgba(5, 150, 105, 0.06) !important;
+    border-color: #059669 !important;
+}
+

@@ -133,6 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // State Variables
     let currentChatId = null;
     let activeFolderId = null;
+    const expandedCompanies = new Set();
+    const expandedProspects = new Set();
     let activeProspectName = null;
     let chatsList = [];
     let chatHistory = [];
@@ -277,7 +279,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderChatsList() {
-        // No-op: Prospects sidebar displays Google Drive files directly
+        if (typeof gdriveFolders !== 'undefined' && gdriveFolders && gdriveFolders.length > 0) {
+            loadProspectsTree({ items: gdriveFolders });
+        } else {
+            loadProspectsTree();
+        }
     }
 
     // Sidebar Search setup for GDrive files list
@@ -362,11 +368,26 @@ document.addEventListener('DOMContentLoaded', () => {
             metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
         }
         
-        // Find matching history session
-        const matchSession = chatsList.find(c => 
-            c.company && c.company.toLowerCase().trim() === companyFolder.name.toLowerCase().trim() &&
-            c.name && c.name.toLowerCase().trim() === prospectName.toLowerCase().trim()
-        );
+        // Find matching history session (check active first, then fallback to most recent)
+        let matchSession = null;
+        if (currentChatId) {
+            matchSession = chatsList.find(c => c.id === currentChatId);
+            if (matchSession && (
+                !matchSession.company || matchSession.company.toLowerCase().trim() !== companyFolder.name.toLowerCase().trim() ||
+                !matchSession.name || matchSession.name.toLowerCase().trim() !== prospectName.toLowerCase().trim()
+            )) {
+                matchSession = null;
+            }
+        }
+        if (!matchSession) {
+            // Filter all matching sessions and sort descending by date (most recent first)
+            const matches = chatsList.filter(c => 
+                c.company && c.company.toLowerCase().trim() === companyFolder.name.toLowerCase().trim() &&
+                c.name && c.name.toLowerCase().trim() === prospectName.toLowerCase().trim()
+            );
+            matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+            matchSession = matches[0] || null;
+        }
         
         sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
         
@@ -484,7 +505,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const contents = document.createElement('div');
                     contents.className = 'sidebar-folder-contents';
-                    if (activeFolderId === folder.id) {
+                    const isExpanded = expandedCompanies.has(folder.name) || activeFolderId === folder.id;
+                    if (isExpanded) {
                         contents.classList.remove('collapsed');
                     } else {
                         contents.classList.add('collapsed');
@@ -494,23 +516,104 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (prospects.length > 0) {
                         prospects.forEach(prospectName => {
-                            const pItem = document.createElement('div');
-                            pItem.className = 'sidebar-prospect-item';
-                            pItem.setAttribute('data-prospect-name', prospectName);
-                            pItem.setAttribute('data-folder-id', folder.id);
+                            const pWrapper = document.createElement('div');
+                            pWrapper.className = 'sidebar-prospect-wrapper';
+                            
+                            const pHeader = document.createElement('div');
+                            pHeader.className = 'sidebar-prospect-header sidebar-prospect-item';
+                            pHeader.setAttribute('data-prospect-name', prospectName);
+                            pHeader.setAttribute('data-folder-id', folder.id);
                             if (activeFolderId === folder.id && activeProspectName === prospectName) {
-                                pItem.classList.add('active');
+                                pHeader.classList.add('active');
                             }
-                            pItem.innerHTML = `👤 ${prospectName}`;
-                            pItem.addEventListener('click', (e) => {
+                            
+                            const pToggleHtml = `<span class="sidebar-prospect-toggle" style="display:inline-block; transition:transform 0.2s ease;">▼</span>`;
+                            pHeader.innerHTML = `
+                                <span>👤 ${prospectName}</span>
+                                ${pToggleHtml}
+                            `;
+                            pWrapper.appendChild(pHeader);
+                            
+                            const sessionsList = document.createElement('div');
+                            sessionsList.className = 'sidebar-prospect-sessions';
+                            
+                            const pKey = `${folder.name}|${prospectName}`;
+                            const isPExpanded = expandedProspects.has(pKey) || (activeFolderId === folder.id && activeProspectName === prospectName);
+                            
+                            if (isPExpanded) {
+                                sessionsList.classList.remove('collapsed');
+                            } else {
+                                sessionsList.classList.add('collapsed');
+                                const toggleSpan = pHeader.querySelector('.sidebar-prospect-toggle');
+                                if (toggleSpan) toggleSpan.style.transform = 'rotate(-90deg)';
+                            }
+                            
+                            // 1. New Session button
+                            const newSessionBtn = document.createElement('div');
+                            newSessionBtn.className = 'sidebar-new-session-btn';
+                            newSessionBtn.innerText = '➕ New Session';
+                            newSessionBtn.addEventListener('click', (e) => {
                                 e.stopPropagation();
+                                startNewSessionForProspect(folder, prospectName);
+                            });
+                            sessionsList.appendChild(newSessionBtn);
+                            
+                            // 2. Fetch history items for this prospect
+                            const matchedSessions = chatsList.filter(c => 
+                                c.company && c.company.toLowerCase().trim() === folder.name.toLowerCase().trim() &&
+                                c.name && c.name.toLowerCase().trim() === prospectName.toLowerCase().trim()
+                            );
+                            
+                            // Sort by date descending
+                            matchedSessions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                            
+                            matchedSessions.forEach(session => {
+                                const sessionItem = document.createElement('div');
+                                sessionItem.className = 'sidebar-session-item';
+                                sessionItem.setAttribute('data-session-id', session.id);
+                                if (currentChatId === session.id) {
+                                    sessionItem.classList.add('active');
+                                    pHeader.classList.add('active'); // Highlight parent prospect row as active too
+                                }
+                                
+                                let displayDate = '';
+                                try {
+                                    const d = new Date(session.date);
+                                    displayDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                                } catch (e) {}
+                                
+                                const titleText = session.title || 'Untitled Session';
+                                sessionItem.innerText = `💬 ${titleText} (${displayDate})`;
+                                sessionItem.title = `${titleText} (${new Date(session.date).toLocaleString()})`;
+                                
+                                sessionItem.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    selectChat(session.id);
+                                });
+                                sessionsList.appendChild(sessionItem);
+                            });
+                            
+                            pHeader.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const isCollapsed = sessionsList.classList.toggle('collapsed');
+                                const toggleSpan = pHeader.querySelector('.sidebar-prospect-toggle');
+                                if (toggleSpan) {
+                                    toggleSpan.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+                                }
+                                if (isCollapsed) {
+                                    expandedProspects.delete(pKey);
+                                } else {
+                                    expandedProspects.add(pKey);
+                                }
                                 selectProspect(folder, prospectName);
                             });
-                            contents.appendChild(pItem);
+                            
+                            pWrapper.appendChild(sessionsList);
+                            contents.appendChild(pWrapper);
                         });
                     } else {
                         const pItem = document.createElement('div');
-                        pItem.className = 'sidebar-prospect-item';
+                        pItem.className = 'sidebar-prospect-item sidebar-prospect-header';
                         pItem.setAttribute('data-prospect-name', 'Unknown Name');
                         pItem.setAttribute('data-folder-id', folder.id);
                         if (activeFolderId === folder.id) {
@@ -531,6 +634,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const toggleSpan = folderHeader.querySelector('.sidebar-folder-toggle');
                         if (toggleSpan) {
                             toggleSpan.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+                        }
+                        if (isCollapsed) {
+                            expandedCompanies.delete(folder.name);
+                        } else {
+                            expandedCompanies.add(folder.name);
                         }
                         const firstP = prospects[0] || 'Unknown Name';
                         await selectProspect(folder, firstP);
@@ -767,6 +875,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Start New Session Helper ---
+    async function startNewSessionForProspect(companyFolder, prospectName) {
+        currentChatId = null;
+        activeFolderId = companyFolder.id;
+        activeProspectName = prospectName;
+        chatHistory = [];
+        chatMessagesLog.innerHTML = '';
+        
+        // Auto-populate inputs
+        if (metaName) metaName.value = prospectName || '';
+        if (metaCompany) {
+            metaCompany.value = companyFolder.name;
+            metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
+            metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        if (metaTitle) metaTitle.value = '';
+        if (metaEmail) metaEmail.value = '';
+        if (metaPhone) metaPhone.value = '';
+        if (metaRep) metaRep.value = 'Albert';
+        if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
+        
+        // Set headers
+        if (activeChatClientTitle) activeChatClientTitle.innerText = `${companyFolder.name} (${prospectName})`;
+        if (activeChatClientMeta) activeChatClientMeta.innerText = `New Chat Session — Interest: Planning & Analytics (TM1)`;
+        
+        if (workspaceEmptyState) workspaceEmptyState.classList.add('hidden');
+        if (workspaceActiveChat) workspaceActiveChat.classList.remove('hidden');
+        
+        // Render first welcome message
+        chatHistory.push({
+            role: 'assistant',
+            content: `Welcome! I've loaded the Google Drive folder for **${companyFolder.name}** and initialized a new session for **${prospectName}**. You can drag files here or click the paperclip to upload documents to this prospect's memory.`,
+            timestamp: new Date().toISOString()
+        });
+        renderChatHistory();
+        
+        sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
+        try {
+            const resolvedFilesData = await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(companyFolder.id)}`)).json();
+            await loadSourcesForCompany(companyFolder.id, companyFolder.name, resolvedFilesData);
+        } catch (err) {
+            console.error('Error loading files for new session:', err);
+            sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load files</div>';
+        }
+        
+        // Re-render the sidebar to reflect new active state
+        renderChatsList();
+    }
+
     // --- Select Chat ---
     async function selectChat(id, preFetchedDetail = null, preFetchedFiles = null) {
         currentChatId = id;
@@ -859,6 +1016,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             renderChatHistory();
             updateValidationBadges();
+            renderChatsList();
 
         } catch (err) {
             console.error('Error loading chat detail:', err);
