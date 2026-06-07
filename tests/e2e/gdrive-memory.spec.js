@@ -11,7 +11,7 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         const indexPage = new IndexPage(page);
         await indexPage.goto();
         await indexPage.newChatBtn.click();
-        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.fillMetadata('Sarah Chen', 'QA_Meridian_Logistics', 'sarah@meridian.com');
         await indexPage.submitForm();
         await indexPage.waitForChatInit();
         await indexPage.closeDrawer();
@@ -38,7 +38,7 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    company: 'Meridian Logistics',
+                    company: 'QA_Meridian_Logistics',
                     fileName: 'LinkedIn_Profile_Kyle_Fouche.pdf',
                     mimeType: 'application/pdf',
                     fileData: base64
@@ -70,7 +70,7 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
                     choices: [{
                         message: {
                             role: 'assistant',
-                            content: `Here are the uploaded documents for Meridian Logistics:
+                            content: `Here are the uploaded documents for QA_Meridian_Logistics:
 - [LinkedIn_Profile_Kyle_Fouche.pdf](https://drive.google.com/file/d/mock_doc_id_123/view) (Size: 0.0 KB, ID: mock_doc_id_123)`
                         }
                     }]
@@ -91,7 +91,7 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         const indexPage = new IndexPage(page);
         await indexPage.goto();
         await indexPage.newChatBtn.click();
-        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.fillMetadata('Sarah Chen', 'QA_Meridian_Logistics', 'sarah@meridian.com');
         await indexPage.submitForm();
         await indexPage.waitForChatInit();
         await indexPage.closeDrawer();
@@ -130,7 +130,7 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         const indexPage = new IndexPage(page);
         await indexPage.goto();
         await indexPage.newChatBtn.click();
-        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.fillMetadata('Sarah Chen', 'QA_Meridian_Logistics', 'sarah@meridian.com');
         await indexPage.submitForm();
         await indexPage.waitForChatInit();
         await indexPage.closeDrawer();
@@ -143,8 +143,8 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         expect(reply).toContain('successfully registered the new call');
         expect(reply).toContain('call_log_');
 
-        // 2. Verify sidebar contains folder Meridian Logistics
-        const folderHeader = page.locator('.sidebar-folder-header', { hasText: 'Meridian Logistics' });
+        // 2. Verify sidebar contains folder QA_Meridian_Logistics
+        const folderHeader = page.locator('.sidebar-folder-header', { hasText: 'QA_Meridian_Logistics' });
         await expect(folderHeader).toBeVisible({ timeout: 15000 });
 
         // 3. Click the folder to expand and verify nested file item

@@ -42,6 +42,9 @@ module.exports = defineConfig({
             reuseExistingServer: !process.env.CI,
             cwd: __dirname,
             timeout: 15000,
+            env: {
+                HISTORY_DIR: 'knowledge/history_test'
+            }
         }
     }),
 

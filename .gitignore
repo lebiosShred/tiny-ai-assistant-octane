@@ -36,6 +36,7 @@ video_pipeline/
 promptfooconfig.yaml
 script.py
 knowledge/history/
+knowledge/history_test/
 
 # Playwright test artifacts
 test-results/

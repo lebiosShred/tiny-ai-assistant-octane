@@ -49,7 +49,7 @@ const MIME_TYPES = {
 };
 
 // Initialize GCS History Directory
-const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
+const historyDir = process.env.HISTORY_DIR ? path.resolve(process.env.HISTORY_DIR) : path.join(PUBLIC_DIR, 'knowledge', 'history');
 if (!fs.existsSync(historyDir)) {
     fs.mkdirSync(historyDir, { recursive: true });
 }
@@ -1654,7 +1654,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 } else {
                     console.warn('⚠️ Google Drive client not configured. Saving file locally.');
                     const cleanCompany = activeCompany.replace(/[^a-zA-Z0-9]/g, '_');
-                    const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                    const localFolder = path.join(historyDir, cleanCompany);
                     if (!fs.existsSync(localFolder)) {
                         fs.mkdirSync(localFolder, { recursive: true });
                     }
@@ -1993,7 +1993,6 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                             }
 
                             // 2. Always clean up local folder if it exists
-                            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                             if (fs.existsSync(historyDir)) {
                                 const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
                                 for (const subdir of subdirs) {
@@ -2089,7 +2088,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                         console.warn('⚠️ Error listing GDrive folder during deletion resolution:', err.message);
                                     }
                                 } else {
-                                    const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                                    const localFolder = path.join(historyDir, cleanCompany);
                                     if (fs.existsSync(localFolder)) {
                                         const localFiles = fs.readdirSync(localFolder);
                                         const found = localFiles.find(f => f.toLowerCase() === targetFileId.toLowerCase());
@@ -2101,7 +2100,6 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                             }
 
                             if (targetFileId.startsWith('local_')) {
-                                const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                                 if (fs.existsSync(historyDir)) {
                                     const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
                                     for (const subdir of subdirs) {
@@ -2346,7 +2344,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         files = await gdriveService.listFolder(clientFolderId);
                     } else {
                         const cleanCompany = companyNameForGDrive.replace(/[^a-zA-Z0-9]/g, '_');
-                        const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                        const localFolder = path.join(historyDir, cleanCompany);
                         if (fs.existsSync(localFolder)) {
                             const localFiles = fs.readdirSync(localFolder);
                             files = localFiles.map(file => {
@@ -2962,7 +2960,6 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 }
                                             }
                                             
-                                            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                                             if (fs.existsSync(historyDir)) {
                                                 const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
                                                 for (const subdir of subdirs) {
@@ -3047,7 +3044,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 }
                                             } else {
                                                 const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                                                const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                                                const localFolder = path.join(historyDir, cleanCompany);
                                                 const filePath = path.join(localFolder, filename);
                                                 if (fs.existsSync(filePath)) {
                                                     fs.unlinkSync(filePath);
@@ -3498,7 +3495,6 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
                 if (!resolvedCompany && !folderId) {
                     // List all subdirectories inside knowledge/history
-                    const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                     if (fs.existsSync(historyDir)) {
                         const localDirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
                         items = localDirs.map(dir => ({
@@ -3512,7 +3508,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     }
                 } else {
                     const cleanCompany = (resolvedCompany || '').replace(/[^a-zA-Z0-9]/g, '_');
-                    const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                    const localFolder = path.join(historyDir, cleanCompany);
                     if (fs.existsSync(localFolder)) {
                         const localFiles = fs.readdirSync(localFolder).filter(f => !fs.statSync(path.join(localFolder, f)).isDirectory());
                         items = localFiles.map(file => {
@@ -3659,7 +3655,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     } else {
                         console.warn('⚠️ Google Drive client not configured. Saving file locally.');
                         const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                        const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                        const localFolder = path.join(historyDir, cleanCompany);
                         if (!fs.existsSync(localFolder)) {
                             fs.mkdirSync(localFolder, { recursive: true });
                         }
@@ -3766,7 +3762,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 } else {
                     console.warn('⚠️ Google Drive client not configured. Saving file locally.');
                     const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                    const localFolder = path.join(PUBLIC_DIR, 'knowledge', 'history', cleanCompany);
+                    const localFolder = path.join(historyDir, cleanCompany);
                     if (!fs.existsSync(localFolder)) {
                         fs.mkdirSync(localFolder, { recursive: true });
                     }
@@ -3829,7 +3825,6 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
 
                 if (fId.startsWith('local_')) {
-                    const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                     if (fs.existsSync(historyDir)) {
                         const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
                         for (const subdir of subdirs) {
@@ -3987,7 +3982,6 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
     // Step 1: Prep Sample Loadout (Dynamic Mock Generator)
     if (pathname === '/api/prep-sample-loadout' && req.method === 'GET') {
-        const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
         let latestBooking = null;
 
         if (fs.existsSync(historyDir)) {
@@ -4113,7 +4107,6 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
                 // Fallback to latest history dossier if missing in request payload
                 if (!name || !company) {
-                    const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                     let latestBooking = null;
                     if (fs.existsSync(historyDir)) {
                         const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
@@ -4479,7 +4472,6 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                 return;
             }
 
-            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
             if (!fs.existsSync(historyDir)) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify([]));
@@ -4580,7 +4572,6 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                         payload.stage = payload.type === 'synthesis' ? 'reports' : 'prep';
                     }
                     
-                    const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                     if (!fs.existsSync(historyDir)) {
                         fs.mkdirSync(historyDir, { recursive: true });
                     }
@@ -4705,7 +4696,6 @@ ${payload.intakeAnswers || ''}`;
                 return;
             }
             const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
-            const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
             const filePath = path.join(historyDir, `${cleanId}.json`);
             fs.unlink(filePath, (err) => {
                 if (err) {
@@ -4781,7 +4771,6 @@ ${payload.intakeAnswers || ''}`;
                     return;
                 }
                 const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
-                const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
                 const filePath = path.join(historyDir, `${cleanId}.json`);
                 
                 fs.readFile(filePath, 'utf8', (readErr, data) => {
@@ -4826,7 +4815,6 @@ ${payload.intakeAnswers || ''}`;
             return;
         }
         const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
-        const historyDir = path.join(PUBLIC_DIR, 'knowledge', 'history');
         const filePath = path.join(historyDir, `${cleanId}.json`);
         
         fs.readFile(filePath, 'utf8', (err, data) => {

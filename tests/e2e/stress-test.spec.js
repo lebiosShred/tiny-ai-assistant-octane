@@ -11,10 +11,10 @@ const path = require('path');
 test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
 
     test.afterEach(async () => {
-        const historyDir = path.join(__dirname, '..', '..', 'knowledge', 'history');
+        const historyDir = process.env.HISTORY_DIR ? path.resolve(process.env.HISTORY_DIR) : path.join(__dirname, '..', '..', 'knowledge', 'history_test');
         if (fs.existsSync(historyDir)) {
             const files = fs.readdirSync(historyDir);
-            const testCompanies = ['Stress_Corp', 'Meridian_Logistics', 'Acme_Corp', 'Acme Corp'];
+            const testCompanies = ['QA_Stress_Corp', 'QA_Meridian_Logistics', 'QA_Acme_Corp'];
             for (const file of files) {
                 const filePath = path.join(historyDir, file);
                 try {
@@ -45,7 +45,7 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         const massiveTranscript = baseSentence.repeat(700); // ~10,500 words
 
         await page.fill('#source-transcript-text', massiveTranscript);
-        await indexPage.fillMetadata('Stress User', 'Stress Corp', 'stress.user@stresscorp.com');
+        await indexPage.fillMetadata('Stress User', 'QA_Stress_Corp', 'stress.user@stresscorp.com');
         await indexPage.submitForm();
         
         // Wait for chat initialization under load
@@ -59,7 +59,7 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         const indexPage = new IndexPage(page);
         await indexPage.goto();
         await indexPage.newChatBtn.click();
-        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.fillMetadata('Sarah Chen', 'QA_Meridian_Logistics', 'sarah@meridian.com');
         await page.fill('#source-transcript-text', 'Client is interested in TM1 planning and watsonx orchestrate pilot.');
         await indexPage.submitForm();
         await indexPage.waitForChatInit();
@@ -85,7 +85,7 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         const indexPage = new IndexPage(page);
         await indexPage.goto();
         await indexPage.newChatBtn.click();
-        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.fillMetadata('Sarah Chen', 'QA_Meridian_Logistics', 'sarah@meridian.com');
         await indexPage.submitForm();
         await indexPage.waitForChatInit();
         await indexPage.closeDrawer();
@@ -106,12 +106,12 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         await indexPage.goto();
         await indexPage.newChatBtn.click();
 
-        // 1. Fill metadata with Acme Corp lead details
-        await indexPage.fillMetadata('Sarah Chen', 'Acme Corp', 'sarah.chen@acmecorp.com');
+        // 1. Fill metadata with QA_Acme_Corp lead details
+        await indexPage.fillMetadata('Sarah Chen', 'QA_Acme_Corp', 'sarah.chen@acmecorp.com');
 
         // 2. Set mismatched LinkedIn profile bio text (pointing to NSW EPA organics officer)
         await page.fill('#source-linkedin-text', 'Sarah Chen is Senior Project Officer Organics at NSW EPA. Pushing waste recycling limits and circular economy initiatives across NSW.');
-        await page.fill('#source-transcript-text', 'We discussed TM1 DevOps support options for Acme Corp.');
+        await page.fill('#source-transcript-text', 'We discussed TM1 DevOps support options for QA_Acme_Corp.');
 
         // 3. Verify the LinkedIn status badge changes dynamically to "Mismatch Warning"
         const badge = page.locator('#linkedin-status-badge');
@@ -124,7 +124,7 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         await indexPage.closeDrawer();
 
         // 5. Send message asking for a personalization focus or recap to verify safety boundary
-        await indexPage.sendMessage('Hi Tiny, suggest some high-impact conversation starters for Sarah Chen at Acme Corp.');
+        await indexPage.sendMessage('Hi Tiny, suggest some high-impact conversation starters for Sarah Chen at QA_Acme_Corp.');
         await indexPage.waitForResponse(20000);
 
         const responseText = await indexPage.getLastResponseText();
@@ -135,7 +135,7 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         expect(responseText.toLowerCase()).not.toContain('waste');
         expect(responseText.toLowerCase()).not.toContain('organics');
         
-        // Confirm the response correctly references Acme Corp
-        expect(responseText).toContain('Acme Corp');
+        // Confirm the response correctly references QA_Acme_Corp
+        expect(responseText).toContain('QA_Acme_Corp');
     });
 });
