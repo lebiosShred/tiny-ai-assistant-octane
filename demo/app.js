@@ -735,6 +735,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (msg.role === 'assistant' && msg.content.includes('[INSUFFICIENT_DATA_FOR_REPORT]')) {
                 card.className = 'chat-message-card assistant error-state';
+                const rawCompany = metaCompany?.value?.trim() || '';
+                const companyName = rawCompany.split('\n')[0].split('---')[0].trim();
+                const companySnippet = companyName ? ` for <strong>${companyName}</strong>` : '';
                 card.innerHTML = `
                     <div class="insufficient-data-card">
                         <div class="card-title">
@@ -742,7 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span>Insufficient Source Data</span>
                         </div>
                         <div class="card-description">
-                            Tiny cannot generate this report because the required source information (e.g. call transcript, LinkedIn biography, or booking intake) is missing. Please open the <strong>Sources Drawer</strong> and fill in the missing inputs.
+                            Tiny cannot generate this report${companySnippet} because the required source information (e.g. call transcript, LinkedIn biography, or booking intake) is missing. Please open the <strong>Sources Drawer</strong> and fill in the missing inputs.
                         </div>
                     </div>
                 `;

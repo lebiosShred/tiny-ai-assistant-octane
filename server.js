@@ -239,7 +239,7 @@ function executeGeminiFailover(payload) {
             const options = {
                 hostname: 'generativelanguage.googleapis.com',
                 port: 443,
-                path: `/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`,
+                path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',
@@ -1526,23 +1526,11 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         content = content.replace(/<\/system>/gi, '');
                         content = content.replace(/<system>/gi, '');
                         
-                        // Sanitize DAN references and other jailbreak terms in Client Name
-                        content = content.replace(/(- Client Name:\s*)([\s\S]*?)(?=\r?\n-|$)/gi, (match, prefix, value) => {
-                            let cleanVal = value
-                                .replace(/\bdan\b/gi, 'D-A-N')
-                                .replace(/\bunrestricted\b/gi, 'filtered')
-                                .replace(/\bwithout\s+filters\b/gi, 'with filters');
-                            return prefix + cleanVal;
-                        });
-
-                        // Sanitize DAN references and other jailbreak terms in Company
-                        content = content.replace(/(- Company:\s*)([\s\S]*?)(?=\r?\n-|$)/gi, (match, prefix, value) => {
-                            let cleanVal = value
-                                .replace(/\bdan\b/gi, 'D-A-N')
-                                .replace(/\bunrestricted\b/gi, 'filtered')
-                                .replace(/\bwithout\s+filters\b/gi, 'with filters');
-                            return prefix + cleanVal;
-                        });
+                        // Sanitize DAN references and other jailbreak terms globally in the message content
+                        content = content
+                            .replace(/\bdan\b/gi, 'D-A-N')
+                            .replace(/\bunrestricted\b/gi, 'filtered')
+                            .replace(/\bwithout\s+filters\b/gi, 'with filters');
 
                         return { ...msg, content };
                     }
