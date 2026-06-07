@@ -538,6 +538,53 @@ async function generateAICompletion(systemPrompt, userPrompt) {
     });
 }
 
+async function extractStructuredProfile(rawText, filename) {
+    const systemPrompt = `You are "Tiny", a high-precision profile extraction assistant for Octane Software Solutions.
+Analyze the raw text content extracted from a prospect's document (such as a LinkedIn profile PDF or CV).
+Generate a clean, professional, and comprehensive markdown summary of their profile.
+
+You must follow these strict rules:
+1. Under "Current Role", identify and list all active roles, including concurrent roles or acting positions (e.g. A/ Senior Project Officer).
+2. Under "Key Experience", list EVERY single work experience entry found in the document, along with dates. Even if a role has no description details or bullet points in the source document, you MUST still list it as a bullet point. Do not omit any roles!
+3. Under "Education", list all schools, degrees, and dates.
+4. Under "Skills", list all skills.
+
+Output format:
+Here's a summary of [Candidate Name]'s LinkedIn profile:
+
+Current Role: [Current Job Title] at [Company Name] (Include any concurrent or acting roles here)
+
+Background: [Brief 2-3 sentence background summary]
+
+Key Experience:
+- [Company Name] ([Dates]): [Job Title] -- [Details of what they did, or if no details are in the source document, write "Role held with no further description provided in source profile"]
+- ... (List all roles here)
+
+Education: [Education details]
+
+Skills: [List of skills]`;
+
+    const userPrompt = `Document Filename: ${filename}\n\nRaw Extracted Text:\n${rawText}`;
+    
+    const payload = {
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.1
+    };
+    
+    try {
+        console.log(`🤖 Running upfront LLM extraction/synthesis for ${filename}...`);
+        const summary = await executeGeminiFailover(payload);
+        return summary;
+    } catch (err) {
+        console.error(`⚠️ Upfront LLM extraction failed for ${filename}:`, err.message);
+        return rawText;
+    }
+}
+
+
 async function fetchTavilyRAGContext(name, company) {
     if (isTestEnrichment(name, company)) {
         console.log(`🌐 Mocking Tavily RAG search for: "${name}" at "${company}"`);
@@ -3514,7 +3561,12 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     try {
                                                         const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
                                                         files = await gdriveService.listFolder(clientFolderId);
-                                                        if (filename.toLowerCase().endsWith('.pdf')) {
+                                                        
+                                                        // Check for companion summary text file first (e.g. filename.pdf.txt)
+                                                        const companionName = filename + '.txt';
+                                                        foundFile = files.find(f => f.name.toLowerCase() === companionName.toLowerCase());
+                                                        
+                                                        if (!foundFile && filename.toLowerCase().endsWith('.pdf')) {
                                                             foundFile = files.find(f => f.name.toLowerCase() === filename.toLowerCase() && f.mimeType === 'application/pdf');
                                                         }
                                                         if (!foundFile) {
@@ -3531,7 +3583,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     const localFolder = path.join(historyDir, cleanCompany);
                                                     if (fs.existsSync(localFolder)) {
                                                         const localFiles = fs.readdirSync(localFolder);
-                                                        const matchedName = localFiles.find(f => f.toLowerCase() === filename.toLowerCase());
+                                                        const companionName = filename + '.txt';
+                                                        let matchedName = localFiles.find(f => f.toLowerCase() === companionName.toLowerCase());
+                                                        if (!matchedName) {
+                                                            matchedName = localFiles.find(f => f.toLowerCase() === filename.toLowerCase());
+                                                        }
                                                         if (matchedName) {
                                                             foundFile = { name: matchedName };
                                                             const localFilePath = path.join(localFolder, matchedName);
@@ -4437,6 +4493,37 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         parsedText = await gdriveService.parseDocxBuffer(fileBuffer);
                     } else if (mimeType.startsWith('text/') || filename.endsWith('.txt') || filename.endsWith('.md')) {
                         parsedText = fileBuffer.toString('utf8');
+                    }
+
+                    // Run upfront LLM structured extraction/synthesis
+                    if (parsedText && parsedText.trim().length > 0) {
+                        parsedText = await extractStructuredProfile(parsedText, filename);
+                    }
+
+                    // Save companion file (summary) in Google Drive or locally
+                    if (gdriveAvailable) {
+                        try {
+                            const companionFilename = filename + '.txt';
+                            const companionBuffer = Buffer.from(parsedText, 'utf8');
+                            let clientFolderId = folderId;
+                            if (!clientFolderId && company) {
+                                clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                            }
+                            await gdriveService.uploadFile(companionFilename, 'text/plain', companionBuffer, clientFolderId);
+                            console.log(`✅ Uploaded companion summary file: ${companionFilename}`);
+                        } catch (err) {
+                            console.warn(`⚠️ Failed to upload companion summary file:`, err.message);
+                        }
+                    } else {
+                        try {
+                            const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                            const localFolder = path.join(historyDir, cleanCompany);
+                            const localCompanionPath = path.join(localFolder, filename + '.txt');
+                            fs.writeFileSync(localCompanionPath, parsedText, 'utf8');
+                            console.log(`✅ Saved local companion summary: ${localCompanionPath}`);
+                        } catch (err) {
+                            console.warn(`⚠️ Failed to save local companion summary file:`, err.message);
+                        }
                     }
 
                     const receipt = generateReceipt("UPLOAD", "FILE", driveFile.name, driveFile.id, company, {

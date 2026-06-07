@@ -135,6 +135,13 @@ async function getFileContent(fileId) {
                     const companyPrefix = `${subdir}_`;
                     if (withoutPrefix.startsWith(companyPrefix)) {
                         const filename = withoutPrefix.slice(companyPrefix.length);
+                        // Check for companion structured summary file first
+                        const companionPath = path.join(historyDir, subdir, filename + '.txt');
+                        if (fs.existsSync(companionPath)) {
+                            console.log(`⚡ Found local companion summary: ${companionPath}`);
+                            content = fs.readFileSync(companionPath, 'utf8');
+                            break;
+                        }
                         const filePath = path.join(historyDir, subdir, filename);
                         if (fs.existsSync(filePath)) {
                             if (filename.endsWith('.pdf')) {
@@ -171,14 +178,33 @@ async function fetchContentInternal(fileId) {
         throw new Error('Google Drive client not initialized. Check credentials.');
     }
 
-    // 1. Get file metadata to check mimeType
+    // 1. Get file metadata to check mimeType and parent folder
     const metadataResponse = await drive.files.get({
         fileId: fileId,
-        fields: 'name,mimeType'
+        fields: 'name,mimeType,parents'
     });
 
-    const { name, mimeType } = metadataResponse.data;
+    const { name, mimeType, parents } = metadataResponse.data;
     console.log(`📄 Fetching content for file: "${name}" (${mimeType})`);
+
+    // Check for companion structured text file first for binary types
+    if ((mimeType === 'application/pdf' || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || (name && (name.endsWith('.docx') || name.endsWith('.pdf')))) && parents && parents.length > 0) {
+        const companionName = name + '.txt';
+        try {
+            const listResponse = await drive.files.list({
+                q: `'${parents[0]}' in parents and name = '${companionName.replace(/'/g, "\\'")}' and trashed = false`,
+                fields: 'files(id, name, mimeType)'
+            });
+            const companionFiles = listResponse.data.files || [];
+            if (companionFiles.length > 0) {
+                const companionFile = companionFiles[0];
+                console.log(`⚡ Found companion summary file: "${companionFile.name}" (ID: ${companionFile.id}). Using it instead of raw parsing.`);
+                return await fetchContentInternal(companionFile.id);
+            }
+        } catch (companionErr) {
+            console.warn(`⚠️ Failed to search/fetch companion summary for ${name}:`, companionErr.message);
+        }
+    }
 
     // 2. Export or download based on mimeType
     if (mimeType === 'application/vnd.google-apps.document') {
