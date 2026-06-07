@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { google } = require('googleapis');
-const pdf2md = require('@opendocsg/pdf2md');
+const pdfParse = require('pdf-parse');
 const PDFDocument = require('pdfkit');
 const mammoth = require('mammoth');
 const TurndownService = require('turndown');
@@ -149,7 +149,7 @@ async function getFileContent(fileId) {
 
             const buffer = Buffer.from(downloadResponse.data);
             try {
-                const markdown = await pdf2md(buffer);
+                const markdown = await parsePdfBuffer(buffer);
                 return markdown;
             } catch (pdfErr) {
                 console.warn(`⚠️ PDF parse failed for ${name} (${pdfErr.message}). Falling back to text decoding...`);
@@ -483,8 +483,8 @@ async function uploadFile(fileName, mimeType, fileBuffer, folderId) {
  */
 async function parsePdfBuffer(buffer) {
     try {
-        const markdown = await pdf2md(buffer);
-        return markdown;
+        const data = await pdfParse(buffer);
+        return data.text;
     } catch (err) {
         console.warn(`⚠️ PDF parse failed: ${err.message}. Falling back to text decoding...`);
         return buffer.toString('utf8');
