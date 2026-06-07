@@ -3514,7 +3514,12 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     try {
                                                         const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
                                                         files = await gdriveService.listFolder(clientFolderId);
-                                                        foundFile = files.find(f => f.name.toLowerCase() === filename.toLowerCase());
+                                                        if (filename.toLowerCase().endsWith('.pdf')) {
+                                                            foundFile = files.find(f => f.name.toLowerCase() === filename.toLowerCase() && f.mimeType === 'application/pdf');
+                                                        }
+                                                        if (!foundFile) {
+                                                            foundFile = files.find(f => f.name.toLowerCase() === filename.toLowerCase());
+                                                        }
                                                         if (foundFile) {
                                                             resolvedFileContent = await gdriveService.getFileContent(foundFile.id);
                                                         }

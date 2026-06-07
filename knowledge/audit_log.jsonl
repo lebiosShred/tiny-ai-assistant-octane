@@ -207,3 +207,5 @@
 {"timestamp":"2026-06-07T05:25:31.785Z","ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.7778.96 Safari/537.36","action":"CHAT_COMPLETION","details":{"provider":"deepseek","model":"deepseek-chat"}}
 {"timestamp":"2026-06-07T05:25:31.858Z","ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.7778.96 Safari/537.36","action":"CHAT_COMPLETION","details":{"provider":"deepseek","model":"deepseek-chat"}}
 {"timestamp":"2026-06-07T05:25:37.612Z","ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.7778.96 Safari/537.36","action":"CHAT_COMPLETION","details":{"provider":"deepseek","model":"deepseek-chat"}}
+{"timestamp":"2026-06-07T19:05:22.421Z","ip":"::1","userAgent":"unknown","action":"CHAT_COMPLETION","details":{"provider":"deepseek","model":"deepseek-chat"}}
+{"timestamp":"2026-06-07T19:05:37.968Z","ip":"::1","userAgent":"unknown","action":"CHAT_COMPLETION","details":{"provider":"deepseek","model":"deepseek-chat"}}
