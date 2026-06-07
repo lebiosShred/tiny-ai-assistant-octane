@@ -757,9 +757,87 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Update sidebar element dynamically if it exists
                     const loadingItem = document.querySelector(`.sidebar-prospect-item[data-prospect-name="Unknown Name"][data-folder-id="${folderId}"]`);
-                    if (loadingItem) {
-                        loadingItem.setAttribute('data-prospect-name', extractedName);
-                        loadingItem.innerHTML = `👤 ${extractedName}`;
+                    if (loadingItem && loadingItem.parentNode) {
+                        const pWrapper = document.createElement('div');
+                        pWrapper.className = 'sidebar-prospect-wrapper';
+                        
+                        const pHeader = document.createElement('div');
+                        pHeader.className = 'sidebar-prospect-header sidebar-prospect-item active';
+                        pHeader.setAttribute('data-prospect-name', extractedName);
+                        pHeader.setAttribute('data-folder-id', folderId);
+                        
+                        const pToggleHtml = `<span class="sidebar-prospect-toggle" style="display:inline-block; transition:transform 0.2s ease;">▼</span>`;
+                        pHeader.innerHTML = `
+                            <span>👤 ${extractedName}</span>
+                            ${pToggleHtml}
+                        `;
+                        pWrapper.appendChild(pHeader);
+                        
+                        const sessionsList = document.createElement('div');
+                        sessionsList.className = 'sidebar-prospect-sessions';
+                        
+                        // New Session button
+                        const newSessionBtn = document.createElement('div');
+                        newSessionBtn.className = 'sidebar-new-session-btn';
+                        newSessionBtn.innerText = '➕ New Session';
+                        newSessionBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const folderObj = gdriveFolders.find(f => f.id === folderId);
+                            if (folderObj) startNewSessionForProspect(folderObj, extractedName);
+                        });
+                        sessionsList.appendChild(newSessionBtn);
+                        
+                        // Fetch history items
+                        const matchedSessions = chatsList.filter(c => 
+                            c.company && c.company.toLowerCase().trim() === companyName.toLowerCase().trim() &&
+                            c.name && c.name.toLowerCase().trim() === extractedName.toLowerCase().trim()
+                        );
+                        matchedSessions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        
+                        matchedSessions.forEach(session => {
+                            const sessionItem = document.createElement('div');
+                            sessionItem.className = 'sidebar-session-item';
+                            sessionItem.setAttribute('data-session-id', session.id);
+                            if (currentChatId === session.id) {
+                                sessionItem.classList.add('active');
+                            }
+                            
+                            let displayDate = '';
+                            try {
+                                const d = new Date(session.date);
+                                displayDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                            } catch (e) {}
+                            
+                            const titleText = session.title || 'Untitled Session';
+                            sessionItem.innerText = `💬 ${titleText} (${displayDate})`;
+                            sessionItem.title = `${titleText} (${new Date(session.date).toLocaleString()})`;
+                            
+                            sessionItem.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                selectChat(session.id);
+                            });
+                            sessionsList.appendChild(sessionItem);
+                        });
+                        
+                        pHeader.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const isCollapsed = sessionsList.classList.toggle('collapsed');
+                            const toggleSpan = pHeader.querySelector('.sidebar-prospect-toggle');
+                            if (toggleSpan) {
+                                toggleSpan.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+                            }
+                            const pKey = `${companyName}|${extractedName}`;
+                            if (isCollapsed) {
+                                expandedProspects.delete(pKey);
+                            } else {
+                                expandedProspects.add(pKey);
+                            }
+                            const folderObj = gdriveFolders.find(f => f.id === folderId);
+                            if (folderObj) selectProspect(folderObj, extractedName);
+                        });
+                        
+                        pWrapper.appendChild(sessionsList);
+                        loadingItem.parentNode.replaceChild(pWrapper, loadingItem);
                     }
                     
                     if (metaName && metaName.value !== extractedName) {
