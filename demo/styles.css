@@ -4477,6 +4477,30 @@ body {
 .sidebar-folder-contents.collapsed {
     display: none;
 }
+.sidebar-prospect-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.6rem;
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.03);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.sidebar-prospect-item:hover {
+    background: rgba(2, 132, 199, 0.04);
+    border-color: rgba(2, 132, 199, 0.1);
+    color: #0284c7;
+}
+.sidebar-prospect-item.active {
+    background: rgba(2, 132, 199, 0.08);
+    border-color: #0284c7;
+    color: #0284c7;
+    font-weight: 500;
+}
 .sidebar-file-item {
     display: flex;
     align-items: center;

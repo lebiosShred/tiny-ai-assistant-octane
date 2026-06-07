@@ -124,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // State Variables
     let currentChatId = null;
     let activeFolderId = null;
+    let activeProspectName = null;
     let chatsList = [];
     let chatHistory = [];
     let transitDistance = "Online/Phone call only (Distance unavailable)";
@@ -327,6 +328,86 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function selectProspect(companyFolder, prospectName, filesData = null) {
+        activeFolderId = companyFolder.id;
+        activeProspectName = prospectName;
+        
+        // Highlight active folder and prospect in the sidebar
+        document.querySelectorAll('.sidebar-folder-header').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.sidebar-prospect-item').forEach(el => el.classList.remove('active'));
+        
+        const folderHeader = document.querySelector(`.sidebar-folder-header[data-folder-id="${companyFolder.id}"]`);
+        if (folderHeader) folderHeader.classList.add('active');
+        const prospectItem = document.querySelector(`.sidebar-prospect-item[data-prospect-name="${prospectName}"][data-folder-id="${companyFolder.id}"]`);
+        if (prospectItem) prospectItem.classList.add('active');
+        
+        // Clear inputs immediately to avoid displaying stale data from prior active chats
+        if (metaName) metaName.value = prospectName || '';
+        if (metaTitle) metaTitle.value = '';
+        if (metaEmail) metaEmail.value = '';
+        if (metaPhone) metaPhone.value = '';
+        
+        if (metaCompany) {
+            metaCompany.value = companyFolder.name;
+            metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
+            metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        
+        // Find matching history session
+        const matchSession = chatsList.find(c => 
+            c.company && c.company.toLowerCase().trim() === companyFolder.name.toLowerCase().trim() &&
+            c.name && c.name.toLowerCase().trim() === prospectName.toLowerCase().trim()
+        );
+        
+        sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
+        
+        try {
+            if (matchSession) {
+                // Fetch details and files list in parallel
+                const [detailRes, filesRes] = await Promise.all([
+                    fetch(`/api/history/detail?id=${encodeURIComponent(matchSession.id)}`),
+                    filesData ? Promise.resolve({ ok: true, json: () => filesData }) : fetch(`/api/gdrive/list?folderId=${encodeURIComponent(companyFolder.id)}`)
+                ]);
+                
+                if (!detailRes.ok) throw new Error('Failed to load chat details');
+                if (!filesRes.ok) throw new Error('Failed to list files');
+                
+                const detailData = await detailRes.json();
+                const resolvedFilesData = filesData || await filesRes.json();
+                
+                await selectChat(matchSession.id, detailData, resolvedFilesData);
+                await loadSourcesForCompany(companyFolder.id, companyFolder.name, resolvedFilesData);
+            } else {
+                currentChatId = null;
+                workspaceEmptyState.classList.add('hidden');
+                workspaceActiveChat.classList.remove('hidden');
+                chatMessagesLog.innerHTML = '';
+                chatHistory = [];
+                
+                chatHistory.push({
+                    role: 'assistant',
+                    content: `Welcome! I've loaded the Google Drive folder for **${companyFolder.name}** and initialized a session for **${prospectName}**. You can drag files here or click the paperclip to upload documents to this prospect's memory.`,
+                    timestamp: new Date().toISOString()
+                });
+                renderChatHistory();
+                
+                if (metaName) metaName.value = prospectName || '';
+                if (metaTitle) metaTitle.value = '';
+                if (metaEmail) metaEmail.value = '';
+                if (metaPhone) metaPhone.value = '';
+                if (metaRep) metaRep.value = 'Albert';
+                if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
+                
+                const resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(companyFolder.id)}`)).json();
+                await loadSourcesForCompany(companyFolder.id, companyFolder.name, resolvedFilesData);
+            }
+        } catch (err) {
+            console.error('Error loading prospect data on select:', err);
+            showToast('Failed to load prospect data.');
+            sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load files</div>';
+        }
+    }
+
     async function loadProspectsTree(preFetchedData = null) {
         if (!recentChatsList) return;
         recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Loading folders...</div>';
@@ -363,107 +444,115 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 
-                let activeFolderName = "";
-                let firstFolderItem = null;
+                let firstFolderObj = null;
+                let firstProspectName = null;
+                
                 uniqueFolders.forEach((folder, index) => {
+                    const prospects = getProspectsForCompany(folder.name);
+                    const hasMultiple = prospects.length >= 2;
+                    
                     const folderItem = document.createElement('div');
-                    folderItem.className = 'sidebar-folder-header';
+                    folderItem.className = 'sidebar-folder-item';
+                    folderItem.setAttribute('data-folder-id', folder.id);
                     folderItem.style.marginBottom = '0.5rem';
+                    
+                    const folderHeader = document.createElement('div');
+                    folderHeader.className = 'sidebar-folder-header';
+                    folderHeader.setAttribute('data-folder-id', folder.id);
                     if (activeFolderId === folder.id) {
-                        folderItem.classList.add('active');
-                        activeFolderName = folder.name;
+                        folderHeader.classList.add('active');
                     }
-                    folderItem.innerHTML = `
+                    
+                    let toggleHtml = '';
+                    if (hasMultiple) {
+                        toggleHtml = `<span class="sidebar-folder-toggle" style="display:inline-block; transition:transform 0.2s ease;">▼</span>`;
+                    }
+                    
+                    folderHeader.innerHTML = `
                         <div class="sidebar-folder-title">
-                            ${folder.name}
+                            📁 ${folder.name}
                         </div>
+                        ${toggleHtml}
                     `;
                     
-                    folderItem.addEventListener('click', async () => {
-                        document.querySelectorAll('.sidebar-folder-header').forEach(el => el.classList.remove('active'));
-                        folderItem.classList.add('active');
-                        activeFolderId = folder.id;
-                        
-                        // Clear inputs immediately to avoid displaying stale data from prior active chats
-                        if (metaName) metaName.value = '';
-                        if (metaTitle) metaTitle.value = '';
-                        if (metaEmail) metaEmail.value = '';
-                        if (metaPhone) metaPhone.value = '';
-                        
-                        if (metaCompany) {
-                            metaCompany.value = folder.name;
-                            metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
-                            metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
+                    folderItem.appendChild(folderHeader);
+                    
+                    const contents = document.createElement('div');
+                    contents.className = 'sidebar-folder-contents';
+                    if (hasMultiple) {
+                        if (activeFolderId === folder.id) {
+                            contents.classList.remove('collapsed');
+                        } else {
+                            contents.classList.add('collapsed');
+                            const toggleSpan = folderHeader.querySelector('.sidebar-folder-toggle');
+                            if (toggleSpan) toggleSpan.style.transform = 'rotate(-90deg)';
                         }
-                        
-                        const matchSession = chatsList.find(c => c.company.toLowerCase().trim() === folder.name.toLowerCase().trim());
-                        sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
-                        
-                        try {
-                            if (matchSession) {
-                                // Run history details fetch and Google Drive folder listing in parallel
-                                const [detailRes, filesRes] = await Promise.all([
-                                    fetch(`/api/history/detail?id=${encodeURIComponent(matchSession.id)}`),
-                                    fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`)
-                                ]);
-                                
-                                if (!detailRes.ok) throw new Error('Failed to load chat details');
-                                if (!filesRes.ok) throw new Error('Failed to list files');
-                                
-                                const detailData = await detailRes.json();
-                                const filesData = await filesRes.json();
-                                
-                                // Render both sections synchronously with the pre-fetched datasets
-                                await selectChat(matchSession.id, detailData, filesData);
-                                await loadSourcesForCompany(folder.id, folder.name, filesData);
-                            } else {
-                                // Start a new chat session for this company folder and fetch files in parallel
-                                currentChatId = null;
-                                workspaceEmptyState.classList.add('hidden');
-                                workspaceActiveChat.classList.remove('hidden');
-                                chatMessagesLog.innerHTML = '';
-                                chatHistory = [];
-                                
-                                // Initialize with welcoming message
-                                chatHistory.push({
-                                    role: 'assistant',
-                                    content: `Welcome! I've loaded the Google Drive folder for **${folder.name}**. You can drag files here or click the paperclip to upload documents to this prospect's memory.`,
-                                    timestamp: new Date().toISOString()
-                                });
-                                renderChatHistory();
-                                
-                                if (metaName) metaName.value = '';
-                                if (metaTitle) metaTitle.value = '';
-                                if (metaEmail) metaEmail.value = '';
-                                if (metaPhone) metaPhone.value = '';
-                                if (metaRep) metaRep.value = 'Albert';
-                                if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
-                                
-                                const filesRes = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`);
-                                if (!filesRes.ok) throw new Error('Failed to list files');
-                                const filesData = await filesRes.json();
-                                
-                                await loadSourcesForCompany(folder.id, folder.name, filesData);
+                    }
+                    
+                    if (prospects.length > 0) {
+                        prospects.forEach(prospectName => {
+                            const pItem = document.createElement('div');
+                            pItem.className = 'sidebar-prospect-item';
+                            pItem.setAttribute('data-prospect-name', prospectName);
+                            pItem.setAttribute('data-folder-id', folder.id);
+                            if (activeFolderId === folder.id && activeProspectName === prospectName) {
+                                pItem.classList.add('active');
                             }
-                        } catch (err) {
-                            console.error('Error loading prospect data on click:', err);
-                            showToast('Failed to load prospect data.');
-                            sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load files</div>';
+                            pItem.innerHTML = `👤 ${prospectName}`;
+                            pItem.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                selectProspect(folder, prospectName);
+                            });
+                            contents.appendChild(pItem);
+                        });
+                    } else {
+                        const pItem = document.createElement('div');
+                        pItem.className = 'sidebar-prospect-item';
+                        pItem.setAttribute('data-prospect-name', 'Unknown Name');
+                        pItem.setAttribute('data-folder-id', folder.id);
+                        if (activeFolderId === folder.id) {
+                            pItem.classList.add('active');
+                        }
+                        pItem.innerHTML = `👤 Loading...`;
+                        pItem.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            selectProspect(folder, 'Unknown Name');
+                        });
+                        contents.appendChild(pItem);
+                    }
+                    
+                    folderItem.appendChild(contents);
+                    
+                    folderHeader.addEventListener('click', async () => {
+                        if (hasMultiple) {
+                            const isCollapsed = contents.classList.toggle('collapsed');
+                            const toggleSpan = folderHeader.querySelector('.sidebar-folder-toggle');
+                            if (toggleSpan) {
+                                toggleSpan.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+                            }
+                            const firstP = prospects[0];
+                            await selectProspect(folder, firstP);
+                        } else {
+                            const resolvedName = prospects[0] || 'Unknown Name';
+                            await selectProspect(folder, resolvedName);
                         }
                     });
                     
                     recentChatsList.appendChild(folderItem);
                     if (index === 0) {
-                        firstFolderItem = folderItem;
+                        firstFolderObj = folder;
+                        firstProspectName = prospects[0] || 'Unknown Name';
                     }
                 });
                 
-                // Auto-select the first folder on initial page load if no active chat or selected folder is set, and we are in empty state
                 const isEmptyState = workspaceEmptyState && !workspaceEmptyState.classList.contains('hidden');
-                if (!currentChatId && !activeFolderId && firstFolderItem && isEmptyState) {
-                    firstFolderItem.click();
-                } else if (activeFolderId && activeFolderName) {
-                    await loadSourcesForCompany(activeFolderId, activeFolderName);
+                if (!currentChatId && !activeFolderId && firstFolderObj && isEmptyState) {
+                    await selectProspect(firstFolderObj, firstProspectName);
+                } else if (activeFolderId) {
+                    const activeFolder = uniqueFolders.find(f => f.id === activeFolderId);
+                    if (activeFolder) {
+                        await loadSourcesForCompany(activeFolderId, activeFolder.name);
+                    }
                 }
             } else {
                 recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">No prospect folders found</div>';
@@ -472,6 +561,52 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error loading prospects tree:', err);
             recentChatsList.innerHTML = '<div style="color: #ef4444; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Error loading folders</div>';
         }
+    }
+
+    function getProspectTokens(name) {
+        const stopWords = new Set(['linkedin', 'profile', 'lead', 'capture', 'form', 'sow', 'statement', 'of', 'work', 'call', 'log', 'pdf', 'txt', 'docx', 'doc', 'ics', 'calendar', 'booking', 'confirmation', 'topics', 'discussion']);
+        const parts = name.toLowerCase().split(/[-_\s]+/);
+        return parts.filter(p => p.length > 0 && !stopWords.has(p) && isNaN(p));
+    }
+
+    function getProspectsForCompany(companyName, files = []) {
+        const prospects = new Set();
+        chatsList.forEach(c => {
+            if (c.company && c.company.toLowerCase().trim() === companyName.toLowerCase().trim() && c.name) {
+                prospects.add(c.name.trim());
+            }
+        });
+        const stopWords = new Set(['linkedin', 'profile', 'lead', 'capture', 'form', 'sow', 'statement', 'of', 'work', 'call', 'log', 'pdf', 'txt', 'docx', 'doc', 'ics', 'calendar', 'booking', 'confirmation', 'topics', 'discussion']);
+        if (files && files.length > 0) {
+            files.forEach(file => {
+                const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                const parts = nameWithoutExt.toLowerCase().split(/[-_\s]+/);
+                const nameParts = parts.filter(p => p.length > 0 && !stopWords.has(p) && isNaN(p));
+                if (nameParts.length >= 2 && nameParts.length <= 3) {
+                    const extracted = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+                    prospects.add(extracted);
+                }
+            });
+        }
+        return Array.from(prospects);
+    }
+
+    function shouldDisplayFileForProspect(fileName, activeProspect, allProspectsInCompany) {
+        const nameLower = fileName.toLowerCase();
+        if (!activeProspect || activeProspect === 'Unknown Name' || activeProspect === 'Loading...') return true;
+        const activeTokens = getProspectTokens(activeProspect);
+        const otherProspects = allProspectsInCompany.filter(p => p.toLowerCase().trim() !== activeProspect.toLowerCase().trim() && p !== 'Unknown Name' && p !== 'Loading...');
+        const otherTokens = [];
+        otherProspects.forEach(op => {
+            otherTokens.push(...getProspectTokens(op));
+        });
+        const containsAny = (tokens) => tokens.some(t => nameLower.includes(t));
+        const hasActiveTokens = containsAny(activeTokens);
+        const hasOtherTokens = containsAny(otherTokens);
+        if (hasOtherTokens && !hasActiveTokens) {
+            return false;
+        }
+        return true;
     }
 
     function extractNameFromFiles(files) {
@@ -496,18 +631,31 @@ document.addEventListener('DOMContentLoaded', () => {
             sourcesList.innerHTML = '';
             
             // Look up associated client name from chatsList, or default to currently entered metaName
-            const matchSession = chatsList.find(c => c.company.toLowerCase().trim() === companyName.toLowerCase().trim());
-            let clientName = 'Unknown Name';
+            let clientName = activeProspectName || 'Unknown Name';
+            const matchSession = chatsList.find(c => 
+                c.company && c.company.toLowerCase().trim() === companyName.toLowerCase().trim() &&
+                c.name && c.name.toLowerCase().trim() === clientName.toLowerCase().trim()
+            );
             
             const files = data.items ? data.items.filter(f => !f.isFolder) : [];
+            const allProspects = getProspectsForCompany(companyName, files);
             
             if (matchSession) {
                 clientName = matchSession.name || 'Unknown Name';
-            } else {
+            } else if (clientName === 'Unknown Name' || !clientName) {
                 // Try to extract from file names in the folder
                 const extractedName = extractNameFromFiles(files);
                 if (extractedName) {
                     clientName = extractedName;
+                    activeProspectName = extractedName;
+                    
+                    // Update sidebar element dynamically if it exists
+                    const loadingItem = document.querySelector(`.sidebar-prospect-item[data-prospect-name="Unknown Name"][data-folder-id="${folderId}"]`);
+                    if (loadingItem) {
+                        loadingItem.setAttribute('data-prospect-name', extractedName);
+                        loadingItem.innerHTML = `👤 ${extractedName}`;
+                    }
+                    
                     if (metaName && metaName.value !== extractedName) {
                         metaName.value = extractedName;
                         metaName.dispatchEvent(new Event('input', { bubbles: true }));
@@ -528,19 +676,18 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             sourcesList.appendChild(headerInfo);
             
-            if (data.items && data.items.length > 0) {
-                const files = data.items.filter(f => !f.isFolder);
-                populateGdriveDropdown(files);
-                if (files.length === 0) {
-                    const noFilesMsg = document.createElement('div');
-                    noFilesMsg.style.cssText = 'color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;';
-                    noFilesMsg.innerText = 'No files inside folder';
-                    sourcesList.appendChild(noFilesMsg);
-                    return;
-                }
-                
-                files.forEach(file => {
-                    const fileItem = document.createElement('div');
+            const filteredFiles = files.filter(file => shouldDisplayFileForProspect(file.name, clientName, allProspects));
+            populateGdriveDropdown(filteredFiles);
+            if (filteredFiles.length === 0) {
+                const noFilesMsg = document.createElement('div');
+                noFilesMsg.style.cssText = 'color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;';
+                noFilesMsg.innerText = 'No files inside folder';
+                sourcesList.appendChild(noFilesMsg);
+                return;
+            }
+            
+            filteredFiles.forEach(file => {
+                const fileItem = document.createElement('div');
                     fileItem.className = 'sidebar-file-item';
                     if (sourceGdriveFileId.value === file.id) {
                         fileItem.classList.add('active');
@@ -616,13 +763,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     sourcesList.appendChild(fileItem);
                 });
-            } else {
-                populateGdriveDropdown([]);
-                const noFilesMsg = document.createElement('div');
-                noFilesMsg.style.cssText = 'color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;';
-                noFilesMsg.innerText = 'No files inside folder';
-                sourcesList.appendChild(noFilesMsg);
-            }
         } catch (err) {
             console.error('Error loading company files:', err);
             sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load files</div>';
@@ -644,6 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
  
             // Populate metadata
             metaName.value = data.name || '';
+            activeProspectName = data.name || null;
             metaCompany.value = data.company || '';
             metaTitle.value = data.title || '';
             metaEmail.value = data.email || '';
@@ -990,6 +1131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Create New Chat ---
     const handleNewChat = () => {
         currentChatId = null;
+        activeProspectName = null;
         renderChatsList();
 
         workspaceEmptyState.classList.add('hidden');
