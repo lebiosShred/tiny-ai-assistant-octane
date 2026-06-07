@@ -4572,7 +4572,7 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                 }
                 body += chunk;
             });
-            req.on('end', () => {
+            req.on('end', async () => {
                 try {
                     const payload = JSON.parse(body);
                     if (!payload.type || !payload.company) {
@@ -4636,18 +4636,14 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                         })();
                     }
 
-                    // Async folder resolution if missing
+                    // Resolve folder ID if missing before writing
                     if (payload.company && !payload.gDriveFolderId) {
-                        const writeCo = payload.company;
-                        (async () => {
-                            try {
-                                const folderId = await gdriveService.findOrCreateClientFolder(writeCo);
-                                payload.gDriveFolderId = folderId;
-                                fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', () => {});
-                            } catch (e) {
-                                console.warn('⚠️ Async folder ID resolution failed during history save:', e.message);
-                            }
-                        })();
+                        try {
+                            const folderId = await gdriveService.findOrCreateClientFolder(payload.company);
+                            payload.gDriveFolderId = folderId;
+                        } catch (e) {
+                            console.warn('⚠️ Folder ID resolution failed during history save:', e.message);
+                        }
                     }
 
                     fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', async (writeErr) => {
