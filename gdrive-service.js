@@ -50,7 +50,18 @@ function getDriveClient() {
             refresh_token: process.env.GDRIVE_REFRESH_TOKEN
         });
 
-        driveClient = google.drive({ version: 'v3', auth: oauth2Client });
+        driveClient = google.drive({
+            version: 'v3',
+            auth: oauth2Client
+        }, {
+            retryConfig: {
+                retry: 5,
+                retryDelay: 1000,
+                httpMethodsToRetry: ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'],
+                statusCodesToRetry: [[100, 199], [429, 429], [500, 599]],
+                noResponseRetries: 3
+            }
+        });
         console.log('✅ Google Drive API client initialized successfully via OAuth2.');
         return driveClient;
     } catch (err) {
@@ -99,6 +110,8 @@ async function listFolder(folderId) {
     }
 }
 
+const fileContentCache = new Map();
+
 /**
  * Extracts text content from a Google Drive file by ID.
  * Supports Google Docs, Google Sheets, PDF files, and plain text files.
@@ -106,89 +119,149 @@ async function listFolder(folderId) {
  * @returns {Promise<string>} Extracted text content
  */
 async function getFileContent(fileId) {
+    if (fileContentCache.has(fileId)) {
+        console.log(`⚡ Content cache hit for file ID: ${fileId}`);
+        return fileContentCache.get(fileId);
+    }
+
+    try {
+        const content = await fetchContentInternal(fileId);
+        fileContentCache.set(fileId, content);
+        return content;
+    } catch (err) {
+        console.error(`❌ Error retrieving file content for ${fileId}:`, err.message);
+        throw err;
+    }
+}
+
+async function fetchContentInternal(fileId) {
     const drive = getDriveClient();
     if (!drive) {
         throw new Error('Google Drive client not initialized. Check credentials.');
     }
 
-    try {
-        // 1. Get file metadata to check mimeType
-        const metadataResponse = await drive.files.get({
+    // 1. Get file metadata to check mimeType
+    const metadataResponse = await drive.files.get({
+        fileId: fileId,
+        fields: 'name,mimeType'
+    });
+
+    const { name, mimeType } = metadataResponse.data;
+    console.log(`📄 Fetching content for file: "${name}" (${mimeType})`);
+
+    // 2. Export or download based on mimeType
+    if (mimeType === 'application/vnd.google-apps.document') {
+        // Google Doc: export as plain text
+        const exportResponse = await drive.files.export({
             fileId: fileId,
-            fields: 'name,mimeType'
-        });
-
-        const { name, mimeType } = metadataResponse.data;
-        console.log(`📄 Fetching content for file: "${name}" (${mimeType})`);
-
-        // 2. Export or download based on mimeType
-        if (mimeType === 'application/vnd.google-apps.document') {
-            // Google Doc: export as plain text
-            const exportResponse = await drive.files.export({
-                fileId: fileId,
-                mimeType: 'text/plain'
-            }, { responseType: 'text' });
-            return exportResponse.data;
-        } 
-        
-        if (mimeType === 'application/vnd.google-apps.spreadsheet') {
-            // Google Sheet: export as CSV
-            const exportResponse = await drive.files.export({
-                fileId: fileId,
-                mimeType: 'text/csv'
-            }, { responseType: 'text' });
-            return exportResponse.data;
-        }
-
-        if (mimeType === 'application/pdf') {
-            // PDF file: download as arrayBuffer, then parse text
-            const downloadResponse = await drive.files.get({
-                fileId: fileId,
-                alt: 'media'
-            }, { responseType: 'arraybuffer' });
-
-            const buffer = Buffer.from(downloadResponse.data);
-            try {
-                const markdown = await parsePdfBuffer(buffer);
-                return markdown;
-            } catch (pdfErr) {
-                console.warn(`⚠️ PDF parse failed for ${name} (${pdfErr.message}). Falling back to text decoding...`);
-                return buffer.toString('utf8');
-            }
-        }
-
-        if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || (name && name.endsWith('.docx'))) {
-            // DOCX file: download as arrayBuffer, then parse text using mammoth + turndown
-            const downloadResponse = await drive.files.get({
-                fileId: fileId,
-                alt: 'media'
-            }, { responseType: 'arraybuffer' });
-
-            const buffer = Buffer.from(downloadResponse.data);
-            try {
-                const markdown = await parseDocxBuffer(buffer);
-                return markdown;
-            } catch (docxErr) {
-                console.warn(`⚠️ DOCX parse failed for ${name} (${docxErr.message}). Falling back to text decoding...`);
-                return buffer.toString('utf8');
-            }
-        }
-
-        // Generic text files (txt, csv, logs, etc.)
-        if (mimeType.startsWith('text/') || mimeType === 'application/json' || name.endsWith('.txt') || name.endsWith('.md')) {
-            const downloadResponse = await drive.files.get({
-                fileId: fileId,
-                alt: 'media'
-            }, { responseType: 'text' });
-            return downloadResponse.data;
-        }
-
-        // Return basic metadata warning for unsupported binary formats
-        return `[Metadata Only] File: ${name}\nFormat: ${mimeType}\nContent extraction is not supported for this file type.`;
-    } catch (err) {
-        console.error(`❌ Error retrieving file content for ${fileId}:`, err.message);
-        throw err;
+            mimeType: 'text/plain'
+        }, { responseType: 'text' });
+        return exportResponse.data;
+    } 
+    
+    if (mimeType === 'application/vnd.google-apps.spreadsheet') {
+        // Google Sheet: export as CSV
+        const exportResponse = await drive.files.export({
+            fileId: fileId,
+            mimeType: 'text/csv'
+        }, { responseType: 'text' });
+        return exportResponse.data;
     }
+
+    if (mimeType === 'application/pdf') {
+        // PDF file: download as stream, then parse text
+        const downloadResponse = await drive.files.get({
+            fileId: fileId,
+            alt: 'media'
+        }, { responseType: 'stream' });
+
+        const chunks = [];
+        return new Promise((resolve, reject) => {
+            const stream = downloadResponse.data;
+            stream.on('data', chunk => {
+                chunks.push(chunk);
+            });
+            stream.on('end', async () => {
+                const buffer = Buffer.concat(chunks);
+                try {
+                    const markdown = await parsePdfBuffer(buffer);
+                    resolve(markdown);
+                } catch (pdfErr) {
+                    console.warn(`⚠️ PDF parse failed for ${name} (${pdfErr.message}). Falling back to text decoding...`);
+                    resolve(buffer.toString('utf8'));
+                }
+            });
+            stream.on('error', err => {
+                reject(err);
+            });
+        });
+    }
+
+    if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || (name && name.endsWith('.docx'))) {
+        // DOCX file: download as stream, then parse text using mammoth + turndown
+        const downloadResponse = await drive.files.get({
+            fileId: fileId,
+            alt: 'media'
+        }, { responseType: 'stream' });
+
+        const chunks = [];
+        return new Promise((resolve, reject) => {
+            const stream = downloadResponse.data;
+            stream.on('data', chunk => {
+                chunks.push(chunk);
+            });
+            stream.on('end', async () => {
+                const buffer = Buffer.concat(chunks);
+                try {
+                    const markdown = await parseDocxBuffer(buffer);
+                    resolve(markdown);
+                } catch (docxErr) {
+                    console.warn(`⚠️ DOCX parse failed for ${name} (${docxErr.message}). Falling back to text decoding...`);
+                    resolve(buffer.toString('utf8'));
+                }
+            });
+            stream.on('error', err => {
+                reject(err);
+            });
+        });
+    }
+
+    // Generic text files (txt, csv, logs, etc.)
+    if (mimeType.startsWith('text/') || mimeType === 'application/json' || name.endsWith('.txt') || name.endsWith('.md')) {
+        const downloadResponse = await drive.files.get({
+            fileId: fileId,
+            alt: 'media'
+        }, { responseType: 'stream' });
+
+        return new Promise((resolve, reject) => {
+            let data = '';
+            const stream = downloadResponse.data;
+            const maxBytes = 2 * 1024 * 1024; // 2MB budget limit
+            let bytesRead = 0;
+
+            stream.on('data', chunk => {
+                bytesRead += chunk.length;
+                if (bytesRead > maxBytes) {
+                    console.warn(`⚠️ File content stream reached budget limit of ${maxBytes} bytes for file ${fileId}`);
+                    stream.destroy();
+                    resolve(data);
+                    return;
+                }
+                data += chunk.toString('utf8');
+            });
+
+            stream.on('end', () => {
+                resolve(data);
+            });
+
+            stream.on('error', err => {
+                reject(err);
+            });
+        });
+    }
+
+    // Return basic metadata warning for unsupported binary formats
+    return `[Metadata Only] File: ${name}\nFormat: ${mimeType}\nContent extraction is not supported for this file type.`;
 }
 
 /**

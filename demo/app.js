@@ -1200,10 +1200,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Populate source textareas
+            // Populate source textareas from saved session data
             sourceLinkedinText.value = data.linkedinInfo || data.linkedin || '';
             sourceIntakeText.value = data.intakeAnswers || data.intake || '';
             sourceTranscriptText.value = data.transcript || '';
+
+            // --- AUTO-INGEST: If textareas are empty, try loading content from GDrive files in batch ---
+            // This bridges the gap where files exist in GDrive but were never saved in the session JSON.
+            if (activeFolderId && (!sourceLinkedinText.value.trim() || !sourceIntakeText.value.trim() || !sourceTranscriptText.value.trim())) {
+                try {
+                    const batchRes = await fetch(`/api/gdrive/batch-read?folderId=${encodeURIComponent(activeFolderId)}`);
+                    if (batchRes.ok) {
+                        const batchData = await batchRes.json();
+                        let updated = false;
+
+                        if (batchData.linkedin && !sourceLinkedinText.value.trim()) {
+                            sourceLinkedinText.value = batchData.linkedin;
+                            console.log(`📄 Auto-ingested LinkedIn Profile content`);
+                            updated = true;
+                        }
+                        if (batchData.intake && !sourceIntakeText.value.trim()) {
+                            sourceIntakeText.value = batchData.intake;
+                            console.log(`📄 Auto-ingested Intake Answers content`);
+                            updated = true;
+                        }
+                        if (batchData.transcript && !sourceTranscriptText.value.trim()) {
+                            sourceTranscriptText.value = batchData.transcript;
+                            console.log(`📄 Auto-ingested Call Transcript content`);
+                            updated = true;
+                        }
+
+                        if (updated) {
+                            updateValidationBadges();
+                            // Auto-save the session with the newly ingested data so it persists
+                            triggerAutoSave();
+                        }
+                    }
+                } catch (autoIngestErr) {
+                    console.warn('⚠️ Auto-ingestion from GDrive batch-read failed:', autoIngestErr.message);
+                }
+            }
 
             // Setup Header Info
             activeChatClientTitle.innerText = `${data.company} (${data.name})`;
