@@ -4186,25 +4186,31 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             if (gdriveAvailable) {
                 const drive = gdriveService.getDriveClient();
                 if (!folderId && !company) {
-                    // Resolve the Prospects folder under root, and list folders inside it
-                    const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
-                    const prospectsSearch = await drive.files.list({
-                        q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
-                        fields: 'files(id, name)',
-                        pageSize: 1
-                    });
-                    let prospectsFiles = prospectsSearch.data.files || [];
-                    if (prospectsFiles.length === 0) {
-                        console.log(`⚠️ Prospects folder not found under parents '${rootFolderId}'. Searching globally...`);
-                        const fallbackSearch = await drive.files.list({
-                            q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+                    // Resolve the Prospects folder
+                    const envProspectsId = process.env.PROSPECTS_FOLDER_ID;
+                    if (envProspectsId) {
+                        folderId = envProspectsId;
+                    } else {
+                        // Resolve the Prospects folder under root, and list folders inside it
+                        const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+                        const prospectsSearch = await drive.files.list({
+                            q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                             fields: 'files(id, name)',
                             pageSize: 1
                         });
-                        prospectsFiles = fallbackSearch.data.files || [];
-                    }
-                    if (prospectsFiles.length > 0) {
-                        folderId = prospectsFiles[0].id;
+                        let prospectsFiles = prospectsSearch.data.files || [];
+                        if (prospectsFiles.length === 0) {
+                            console.log(`⚠️ Prospects folder not found under parents '${rootFolderId}'. Searching globally...`);
+                            const fallbackSearch = await drive.files.list({
+                                q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+                                fields: 'files(id, name)',
+                                pageSize: 1
+                            });
+                            prospectsFiles = fallbackSearch.data.files || [];
+                        }
+                        if (prospectsFiles.length > 0) {
+                            folderId = prospectsFiles[0].id;
+                        }
                     }
                 } else if (company && !folderId) {
                     folderId = await gdriveService.findOrCreateClientFolder(company);

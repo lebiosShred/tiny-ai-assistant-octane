@@ -491,7 +491,7 @@ async function findOrCreateClientFolder(companyName) {
 
         try {
             // 1. Resolve or create the central "Prospects" directory
-            let prospectsFolderId = cachedProspectsFolderId;
+            let prospectsFolderId = cachedProspectsFolderId || process.env.PROSPECTS_FOLDER_ID;
             if (!prospectsFolderId) {
                 const prospectsSearch = await drive.files.list({
                     q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
