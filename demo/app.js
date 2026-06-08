@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Loading & Loading Chats list ---
     async function loadChatsList(preFetchedData = null) {
         try {
-            chatsList = preFetchedData || await (await fetch('/api/history')).json();
+            chatsList = preFetchedData || await (await fetch('/api/history', { headers: { 'Cache-Control': 'no-cache' } })).json();
             renderChatsList();
         } catch (err) {
             console.error('Error loading chats:', err);
@@ -2927,7 +2927,7 @@ ${data.parsedText}`;
         try {
             // Fetch chats list and prospects tree in parallel to eliminate sequential roundtrip latency
             const [chatsRes, prospectsRes] = await Promise.all([
-                fetch('/api/history'),
+                fetch('/api/history', { headers: { 'Cache-Control': 'no-cache' } }),
                 fetch('/api/gdrive/list')
             ]);
             

@@ -578,6 +578,24 @@ async function findOrCreateClientFolder(companyName) {
                     fields: 'id'
                 });
                 clientFolderId = clientCreate.data.id;
+
+                // Axiom Requirement: Ensure folder is visible to the administrative user
+                try {
+                    const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_FROM || 'amie.lebios@octanesolutions.com.au';
+                    console.log(`🔐 Sharing folder "${cleanCompany}" with ${adminEmail}...`);
+                    await drive.permissions.create({
+                        fileId: clientFolderId,
+                        requestBody: {
+                            role: 'writer',
+                            type: 'user',
+                            emailAddress: adminEmail
+                        },
+                        sendNotificationEmail: false,
+                        supportsAllDrives: true
+                    });
+                } catch (permErr) {
+                    console.warn(`⚠️ Failed to set permissions for "${cleanCompany}":`, permErr.message);
+                }
             }
 
             // Cache the result

@@ -5,6 +5,10 @@ const path = require('path');
 const crypto = require('crypto');
 const gdriveService = require('./gdrive-service');
 const emailService = require('./email-service');
+const { validateHistory } = require('./api/validation');
+const redisModule = require('./api/redis');
+const queueModule = require('./api/queue');
+const searchService = require('./api/searchService');
 const Exa = require('exa-js').default;
 const Busboy = require('busboy');
 
@@ -203,76 +207,26 @@ function isTestEnrichment(name, company) {
     return n.includes('qa_') || n.includes('test') || c.includes('qa_') || c.includes('test') || c.includes('meridian');
 }
 
-function searchWeb(query) {
-    if (isTestEnrichment('', query)) {
-        console.log(`🌐 Mocking web search for test query: "${query}"`);
-        return Promise.resolve(`Source: Mock Search Result (https://mock.com)\nContent: This is mock search data for query: "${query}". Competitor details or technographics are simulated for testing.`);
-    }
-    return new Promise((resolve) => {
-        const apiKey = (process.env.TAVILY_API_KEY || '').trim();
-        if (!apiKey) {
-            console.warn("⚠️ TAVILY_API_KEY is not configured.");
-            resolve("");
-            return;
+async function searchWeb(query) {
+    const cacheKey = `search:web:${crypto.createHash('md5').update(query).digest('hex')}`;
+    try {
+        const cached = await redisModule.getCache(cacheKey);
+        if (cached !== null && cached !== undefined) {
+            console.log(`⚡ Cache hit for query: "${query}"`);
+            return cached;
         }
+    } catch (e) {
+        console.warn('⚠️ Cache fetch failed in searchWeb:', e.message);
+    }
 
-        const payload = JSON.stringify({
-            api_key: apiKey,
-            query: query,
-            search_depth: "basic",
-            include_answer: false,
-            max_results: 3
-        });
-
-        const options = {
-            hostname: 'api.tavily.com',
-            port: 443,
-            path: '/search',
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'content-length': Buffer.byteLength(payload)
-            }
-        };
-
-        const req = https.request(options, (res) => {
-            let resBody = '';
-            res.on('data', chunk => resBody += chunk);
-            res.on('end', () => {
-                if (res.statusCode !== 200) {
-                    console.error(`⚠️ Tavily API returned status ${res.statusCode}: ${resBody}`);
-                    resolve("");
-                    return;
-                }
-                try {
-                    const data = JSON.parse(resBody);
-                    if (!data.results || !Array.isArray(data.results)) {
-                        resolve("");
-                        return;
-                    }
-                    const formatted = data.results.map(r => `Source: ${r.title} (${r.url})\nContent: ${r.content}\n`).join("\n");
-                    resolve(formatted);
-                } catch (e) {
-                    console.error("⚠️ Failed to parse Tavily API response:", e);
-                    resolve("");
-                }
-            });
-        });
-
-        req.on('error', (err) => {
-            console.error("⚠️ Tavily request error:", err);
-            resolve("");
-        });
-
-        req.setTimeout(8000, () => {
-            console.warn("⚠️ Tavily searchWeb request timed out.");
-            req.destroy();
-            resolve("");
-        });
-
-        req.write(payload);
-        req.end();
-    });
+    const result = await searchService.searchWeb(query);
+    
+    try {
+        await redisModule.setCache(cacheKey, result, 86400); // 24 hours TTL
+    } catch (e) {
+        console.warn('⚠️ Cache store failed in searchWeb:', e.message);
+    }
+    return result;
 }
 
 function executeGeminiFailover(payload) {
@@ -554,6 +508,100 @@ async function generateAICompletion(systemPrompt, userPrompt) {
 </safety_rules>
 `;
 
+    const errors = [];
+
+    // Check for AI Gateway configuration (LiteLLM or Portkey)
+    const gatewayUrl = (process.env.AI_GATEWAY_URL || '').trim();
+    if (gatewayUrl) {
+        console.log(`🌐 Routing completion request through AI Gateway: ${gatewayUrl}`);
+        try {
+            const result = await new Promise((resolve, reject) => {
+                const urlObj = new URL(gatewayUrl.endsWith('/chat/completions') ? gatewayUrl : `${gatewayUrl}/chat/completions`);
+                const gatewayPayload = JSON.stringify({
+                    model: process.env.AI_GATEWAY_MODEL || process.env.MISTRAL_API_MODEL || 'mistral-large-latest',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: systemPrompt + '\n' + knowledgeBase + safetyRules
+                        },
+                        {
+                            role: 'user',
+                            content: userPrompt
+                        }
+                    ],
+                    temperature: 0.2
+                });
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(gatewayPayload)
+                };
+
+                const gatewayKey = (process.env.AI_GATEWAY_API_KEY || '').trim();
+                if (gatewayKey) {
+                    headers['Authorization'] = `Bearer ${gatewayKey}`;
+                }
+
+                // Portkey custom headers support
+                const portkeyKey = (process.env.PORTKEY_API_KEY || '').trim();
+                if (portkeyKey) {
+                    headers['x-portkey-api-key'] = portkeyKey;
+                }
+                const portkeyProvider = (process.env.PORTKEY_PROVIDER || '').trim();
+                if (portkeyProvider) {
+                    headers['x-portkey-provider'] = portkeyProvider;
+                }
+
+                const options = {
+                    hostname: urlObj.hostname,
+                    port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+                    path: urlObj.pathname + urlObj.search,
+                    method: 'POST',
+                    headers
+                };
+
+                const client = urlObj.protocol === 'https:' ? https : http;
+                const req = client.request(options, (res) => {
+                    let data = '';
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => {
+                        if (res.statusCode >= 200 && res.statusCode < 300) {
+                            try {
+                                const parsed = JSON.parse(data);
+                                const content = parsed.choices && parsed.choices[0] && parsed.choices[0].message
+                                    ? parsed.choices[0].message.content
+                                    : (parsed.content || '');
+                                resolve(content);
+                            } catch (e) {
+                                reject(new Error(`Failed to parse gateway response JSON: ${e.message}`));
+                            }
+                        } else {
+                            reject(new Error(`Gateway returned status ${res.statusCode}: ${data}`));
+                        }
+                    });
+                });
+
+                req.on('error', reject);
+                req.setTimeout(15000, () => {
+                    console.warn(`⚠️ AI Gateway request timed out.`);
+                    req.destroy();
+                    reject(new Error("AI Gateway request timed out (15s)."));
+                });
+
+                req.write(gatewayPayload);
+                req.end();
+            });
+
+            if (result) {
+                console.log('✅ AI Gateway completion succeeded.');
+                return result;
+            }
+        } catch (gatewayErr) {
+            console.warn(`⚠️ AI Gateway call failed: ${gatewayErr.message}. Falling back to Mistral API loop.`);
+            errors.push(`AI Gateway: ${gatewayErr.message}`);
+        }
+    }
+
     const mistralKeys = (process.env.MISTRAL_API_KEY || '').split(',').map(k => k.trim()).filter(k => k.length > 0);
     const payload = JSON.stringify({
         model: process.env.MISTRAL_API_MODEL || 'mistral-large-latest',
@@ -569,8 +617,6 @@ async function generateAICompletion(systemPrompt, userPrompt) {
         ],
         temperature: 0.2
     });
-
-    const errors = [];
 
     // Attempt Mistral keys sequentially
     for (let i = 0; i < mistralKeys.length; i++) {
@@ -691,267 +737,92 @@ Skills: [List of skills]`;
     }
 }
 
-
 async function fetchTavilyRAGContext(name, company) {
-    if (isTestEnrichment(name, company)) {
-        console.log(`🌐 Mocking Tavily RAG search for: "${name}" at "${company}"`);
-        return `Title: Mock LinkedIn Profile\nURL: https://linkedin.com/mock\nContent: Mock background history for ${name} at ${company}. Experienced financial planning and scheduling lead. Circular circular circular updates. Circular economy Circular circular circular updates. Circular economy circular circular updates circular. Circular circular circular. circular circular. circular. circular circular circular circular circular.`;
+    const cacheKey = `search:tavily_rag:${crypto.createHash('md5').update(`${name || ''}:${company || ''}`).digest('hex')}`;
+    try {
+        const cached = await redisModule.getCache(cacheKey);
+        if (cached !== null && cached !== undefined) {
+            console.log(`⚡ Cache hit for fetchTavilyRAGContext: "${name}" at "${company}"`);
+            return cached;
+        }
+    } catch (e) {
+        console.warn('⚠️ Cache fetch failed in fetchTavilyRAGContext:', e.message);
     }
-    const apiKey = (process.env.TAVILY_API_KEY || '').trim();
-    if (!apiKey) {
-        console.warn("⚠️ TAVILY_API_KEY is not configured on the server. Skipping RAG search.");
-        return "No real-time search context available (Tavily API key missing).";
+
+    const result = await searchService.fetchTavilyRAGContext(name, company);
+
+    try {
+        await redisModule.setCache(cacheKey, result, 86400);
+    } catch (e) {
+        console.warn('⚠️ Cache store failed in fetchTavilyRAGContext:', e.message);
     }
-
-    const query = `"${name}" "${company}" LinkedIn profile background history`;
-    const payload = JSON.stringify({
-        api_key: apiKey,
-        query: query,
-        search_depth: "advanced",
-        max_results: 5
-    });
-
-    return new Promise((resolve) => {
-        const options = {
-            hostname: 'api.tavily.com',
-            port: 443,
-            path: '/search',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(payload)
-            }
-        };
-
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    try {
-                        const parsed = JSON.parse(data);
-                        if (parsed.results && parsed.results.length > 0) {
-                            const formatted = parsed.results.map(item => 
-                                `Title: ${item.title}\nURL: ${item.url}\nContent: ${item.content}`
-                            ).join('\n\n');
-                            resolve(formatted);
-                        } else {
-                            resolve("No search results returned for this lead.");
-                        }
-                    } catch (e) {
-                        console.error("⚠️ Failed to parse Tavily API response:", e.message);
-                        resolve("Failed to parse search results.");
-                    }
-                } else {
-                    console.error(`⚠️ Tavily API returned status ${res.statusCode}: ${data}`);
-                    resolve("Tavily RAG search service unavailable.");
-                }
-            });
-        });
-
-        req.on('error', (err) => {
-            console.error("❌ Tavily request failed:", err.message);
-            resolve("Failed to fetch search context due to network error.");
-        });
-
-        req.setTimeout(15000, () => {
-            console.warn("⚠️ Tavily request timed out.");
-            req.destroy();
-            resolve("Tavily search request timed out.");
-        });
-
-        req.write(payload);
-        req.end();
-    });
+    return result;
 }
 
 async function fetchTavilyCompanyNews(company, website) {
-    if (isTestEnrichment('', company)) {
-        console.log(`🌐 Mocking Tavily Company News for: "${company}"`);
-        return `Title: Mock Company News\nURL: https://mocknews.com\nContent: Mock news updates for ${company}. Standard updates and product launches. circular circular. circular. circular circular circular circular circular.`;
-    }
-    const apiKey = (process.env.TAVILY_API_KEY || '').trim();
-    if (!apiKey) {
-        console.warn("⚠️ TAVILY_API_KEY is not configured on the server. Skipping company updates search.");
-        return "No real-time company search context available (Tavily API key missing).";
-    }
-
-    let query = `"${company}" company recent news updates press releases 2025 2026`;
-    if (website && website !== 'Unknown URL' && website.trim() !== '') {
-        const domain = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-        query = `site:${domain}/press OR site:${domain}/news OR "${company}" recent news updates OR "product launch" OR "acquisitions" 2025 2026`;
+    const cacheKey = `search:tavily_news:${crypto.createHash('md5').update(`${company || ''}:${website || ''}`).digest('hex')}`;
+    try {
+        const cached = await redisModule.getCache(cacheKey);
+        if (cached !== null && cached !== undefined) {
+            console.log(`⚡ Cache hit for fetchTavilyCompanyNews: "${company}"`);
+            return cached;
+        }
+    } catch (e) {
+        console.warn('⚠️ Cache fetch failed in fetchTavilyCompanyNews:', e.message);
     }
 
-    const payload = JSON.stringify({
-        api_key: apiKey,
-        query: query,
-        search_depth: "advanced",
-        topic: "news",
-        max_results: 6
-    });
+    const result = await searchService.fetchTavilyCompanyNews(company, website);
 
-    return new Promise((resolve) => {
-        const options = {
-            hostname: 'api.tavily.com',
-            port: 443,
-            path: '/search',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(payload)
-            }
-        };
-
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    try {
-                        const parsed = JSON.parse(data);
-                        if (parsed.results && parsed.results.length > 0) {
-                            const formatted = parsed.results.map(item => 
-                                `Title: ${item.title}\nURL: ${item.url}\nContent: ${item.content}`
-                            ).join('\n\n');
-                            resolve(formatted);
-                        } else {
-                            resolve(`No recent news or press updates returned for ${company}.`);
-                        }
-                    } catch (e) {
-                        console.error("⚠️ Failed to parse Tavily company search response:", e.message);
-                        resolve("Failed to parse company search results.");
-                    }
-                } else {
-                    console.error(`⚠️ Tavily company search returned status ${res.statusCode}: ${data}`);
-                    resolve("Tavily RAG company search service unavailable.");
-                }
-            });
-        });
-
-        req.on('error', (err) => {
-            console.error("❌ Tavily company search request failed:", err.message);
-            resolve("Failed to fetch company search context due to network error.");
-        });
-
-        req.setTimeout(15000, () => {
-            console.warn("⚠️ Tavily company search request timed out.");
-            req.destroy();
-            resolve("Tavily company search request timed out.");
-        });
-
-        req.write(payload);
-        req.end();
-    });
+    try {
+        await redisModule.setCache(cacheKey, result, 86400);
+    } catch (e) {
+        console.warn('⚠️ Cache store failed in fetchTavilyCompanyNews:', e.message);
+    }
+    return result;
 }
 
 async function fetchGithubTechnographics(companyName) {
-    if (!companyName || companyName.toLowerCase().includes('unknown') || companyName.trim() === '') {
-        return "No company name available for GitHub technographic mapping.";
+    const cacheKey = `search:github:${crypto.createHash('md5').update(companyName || '').digest('hex')}`;
+    try {
+        const cached = await redisModule.getCache(cacheKey);
+        if (cached !== null && cached !== undefined) {
+            console.log(`⚡ Cache hit for fetchGithubTechnographics: "${companyName}"`);
+            return cached;
+        }
+    } catch (e) {
+        console.warn('⚠️ Cache fetch failed in fetchGithubTechnographics:', e.message);
     }
 
-    const formattedOrg = companyName.toLowerCase()
-        .replace(/[^a-z0-9]/g, '');
-        
-    if (!formattedOrg) {
-        return "Invalid company name for GitHub organization mapping.";
+    const result = await searchService.fetchGithubTechnographics(companyName);
+
+    try {
+        await redisModule.setCache(cacheKey, result, 86400);
+    } catch (e) {
+        console.warn('⚠️ Cache store failed in fetchGithubTechnographics:', e.message);
     }
-
-    const githubPat = (process.env.GITHUB_PAT || '').trim();
-
-    return new Promise((resolve) => {
-        const options = {
-            hostname: 'api.github.com',
-            port: 443,
-            path: `/orgs/${formattedOrg}/repos?sort=updated&per_page=5`,
-            method: 'GET',
-            headers: {
-                'User-Agent': 'Octane-Sales-Assistant-Backend',
-                ...(githubPat && { 'Authorization': `token ${githubPat}` })
-            }
-        };
-
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                if (res.statusCode === 200) {
-                    try {
-                        const repos = JSON.parse(data);
-                        if (Array.isArray(repos) && repos.length > 0) {
-                            const repoDetails = repos.map(r => 
-                                `- Repo: ${r.name} | Primary Language: ${r.language || 'Unspecified'} | Description: ${r.description || 'None provided'}`
-                            ).join('\n');
-                            resolve(`Public GitHub Organization Found [${formattedOrg}]:\n${repoDetails}`);
-                        } else {
-                            resolve("GitHub organization exists but has no public repositories.");
-                        }
-                    } catch (e) {
-                        console.error("⚠️ Failed to parse GitHub API response:", e.message);
-                        resolve("Failed to parse GitHub technographics.");
-                    }
-                } else if (res.statusCode === 404) {
-                    resolve("No public GitHub organization found for this company.");
-                } else {
-                    console.error(`⚠️ GitHub API returned status ${res.statusCode}: ${data}`);
-                    resolve("GitHub API rate-limited or temporarily unavailable.");
-                }
-            });
-        });
-
-        req.on('error', (err) => {
-            console.error("❌ GitHub request failed:", err.message);
-            resolve("Failed to fetch GitHub technographics due to network error.");
-        });
-
-        req.setTimeout(10000, () => {
-            console.warn("⚠️ GitHub request timed out.");
-            req.destroy();
-            resolve("GitHub request timed out.");
-        });
-
-        req.end();
-    });
+    return result;
 }
 
 async function fetchExaRAGContext(name, company) {
-    if (isTestEnrichment(name, company)) {
-        console.log(`🌐 Mocking Exa RAG search for: "${name}" at "${company}"`);
-        return `Title: Mock Exa Search\nURL: https://exa.ai/mock\nContent: Mock Exa search content for ${name} at ${company}.`;
-    }
-    const apiKey = (process.env.EXA_API_KEY || '').trim();
-    if (!apiKey) {
-        console.warn("⚠️ EXA_API_KEY is not configured on the server. Skipping Exa RAG search.");
-        return "No real-time Exa search context available (Exa API key missing).";
-    }
-
-    const query = `"${name}" "${company}" LinkedIn profile background history`;
+    const cacheKey = `search:exa_rag:${crypto.createHash('md5').update(`${name || ''}:${company || ''}`).digest('hex')}`;
     try {
-        const exa = new Exa(apiKey);
-        console.log(`🌐 Performing Exa semantic search for: ${query}`);
-        const response = await Promise.race([
-            exa.searchAndContents(query, {
-                type: "neural",
-                numResults: 5,
-                highlights: true
-            }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000))
-        ]);
-
-        if (response.results && response.results.length > 0) {
-            const formatted = response.results.map(item => {
-                const text = (item.highlights && item.highlights.length > 0)
-                    ? item.highlights.join(' ... ')
-                    : (item.text ? item.text.substring(0, 300) : 'No snippet');
-                return `Title: ${item.title}\nURL: ${item.url}\nContent: ${text}`;
-            }).join('\n\n');
-            return formatted;
-        } else {
-            return "No search results returned for this lead from Exa.";
+        const cached = await redisModule.getCache(cacheKey);
+        if (cached !== null && cached !== undefined) {
+            console.log(`⚡ Cache hit for fetchExaRAGContext: "${name}" at "${company}"`);
+            return cached;
         }
-    } catch (error) {
-        console.error("❌ Exa RAG search failed:", error.message);
-        return `Failed to fetch Exa search context: ${error.message}`;
+    } catch (e) {
+        console.warn('⚠️ Cache fetch failed in fetchExaRAGContext:', e.message);
     }
+
+    const result = await searchService.fetchExaRAGContext(name, company);
+
+    try {
+        await redisModule.setCache(cacheKey, result, 86400);
+    } catch (e) {
+        console.warn('⚠️ Cache store failed in fetchExaRAGContext:', e.message);
+    }
+    return result;
 }
 
 async function handleCallPrep(contactId) {
@@ -1626,7 +1497,14 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 const dirUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${originLon},${originLat};${destLon},${destLat}?access_token=${apiKey}`;
                 
                 const dirRes = await fetch(dirUrl);
-                if (!dirRes.ok) throw new Error(`Routing failed: ${dirRes.status}`);
+                if (!dirRes.ok) {
+                    if (dirRes.status === 422) {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ distanceString: `Destination is unreachable by driving from origin.` }));
+                        return;
+                    }
+                    throw new Error(`Routing failed: ${dirRes.status}`);
+                }
                 const dirData = await dirRes.json();
                 
                 if (!dirData.routes || dirData.routes.length === 0) {
@@ -4864,7 +4742,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
         return;
     }
 
-    // API Web Search Route (for watsonx agent custom tools)
+    // API Web Search Route (for watsonx agent custom tools, with async/sync queuing support)
     if (pathname === '/api/search' && req.method === 'GET') {
         const query = parsedUrl.searchParams.get('q');
         if (!query) {
@@ -4874,13 +4752,69 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
         }
         try {
             console.log(`🌐 Performing web search from endpoint for: ${query}`);
-            const results = await searchWeb(query);
-            logAuditEvent(req, 'WEB_SEARCH', { query: query });
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ results: results || "No results found." }));
+            const jobResult = await queueModule.addSearchJob('web-search', { query });
+            
+            if (jobResult.status === 'completed') {
+                logAuditEvent(req, 'WEB_SEARCH', { query: query });
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ results: jobResult.result || "No results found." }));
+                return;
+            }
+            
+            if (parsedUrl.searchParams.get('async') === 'true') {
+                res.writeHead(202, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'queued', jobId: jobResult.jobId }));
+                return;
+            }
+
+            // Synchronous polling wrapper for legacy support
+            const startTime = Date.now();
+            const timeoutMs = 25000;
+            let completed = false;
+            let statusResult = null;
+            
+            while (Date.now() - startTime < timeoutMs) {
+                statusResult = await queueModule.getJobStatus(jobResult.jobId);
+                if (statusResult.status === 'completed') {
+                    completed = true;
+                    break;
+                }
+                if (statusResult.status === 'failed') {
+                    throw new Error(statusResult.error || 'Job execution failed');
+                }
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            if (completed && statusResult) {
+                logAuditEvent(req, 'WEB_SEARCH', { query: query });
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ results: statusResult.result || "No results found." }));
+            } else {
+                res.writeHead(504, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Search job timed out on the queue.' }));
+            }
         } catch (err) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: `Web search failed: ${err.message}` }));
+        }
+        return;
+    }
+
+    // API Web Search Queue Status Route
+    if (pathname === '/api/search/status' && req.method === 'GET') {
+        const jobId = parsedUrl.searchParams.get('jobId');
+        if (!jobId) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing jobId query parameter.' }));
+            return;
+        }
+        try {
+            const statusResult = await queueModule.getJobStatus(jobId);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(statusResult));
+        } catch (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Failed to get search status: ${err.message}` }));
         }
         return;
     }
@@ -5431,11 +5365,16 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
     // API History Routes
     if (pathname === '/api/history') {
         if (req.method === 'GET') {
+            const bypassCache = parsedUrl.searchParams.has('t') || req.headers['cache-control'] === 'no-cache';
             // Return cached list if available to avoid expensive GCS roundtrips
-            if (historyListCache) {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
+            if (historyListCache && !bypassCache) {
+                res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
                 res.end(JSON.stringify(historyListCache));
                 return;
+            }
+            if (bypassCache) {
+                console.log('🔄 Bypassing historyListCache due to client request.');
+                historyListCache = null;
             }
 
             if (!fs.existsSync(historyDir)) {
@@ -5528,9 +5467,13 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
             req.on('end', async () => {
                 try {
                     const payload = JSON.parse(body);
-                    if (!payload.type || !payload.company) {
+                    const validationResult = validateHistory(payload);
+                    if (!validationResult.success) {
                         res.writeHead(400, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ error: 'Missing type or company in payload.' }));
+                        res.end(JSON.stringify({ 
+                            error: 'Schema validation failed.', 
+                            details: validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`) 
+                        }));
                         return;
                     }
                     let id = payload.id;
@@ -6047,3 +5990,18 @@ ${payload.intakeAnswers || ''}`;
 server.listen(PORT, () => {
     console.log(`🚀 Tiny AI Proxy Server running at http://localhost:${PORT}`);
 });
+
+// Graceful shutdown lifecycle management (for background process control)
+const cleanExit = async () => {
+    console.log('🔌 Shutting down server and cleaning up background resources...');
+    try {
+        await queueModule.closeQueue();
+        await redisModule.closeRedis();
+    } catch (e) {
+        console.error('⚠️ Shutdown cleanup error:', e.message);
+    }
+    process.exit(0);
+};
+
+process.on('SIGINT', cleanExit);
+process.on('SIGTERM', cleanExit);
