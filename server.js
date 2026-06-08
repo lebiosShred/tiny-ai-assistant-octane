@@ -89,9 +89,13 @@ function loadKnowledgeBase() {
         const knowledgeDir = path.join(PUBLIC_DIR, 'knowledge');
         const targetDirs = [knowledgeDir];
         const octaneServicesDir = path.join(knowledgeDir, 'Octane Services');
+        const octaneCompetitorsDir = path.join(knowledgeDir, 'Octane Competitors');
         
         if (fs.existsSync(octaneServicesDir)) {
             targetDirs.push(octaneServicesDir);
+        }
+        if (fs.existsSync(octaneCompetitorsDir)) {
+            targetDirs.push(octaneCompetitorsDir);
         }
         
         const allFiles = [];
@@ -106,8 +110,14 @@ function loadKnowledgeBase() {
                         try {
                             const stat = fs.statSync(fullPath);
                             if (stat.isFile() && (f.endsWith('.md') || f.endsWith('.txt'))) {
+                                let namePrefix = '';
+                                if (dirPath === octaneServicesDir) {
+                                    namePrefix = 'Octane Services/';
+                                } else if (dirPath === octaneCompetitorsDir) {
+                                    namePrefix = 'Octane Competitors/';
+                                }
                                 allFiles.push({
-                                    name: dirPath === knowledgeDir ? f : `Octane Services/${f}`,
+                                    name: namePrefix + f,
                                     path: fullPath
                                 });
                             }
@@ -5731,9 +5741,9 @@ ${payload.intakeAnswers || ''}`;
                     return;
                 }
                 
-                // Only return original files. Exclude auxiliary markdown files (.pdf.md, .docx.md) and Octane Services folder
+                // Only return original files. Exclude auxiliary markdown files (.pdf.md, .docx.md), Octane Services, and Octane Competitors folders
                 const originalFiles = files.filter(f => {
-                    return !f.endsWith('.pdf.md') && !f.endsWith('.docx.md') && f !== 'Octane Services';
+                    return !f.endsWith('.pdf.md') && !f.endsWith('.docx.md') && f !== 'Octane Services' && f !== 'Octane Competitors';
                 });
                 
                 const fileList = [];
@@ -5874,7 +5884,7 @@ ${payload.intakeAnswers || ''}`;
                 return;
             }
 
-            if (fileName === 'Octane Services' || fileName.includes('Octane Services')) {
+            if (fileName === 'Octane Services' || fileName.includes('Octane Services') || fileName === 'Octane Competitors' || fileName.includes('Octane Competitors')) {
                 res.writeHead(403, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Access forbidden.' }));
                 return;
