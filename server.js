@@ -87,41 +87,68 @@ function extractScore(content) {
 function loadKnowledgeBase() {
     return new Promise((resolve) => {
         const knowledgeDir = path.join(PUBLIC_DIR, 'knowledge');
-        fs.readdir(knowledgeDir, (err, files) => {
-            if (err) {
-                resolve("");
-                return;
-            }
-            // Ingest both markdown files and raw txt files
-            const mdFiles = files.filter(f => f.endsWith('.md') || f.endsWith('.txt'));
-            if (mdFiles.length === 0) {
-                resolve("");
-                return;
-            }
-            
-            let concatenated = "\n\n<knowledge_base>\n";
-            let readCount = 0;
-            const contents = {};
-            
-            mdFiles.forEach(file => {
-                const filePath = path.join(knowledgeDir, file);
-                fs.readFile(filePath, 'utf8', (err2, data) => {
-                    readCount++;
-                    if (!err2) {
-                        contents[file] = data;
+        const targetDirs = [knowledgeDir];
+        const octaneServicesDir = path.join(knowledgeDir, 'Octane Services');
+        
+        if (fs.existsSync(octaneServicesDir)) {
+            targetDirs.push(octaneServicesDir);
+        }
+        
+        const allFiles = [];
+        let completedDirs = 0;
+        
+        const processDirectory = (dirPath) => {
+            fs.readdir(dirPath, (err, files) => {
+                completedDirs++;
+                if (!err && files) {
+                    files.forEach(f => {
+                        const fullPath = path.join(dirPath, f);
+                        try {
+                            const stat = fs.statSync(fullPath);
+                            if (stat.isFile() && (f.endsWith('.md') || f.endsWith('.txt'))) {
+                                allFiles.push({
+                                    name: dirPath === knowledgeDir ? f : `Octane Services/${f}`,
+                                    path: fullPath
+                                });
+                            }
+                        } catch (statErr) {
+                            // Ignore stat errors for unreadable items
+                        }
+                    });
+                }
+                
+                if (completedDirs === targetDirs.length) {
+                    if (allFiles.length === 0) {
+                        resolve("");
+                        return;
                     }
-                    if (readCount === mdFiles.length) {
-                        mdFiles.forEach(f => {
-                            if (contents[f]) {
-                                concatenated += `  <playbook file="${f}">\n${contents[f]}\n  </playbook>\n`;
+                    
+                    let concatenated = "\n\n<knowledge_base>\n";
+                    let readCount = 0;
+                    const contents = {};
+                    
+                    allFiles.forEach(fileObj => {
+                        fs.readFile(fileObj.path, 'utf8', (err2, data) => {
+                            readCount++;
+                            if (!err2) {
+                                contents[fileObj.name] = data;
+                            }
+                            if (readCount === allFiles.length) {
+                                allFiles.forEach(fo => {
+                                    if (contents[fo.name]) {
+                                        concatenated += `  <playbook file="${fo.name}">\n${contents[fo.name]}\n  </playbook>\n`;
+                                    }
+                                });
+                                concatenated += "</knowledge_base>\n";
+                                resolve(concatenated);
                             }
                         });
-                        concatenated += "</knowledge_base>\n";
-                        resolve(concatenated);
-                    }
-                });
+                    });
+                }
             });
-        });
+        };
+        
+        targetDirs.forEach(dir => processDirectory(dir));
     });
 }
 
@@ -5705,9 +5732,9 @@ ${payload.intakeAnswers || ''}`;
                     return;
                 }
                 
-                // Only return original files. Exclude auxiliary markdown files (.pdf.md, .docx.md)
+                // Only return original files. Exclude auxiliary markdown files (.pdf.md, .docx.md) and Octane Services folder
                 const originalFiles = files.filter(f => {
-                    return !f.endsWith('.pdf.md') && !f.endsWith('.docx.md');
+                    return !f.endsWith('.pdf.md') && !f.endsWith('.docx.md') && f !== 'Octane Services';
                 });
                 
                 const fileList = [];
@@ -5845,6 +5872,12 @@ ${payload.intakeAnswers || ''}`;
             if (!targetPath.startsWith(resolvedBase + path.sep)) {
                 res.writeHead(403, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Directory traversal forbidden.' }));
+                return;
+            }
+
+            if (fileName === 'Octane Services' || fileName.includes('Octane Services')) {
+                res.writeHead(403, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Access forbidden.' }));
                 return;
             }
 
