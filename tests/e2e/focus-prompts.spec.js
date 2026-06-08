@@ -49,6 +49,12 @@ test.describe('Aegis v2 -- Focus Prompts Validation', () => {
                     reply = 'Relates to TM1 upgrade pipeline. Recommended services: DevOps Blue Support and TM1 Flight Check.\nLikely Pain Points:\n1. Spreadsheet limits\n2. RAM bottlenecks\n3. Manual reconciliation';
                 } else if (userMessage.includes('Conversation starter')) {
                     reply = 'Opener 1: Congratulate Sarah on her tenure at Meridian.\nOpener 2: Address the recent growth of Meridian Logistics in Melbourne.\nOpener 3: Mention our past TM1 optimization work at Steric.';
+                } else if (userMessage.includes('Complementary applications')) {
+                    reply = 'Complementary applications found: NetSuite, SAP, Dynamics, Power BI, Tableau.';
+                } else if (userMessage.includes('Competing applications')) {
+                    reply = 'Competing applications found: Anaplan, Workday Adaptive Planning, Board.';
+                } else if (userMessage.includes('Competing consulting firms')) {
+                    reply = 'No competing consulting firms mentioned by the client.';
                 } else {
                     reply = 'General assistant response.';
                 }
@@ -173,5 +179,58 @@ test.describe('Aegis v2 -- Focus Prompts Validation', () => {
         expect(responseText).toContain('Opener 1');
         expect(responseText).toContain('Sarah');
         expect(responseText).toContain('Steric');
+    });
+
+    test('verifies "Complementary applications" output', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.newChatBtn.click();
+        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.submitForm();
+        await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
+
+        await indexPage.sendMessage('Complementary applications');
+        await indexPage.waitForResponse(20000);
+        const responseText = await indexPage.getLastResponseText();
+        
+        expect(responseText).toContain('Complementary applications found');
+        expect(responseText).toContain('NetSuite');
+    });
+
+    test('verifies "Competing applications" output', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.newChatBtn.click();
+        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.submitForm();
+        await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
+
+        await indexPage.sendMessage('Competing applications');
+        await indexPage.waitForResponse(20000);
+        const responseText = await indexPage.getLastResponseText();
+        
+        expect(responseText).toContain('Competing applications found');
+        expect(responseText).toContain('Anaplan');
+    });
+
+    test('verifies "Competing consulting firms" output', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await indexPage.newChatBtn.click();
+        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.submitForm();
+        await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
+
+        await indexPage.sendMessage('Competing consulting firms');
+        await indexPage.waitForResponse(20000);
+        const responseText = await indexPage.getLastResponseText();
+        
+        expect(responseText).toContain('competing consulting firms');
     });
 });

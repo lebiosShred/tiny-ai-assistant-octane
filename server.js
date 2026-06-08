@@ -536,11 +536,6 @@ function makeHubSpotRequest(method, endpoint, payload = null) {
 }
 
 async function generateAICompletion(systemPrompt, userPrompt) {
-    const apiKey = (process.env.MISTRAL_API_KEY || '').trim();
-    if (!apiKey) {
-        throw new Error('MISTRAL_API_KEY is not configured on the server.');
-    }
-    
     const knowledgeBase = await loadKnowledgeBase(userPrompt);
     const safetyRules = `
 <safety_rules>
@@ -559,6 +554,7 @@ async function generateAICompletion(systemPrompt, userPrompt) {
 </safety_rules>
 `;
 
+    const mistralKeys = (process.env.MISTRAL_API_KEY || '').split(',').map(k => k.trim()).filter(k => k.length > 0);
     const payload = JSON.stringify({
         model: process.env.MISTRAL_API_MODEL || 'mistral-large-latest',
         messages: [
@@ -574,38 +570,79 @@ async function generateAICompletion(systemPrompt, userPrompt) {
         temperature: 0.2
     });
 
-    return new Promise((resolve, reject) => {
-        const options = {
-            hostname: 'api.mistral.ai',
-            port: 443,
-            path: '/v1/chat/completions',
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(payload)
-            }
-        };
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    try {
-                        const parsed = JSON.parse(data);
-                        resolve(parsed.choices[0].message.content);
-                    } catch (e) {
-                        reject(new Error(`Failed to parse AI response: ${e.message}`));
+    const errors = [];
+
+    // Attempt Mistral keys sequentially
+    for (let i = 0; i < mistralKeys.length; i++) {
+        const apiKey = mistralKeys[i];
+        console.log(`🤖 Attempting Mistral completion using key index ${i}...`);
+        try {
+            const result = await new Promise((resolve, reject) => {
+                const options = {
+                    hostname: 'api.mistral.ai',
+                    port: 443,
+                    path: '/v1/chat/completions',
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(payload)
                     }
-                } else {
-                    reject(new Error(`AI completions API error status ${res.statusCode}: ${data}`));
-                }
+                };
+                const req = https.request(options, (res) => {
+                    let data = '';
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => {
+                        if (res.statusCode >= 200 && res.statusCode < 300) {
+                            try {
+                                const parsed = JSON.parse(data);
+                                resolve(parsed.choices[0].message.content);
+                            } catch (e) {
+                                reject(new Error(`Failed to parse Mistral API JSON: ${e.message}`));
+                            }
+                        } else {
+                            reject(new Error(`Mistral API error status ${res.statusCode}: ${data}`));
+                        }
+                    });
+                });
+                req.on('error', reject);
+                req.setTimeout(15000, () => {
+                    console.warn(`⚠️ Mistral API request timed out for key index ${i}.`);
+                    req.destroy();
+                    reject(new Error("Mistral API request timed out (15s)."));
+                });
+                req.write(payload);
+                req.end();
             });
-        });
-        req.on('error', reject);
-        req.write(payload);
-        req.end();
-    });
+            return result; // Success!
+        } catch (err) {
+            console.warn(`⚠️ Mistral API attempt ${i} failed: ${err.message}`);
+            errors.push(`Mistral index ${i}: ${err.message}`);
+        }
+    }
+
+    // Fall back to Gemini failover if all Mistral keys failed or if no Mistral keys are configured
+    console.log("⚠️ All Mistral keys exhausted or missing. Initiating Gemini failover...");
+    try {
+        const failoverPayload = {
+            messages: [
+                {
+                    role: 'system',
+                    content: systemPrompt + '\n' + knowledgeBase + safetyRules
+                },
+                {
+                    role: 'user',
+                    content: userPrompt
+                }
+            ],
+            temperature: 0.2
+        };
+        const geminiResult = await executeGeminiFailover(failoverPayload);
+        return geminiResult;
+    } catch (geminiErr) {
+        errors.push(`Gemini failover: ${geminiErr.message}`);
+        throw new Error(`All completion keys exhausted. Errors: ${errors.join(' | ')}`);
+    }
 }
 
 async function extractStructuredProfile(rawText, filename) {
@@ -670,8 +707,8 @@ async function fetchTavilyRAGContext(name, company) {
     const payload = JSON.stringify({
         api_key: apiKey,
         query: query,
-        search_depth: "basic",
-        max_results: 3
+        search_depth: "advanced",
+        max_results: 5
     });
 
     return new Promise((resolve) => {
@@ -717,7 +754,7 @@ async function fetchTavilyRAGContext(name, company) {
             resolve("Failed to fetch search context due to network error.");
         });
 
-        req.setTimeout(1500, () => {
+        req.setTimeout(15000, () => {
             console.warn("⚠️ Tavily request timed out.");
             req.destroy();
             resolve("Tavily search request timed out.");
@@ -750,7 +787,7 @@ async function fetchTavilyCompanyNews(company, website) {
         query: query,
         search_depth: "advanced",
         topic: "news",
-        max_results: 4
+        max_results: 6
     });
 
     return new Promise((resolve) => {
@@ -796,7 +833,7 @@ async function fetchTavilyCompanyNews(company, website) {
             resolve("Failed to fetch company search context due to network error.");
         });
 
-        req.setTimeout(1500, () => {
+        req.setTimeout(15000, () => {
             console.warn("⚠️ Tavily company search request timed out.");
             req.destroy();
             resolve("Tavily company search request timed out.");
@@ -866,7 +903,7 @@ async function fetchGithubTechnographics(companyName) {
             resolve("Failed to fetch GitHub technographics due to network error.");
         });
 
-        req.setTimeout(3000, () => {
+        req.setTimeout(10000, () => {
             console.warn("⚠️ GitHub request timed out.");
             req.destroy();
             resolve("GitHub request timed out.");
@@ -894,10 +931,10 @@ async function fetchExaRAGContext(name, company) {
         const response = await Promise.race([
             exa.searchAndContents(query, {
                 type: "neural",
-                numResults: 3,
+                numResults: 5,
                 highlights: true
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 1500))
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000))
         ]);
 
         if (response.results && response.results.length > 0) {

@@ -1,7 +1,47 @@
 const { test, expect } = require('../fixtures/base');
 const { IndexPage } = require('../pages/IndexPage');
+const fs = require('fs');
+const path = require('path');
 
 test.describe('Aegis Chat Session Deletion Suite', () => {
+
+    test.beforeEach(() => {
+        const historyDir = process.env.HISTORY_DIR ? path.resolve(process.env.HISTORY_DIR) : path.join(__dirname, '..', '..', 'knowledge', 'history_test');
+        if (fs.existsSync(historyDir)) {
+            const files = fs.readdirSync(historyDir);
+            for (const file of files) {
+                const filePath = path.join(historyDir, file);
+                try {
+                    if (fs.statSync(filePath).isDirectory()) {
+                        fs.rmSync(filePath, { recursive: true, force: true });
+                    } else {
+                        fs.unlinkSync(filePath);
+                    }
+                } catch (err) {
+                    console.error(`Failed to clean up test resource ${file}:`, err.message);
+                }
+            }
+        }
+    });
+
+    test.afterEach(() => {
+        const historyDir = process.env.HISTORY_DIR ? path.resolve(process.env.HISTORY_DIR) : path.join(__dirname, '..', '..', 'knowledge', 'history_test');
+        if (fs.existsSync(historyDir)) {
+            const files = fs.readdirSync(historyDir);
+            for (const file of files) {
+                const filePath = path.join(historyDir, file);
+                try {
+                    if (fs.statSync(filePath).isDirectory()) {
+                        fs.rmSync(filePath, { recursive: true, force: true });
+                    } else {
+                        fs.unlinkSync(filePath);
+                    }
+                } catch (err) {
+                    console.error(`Failed to clean up test resource ${file}:`, err.message);
+                }
+            }
+        }
+    });
 
     test('verifies hover-reveal deletion flow with confirmation modal', async ({ page }) => {
         test.setTimeout(45000);
