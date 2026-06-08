@@ -131,21 +131,17 @@ function evaluateWithHeuristics(text, context = {}) {
     // ── Sales Utility Checks ──
     let salesUtilityVerdict = 'FULLY_VALUED';
 
-    // 1. Pricing catalog check: find all dollar values in text
-    // Matches patterns like A$4,560, $160,000, A$27,360, etc.
-    const dollarMatches = text.match(/(?:A\$|\$)\d{1,3}(?:,\d{3})*(?:\/\w+)?|\b\d{1,3},\d{3}\b/g) || [];
-    const validPrices = ['4,560', '1,850', '5,800', '160,000', '125,000'];
+    // 1. Prohibited pricing check: find all dollar/price values in text
+    // Matches patterns like A$4,560, $160,000, A$1,850, $125,000, etc.
+    const dollarMatches = text.match(/(?:A\$|\$)\d{1,3}(?:,\d{3})*(?:\/\w+)?/gi) || [];
     for (const match of dollarMatches) {
-        const cleanNum = match.replace(/[A\$\s\/month\/day\/yr]/g, '');
-        if (!validPrices.includes(cleanNum)) {
-            violations.push({
-                severity: 'WARNING',
-                rubric: 'salesUtility',
-                rule: 'Invalid catalog pricing',
-                detail: `Found pricing value "${match}" not matching catalog packages (4,560, 1,850, 5,800, 160,000, 125,000).`
-            });
-            salesUtilityVerdict = 'PARTIAL_VALUE';
-        }
+        violations.push({
+            severity: 'WARNING',
+            rubric: 'salesUtility',
+            rule: 'Prohibited pricing output',
+            detail: `Found prohibited numerical pricing value "${match}". The services-only model permits zero price values or dollar figures.`
+        });
+        salesUtilityVerdict = 'PARTIAL_VALUE';
     }
 
     // 2. Prohibited em-dash check

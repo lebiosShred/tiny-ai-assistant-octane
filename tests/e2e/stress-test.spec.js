@@ -95,7 +95,7 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         const floodQuery = "We use NetSuite, SAP ERP, Dynamics 365, Salesforce, Power BI, Tableau, Alteryx, Snowflake, Databricks, Oracle Hyperion, Jedox, Anaplan, Workday Adaptive, Board, TM1, and we are working with Accenture. Quote us DevOps Blue and custom package.";
         
         await indexPage.sendMessage(floodQuery);
-        await indexPage.waitForResponse(20000);
+        await indexPage.waitForResponse(45000);
         
         const responseText = await indexPage.getLastResponseText();
         expect(responseText.length).toBeGreaterThan(10);

@@ -46,7 +46,7 @@ test.describe('Aegis v2 -- Focus Prompts Validation', () => {
                 } else if (userMessage.includes('Customer match')) {
                     reply = 'Matches Large/Mid TM1 Shop customer profile. Similar active client served in the past: Steric.';
                 } else if (userMessage.includes('Assessment')) {
-                    reply = 'Relates to TM1 upgrade pipeline. Recommended services: DevOps Blue Support (A$4,560/month) and TM1 Flight Check (A$27,360).\nLikely Pain Points:\n1. Spreadsheet limits\n2. RAM bottlenecks\n3. Manual reconciliation';
+                    reply = 'Relates to TM1 upgrade pipeline. Recommended services: DevOps Blue Support and TM1 Flight Check.\nLikely Pain Points:\n1. Spreadsheet limits\n2. RAM bottlenecks\n3. Manual reconciliation';
                 } else if (userMessage.includes('Conversation starter')) {
                     reply = 'Opener 1: Congratulate Sarah on her tenure at Meridian.\nOpener 2: Address the recent growth of Meridian Logistics in Melbourne.\nOpener 3: Mention our past TM1 optimization work at Steric.';
                 } else {

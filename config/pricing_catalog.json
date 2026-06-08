@@ -3,38 +3,32 @@
     {
       "id": "devops_blue",
       "name": "DevOps Blue Support",
-      "price": "A$4,560/month",
       "description": "Base support. Rollover hours, monthly health checks, free professional training library. 24/7 SLA-based ticketing: Urgent <1hr, High 4hr, Medium 8hr, Low 24hr. No distinction between support and development."
     },
     {
       "id": "devops_red",
       "name": "DevOps Red Support",
-      "price": "Custom Quoted",
       "description": "Advanced tier for larger instances or high deployment cadence."
     },
     {
       "id": "tm1_flight_check",
       "name": "TM1 Flight Check",
-      "price": "Fixed A$5,800",
       "description": "A 6-day complete analysis of system health (RAM, disk, log file rotation, model efficiency, user interviews)."
     },
     {
       "id": "data_integration_connector",
       "name": "Data Integration Connector",
-      "price": "[PRICING_TBD_BY_DISCOVERY]",
       "description": "Automates data transfer from source ERPs (like Oracle, SAP) to a central database. Inclusions: 5 standard report conversions, 1 instance per environment (Dev/Test/Prod). Exclusions: DB service account creation."
     },
     {
       "id": "custom_training",
       "name": "Custom training",
-      "price": "A$1,850/day",
       "description": "Standard custom training rate."
     },
     {
       "id": "ai_pilots",
       "name": "AI Pilots / watsonx POCs",
-      "price": "$160,000/yr licensing, $125,000 implementation",
-      "description": "Indicative SaaS pricing starting at $160,000/yr for licensing and $125,000 for implementation. Includes 2-to-6 week co-creation phase, working demo, and client resource allocation."
+      "description": "Indicative SaaS licensing and implementation. Includes 2-to-6 week co-creation phase, working demo, and client resource allocation."
     }
   ]
 }

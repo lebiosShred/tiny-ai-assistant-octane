@@ -25,7 +25,7 @@ async function loadPricingCatalog() {
         const res = await fetch('/api/config/pricing');
         if (res.ok) {
             const data = await res.json();
-            pricingCatalogString = data.packages.map(p => `- ${p.name}: ${p.price}. ${p.description}`).join('\n');
+            pricingCatalogString = data.packages.map(p => `- ${p.name}: ${p.description}`).join('\n');
             return pricingCatalogString;
         }
     } catch (e) {
@@ -33,12 +33,12 @@ async function loadPricingCatalog() {
     }
     // Static fallback in case backend is down or disconnected
     pricingCatalogString = [
-        "- DevOps Blue Support: [PRICING_TBD_BY_DISCOVERY]",
-        "- DevOps Red Support: Advanced tier for larger instances or high deployment cadence. [PRICING_TBD_BY_DISCOVERY]",
-        "- TM1 Flight Check: [PRICING_TBD_BY_DISCOVERY]",
-        "- Data Integration Connector: [PRICING_TBD_BY_DISCOVERY]. Automates data transfer from source ERPs to a central database.",
-        "- Custom training: [PRICING_TBD_BY_DISCOVERY]",
-        "- AI Pilots / watsonx POCs: [PRICING_TBD_BY_DISCOVERY]"
+        "- DevOps Blue Support: Base support. Rollover hours, monthly health checks, free professional training library. 24/7 SLA-based ticketing. No distinction between support and development.",
+        "- DevOps Red Support: Advanced tier for larger instances or high deployment cadence.",
+        "- TM1 Flight Check: A 6-day complete analysis of system health (RAM, disk, log file rotation, model efficiency, user interviews).",
+        "- Data Integration Connector: Automates data transfer from source ERPs to a central database.",
+        "- Custom training: Standard custom training rate.",
+        "- AI Pilots / watsonx POCs: Indicative SaaS licensing and implementation. Includes 2-to-6 week co-creation phase, working demo, and client resource allocation."
     ].join('\n');
     return pricingCatalogString;
 }
@@ -159,7 +159,7 @@ ${params.transitDistance || "Online/Phone call only (Distance unavailable)"}
                 "COMPANY OVERVIEW": `<p><strong>Company Overview:</strong> Factual background for ${params.company || "Unknown Company"} requires an active server-side search connection. In offline/mock mode, this section degrades gracefully to protect data integrity.</p>`,
                 "DISCOVERY TRACK CLASS": params.track === 'Agentic AI Operations & Watsonx' ? 'Variant B (Existing TM1 / Planning Analytics User)' : 'Variant A (First-Time TM1 / Planning Analytics User)',
                 "TAILORED PLAYBOOK QUESTIONS": `<p>1. What systems, processes, and tools do you use today?<br>2. Where does your current setup fall short?</p>`,
-                "RELEVANT OCTANE SERVICES & PRICING": `<p>DevOps Blue Support at A$4,560/mo flat-rate.</p>`,
+                "RELEVANT OCTANE SERVICES": `<p>DevOps Blue Support tier for baseline administration and health checks.</p>`,
                 "PEER CREDIBILITY STORY": `<p>Shift: DevOps Blue Support resolved spreadsheet dependency.</p>`,
                 "OCTANE'S COMPETITORS": `<p>Key enterprise planning partners and generic consulting firms.</p>`,
                 "COMPETING APPLICATIONS": `<p>[ESTIMATED MARKET COMPETITORS]: Anaplan, Workday Adaptive Planning, Board</p>`,
@@ -306,7 +306,7 @@ Do not write markdown backticks or conversational prefixes. Return only the HTML
                     <h4 class="rapport-card-title">⚠️ Phrases to Avoid / Competitor Flags</h4>
                     <ul class="rapport-card-list">
                         <li>Do not assume their primary ERP or BI systems until validated during discovery.</li>
-                        <li>Do not quote exact service pricing before qualifying their environment size and needs.</li>
+                        <li>Do not quote any service pricing or rates. Focus on describing scope and SLA tiers qualitatively.</li>
                     </ul>
                 </div>
             `;
@@ -488,7 +488,7 @@ Detailed chronological meeting notes capturing context, technical systems discus
 Format using <p> paragraphs, <ul>/<li> lists, and <blockquote> tags.
 
 [DOCUMENT: PROPOSAL]
-Draft a preliminary, consultative proposal document. Do NOT include custom pricing amounts. Only state standard list-price frameworks from the Reference Catalog. Include sections:
+Draft a preliminary, consultative proposal document. Do NOT include any pricing amounts, rates, or dollar figures. Include sections:
 1. UNDERSTANDING OF REQUIREMENTS
 2. PROPOSED SOLUTION (DevOps support, Flight Check, or watsonx POC)
 3. APPROACH & METHODOLOGY
@@ -766,7 +766,7 @@ ${dossierContent || "Not available"}
 ${questionnaireAnswers || "Not available"}
 
 --- INSTRUCTIONS ---
-Draft a preliminary, consultative proposal document. Do NOT include custom pricing amounts. Only state standard list-price frameworks from the Reference Catalog. Include sections:
+Draft a preliminary, consultative proposal document. Do NOT include any pricing amounts, rates, or dollar figures. Include sections:
 1. UNDERSTANDING OF REQUIREMENTS
 - Summarize the client's current background, systems, pain points, and goals.
 2. PROPOSED SOLUTION

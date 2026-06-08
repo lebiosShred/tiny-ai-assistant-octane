@@ -96,12 +96,12 @@ const RUBRICS = {
   },
   salesUtility: {
     name: 'Sales Utility',
-    description: 'Does the output align with catalog pricing, stack categories, and connection logic?',
+    description: 'Does the output align with catalog services, stack categories, and connection logic?',
     categories: ['FULLY_VALUED', 'PARTIAL_VALUE', 'LOW_VALUE', 'FABRICATED'],
     systemPrompt: [
       'You are a B2B sales utility auditor. Evaluate whether the generated sales briefing:',
       '1. Recommends ONLY valid services from the catalog (DevOps Blue Support, DevOps Red Support, TM1 Flight Check, watsonx Orchestrate POC, Custom Training).',
-      '2. Uses exact catalog pricing. If a service price is unlisted, it MUST quote [PRICING_TBD_BY_DISCOVERY].',
+      '2. Contains NO pricing values, rates, or dollar figures ($ or A$). All service recommendations must be purely qualitative.',
       '3. Correctly categorizes complementary applications (e.g. NetSuite, SAP, CRM/BI) separate from competing planning software.',
       '4. Ensures organizational news stories used for conversation starters explicitly connect to TM1 and AI.',
       '',

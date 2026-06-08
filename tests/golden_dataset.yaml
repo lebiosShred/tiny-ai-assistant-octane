@@ -1,0 +1,35 @@
+# Aegis v2 -- Promptfoo Golden Dataset for Sales Prompt Evaluations
+
+- description: "Standard Small Shop TM1 Prospect"
+  vars:
+    name: "Sarah Chen"
+    title: "Head of FP&A"
+    company: "Meridian Logistics"
+    website: "https://meridianlogistics.com"
+    email: "sarah.chen@meridianlogistics.com.au"
+    rep: "Albert"
+    interest: "Planning & Analytics"
+    intake_notes: "Currently using manual spreadsheets for demand planning. Experiencing severe formula errors and slow consolidation cycles."
+    transcript: "Albert: Hi Sarah, thanks for booking. What's the main issue today?\nSarah: Well, we have about 40 sheets we manually consolidate. It takes days and is incredibly prone to errors. We need a planning tool to replace this."
+  assert:
+    - type: contains
+      value: "Meridian Logistics"
+    - type: contains
+      value: "Sarah"
+
+- description: "AI Solution and Pilot Prospect"
+  vars:
+    name: "David Miller"
+    title: "CFO"
+    company: "Rinnai Finance"
+    website: "https://rinnai.com.au"
+    email: "d.miller@rinnai.com.au"
+    rep: "Isha"
+    interest: "AI"
+    intake_notes: "Interested in watsonx AI pilot program to automate month-end close reporting and financial commentary generation."
+    transcript: "Isha: Hello David, let's talk about the AI pilot.\nDavid: Yes, our month-end takes 5 days. We want a proof of concept to automate PowerPoint generation from our Planning Analytics database."
+  assert:
+    - type: contains
+      value: "Rinnai"
+    - type: contains
+      value: "watsonx"

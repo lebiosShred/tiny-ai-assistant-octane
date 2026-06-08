@@ -9,12 +9,12 @@ const { IndexPage } = require('../pages/IndexPage');
  */
 test.describe('Aegis Sales Utility & Resiliency Suite', () => {
 
-    test('verifies catalog pricing alignment and pricing fallbacks', async ({ page }) => {
+    test('verifies catalog services alignment and price-free output constraints', async ({ page }) => {
         test.setTimeout(60000);
         const indexPage = new IndexPage(page);
 
-        // Intercept API chat completions to return valid catalog pricing in one branch
-        // and unknown pricing in another
+        // Intercept API chat completions to return valid catalog services in one branch
+        // and unknown services in another
         await page.route('**/api/chat', async route => {
             const postData = route.request().postData();
             let userMessage = '';
@@ -31,9 +31,9 @@ test.describe('Aegis Sales Utility & Resiliency Suite', () => {
 
             let responseText = '';
             if (userMessage.includes('DevOps Blue')) {
-                responseText = 'We recommend DevOps Blue Support at A$4,560/month and Custom Training at A$1,850/day.';
+                responseText = 'We recommend DevOps Blue Support and Custom Training.';
             } else if (userMessage.includes('Gold Tier')) {
-                responseText = 'For Gold Tier Custom Migration, the price is [PRICING_TBD_BY_DISCOVERY].';
+                responseText = 'For Gold Tier Custom Migration, the scope and terms will be determined by discovery.';
             } else {
                 responseText = 'General response.';
             }
@@ -54,18 +54,22 @@ test.describe('Aegis Sales Utility & Resiliency Suite', () => {
         await indexPage.waitForChatInit();
         await indexPage.closeDrawer();
 
-        // 1. Check valid catalog price
+        // 1. Check valid catalog services are recommended, and no pricing values are returned
         await indexPage.sendMessage('Recommend DevOps Blue and Training');
         await indexPage.waitForResponse(20000);
         let lastResponse = await indexPage.getLastResponseText();
-        expect(lastResponse).toContain('A$4,560/month');
-        expect(lastResponse).toContain('A$1,850/day');
+        expect(lastResponse).toContain('DevOps Blue Support');
+        expect(lastResponse).toContain('Custom Training');
+        expect(lastResponse).not.toContain('$');
+        expect(lastResponse).not.toContain('A$');
 
-        // 2. Check fallback pricing for custom package
+        // 2. Check fallback check: no pricing values returned
         await indexPage.sendMessage('Quote Gold Tier');
         await indexPage.waitForResponse(20000);
         lastResponse = await indexPage.getLastResponseText();
-        expect(lastResponse).toContain('[PRICING_TBD_BY_DISCOVERY]');
+        expect(lastResponse).toContain('Gold Tier');
+        expect(lastResponse).not.toContain('$');
+        expect(lastResponse).not.toContain('A$');
     });
 
     test('verifies technographic stack separation', async ({ page }) => {

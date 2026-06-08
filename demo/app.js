@@ -1670,16 +1670,16 @@ You are given the following sources for the client:
 Active Leads in System:
 ${leadsSummary}
 
-Reference Catalog & Pricing Specifications (SOLE SOURCE OF TRUTH):
-- DevOps Blue Support: A$4,560/month. Includes 24/7 SLA ticketing (Urgent <1hr, High 4hr, Medium 8hr, Low 24hr), rollover support hours, monthly health checks, and free training library.
+Reference Catalog & Services Specifications (SOLE SOURCE OF TRUTH):
+- DevOps Blue Support: Includes 24/7 SLA ticketing (Urgent <1hr, High 4hr, Medium 8hr, Low 24hr), rollover support hours, monthly health checks, and free training library.
 - DevOps Red Support: Advanced DevOps support tier. Rollover hours, certified developers, onshore/offshore hybrid model.
 - TM1 Flight Check: 6-day analysis, RAM/HDD log file performance checks, user interviews.
 - Data Integration Connector: Setup + email support, 60-day free trial.
 - watsonx Orchestrate POC: 2-6 weeks co-creation, working demo, client resources.
-- Custom Training: A$1,850/day.
+- Custom Training: Standard power user training sessions.
 
 Rules:
-1. ALWAYS adhere strictly to the pricing catalog. If a pricing option is not explicitly listed, write '[PRICING_TBD_BY_DISCOVERY]'. NEVER invent or repeat custom rates from the transcript.
+1. NEVER quote numerical prices, rates, or dollar values in any output. Focus exclusively on qualitative service specifications.
 2. Produce deliverables in PLAIN TEXT. Do NOT use HTML formatting, custom markdown styling, or branding guidelines. Use simple headers, dashes, and spacing.
 3. Be concise and factual. Do not make up facts. Use the client details provided.
 4. If the required input data for the requested report or query is missing from the sources (e.g., LinkedIn and Intake are both empty when generating a Lead Sheet, or the transcript is empty when generating a recap email, migration assessment, action items, summary sheet, notes, or proposal), you MUST output exactly '[INSUFFICIENT_DATA_FOR_REPORT]'. Do NOT fabricate, placeholder, or assume any information.
@@ -2318,7 +2318,7 @@ OneDrive Screencast Link: [Link if available]`;
             } else if (promptType === 'notes') {
                 promptText = `Generate detailed chronological meeting notes capturing context, technical systems discussed, and direct quotes.`;
             } else if (promptType === 'proposal') {
-                promptText = `Draft a preliminary, consultative proposal document. Do NOT include custom pricing amounts. Only state standard list-price frameworks from the Reference Catalog. Include sections:
+                promptText = `Draft a preliminary, consultative proposal document. Do NOT include any pricing amounts, rates, or dollar figures. Include sections:
 1. UNDERSTANDING OF REQUIREMENTS
 2. PROPOSED SOLUTION
 3. APPROACH & METHODOLOGY
