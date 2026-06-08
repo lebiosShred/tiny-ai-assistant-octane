@@ -90,12 +90,16 @@ function loadKnowledgeBase(userQuery = '') {
         const targetDirs = [knowledgeDir];
         const octaneServicesDir = path.join(knowledgeDir, 'Octane Services');
         const octaneCompetitorsDir = path.join(knowledgeDir, 'Octane Competitors');
+        const complementaryAppsDir = path.join(knowledgeDir, 'Complementary Applications');
         
         if (fs.existsSync(octaneServicesDir)) {
             targetDirs.push(octaneServicesDir);
         }
         if (fs.existsSync(octaneCompetitorsDir)) {
             targetDirs.push(octaneCompetitorsDir);
+        }
+        if (fs.existsSync(complementaryAppsDir)) {
+            targetDirs.push(complementaryAppsDir);
         }
         
         const allFiles = [];
@@ -122,6 +126,26 @@ function loadKnowledgeBase(userQuery = '') {
                                     const fileKey = f.split('_')[0].toLowerCase();
                                     const isMentioned = queryLower.includes(fileKey) || queryLower.includes('competitor');
                                     if (!isBasePlan && !isMentioned) {
+                                        return; // Skip profile
+                                    }
+                                } else if (dirPath === complementaryAppsDir) {
+                                    namePrefix = 'Complementary Applications/';
+                                    
+                                    // Limit context footprint: only load matching app profile or overview
+                                    const isOverview = f === 'complementary_apps_overview.md';
+                                    let isMentioned = queryLower.includes('complementary') || queryLower.includes('ibm');
+                                    if (f.includes('watsonx') && (queryLower.includes('watsonx') || queryLower.includes('orchestrate'))) {
+                                        isMentioned = true;
+                                    } else if (f.includes('cognos') && (queryLower.includes('cognos') || queryLower.includes('controller'))) {
+                                        isMentioned = true;
+                                    } else if (f.includes('apptio') && queryLower.includes('apptio')) {
+                                        isMentioned = true;
+                                    } else if (f.includes('app_connect') && (queryLower.includes('connect') || queryLower.includes('app connect') || queryLower.includes('appconnect'))) {
+                                        isMentioned = true;
+                                    } else if (f.includes('spss_openpages') && (queryLower.includes('spss') || queryLower.includes('openpages') || queryLower.includes('modeler') || queryLower.includes('grc'))) {
+                                        isMentioned = true;
+                                    }
+                                    if (!isOverview && !isMentioned) {
                                         return; // Skip profile
                                     }
                                 }
@@ -5760,9 +5784,9 @@ ${payload.intakeAnswers || ''}`;
                     return;
                 }
                 
-                // Only return original files. Exclude auxiliary markdown files (.pdf.md, .docx.md), Octane Services, and Octane Competitors folders
+                // Only return original files. Exclude auxiliary markdown files (.pdf.md, .docx.md), Octane Services, Octane Competitors, and Complementary Applications folders
                 const originalFiles = files.filter(f => {
-                    return !f.endsWith('.pdf.md') && !f.endsWith('.docx.md') && f !== 'Octane Services' && f !== 'Octane Competitors';
+                    return !f.endsWith('.pdf.md') && !f.endsWith('.docx.md') && f !== 'Octane Services' && f !== 'Octane Competitors' && f !== 'Complementary Applications';
                 });
                 
                 const fileList = [];
@@ -5906,7 +5930,7 @@ ${payload.intakeAnswers || ''}`;
                 return;
             }
 
-            if (decodedFileName === 'Octane Services' || decodedFileName.includes('Octane Services') || decodedFileName === 'Octane Competitors' || decodedFileName.includes('Octane Competitors')) {
+            if (decodedFileName === 'Octane Services' || decodedFileName.includes('Octane Services') || decodedFileName === 'Octane Competitors' || decodedFileName.includes('Octane Competitors') || decodedFileName === 'Complementary Applications' || decodedFileName.includes('Complementary Applications')) {
                 res.writeHead(403, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Access forbidden.' }));
                 return;
