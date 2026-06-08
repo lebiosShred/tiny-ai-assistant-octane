@@ -1,15 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     'use strict';
 
-    // Hide quick prompts bar if not running in automation test (with manual override via ?show_prompts)
-    const showPrompts = navigator.webdriver || new URLSearchParams(window.location.search).has('show_prompts');
-    if (!showPrompts) {
-        const bar = document.querySelector('.quick-prompts-bar');
-        if (bar) {
-            bar.style.setProperty('display', 'none', 'important');
-        }
-    }
-
     // Helpers
     function escapeHTML(str) {
         if (!str) return '';
