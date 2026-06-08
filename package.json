@@ -29,7 +29,10 @@
     "nodemailer": "^8.0.10",
     "pdf-parse": "^1.1.1",
     "pdfkit": "^0.18.0",
-    "turndown": "^7.2.4"
+    "turndown": "^7.2.4",
+    "zod": "^3.23.8",
+    "bullmq": "^5.8.2",
+    "ioredis": "^5.4.1"
   },
   "devDependencies": {
     "@ast-grep/cli": "^0.30.0",

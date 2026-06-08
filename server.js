@@ -1390,13 +1390,13 @@ const server = http.createServer(async (req, res) => {
             
             // Fathom Webhook Handshake / Event verification
             if (payload.event !== 'meeting.finished' || !payload.recording_id) {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate' });
                 res.end(JSON.stringify({ status: 'ignored', message: 'Not a completed meeting event.' }));
                 return;
             }
 
             // Immediately acknowledge webhook to prevent timeouts
-            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate' });
             res.end(JSON.stringify({ status: 'processing' }));
             
             // Asynchronous Processing (Fire and Forget)
@@ -2982,6 +2982,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                         type: 'string',
                                         description: 'The company or prospect name'
                                     },
+                                    contact_name: {
+                                        type: 'string',
+                                        description: 'The specific contact person\'s name, if provided'
+                                    },
                                     content: {
                                         type: 'string',
                                         description: 'The LinkedIn profile text content'
@@ -3003,6 +3007,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                         type: 'string',
                                         description: 'The company or prospect name'
                                     },
+                                    contact_name: {
+                                        type: 'string',
+                                        description: 'The specific contact person\'s name, if provided'
+                                    },
                                     content: {
                                         type: 'string',
                                         description: 'The sales brief document content'
@@ -3023,6 +3031,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                     company: {
                                         type: 'string',
                                         description: 'The company or prospect name'
+                                    },
+                                    contact_name: {
+                                        type: 'string',
+                                        description: 'The specific contact person\'s name, if provided'
                                     },
                                     content: {
                                         type: 'string',
@@ -3436,40 +3448,49 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 toolResult = `Error: Missing required parameters 'company' or 'filename'.`;
                                             }
                                         } else if (name === 'upload_linkedin_profile') {
-                                            const { company, content } = args;
+                                            const { company, content, contact_name } = args;
                                             if (company && content) {
-                                                console.log(`📤 Tool Call: Uploading LinkedIn profile for ${company}`);
-                                                const driveFile = await handleFileUpload('linkedin_profile.txt', content, company);
+                                                console.log(`\uD83D\uDCE4 Tool Call: Uploading LinkedIn profile for ${company}${contact_name ? ` (Contact: ${contact_name})` : ''}`);
+                                                const fileName = contact_name 
+                                                    ? `${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_linkedin_profile.txt` 
+                                                    : `linkedin_profile.txt`;
+                                                const driveFile = await handleFileUpload(fileName, content, company);
                                                 gdriveAction = true;
-                                                receipts.push(generateReceipt("UPLOAD", "FILE", "linkedin_profile.txt", driveFile.id, company, {
+                                                receipts.push(generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
                                                     sizeBytes: Buffer.byteLength(content, 'utf8'),
                                                     url: driveFile.webViewLink,
                                                     initiator: "DeepSeek Tool Call: upload_linkedin_profile"
                                                 }));
-                                                toolResult = `I have successfully uploaded the LinkedIn profile bio for **${company}** (File ID: \`${driveFile.id}\`).`;
+                                                toolResult = `I have successfully uploaded the LinkedIn profile bio for **${company}**${contact_name ? ` (Contact: ${contact_name})` : ''} (File ID: \`${driveFile.id}\`).`;
                                             } else {
                                                 toolResult = `Error: Missing required parameters 'company' or 'content'.`;
                                             }
                                         } else if (name === 'upload_sales_brief') {
-                                            const { company, content } = args;
+                                            const { company, content, contact_name } = args;
                                             if (company && content) {
-                                                console.log(`📤 Tool Call: Uploading sales brief for ${company}`);
-                                                const driveFile = await handleFileUpload('sales_brief.txt', content, company);
+                                                console.log(`\uD83D\uDCE4 Tool Call: Uploading sales brief for ${company}${contact_name ? ` (Contact: ${contact_name})` : ''}`);
+                                                const fileName = contact_name 
+                                                    ? `${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_sales_brief.txt` 
+                                                    : `sales_brief.txt`;
+                                                const driveFile = await handleFileUpload(fileName, content, company);
                                                 gdriveAction = true;
-                                                receipts.push(generateReceipt("UPLOAD", "FILE", "sales_brief.txt", driveFile.id, company, {
+                                                receipts.push(generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
                                                     sizeBytes: Buffer.byteLength(content, 'utf8'),
                                                     url: driveFile.webViewLink,
                                                     initiator: "DeepSeek Tool Call: upload_sales_brief"
                                                 }));
-                                                toolResult = `I have successfully uploaded the sales brief for **${company}** (File ID: \`${driveFile.id}\`).`;
+                                                toolResult = `I have successfully uploaded the sales brief for **${company}**${contact_name ? ` (Contact: ${contact_name})` : ''} (File ID: \`${driveFile.id}\`).`;
                                             } else {
                                                 toolResult = `Error: Missing required parameters 'company' or 'content'.`;
                                             }
                                         } else if (name === 'register_call_log') {
-                                            const { company, content } = args;
+                                            const { company, content, contact_name } = args;
                                             if (company && content) {
-                                                console.log(`📞 Tool Call: Registering call log for ${company}`);
-                                                const fileName = `call_log_${Date.now()}.txt`;
+                                                console.log(`\uD83D\uDCDE Tool Call: Registering call log for ${company}${contact_name ? ` (Contact: ${contact_name})` : ''}`);
+                                                const dateStr = new Date().toISOString().split('T')[0];
+                                                const fileName = contact_name 
+                                                    ? `${dateStr}_${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_call_log_${Date.now()}.txt` 
+                                                    : `call_log_${Date.now()}.txt`;
                                                 const driveFile = await handleFileUpload(fileName, content, company);
                                                 let hubspotLogged = false;
 
@@ -4238,7 +4259,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     return true;
                 });
 
-                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate' });
                 res.end(JSON.stringify({ items }));
             } else {
                 console.log('⚠️ Google Drive client not configured. Listing local files.');
@@ -4321,10 +4342,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             res.end(JSON.stringify({ error: 'Missing fileId parameter.' }));
             return;
         }
+        const ignoreCache = parsedUrl.searchParams.get('ignoreCache') === 'true';
         try {
-            console.log(`📄 Reading GDrive file content: ${fileId}`);
-            const content = await gdriveService.getFileContent(fileId);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
+            console.log(`📄 Reading GDrive file content: ${fileId} (ignoreCache: ${ignoreCache})`);
+            const content = await gdriveService.getFileContent(fileId, ignoreCache);
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate' });
             res.end(JSON.stringify({ content }));
         } catch (err) {
             console.error(`❌ GDrive file read failed:`, err);
@@ -4342,8 +4364,9 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             res.end(JSON.stringify({ error: 'Missing folderId parameter.' }));
             return;
         }
+        const ignoreCache = parsedUrl.searchParams.get('ignoreCache') === 'true';
         try {
-            console.log(`📄 Batch reading GDrive files for folder: ${folderId}`);
+            console.log(`📄 Batch reading GDrive files for folder: ${folderId} (ignoreCache: ${ignoreCache})`);
             const files = await gdriveService.listFolder(folderId);
             const nonFolderFiles = files.filter(f => !f.isFolder);
 
@@ -4365,7 +4388,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 for (const file of matchingFiles) {
                     readPromises.push((async () => {
                         try {
-                            const content = await gdriveService.getFileContent(file.id);
+                            const content = await gdriveService.getFileContent(file.id, ignoreCache);
                             if (content && content.trim()) {
                                 if (result[mapping.category]) {
                                     result[mapping.category] += `\n\n--- [${file.name}] ---\n${content.trim()}`;
@@ -4381,7 +4404,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             }
 
             await Promise.all(readPromises);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate' });
             res.end(JSON.stringify(result));
         } catch (err) {
             console.error(`❌ GDrive batch read failed:`, err);

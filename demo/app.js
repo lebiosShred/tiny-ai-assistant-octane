@@ -983,7 +983,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         setTimeout(async () => {
                             try {
-                                const response = await fetch(`/api/gdrive/read?fileId=${encodeURIComponent(file.id)}`);
+                                const response = await fetch(`/api/gdrive/read?fileId=${encodeURIComponent(file.id)}&ignoreCache=true`);
                                 if (!response.ok) throw new Error("GDrive read failed");
                                 const data = await response.json();
                                 if (textPreviewTarget) {
@@ -1175,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // This bridges the gap where files exist in GDrive but were never saved in the session JSON.
             if (activeFolderId && (!sourceLinkedinText.value.trim() || !sourceIntakeText.value.trim() || !sourceTranscriptText.value.trim())) {
                 try {
-                    const batchRes = await fetch(`/api/gdrive/batch-read?folderId=${encodeURIComponent(activeFolderId)}`);
+                    const batchRes = await fetch(`/api/gdrive/batch-read?folderId=${encodeURIComponent(activeFolderId)}&ignoreCache=true`);
                     if (batchRes.ok) {
                         const batchData = await batchRes.json();
                         let updated = false;
@@ -1694,7 +1694,8 @@ Rules:
     - "Competing consulting firms": Did the client mention they are working with a firm competing with us?
 6. If a source field (such as the LinkedIn Profile Bio or Booking Intake Answers) is empty or contains placeholder text, you MUST explain the missing data to the user rather than calling the upload tool. Do not call any upload tools unless you are explicitly given new profile/content data to upload.
 7. If the user asks you to analyze, search, read, or retrieve information from a prospect's files (such as a LinkedIn profile PDF, call transcript, or intake document) and the corresponding source fields above are empty or incomplete, you MUST call 'search_prospect_files' or 'read_prospect_file' to dynamically query and fetch the content. When a prospect's name (e.g. Sarah Chen) is provided in the query, refer to the "Active Leads in System" list to map them to their correct company name (e.g. Meridian Logistics) so you can pass the correct company argument to the tool.
-8. If the user asks to save, register, or log call notes, summaries, transcripts, or details, but does not explicitly provide the conversation notes, content, or transcript text within their prompt, you MUST be skeptical. Do NOT assume or fabricate details from pre-existing profile or intake answers. Instead, politely ask the user to provide the specific details or notes of their conversation before calling 'register_call_log'.`;
+8. If the user asks to save, register, or log call notes, summaries, transcripts, or details, but does not explicitly provide the conversation notes, content, or transcript text within their prompt, you MUST be skeptical. Do NOT assume or fabricate details from pre-existing profile or intake answers. Instead, politely ask the user to provide the specific details or notes of their conversation before calling 'register_call_log'.
+9. Google Drive is organized exclusively by Company Name. Do not create folders for individual people. If a user asks to 'create a folder for a contact', invoke the create_prospect_folder tool using their company name instead, and inform the user that contacts are stored as files within the parent company folder.`;
 
         // Format history for Mistral API proxy `/api/chat`
         const messages = [
@@ -2847,7 +2848,7 @@ ${data.parsedText}`;
             sourceGdriveFileId.value = fileId;
             showToast("Reading Google Drive file...");
             try {
-                const response = await fetch(`/api/gdrive/read?fileId=${encodeURIComponent(fileId)}`);
+                const response = await fetch(`/api/gdrive/read?fileId=${encodeURIComponent(fileId)}&ignoreCache=true`);
                 if (!response.ok) throw new Error("GDrive read failed");
                 const data = await response.json();
                 gdriveFileContent = data.content || '';
@@ -2928,7 +2929,7 @@ ${data.parsedText}`;
             // Fetch chats list and prospects tree in parallel to eliminate sequential roundtrip latency
             const [chatsRes, prospectsRes] = await Promise.all([
                 fetch('/api/history', { headers: { 'Cache-Control': 'no-cache' } }),
-                fetch('/api/gdrive/list')
+                fetch('/api/gdrive/list', { headers: { 'Cache-Control': 'no-cache' } })
             ]);
             
             if (!chatsRes.ok) throw new Error('Failed to fetch history');

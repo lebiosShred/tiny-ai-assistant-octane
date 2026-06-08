@@ -116,10 +116,14 @@ const fileContentCache = new Map();
  * Extracts text content from a Google Drive file by ID.
  * Supports Google Docs, Google Sheets, PDF files, and plain text files.
  * @param {string} fileId Google Drive File ID
+ * @param {boolean} ignoreCache Bypass memory cache
  * @returns {Promise<string>} Extracted text content
  */
-async function getFileContent(fileId) {
-    if (fileContentCache.has(fileId)) {
+async function getFileContent(fileId, ignoreCache = false) {
+    if (ignoreCache && fileContentCache.has(fileId)) {
+        console.log(`🗑️ Bypassing and invalidating cache for file ID: ${fileId}`);
+        fileContentCache.delete(fileId);
+    } else if (fileContentCache.has(fileId)) {
         console.log(`⚡ Content cache hit for file ID: ${fileId}`);
         return fileContentCache.get(fileId);
     }
@@ -757,6 +761,17 @@ async function renameFolder(fileId, newName) {
     }
 }
 
+/**
+ * Invalidates the file content cache for a given file ID.
+ * @param {string} fileId Google Drive File ID
+ */
+function invalidateFileContentCache(fileId) {
+    if (fileContentCache.has(fileId)) {
+        console.log(`🗑️ Invalidating file content cache for ID: ${fileId}`);
+        fileContentCache.delete(fileId);
+    }
+}
+
 module.exports = {
     getDriveClient,
     listFolder,
@@ -770,6 +785,7 @@ module.exports = {
     deleteFile,
     renameFolder,
     folderIdCache,
-    invalidateFolderCache
+    invalidateFolderCache,
+    invalidateFileContentCache
 };
 
