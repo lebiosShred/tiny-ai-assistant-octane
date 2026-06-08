@@ -2088,17 +2088,17 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                 try {
                                     const drive = gdriveService.getDriveClient();
                                     const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
-                                    const clientsSearch = await drive.files.list({
-                                        q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                                    const prospectsSearch = await drive.files.list({
+                                        q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                                         fields: 'files(id)',
                                         pageSize: 1
                                     });
-                                    const clientsFiles = clientsSearch.data.files || [];
-                                    if (clientsFiles.length > 0) {
-                                        const clientsFolderId = clientsFiles[0].id;
-                                        // Fetch all folders inside Clients and filter locally with normalized strings
+                                    const prospectsFiles = prospectsSearch.data.files || [];
+                                    if (prospectsFiles.length > 0) {
+                                        const prospectsFolderId = prospectsFiles[0].id;
+                                        // Fetch all folders inside Prospects and filter locally with normalized strings
                                         const clientSearch = await drive.files.list({
-                                            q: `mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
+                                            q: `mimeType = 'application/vnd.google-apps.folder' and '${prospectsFolderId}' in parents and trashed = false`,
                                             fields: 'files(id, name)',
                                             pageSize: 100
                                         });
@@ -3333,16 +3333,16 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     try {
                                                         const drive = gdriveService.getDriveClient();
                                                         const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
-                                                        const clientsSearch = await drive.files.list({
-                                                            q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                                                        const prospectsSearch = await drive.files.list({
+                                                            q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                                                             fields: 'files(id)',
                                                             pageSize: 1
                                                         });
-                                                        const clientsFiles = clientsSearch.data.files || [];
-                                                        if (clientsFiles.length > 0) {
-                                                            const clientsFolderId = clientsFiles[0].id;
+                                                        const prospectsFiles = prospectsSearch.data.files || [];
+                                                        if (prospectsFiles.length > 0) {
+                                                            const prospectsFolderId = prospectsFiles[0].id;
                                                             const clientSearch = await drive.files.list({
-                                                                q: `mimeType = 'application/vnd.google-apps.folder' and '${clientsFolderId}' in parents and trashed = false`,
+                                                                q: `mimeType = 'application/vnd.google-apps.folder' and '${prospectsFolderId}' in parents and trashed = false`,
                                                                 fields: 'files(id, name)',
                                                                 pageSize: 100
                                                             });
@@ -4218,25 +4218,25 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             if (gdriveAvailable) {
                 const drive = gdriveService.getDriveClient();
                 if (!folderId && !company) {
-                    // Resolve the Clients folder under root, and list folders inside it
+                    // Resolve the Prospects folder under root, and list folders inside it
                     const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
-                    const clientsSearch = await drive.files.list({
-                        q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                    const prospectsSearch = await drive.files.list({
+                        q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                         fields: 'files(id, name)',
                         pageSize: 1
                     });
-                    let clientsFiles = clientsSearch.data.files || [];
-                    if (clientsFiles.length === 0) {
-                        console.log(`⚠️ Clients folder not found under parents '${rootFolderId}'. Searching globally...`);
+                    let prospectsFiles = prospectsSearch.data.files || [];
+                    if (prospectsFiles.length === 0) {
+                        console.log(`⚠️ Prospects folder not found under parents '${rootFolderId}'. Searching globally...`);
                         const fallbackSearch = await drive.files.list({
-                            q: `name = 'Clients' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+                            q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
                             fields: 'files(id, name)',
                             pageSize: 1
                         });
-                        clientsFiles = fallbackSearch.data.files || [];
+                        prospectsFiles = fallbackSearch.data.files || [];
                     }
-                    if (clientsFiles.length > 0) {
-                        folderId = clientsFiles[0].id;
+                    if (prospectsFiles.length > 0) {
+                        folderId = prospectsFiles[0].id;
                     }
                 } else if (company && !folderId) {
                     folderId = await gdriveService.findOrCreateClientFolder(company);
