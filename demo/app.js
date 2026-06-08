@@ -184,6 +184,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const metaPhone = document.getElementById('meta-phone');
     const metaRep = document.getElementById('meta-rep');
     const metaTrack = document.getElementById('meta-track');
+
+    // --- Track Checkbox ↔ Hidden Input Bidirectional Sync ---
+    const trackCheckboxGroup = document.getElementById('track-checkbox-group');
+    if (metaTrack && trackCheckboxGroup) {
+        const trackCheckboxes = trackCheckboxGroup.querySelectorAll('input[type="checkbox"]');
+        const nativeValueDesc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+
+        // Sync checkboxes → hidden input
+        function syncTrackFromCheckboxes() {
+            const checked = Array.from(trackCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+            nativeValueDesc.set.call(metaTrack, checked.join(', '));
+        }
+
+        // Sync hidden input → checkboxes (called when .value is set programmatically)
+        function syncCheckboxesFromTrack(newVal) {
+            const vals = String(newVal).split(',').map(v => v.trim()).filter(Boolean);
+            trackCheckboxes.forEach(cb => {
+                cb.checked = vals.includes(cb.value);
+            });
+        }
+
+        // Override .value on this specific element to intercept programmatic sets
+        Object.defineProperty(metaTrack, 'value', {
+            get() { return nativeValueDesc.get.call(this); },
+            set(v) {
+                nativeValueDesc.set.call(this, v);
+                syncCheckboxesFromTrack(v);
+            },
+            configurable: true
+        });
+
+        // Listen for checkbox changes
+        trackCheckboxes.forEach(cb => {
+            cb.addEventListener('change', syncTrackFromCheckboxes);
+        });
+
+        // Initialize: sync checkboxes from current hidden input value
+        syncCheckboxesFromTrack(metaTrack.value);
+    }
+    // --- End Track Checkbox Sync ---
+
     const sourceGdriveFileSelect = document.getElementById('source-gdrive-file');
     const sourceGdriveFileId = document.getElementById('source-gdrive-file-id');
     const btnRefreshGdrive = document.getElementById('btn-refresh-gdrive');

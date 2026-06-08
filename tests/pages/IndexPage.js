@@ -26,7 +26,9 @@ class IndexPage {
     this.emailInput = page.locator('#meta-email');
     this.phoneInput = page.locator('#meta-phone');
     this.repSelect = page.locator('#meta-rep');
-    this.trackSelect = page.locator('#meta-track');
+    this.trackSelect = page.locator('#meta-track'); // hidden input (backward compat)
+    this.trackTm1Checkbox = page.locator('#track-tm1');
+    this.trackAiCheckbox = page.locator('#track-ai');
     this.gdriveSelect = page.locator('#source-gdrive-file');
     
     // Action Buttons
