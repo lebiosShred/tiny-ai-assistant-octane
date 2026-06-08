@@ -2875,7 +2875,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             hasSystem = true;
                             dsMessages.push({
                                 role: 'system',
-                                content: msg.content + '\n\nIMPORTANT: You have tools available to create/delete prospect folders and files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions (e.g. "delete prospect sample", "create file readme.md at AECOM", "Please delete the folder for prospect Meridian Logistics"), you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.\n\nAdditionally, when gathering required client/company details (e.g. Client Name, Company Name) in a multi-turn conversation, once you have successfully gathered both the Client Name and Company Name, you MUST call the `create_prospect_folder` tool immediately to create the client folder. Do not claim to have saved or created the folder in plain text without invoking the tool.'
+                                content: msg.content + '\n\nIMPORTANT: You have tools available to create/delete prospect files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions (e.g. "delete prospect sample", "create file readme.md at AECOM", "Please delete the file for prospect Meridian Logistics"), you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.\n\nIMPORTANT: You do NOT have the ability to create folders. Under the Account-Based Storage architecture, all files must be stored directly under the client company folder. Do not claim to have saved or created a folder.'
                             });
                         } else {
                             dsMessages.push(msg);
@@ -2885,28 +2885,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 if (!hasSystem) {
                     dsMessages.unshift({
                         role: 'system',
-                        content: 'You have tools available to create/delete prospect folders and files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions, you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.\n\nAdditionally, when gathering required client/company details (e.g. Client Name, Company Name) in a multi-turn conversation, once you have successfully gathered both the Client Name and Company Name, you MUST call the `create_prospect_folder` tool immediately to create the client folder. Do not claim to have saved or created the folder in plain text without invoking the tool.'
+                        content: 'You have tools available to create/delete prospect files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions, you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.\n\nIMPORTANT: You do NOT have the ability to create folders. Under the Account-Based Storage architecture, all files must be stored directly under the client company folder. Do not claim to have saved or created a folder.'
                     });
                 }
 
                 const dsTools = [
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'create_prospect_folder',
-                            description: 'Creates a new shared folder for a prospect on Google Drive. Use this only when explicitly asked to create a folder/directory itself, not when creating files.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company or prospect name'
-                                    }
-                                },
-                                required: ['company']
-                            }
-                        }
-                    },
                     {
                         type: 'function',
                         function: {
@@ -3286,20 +3269,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                         }
 
                                         let toolResult = '';
-                                        if (name === 'create_prospect_folder') {
-                                            const company = args.company;
-                                            if (company) {
-                                                console.log(`📂 Tool Call: Creating folder for ${company}`);
-                                                await gdriveService.findOrCreateClientFolder(company);
-                                                gdriveAction = true;
-                                                receipts.push(generateReceipt("UPLOAD", "FOLDER", company, company, company, {
-                                                    initiator: "DeepSeek Tool Call: create_prospect_folder"
-                                                }));
-                                                toolResult = `I have successfully created a Google Drive folder for the prospect **${company}**.`;
-                                            } else {
-                                                toolResult = `Error: Missing 'company' parameter.`;
-                                            }
-                                        } else if (name === 'delete_prospect_folder') {
+                                        if (name === 'delete_prospect_folder') {
                                             const company = args.company;
                                             if (company) {
                                                 console.log(`🗑️ Tool Call: Deleting folder and history for ${company}`);

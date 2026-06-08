@@ -3811,6 +3811,27 @@ body.resizing * {
     color: #15803d !important;
 }
 
+.btn-action-primary {
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    padding: 0.45rem 1rem !important;
+    border-radius: 20px !important;
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+}
+
+.btn-action-primary:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.25) !important;
+}
+
 .chat-input-area {
     background: #ffffff !important;
     border-top: 1px solid rgba(226, 232, 240, 0.8) !important;

@@ -513,8 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 let firstProspectName = null;
                 
                 uniqueFolders.forEach((folder, index) => {
-                    const prospects = getProspectsForCompany(folder.name);
-                    
                     const folderItem = document.createElement('div');
                     folderItem.className = 'sidebar-folder-item';
                     folderItem.setAttribute('data-folder-id', folder.id);
@@ -549,134 +547,71 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (toggleSpan) toggleSpan.style.transform = 'rotate(-90deg)';
                     }
                     
-                    if (prospects.length > 0) {
-                        prospects.forEach(prospectName => {
-                            const pWrapper = document.createElement('div');
-                            pWrapper.className = 'sidebar-prospect-wrapper';
-                            
-                            const pHeader = document.createElement('div');
-                            pHeader.className = 'sidebar-prospect-header sidebar-prospect-item';
-                            pHeader.setAttribute('data-prospect-name', prospectName);
-                            pHeader.setAttribute('data-folder-id', folder.id);
-                            if (activeFolderId === folder.id && activeProspectName === prospectName) {
-                                pHeader.classList.add('active');
-                            }
-                            
-                            const pToggleHtml = `<span class="sidebar-prospect-toggle" style="display:inline-block; transition:transform 0.2s ease;">▼</span>`;
-                            pHeader.innerHTML = `
-                                <span>👤 ${prospectName}</span>
-                                ${pToggleHtml}
-                            `;
-                            pWrapper.appendChild(pHeader);
-                            
-                            const sessionsList = document.createElement('div');
-                            sessionsList.className = 'sidebar-prospect-sessions';
-                            
-                            const pKey = `${folder.name}|${prospectName}`;
-                            const isPExpanded = expandedProspects.has(pKey) || (activeFolderId === folder.id && activeProspectName === prospectName);
-                            
-                            if (isPExpanded) {
-                                sessionsList.classList.remove('collapsed');
-                            } else {
-                                sessionsList.classList.add('collapsed');
-                                const toggleSpan = pHeader.querySelector('.sidebar-prospect-toggle');
-                                if (toggleSpan) toggleSpan.style.transform = 'rotate(-90deg)';
-                            }
-                            
-                            // 1. New Session button
-                            const newSessionBtn = document.createElement('div');
-                            newSessionBtn.className = 'sidebar-new-session-btn';
-                            newSessionBtn.innerText = '➕ New Session';
-                            newSessionBtn.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                startNewSessionForProspect(folder, prospectName);
-                            });
-                            sessionsList.appendChild(newSessionBtn);
-                            
-                            // 2. Fetch history items for this prospect
-                            const matchedSessions = chatsList.filter(c => 
-                                c.company && c.company.toLowerCase().trim() === folder.name.toLowerCase().trim() &&
-                                c.name && c.name.toLowerCase().trim() === prospectName.toLowerCase().trim()
-                            );
-                            
-                            // Sort by date descending
-                            matchedSessions.sort((a, b) => new Date(b.date) - new Date(a.date));
-                            
-                            matchedSessions.forEach(session => {
-                                const sessionItem = document.createElement('div');
-                                sessionItem.className = 'sidebar-session-item';
-                                sessionItem.setAttribute('data-session-id', session.id);
-                                if (currentChatId === session.id) {
-                                    sessionItem.classList.add('active');
-                                    pHeader.classList.add('active'); // Highlight parent prospect row as active too
-                                }
-                                
-                                let displayDate = '';
-                                try {
-                                    const d = new Date(session.date);
-                                    displayDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                                } catch (e) {}
-                                
-                                const titleText = session.title || 'Untitled Session';
-                                
-                                const textSpan = document.createElement('span');
-                                textSpan.className = 'session-text';
-                                textSpan.innerText = `💬 ${titleText} (${displayDate})`;
-                                sessionItem.appendChild(textSpan);
-                                
-                                const delBtn = document.createElement('button');
-                                delBtn.className = 'btn-delete-session';
-                                delBtn.type = 'button';
-                                delBtn.innerText = '🗑️';
-                                delBtn.title = 'Delete Session';
-                                delBtn.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    confirmDeleteSession(session.id, titleText);
-                                });
-                                sessionItem.appendChild(delBtn);
-
-                                sessionItem.title = `${titleText} (${new Date(session.date).toLocaleString()})`;
-                                
-                                sessionItem.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    selectChat(session.id);
-                                });
-                                sessionsList.appendChild(sessionItem);
-                            });
-                            
-                            pHeader.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                const isCollapsed = sessionsList.classList.toggle('collapsed');
-                                const toggleSpan = pHeader.querySelector('.sidebar-prospect-toggle');
-                                if (toggleSpan) {
-                                    toggleSpan.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
-                                }
-                                if (isCollapsed) {
-                                    expandedProspects.delete(pKey);
-                                } else {
-                                    expandedProspects.add(pKey);
-                                }
-                                selectProspect(folder, prospectName);
-                            });
-                            
-                            pWrapper.appendChild(sessionsList);
-                            contents.appendChild(pWrapper);
-                        });
-                    } else {
-                        const pItem = document.createElement('div');
-                        pItem.className = 'sidebar-prospect-item sidebar-prospect-header';
-                        pItem.setAttribute('data-prospect-name', 'Unknown Name');
-                        pItem.setAttribute('data-folder-id', folder.id);
-                        if (activeFolderId === folder.id) {
-                            pItem.classList.add('active');
+                    const sessionsList = document.createElement('div');
+                    sessionsList.className = 'sidebar-prospect-sessions'; // Reusing class for styling
+                    
+                    // 1. New Session button
+                    const newSessionBtn = document.createElement('div');
+                    newSessionBtn.className = 'sidebar-new-session-btn';
+                    newSessionBtn.innerText = '➕ New Session';
+                    newSessionBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        startNewSessionForProspect(folder, '');
+                    });
+                    sessionsList.appendChild(newSessionBtn);
+                    
+                    // 2. Fetch history items for this company
+                    const matchedSessions = chatsList.filter(c => 
+                        c.company && c.company.toLowerCase().trim() === folder.name.toLowerCase().trim()
+                    );
+                    
+                    // Sort by date descending
+                    matchedSessions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    matchedSessions.forEach(session => {
+                        const sessionItem = document.createElement('div');
+                        sessionItem.className = 'sidebar-session-item';
+                        sessionItem.setAttribute('data-session-id', session.id);
+                        if (currentChatId === session.id) {
+                            sessionItem.classList.add('active');
                         }
-                        pItem.innerHTML = `👤 Loading...`;
-                        pItem.addEventListener('click', (e) => {
+                        
+                        let displayDate = '';
+                        try {
+                            const d = new Date(session.date);
+                            displayDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                        } catch (e) {}
+                        
+                        // Append prospect name if available in the history metadata
+                        const sessionContact = session.name && session.name !== 'Unknown Name' ? ` [${session.name}]` : '';
+                        const titleText = (session.title || 'Untitled Session') + sessionContact;
+                        
+                        const textSpan = document.createElement('span');
+                        textSpan.className = 'session-text';
+                        textSpan.innerText = `💬 ${titleText} (${displayDate})`;
+                        sessionItem.appendChild(textSpan);
+                        
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'btn-delete-session';
+                        delBtn.type = 'button';
+                        delBtn.innerText = '🗑️';
+                        delBtn.title = 'Delete Session';
+                        delBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
-                            selectProspect(folder, 'Unknown Name');
+                            confirmDeleteSession(session.id, titleText);
                         });
-                        contents.appendChild(pItem);
-                    }
+                        sessionItem.appendChild(delBtn);
+
+                        sessionItem.title = `${titleText} (${new Date(session.date).toLocaleString()})`;
+                        
+                        sessionItem.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            selectChat(session.id);
+                        });
+                        sessionsList.appendChild(sessionItem);
+                    });
+                    
+                    contents.appendChild(sessionsList);
                     
                     folderItem.appendChild(contents);
                     
@@ -691,14 +626,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             expandedCompanies.add(folder.name);
                         }
-                        const firstP = prospects[0] || 'Unknown Name';
-                        await selectProspect(folder, firstP);
+                        await selectProspect(folder, '');
                     });
                     
                     recentChatsList.appendChild(folderItem);
                     if (index === 0) {
                         firstFolderObj = folder;
-                        firstProspectName = prospects[0] || 'Unknown Name';
+                        firstProspectName = '';
                     }
                 });
                 
@@ -720,77 +654,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function getProspectTokens(name) {
-        const stopWords = new Set(['linkedin', 'profile', 'lead', 'capture', 'form', 'sow', 'statement', 'of', 'work', 'call', 'log', 'pdf', 'txt', 'docx', 'doc', 'ics', 'calendar', 'booking', 'confirmation', 'topics', 'discussion']);
-        const parts = name.toLowerCase().split(/[-_\s]+/);
-        return parts.filter(p => p.length > 0 && !stopWords.has(p) && isNaN(p));
-    }
-
-    function getProspectsForCompany(companyName, files = []) {
-        const prospects = new Set();
-        chatsList.forEach(c => {
-            if (c.company && c.company.toLowerCase().trim() === companyName.toLowerCase().trim() && c.name) {
-                prospects.add(c.name.trim());
-            }
-        });
-        const stopWords = new Set(['linkedin', 'profile', 'lead', 'capture', 'form', 'sow', 'statement', 'of', 'work', 'call', 'log', 'pdf', 'txt', 'docx', 'doc', 'ics', 'calendar', 'booking', 'confirmation', 'topics', 'discussion']);
-        if (files && files.length > 0) {
-            files.forEach(file => {
-                const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-                const parts = nameWithoutExt.toLowerCase().split(/[-_\s]+/);
-                const nameParts = parts.filter(p => p.length > 0 && !stopWords.has(p) && isNaN(p));
-                if (nameParts.length >= 2 && nameParts.length <= 3) {
-                    const extracted = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-                    prospects.add(extracted);
-                }
-            });
-        }
-        return Array.from(prospects);
-    }
-
-    function shouldDisplayFileForProspect(fileName, activeProspect, allProspectsInCompany) {
-        const nameLower = fileName.toLowerCase();
-        if (!activeProspect || activeProspect === 'Unknown Name' || activeProspect === 'Loading...') return true;
-        const activeTokens = getProspectTokens(activeProspect);
-        const otherProspects = allProspectsInCompany.filter(p => p.toLowerCase().trim() !== activeProspect.toLowerCase().trim() && p !== 'Unknown Name' && p !== 'Loading...');
-        const otherTokens = [];
-        otherProspects.forEach(op => {
-            otherTokens.push(...getProspectTokens(op));
-        });
-        const containsAny = (tokens) => tokens.some(t => nameLower.includes(t));
-        const hasActiveTokens = containsAny(activeTokens);
-        const hasOtherTokens = containsAny(otherTokens);
-        if (hasOtherTokens && !hasActiveTokens) {
-            return false;
-        }
-        return true;
-    }
-
-    function extractNameFromFiles(files) {
-        if (!files || files.length === 0) return null;
-        const stopWords = new Set(['linkedin', 'profile', 'lead', 'capture', 'form', 'sow', 'statement', 'of', 'work', 'call', 'log', 'pdf', 'txt', 'docx', 'doc', 'ics', 'calendar', 'booking', 'confirmation', 'topics', 'discussion']);
-        for (const file of files) {
-            const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-            const parts = nameWithoutExt.toLowerCase().split(/[-_\s]+/);
-            const nameParts = parts.filter(p => p.length > 0 && !stopWords.has(p) && isNaN(p));
-            if (nameParts.length >= 2 && nameParts.length <= 3) {
-                return nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-            }
-        }
-        return null;
-    }
-
-    function updateNextBestAction(files) {
-        // Disabled: Next Best Action banner feature has been removed.
-        return;
-    }
-
-    function runNBAPrompt(promptText) {
-        if (!chatUserInput) return;
-        chatUserInput.value = promptText;
-        sendUserQuery();
-    }
-
     async function loadSourcesForCompany(folderId, companyName, preFetchedFiles = null) {
         if (!sourcesList) return;
         sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
@@ -798,135 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = preFetchedFiles || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folderId)}`)).json();
             sourcesList.innerHTML = '';
             
-            // Look up associated client name from chatsList, or default to currently entered metaName
-            let clientName = activeProspectName || 'Unknown Name';
-            const matchSession = chatsList.find(c => 
-                c.company && c.company.toLowerCase().trim() === companyName.toLowerCase().trim() &&
-                c.name && c.name.toLowerCase().trim() === clientName.toLowerCase().trim()
-            );
-            
             const files = data.items ? data.items.filter(f => !f.isFolder) : [];
-            const allProspects = getProspectsForCompany(companyName, files);
-            
-            if (matchSession) {
-                clientName = matchSession.name || 'Unknown Name';
-            } else if (clientName === 'Unknown Name' || !clientName) {
-                // Try to extract from file names in the folder
-                const extractedName = extractNameFromFiles(files);
-                if (extractedName) {
-                    clientName = extractedName;
-                    activeProspectName = extractedName;
-                    
-                    // Update sidebar element dynamically if it exists
-                    const loadingItem = document.querySelector(`.sidebar-prospect-item[data-prospect-name="Unknown Name"][data-folder-id="${folderId}"]`);
-                    if (loadingItem && loadingItem.parentNode) {
-                        const pWrapper = document.createElement('div');
-                        pWrapper.className = 'sidebar-prospect-wrapper';
-                        
-                        const pHeader = document.createElement('div');
-                        pHeader.className = 'sidebar-prospect-header sidebar-prospect-item active';
-                        pHeader.setAttribute('data-prospect-name', extractedName);
-                        pHeader.setAttribute('data-folder-id', folderId);
-                        
-                        const pToggleHtml = `<span class="sidebar-prospect-toggle" style="display:inline-block; transition:transform 0.2s ease;">▼</span>`;
-                        pHeader.innerHTML = `
-                            <span>👤 ${extractedName}</span>
-                            ${pToggleHtml}
-                        `;
-                        pWrapper.appendChild(pHeader);
-                        
-                        const sessionsList = document.createElement('div');
-                        sessionsList.className = 'sidebar-prospect-sessions';
-                        
-                        // New Session button
-                        const newSessionBtn = document.createElement('div');
-                        newSessionBtn.className = 'sidebar-new-session-btn';
-                        newSessionBtn.innerText = '➕ New Session';
-                        newSessionBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const folderObj = gdriveFolders.find(f => f.id === folderId);
-                            if (folderObj) startNewSessionForProspect(folderObj, extractedName);
-                        });
-                        sessionsList.appendChild(newSessionBtn);
-                        
-                        // Fetch history items
-                        const matchedSessions = chatsList.filter(c => 
-                            c.company && c.company.toLowerCase().trim() === companyName.toLowerCase().trim() &&
-                            c.name && c.name.toLowerCase().trim() === extractedName.toLowerCase().trim()
-                        );
-                        matchedSessions.sort((a, b) => new Date(b.date) - new Date(a.date));
-                        
-                        matchedSessions.forEach(session => {
-                            const sessionItem = document.createElement('div');
-                            sessionItem.className = 'sidebar-session-item';
-                            sessionItem.setAttribute('data-session-id', session.id);
-                            if (currentChatId === session.id) {
-                                sessionItem.classList.add('active');
-                            }
-                            
-                            let displayDate = '';
-                            try {
-                                const d = new Date(session.date);
-                                displayDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                            } catch (e) {}
-                            
-                            const titleText = session.title || 'Untitled Session';
-                            
-                            const textSpan = document.createElement('span');
-                            textSpan.className = 'session-text';
-                            textSpan.innerText = `💬 ${titleText} (${displayDate})`;
-                            sessionItem.appendChild(textSpan);
-                            
-                            const delBtn = document.createElement('button');
-                            delBtn.className = 'btn-delete-session';
-                            delBtn.type = 'button';
-                            delBtn.innerText = '🗑️';
-                            delBtn.title = 'Delete Session';
-                            delBtn.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                confirmDeleteSession(session.id, titleText);
-                            });
-                            sessionItem.appendChild(delBtn);
-
-                            sessionItem.title = `${titleText} (${new Date(session.date).toLocaleString()})`;
-                            
-                            sessionItem.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                selectChat(session.id);
-                            });
-                            sessionsList.appendChild(sessionItem);
-                        });
-                        
-                        pHeader.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const isCollapsed = sessionsList.classList.toggle('collapsed');
-                            const toggleSpan = pHeader.querySelector('.sidebar-prospect-toggle');
-                            if (toggleSpan) {
-                                toggleSpan.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
-                            }
-                            const pKey = `${companyName}|${extractedName}`;
-                            if (isCollapsed) {
-                                expandedProspects.delete(pKey);
-                            } else {
-                                expandedProspects.add(pKey);
-                            }
-                            const folderObj = gdriveFolders.find(f => f.id === folderId);
-                            if (folderObj) selectProspect(folderObj, extractedName);
-                        });
-                        
-                        pWrapper.appendChild(sessionsList);
-                        loadingItem.parentNode.replaceChild(pWrapper, loadingItem);
-                    }
-                    
-                    if (metaName && metaName.value !== extractedName) {
-                        metaName.value = extractedName;
-                        metaName.dispatchEvent(new Event('input', { bubbles: true }));
-                        metaName.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                } else {
-                    clientName = (metaName && metaName.value) ? metaName.value : 'Unknown Name';
-                }
-            }
             
             // Construct and render metadata context header at the top
             const headerInfo = document.createElement('div');
@@ -934,99 +669,97 @@ document.addEventListener('DOMContentLoaded', () => {
             headerInfo.style.cssText = 'padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 0.75rem; font-size: 0.8rem; color: #475569; background: #f8fafc; border-radius: 6px;';
             headerInfo.innerHTML = `
                 <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.25rem;">${companyName}</div>
-                <div style="color: #64748b;">Prospect: ${clientName}</div>
+                <div style="color: #64748b;">Account Documents</div>
             `;
             sourcesList.appendChild(headerInfo);
             
-            const filteredFiles = files.filter(file => shouldDisplayFileForProspect(file.name, clientName, allProspects));
-            populateGdriveDropdown(filteredFiles);
-            if (filteredFiles.length === 0) {
+            populateGdriveDropdown(files);
+            
+            if (files.length === 0) {
                 const noFilesMsg = document.createElement('div');
                 noFilesMsg.style.cssText = 'color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;';
                 noFilesMsg.innerText = 'No files inside folder';
                 sourcesList.appendChild(noFilesMsg);
-                updateNextBestAction(filteredFiles);
                 return;
             }
             
-            filteredFiles.forEach(file => {
+            files.forEach(file => {
                 const fileItem = document.createElement('div');
-                    fileItem.className = 'sidebar-file-item';
-                    if (sourceGdriveFileId.value === file.id) {
-                        fileItem.classList.add('active');
+                fileItem.className = 'sidebar-file-item';
+                if (sourceGdriveFileId && sourceGdriveFileId.value === file.id) {
+                    fileItem.classList.add('active');
+                }
+                
+                fileItem.innerHTML = `
+                    <div class="sidebar-file-title">
+                        <span>📄</span> ${file.name}
+                    </div>
+                    <span class="sidebar-file-size">${(file.size / 1024).toFixed(1)} KB</span>
+                `;
+                
+                fileItem.addEventListener('click', () => {
+                    document.querySelectorAll('.sidebar-file-item').forEach(el => el.classList.remove('active'));
+                    fileItem.classList.add('active');
+                    
+                    if (pdfPreviewModal) {
+                        pdfPreviewModal.classList.remove('modal-hidden');
+                    }
+                    if (pdfModalTitle) {
+                        pdfModalTitle.innerText = file.name || 'Document Preview';
+                    }
+                    if (pdfRenderTarget) {
+                        pdfRenderTarget.classList.add('hidden');
+                    }
+                    if (textPreviewTarget) {
+                        textPreviewTarget.classList.remove('hidden');
+                        textPreviewTarget.innerHTML = '<div style="color: #64748b; font-size: 0.9rem; padding: 2rem; text-align: center;">⚡ Reading file content...</div>';
                     }
                     
-                    fileItem.innerHTML = `
-                        <div class="sidebar-file-title">
-                            <span>📄</span> ${file.name}
-                        </div>
-                        <span class="sidebar-file-size">${(file.size / 1024).toFixed(1)} KB</span>
-                    `;
-                    
-                    fileItem.addEventListener('click', () => {
-                        document.querySelectorAll('.sidebar-file-item').forEach(el => el.classList.remove('active'));
-                        fileItem.classList.add('active');
-                        
-                        if (pdfPreviewModal) {
-                            pdfPreviewModal.classList.remove('modal-hidden');
-                        }
-                        if (pdfModalTitle) {
-                            pdfModalTitle.innerText = file.name || 'Document Preview';
-                        }
-                        if (pdfRenderTarget) {
-                            pdfRenderTarget.classList.add('hidden');
-                        }
-                        if (textPreviewTarget) {
-                            textPreviewTarget.classList.remove('hidden');
-                            textPreviewTarget.innerHTML = '<div style="color: #64748b; font-size: 0.9rem; padding: 2rem; text-align: center;">⚡ Reading file content...</div>';
-                        }
-                        
-                        setTimeout(async () => {
-                            try {
-                                const response = await fetch(`/api/gdrive/read?fileId=${encodeURIComponent(file.id)}&ignoreCache=true`);
-                                if (!response.ok) throw new Error("GDrive read failed");
-                                const data = await response.json();
-                                if (textPreviewTarget) {
-                                    try {
-                                        const markdown = data.content || '';
-                                        const parsedHtml = (window.marked && typeof window.marked.parse === 'function')
-                                            ? window.marked.parse(markdown)
-                                            : (window.marked && typeof window.marked === 'function')
-                                                ? window.marked(markdown)
-                                                : null;
-                                        
-                                        if (parsedHtml !== null) {
-                                            const cleanHtml = (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function')
-                                                ? window.DOMPurify.sanitize(parsedHtml)
-                                                : parsedHtml;
-                                            textPreviewTarget.innerHTML = cleanHtml || '[Empty File]';
-                                        } else {
-                                            textPreviewTarget.textContent = markdown || '[Empty File]';
-                                        }
-                                    } catch (renderErr) {
-                                        console.warn("Markdown rendering failed:", renderErr);
-                                        textPreviewTarget.textContent = data.content || '[Empty File]';
+                    setTimeout(async () => {
+                        try {
+                            const response = await fetch(`/api/gdrive/read?fileId=${encodeURIComponent(file.id)}&ignoreCache=true`);
+                            if (!response.ok) throw new Error("GDrive read failed");
+                            const data = await response.json();
+                            if (textPreviewTarget) {
+                                try {
+                                    const markdown = data.content || '';
+                                    const parsedHtml = (window.marked && typeof window.marked.parse === 'function')
+                                        ? window.marked.parse(markdown)
+                                        : (window.marked && typeof window.marked === 'function')
+                                            ? window.marked(markdown)
+                                            : null;
+                                    
+                                    if (parsedHtml !== null) {
+                                        const cleanHtml = (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function')
+                                            ? window.DOMPurify.sanitize(parsedHtml)
+                                            : parsedHtml;
+                                        textPreviewTarget.innerHTML = cleanHtml || '[Empty File]';
+                                    } else {
+                                        textPreviewTarget.textContent = markdown || '[Empty File]';
                                     }
-                                }
-                                gdriveFileContent = data.content || '';
-                                sourceGdriveFileId.value = file.id;
-                                if (sourceGdriveFileSelect) {
-                                    sourceGdriveFileSelect.value = file.id;
-                                }
-                                updateValidationBadges();
-                                triggerAutoSave();
-                            } catch (err) {
-                                console.error("Error reading file:", err);
-                                if (textPreviewTarget) {
-                                    textPreviewTarget.innerHTML = `<div style="color: #ef4444; font-size: 0.9rem; padding: 2rem; text-align: center;">❌ Failed to load file content.<br><span style="font-size: 0.8rem; color: #94a3b8;">${err.message}</span></div>`;
+                                } catch (renderErr) {
+                                    console.warn("Markdown rendering failed:", renderErr);
+                                    textPreviewTarget.textContent = data.content || '[Empty File]';
                                 }
                             }
-                        }, 100);
-                    });
-                    
-                    sourcesList.appendChild(fileItem);
+                            gdriveFileContent = data.content || '';
+                            if (sourceGdriveFileId) sourceGdriveFileId.value = file.id;
+                            if (sourceGdriveFileSelect) {
+                                sourceGdriveFileSelect.value = file.id;
+                            }
+                            if (typeof updateValidationBadges === 'function') updateValidationBadges();
+                            if (typeof triggerAutoSave === 'function') triggerAutoSave();
+                        } catch (err) {
+                            console.error("Error reading file:", err);
+                            if (textPreviewTarget) {
+                                textPreviewTarget.innerHTML = `<div style="color: #ef4444; font-size: 0.9rem; padding: 2rem; text-align: center;">❌ Failed to load file content.<br><span style="font-size: 0.8rem; color: #94a3b8;">${err.message}</span></div>`;
+                            }
+                        }
+                    }, 100);
                 });
-                updateNextBestAction(filteredFiles);
+                
+                sourcesList.appendChild(fileItem);
+            });
         } catch (err) {
             console.error('Error loading company files:', err);
             sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load files</div>';
@@ -1037,12 +770,12 @@ document.addEventListener('DOMContentLoaded', () => {
     async function startNewSessionForProspect(companyFolder, prospectName) {
         currentChatId = null;
         activeFolderId = companyFolder.id;
-        activeProspectName = prospectName;
+        activeProspectName = prospectName || '';
         chatHistory = [];
         chatMessagesLog.innerHTML = '';
         
         // Auto-populate inputs
-        if (metaName) metaName.value = prospectName || '';
+        if (metaName) metaName.value = activeProspectName;
         if (metaCompany) {
             metaCompany.value = companyFolder.name;
             metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1055,7 +788,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
         
         // Set headers
-        if (activeChatClientTitle) activeChatClientTitle.innerText = `${companyFolder.name} (${prospectName})`;
+        if (activeChatClientTitle) {
+            activeChatClientTitle.innerText = activeProspectName ? `${companyFolder.name} (${activeProspectName})` : companyFolder.name;
+        }
         if (activeChatClientMeta) activeChatClientMeta.innerText = `New Chat Session — Interest: Planning & Analytics (TM1)`;
         
         if (workspaceEmptyState) workspaceEmptyState.classList.add('hidden');
@@ -1068,9 +803,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const resolvedFilesData = await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(companyFolder.id)}`)).json();
             await loadSourcesForCompany(companyFolder.id, companyFolder.name, resolvedFilesData);
-        } catch (err) {
-            console.error('Error loading files for new session:', err);
-            sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load files</div>';
+        } catch(e) {
+            console.error('Failed to pre-fetch files for new session', e);
+            sourcesList.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Error loading files</div>';
         }
         
         // Re-render the sidebar to reflect new active state
@@ -3122,6 +2857,57 @@ Identifier: ${receipt.targetId}
             }
 
             modal.classList.remove('modal-hidden');
+        });
+    }
+
+    // --- Quick Add Prospect Modal Logic ---
+    const btnQuickAddProspect = document.getElementById('btn-quick-add-prospect');
+    const addProspectModal = document.getElementById('add-prospect-modal');
+    const closeAddProspectBtn = document.getElementById('close-add-prospect-btn');
+    const btnCancelAddProspect = document.getElementById('btn-cancel-add-prospect');
+    const btnSubmitAddProspect = document.getElementById('btn-submit-add-prospect');
+    const quickMetaName = document.getElementById('quick-meta-name');
+    const quickMetaCompany = document.getElementById('quick-meta-company');
+
+    if (btnQuickAddProspect) {
+        btnQuickAddProspect.addEventListener('click', () => {
+            const btnNewChat = document.getElementById('btn-new-chat');
+            if (btnNewChat) btnNewChat.click();
+            quickMetaName.value = '';
+            quickMetaCompany.value = '';
+            if (addProspectModal) addProspectModal.classList.remove('modal-hidden');
+            setTimeout(() => quickMetaName.focus(), 100);
+        });
+    }
+
+    const closeAddModal = () => {
+        if (addProspectModal) addProspectModal.classList.add('modal-hidden');
+    };
+
+    if (closeAddProspectBtn) closeAddProspectBtn.addEventListener('click', closeAddModal);
+    if (btnCancelAddProspect) btnCancelAddProspect.addEventListener('click', closeAddModal);
+
+    if (btnSubmitAddProspect) {
+        btnSubmitAddProspect.addEventListener('click', () => {
+            const nameVal = quickMetaName.value.trim();
+            const companyVal = quickMetaCompany.value.trim();
+            
+            if (!companyVal) {
+                showToast('Company Name is required.');
+                quickMetaCompany.focus();
+                return;
+            }
+
+            const metaName = document.getElementById('meta-name');
+            const metaCompany = document.getElementById('meta-company');
+            const btnSaveSources = document.getElementById('btn-save-sources');
+
+            if (metaName) metaName.value = nameVal;
+            if (metaCompany) metaCompany.value = companyVal;
+            
+            closeAddModal();
+            
+            if (btnSaveSources) btnSaveSources.click();
         });
     }
 });

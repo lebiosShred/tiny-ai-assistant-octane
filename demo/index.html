@@ -107,7 +107,13 @@
 
                             <!-- Predefined Prompt Quick Buttons -->
                             <div class="quick-prompts-bar">
-                                <div class="quick-prompts-label">Generate Plain Text Reports:</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div class="quick-prompts-label">Quick Actions:</div>
+                                    <button type="button" class="btn-action-primary" id="btn-quick-add-prospect" aria-label="Add Prospect">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                        Add Prospect
+                                    </button>
+                                </div>
                                 <div class="quick-prompts-buttons">
                                     <button type="button" class="btn btn-quick-prompt" data-prompt-type="leadSheet">📋 Lead Sheet</button>
                                 </div>
@@ -375,6 +381,28 @@
             <div class="confirm-modal-footer">
                 <button type="button" id="btn-cancel-confirm" class="btn btn-secondary">Cancel</button>
                 <button type="button" id="btn-submit-confirm" class="btn btn-primary">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Prospect Modal -->
+    <div id="add-prospect-modal" class="modal-hidden">
+        <div class="modal-backdrop"></div>
+        <div class="confirm-modal-content" style="max-width: 400px;">
+            <div class="confirm-modal-header">
+                <span class="confirm-modal-title">Add New Prospect</span>
+                <button type="button" id="close-add-prospect-btn" aria-label="Close Modal" class="btn-close-confirm">✕</button>
+            </div>
+            <div class="confirm-modal-body" style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
+                <label for="quick-meta-name" style="font-size: 0.85rem; font-weight: 500; color: #64748b;">Prospect Name</label>
+                <input type="text" id="quick-meta-name" placeholder="e.g. Sarah Chen" style="padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-size: 0.95rem;">
+                
+                <label for="quick-meta-company" style="font-size: 0.85rem; font-weight: 500; color: #64748b;">Company</label>
+                <input type="text" id="quick-meta-company" placeholder="e.g. Meridian Logistics" style="padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-size: 0.95rem;">
+            </div>
+            <div class="confirm-modal-footer">
+                <button type="button" id="btn-cancel-add-prospect" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="btn-submit-add-prospect" class="btn btn-primary">Save Prospect</button>
             </div>
         </div>
     </div>
