@@ -413,12 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 workspaceActiveChat.classList.remove('hidden');
                 chatMessagesLog.innerHTML = '';
                 chatHistory = [];
-                
-                chatHistory.push({
-                    role: 'assistant',
-                    content: `Welcome! I've loaded the Google Drive folder for **${companyFolder.name}** and initialized a session for **${prospectName}**. You can drag files here or click the paperclip to upload documents to this prospect's memory.`,
-                    timestamp: new Date().toISOString()
-                });
                 renderChatHistory();
                 
                 if (metaName) metaName.value = prospectName || '';
@@ -746,72 +740,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateNextBestAction(files) {
-        const banner = document.getElementById('chat-nba-banner');
-        const msgText = document.getElementById('nba-message-text');
-        const execBtn = document.getElementById('btn-nba-execute');
-        if (!banner || !msgText || !execBtn) return;
-
-        if (!activeFolderId) {
-            banner.classList.add('hidden');
-            return;
-        }
-
-        const fileList = files || [];
-
-        // Heuristic: check presence of file names
-        let hasLinkedIn = false;
-        let hasIntake = false;
-        let hasTranscript = false;
-        let hasProposalOrBrief = false;
-
-        fileList.forEach(f => {
-            const name = f.name.toLowerCase();
-            if (name.includes('linkedin') || name.includes('metadata')) {
-                hasLinkedIn = true;
-            } else if (name.includes('intake')) {
-                hasIntake = true;
-            } else if (name.includes('transcript') || name.includes('call_log') || name.includes('recording')) {
-                hasTranscript = true;
-            } else if (name.includes('proposal') || name.includes('brief') || name.includes('lead_sheet') || name.includes('sow')) {
-                hasProposalOrBrief = true;
-            }
-        });
-
-        let stage = 'NO_DATA';
-        if (hasProposalOrBrief) {
-            stage = 'PROPOSAL_SENT';
-        } else if (hasLinkedIn && hasIntake && hasTranscript) {
-            stage = 'PROPOSAL_SENT';
-        } else if (hasLinkedIn && hasIntake) {
-            stage = 'TRANSCRIPT_LOADED';
-        } else if (hasLinkedIn) {
-            stage = 'INTAKE_LOADED';
-        } else {
-            stage = 'NO_DATA';
-        }
-
-        banner.classList.remove('hidden');
-
-        if (stage === 'NO_DATA') {
-            msgText.innerHTML = `<strong>LinkedIn:</strong> Analyze the prospect's LinkedIn profile to gather background context.`;
-            execBtn.innerText = 'Analyze LinkedIn';
-            execBtn.style.display = 'block';
-            execBtn.onclick = () => runNBAPrompt("Analysis of the client's LinkedIn profile");
-        } else if (stage === 'INTAKE_LOADED') {
-            msgText.innerHTML = `<strong>Intake:</strong> Synthesize client intake responses to identify business needs.`;
-            execBtn.innerText = 'Synthesize Intake';
-            execBtn.style.display = 'block';
-            execBtn.onclick = () => runNBAPrompt("Synthesis of intake answers");
-        } else if (stage === 'TRANSCRIPT_LOADED') {
-            msgText.innerHTML = `<strong>Transcript:</strong> Synthesize the call transcript to extract pain points and key solutions.`;
-            execBtn.innerText = 'Synthesize Transcript';
-            execBtn.style.display = 'block';
-            execBtn.onclick = () => runNBAPrompt("Analysis of call transcripts");
-        } else if (stage === 'PROPOSAL_SENT') {
-            msgText.innerHTML = `All pipeline documents have been synthesized. Ready to proceed!`;
-            execBtn.style.display = 'none';
-            execBtn.onclick = null;
-        }
+        // Disabled: Next Best Action banner feature has been removed.
+        return;
     }
 
     function runNBAPrompt(promptText) {
@@ -1090,12 +1020,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (workspaceEmptyState) workspaceEmptyState.classList.add('hidden');
         if (workspaceActiveChat) workspaceActiveChat.classList.remove('hidden');
         
-        // Render first welcome message
-        chatHistory.push({
-            role: 'assistant',
-            content: `Welcome! I've loaded the Google Drive folder for **${companyFolder.name}** and initialized a new session for **${prospectName}**. You can drag files here or click the paperclip to upload documents to this prospect's memory.`,
-            timestamp: new Date().toISOString()
-        });
+        chatHistory = [];
         renderChatHistory();
         
         sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
@@ -1272,11 +1197,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         timestamp: data.date
                     });
                 } else {
-                    chatHistory.push({
-                        role: 'assistant',
-                        content: `Hi! I am Tiny, your AI Sales Assistant. I have loaded the sources for ${data.name}. You can generate reports or ask me questions about this prospect.`,
-                        timestamp: new Date().toISOString()
-                    });
+                    chatHistory = [];
                 }
             }
             renderChatHistory();
@@ -1542,22 +1463,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // If it was a new chat, update currentChatId
             if (!currentChatId) {
                 currentChatId = result.id;
-                if (chatHistory.length === 0) {
-                    // Append first assistant welcome message
-                    chatHistory.push({
-                        role: 'assistant',
-                        content: `Chat session initialized for ${payload.name} at ${payload.company}. Sources uploaded!`,
-                        timestamp: new Date().toISOString()
-                    });
-                    payload.id = currentChatId;
-                    payload.messages = chatHistory;
-                    // Re-save with welcome message
-                    await fetch('/api/history', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                }
             }
             
             await loadChatsList();

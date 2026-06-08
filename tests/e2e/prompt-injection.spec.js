@@ -81,11 +81,11 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
         // Click Lead Sheet quick prompt
         await page.click('button[data-prompt-type="leadSheet"]');
 
-        // Wait for Lead Sheet response card to appear (second assistant message card)
+        // Wait for Lead Sheet response card to appear (first assistant message card)
         await page.waitForFunction(
             () => {
                 const cards = document.querySelectorAll('#chat-messages-log .chat-message-card.assistant');
-                return cards.length >= 2 && cards[cards.length - 1].innerText && cards[cards.length - 1].innerText.length > 20;
+                return cards.length >= 1 && cards[cards.length - 1].innerText && cards[cards.length - 1].innerText.length > 20;
             },
             { timeout: 35000 }
         );
@@ -141,7 +141,7 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
         await page.waitForFunction(
             () => {
                 const cards = document.querySelectorAll('#chat-messages-log .chat-message-card.assistant');
-                return cards.length >= 2 && cards[cards.length - 1].innerText && cards[cards.length - 1].innerText.length > 20;
+                return cards.length >= 1 && cards[cards.length - 1].innerText && cards[cards.length - 1].innerText.length > 20;
             },
             { timeout: 35000 }
         );
@@ -194,7 +194,7 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
         await page.waitForFunction(
             () => {
                 const cards = document.querySelectorAll('#chat-messages-log .chat-message-card.assistant');
-                return cards.length >= 2 && cards[cards.length - 1].innerText && cards[cards.length - 1].innerText.length > 20;
+                return cards.length >= 1 && cards[cards.length - 1].innerText && cards[cards.length - 1].innerText.length > 20;
             },
             { timeout: 35000 }
         );
@@ -242,7 +242,7 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
         await page.waitForFunction(
             () => {
                 const cards = document.querySelectorAll('#chat-messages-log .chat-message-card.assistant');
-                return cards.length >= 2 && cards[cards.length - 1].innerText && cards[cards.length - 1].innerText.length > 20;
+                return cards.length >= 1 && cards[cards.length - 1].innerText && cards[cards.length - 1].innerText.length > 20;
             },
             { timeout: 35000 }
         );
@@ -297,7 +297,7 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
         await page.waitForFunction(
             () => {
                 const cards = document.querySelectorAll('#chat-messages-log .chat-message-card.assistant');
-                return cards.length >= 2 && cards[cards.length - 1].innerText && cards[cards.length - 1].innerText.length > 20;
+                return cards.length >= 1 && cards[cards.length - 1].innerText && cards[cards.length - 1].innerText.length > 20;
             },
             { timeout: 35000 }
         );

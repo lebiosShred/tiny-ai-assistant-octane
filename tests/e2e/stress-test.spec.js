@@ -51,7 +51,8 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         // Wait for chat initialization under load
         await indexPage.waitForChatInit();
         const chatMessages = await page.locator('#chat-messages-log').innerText();
-        expect(chatMessages).toContain('Chat session initialized');
+        expect(chatMessages).not.toContain('Chat session initialized');
+        expect(chatMessages.trim()).toBe('');
     });
 
     test('Step 2: Concurrency Button Spamming', async ({ page }) => {

@@ -106,8 +106,9 @@ class IndexPage {
   async waitForChatInit() {
     await this.page.waitForFunction(
       () => {
-        const log = document.querySelector('#chat-messages-log');
-        return log && log.innerText.includes('Chat session initialized');
+        const titleEl = document.querySelector('#active-chat-client-title');
+        const titleText = titleEl ? titleEl.innerText.trim() : '';
+        return titleText !== '' && titleText !== 'Loading...' && titleText !== 'New Chat';
       },
       null,
       { timeout: 15000 }

@@ -45,9 +45,14 @@ test.describe('Aegis Functional E2E Suite', () => {
         await indexPage.submitForm();
         await indexPage.waitForChatInit();
 
-        // Assert welcome message containing initialization text
+        // Assert no initial greeting message is present in the chat log
         const welcomeText = await page.locator('#chat-messages-log').innerText();
-        expect(welcomeText).toContain('Chat session initialized');
+        expect(welcomeText).not.toContain('Chat session initialized');
+        expect(welcomeText.trim()).toBe('');
+
+        // Assert header is updated
+        const clientTitleText = await page.locator('#active-chat-client-title').innerText();
+        expect(clientTitleText).toContain('Meridian Logistics');
     });
 
     test('Generating reports via quick prompts generates a valid response', async ({ page }) => {
