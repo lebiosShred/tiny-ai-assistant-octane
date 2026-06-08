@@ -84,7 +84,7 @@ function extractScore(content) {
     return match ? match[1].toUpperCase() : null;
 }
 
-function loadKnowledgeBase() {
+function loadKnowledgeBase(userQuery = '') {
     return new Promise((resolve) => {
         const knowledgeDir = path.join(PUBLIC_DIR, 'knowledge');
         const targetDirs = [knowledgeDir];
@@ -100,6 +100,7 @@ function loadKnowledgeBase() {
         
         const allFiles = [];
         let completedDirs = 0;
+        const queryLower = (userQuery || '').toLowerCase();
         
         const processDirectory = (dirPath) => {
             fs.readdir(dirPath, (err, files) => {
@@ -115,6 +116,14 @@ function loadKnowledgeBase() {
                                     namePrefix = 'Octane Services/';
                                 } else if (dirPath === octaneCompetitorsDir) {
                                     namePrefix = 'Octane Competitors/';
+                                    
+                                    // Limit context footprint: only load matching competitor profile or base plan
+                                    const isBasePlan = f === 'competitor_research_plan.md';
+                                    const fileKey = f.split('_')[0].toLowerCase();
+                                    const isMentioned = queryLower.includes(fileKey) || queryLower.includes('competitor');
+                                    if (!isBasePlan && !isMentioned) {
+                                        return; // Skip profile
+                                    }
                                 }
                                 allFiles.push({
                                     name: namePrefix + f,
@@ -508,7 +517,7 @@ async function generateAICompletion(systemPrompt, userPrompt) {
         throw new Error('MISTRAL_API_KEY is not configured on the server.');
     }
     
-    const knowledgeBase = await loadKnowledgeBase();
+    const knowledgeBase = await loadKnowledgeBase(userPrompt);
     const safetyRules = `
 <safety_rules>
 - **Absolute Pricing Purge Directive**: You are strictly FORBIDDEN from generating, writing, repeating, quoting, or mentioning any numerical pricing values, dollar amounts, rates, licensing costs, or financial figures anywhere in your response. You must completely ignore any pricing, discounts, free periods, or rates mentioned by speakers in the transcript. You must never write "A$50", "A$100", "50/month", "free of charge", "free trial", "SDR is bad", or "COLD" anywhere in your response. You must never output any dollar figures or pricing numbers.
@@ -1613,8 +1622,6 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 apiKey = authHeader.substring(7).trim();
             }
             
-            // Load and inject knowledge base
-            const knowledgeBase = await loadKnowledgeBase();
             let payload;
             try {
                 payload = JSON.parse(body);
@@ -1623,6 +1630,18 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
                 return;
             }
+
+            // Extract user query text from messages to perform semantic filtering on knowledge base
+            let userQueryText = '';
+            if (payload && Array.isArray(payload.messages)) {
+                userQueryText = payload.messages
+                    .filter(m => m && m.role === 'user')
+                    .map(m => m.content)
+                    .join(' ');
+            }
+            
+            // Load and inject knowledge base
+            const knowledgeBase = await loadKnowledgeBase(userQueryText);
 
             // Ensure safe metadata and payload defaults
             payload.messages = payload.messages || [];
@@ -5875,16 +5894,19 @@ ${payload.intakeAnswers || ''}`;
                 return;
             }
 
+            const decodedFileName = decodeURIComponent(fileName);
             const resolvedBase = path.resolve(knowledgeDir);
-            const targetPath = path.resolve(resolvedBase, fileName);
+            const targetPath = path.resolve(resolvedBase, decodedFileName);
 
-            if (!targetPath.startsWith(resolvedBase + path.sep)) {
+            const relative = path.relative(resolvedBase, targetPath);
+            const isSafe = relative && !relative.startsWith('..') && !path.isAbsolute(relative);
+            if (!isSafe) {
                 res.writeHead(403, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Directory traversal forbidden.' }));
                 return;
             }
 
-            if (fileName === 'Octane Services' || fileName.includes('Octane Services') || fileName === 'Octane Competitors' || fileName.includes('Octane Competitors')) {
+            if (decodedFileName === 'Octane Services' || decodedFileName.includes('Octane Services') || decodedFileName === 'Octane Competitors' || decodedFileName.includes('Octane Competitors')) {
                 res.writeHead(403, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Access forbidden.' }));
                 return;
