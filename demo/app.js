@@ -1232,6 +1232,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentChatId = result.id;
             }
             
+            // Force reload of folder explorer tree
+            gdriveFolders = [];
+            
             await loadChatsList();
             // Setup Header Info directly to prevent clearing chat history and race conditions
             if (activeChatClientTitle) activeChatClientTitle.innerText = `${payload.company} (${payload.name})`;
@@ -1274,6 +1277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Create New Chat ---
     const handleNewChat = () => {
         currentChatId = null;
+        activeFolderId = null;
         activeProspectName = null;
         renderChatsList();
 
@@ -2889,16 +2893,11 @@ Identifier: ${receipt.targetId}
                 return;
             }
 
-            const metaName = document.getElementById('meta-name');
-            const metaCompany = document.getElementById('meta-company');
-            const btnSaveSources = document.getElementById('btn-save-sources');
-
-            if (metaName) metaName.value = nameVal;
-            if (metaCompany) metaCompany.value = companyVal;
-            
+            activeFolderId = null; // Prevent state leakage to new prospect
             closeAddModal();
             
-            if (btnSaveSources) btnSaveSources.click();
+            // Call saveDiscoverySession directly to bypass the redundant confirmation modal
+            saveDiscoverySession(nameVal || 'Unknown Name', companyVal, '');
         });
     }
 });
