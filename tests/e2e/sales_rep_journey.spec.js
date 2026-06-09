@@ -31,7 +31,13 @@ test.describe('Synthetic User Journey Simulation', () => {
                 console.log(`Diagnostic: Button clicked! Name: ${document.getElementById('meta-name').value}, Company: ${document.getElementById('meta-company').value}`);
             });
         });
-        await page.check('#track-tm1', { force: true }); // Ensure Planning track is checked
+        await page.evaluate(() => {
+            const cb = document.getElementById('track-tm1');
+            if (cb) {
+                cb.checked = true;
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
 
         // Save metadata and explicitly wait for the backend sync (to handle Drive latency)
         // Trigger the Save button via direct DOM invocation to bypass 1-pixel 0x0 WCAG clipping hitboxes

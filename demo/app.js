@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (metaEmail) metaEmail.value = '';
                 if (metaPhone) metaPhone.value = '';
                 if (metaRep) metaRep.value = 'Albert';
-                if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
+                if (metaTrack) metaTrack.value = '';
                 
                 const resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(companyFolder.id)}`)).json();
                 await loadSourcesForCompany(companyFolder.id, companyFolder.name, resolvedFilesData);
@@ -776,13 +776,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (metaEmail) metaEmail.value = '';
         if (metaPhone) metaPhone.value = '';
         if (metaRep) metaRep.value = 'Albert';
-        if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
+        if (metaTrack) metaTrack.value = '';
         
         // Set headers
         if (activeChatClientTitle) {
             activeChatClientTitle.innerText = activeProspectName ? `${companyFolder.name} (${activeProspectName})` : companyFolder.name;
         }
-        if (activeChatClientMeta) activeChatClientMeta.innerText = `New Chat Session — Interest: Planning & Analytics (TM1)`;
+        if (activeChatClientMeta) activeChatClientMeta.innerText = `New Chat Session — Interest: None`;
         
         if (workspaceEmptyState) workspaceEmptyState.classList.add('hidden');
         if (workspaceActiveChat) workspaceActiveChat.classList.remove('hidden');
@@ -866,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
             metaEmail.value = data.email || '';
             metaPhone.value = data.phone || '';
             metaRep.value = data.rep || 'Albert';
-            metaTrack.value = data.track || 'Planning & Analytics (TM1)';
+            metaTrack.value = data.track || '';
             
             // Set folder ID
             activeFolderId = data.gDriveFolderId || null;
@@ -935,7 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Setup Header Info
             activeChatClientTitle.innerText = `${data.company} (${data.name})`;
-            activeChatClientMeta.innerText = `${data.title || 'No Title'} — Interest: ${data.track || 'Planning & Analytics (TM1)'}`;
+            activeChatClientMeta.innerText = `${data.title || 'No Title'} — Interest: ${data.track || 'None'}`;
 
             // Distance setup
             transitDistance = data.transitDistance || "Online/Phone call only (Distance unavailable)";
@@ -1201,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
             email: email,
             phone: metaPhone ? metaPhone.value.trim() : '',
             rep: metaRep ? metaRep.value : 'Albert',
-            track: metaTrack ? metaTrack.value : 'Planning & Analytics (TM1)',
+            track: metaTrack ? metaTrack.value : '',
             oneDriveFile: sourceGdriveFileSelect ? (sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '') : '',
             gDriveFile: sourceGdriveFileSelect ? (sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '') : '',
             gDriveFileId: sourceGdriveFileId ? sourceGdriveFileId.value : '',
@@ -1238,7 +1238,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadChatsList();
             // Setup Header Info directly to prevent clearing chat history and race conditions
             if (activeChatClientTitle) activeChatClientTitle.innerText = `${payload.company} (${payload.name})`;
-            if (activeChatClientMeta) activeChatClientMeta.innerText = `${payload.title || 'No Title'} — Interest: ${payload.track || 'Planning & Analytics (TM1)'}`;
+            if (activeChatClientMeta) activeChatClientMeta.innerText = `${payload.title || 'No Title'} — Interest: ${payload.track || 'None'}`;
             renderChatHistory();
 
         } catch (err) {
@@ -1294,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         metaEmail.value = '';
         metaPhone.value = '';
         metaRep.value = 'Albert';
-        metaTrack.value = 'Planning & Analytics (TM1)';
+        metaTrack.value = '';
         sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
         sourceGdriveFileId.value = '';
         gdriveFileContent = '';
@@ -1543,7 +1543,7 @@ Rules:
                             if (metaEmail) metaEmail.value = '';
                             if (metaPhone) metaPhone.value = '';
                             if (metaRep) metaRep.value = 'Albert';
-                            if (metaTrack) metaTrack.value = 'Planning & Analytics (TM1)';
+                            if (metaTrack) metaTrack.value = '';
                             
                             // Clear source fields
                             if (sourceGdriveFileSelect) {
