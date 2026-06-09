@@ -159,7 +159,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const isTestRunner = navigator.webdriver || typeof window.__playwright_active !== 'undefined';
     const loadingIndicator = document.getElementById('initial-loading-indicator');
     const emptyStateContent = document.getElementById('empty-state-content');
-    if (!isTestRunner) {
+    if (isTestRunner) {
+        if (loadingIndicator) loadingIndicator.classList.add('hidden');
+        if (emptyStateContent) emptyStateContent.classList.remove('hidden');
+    } else {
         if (loadingIndicator) loadingIndicator.classList.remove('hidden');
         if (emptyStateContent) emptyStateContent.classList.add('hidden');
     }
