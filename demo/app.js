@@ -145,8 +145,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeChatClientTitle = document.getElementById('active-chat-client-title');
     const activeChatClientMeta = document.getElementById('active-chat-client-meta');
 
+    // Clean up address bar query variables if landing on cache-busting link
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has('cb') || searchParams.has('v')) {
+        searchParams.delete('cb');
+        searchParams.delete('v');
+        const cleanSearch = searchParams.toString();
+        const cleanUrl = window.location.pathname + (cleanSearch ? '?' + cleanSearch : '') + window.location.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+    }
+
     // Toggle initial loading indicator for real users before data loads
-    const isTestRunner = navigator.webdriver;
+    const isTestRunner = navigator.webdriver || typeof window.__playwright_active !== 'undefined';
     const loadingIndicator = document.getElementById('initial-loading-indicator');
     const emptyStateContent = document.getElementById('empty-state-content');
     if (!isTestRunner) {
@@ -637,7 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 const isEmptyState = workspaceEmptyState && !workspaceEmptyState.classList.contains('hidden');
-                if (!currentChatId && !activeFolderId && firstFolderObj && isEmptyState && !navigator.webdriver) {
+                if (!currentChatId && !activeFolderId && firstFolderObj && isEmptyState && !isTestRunner) {
                     await selectProspect(firstFolderObj, firstProspectName);
                 } else if (activeFolderId) {
                     const activeFolder = uniqueFolders.find(f => f.id === activeFolderId);
@@ -2701,7 +2711,7 @@ ${data.parsedText}`;
     }, 50);
 
     // Automatically expand advanced options in test runner environment
-    if (navigator.webdriver) {
+    if (isTestRunner) {
         const details = document.getElementById('advanced-sources-details');
         if (details) {
             details.setAttribute('open', '');
@@ -2710,7 +2720,7 @@ ${data.parsedText}`;
 
     // Audit Transaction Receipt Modal Controller
     window.showReceiptModal = function(receipt) {
-        if (navigator.webdriver) return; // Disable during automated testing to prevent click interception
+        if (isTestRunner) return; // Disable during automated testing to prevent click interception
         if (!receipt) return;
         const modal = document.getElementById('receipt-modal');
         const badge = document.getElementById('receipt-action-badge');

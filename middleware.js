@@ -1,5 +1,15 @@
 export const config = {
-  matcher: ['/admin_setup.html', '/admin_setup', '/demo/admin_setup.html', '/admin-login', '/demo/admin-login.html'],
+  matcher: [
+    '/',
+    '/index.html',
+    '/docs.html',
+    '/book.html',
+    '/admin_setup.html',
+    '/admin_setup',
+    '/demo/admin_setup.html',
+    '/admin-login',
+    '/demo/admin-login.html'
+  ],
 };
 
 // SHA-256 of 'authonly'
@@ -15,6 +25,23 @@ async function hashPassword(password) {
 
 export default async function middleware(req) {
   const url = new URL(req.url);
+
+  // Bypass cache-busting redirects for localhost/127.0.0.1
+  const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+
+  // Strip cache-busting telemetry parameters at the Edge
+  if (!isLocalhost && (url.searchParams.has('cb') || url.searchParams.has('v'))) {
+    const cleanUrl = new URL(req.url);
+    cleanUrl.searchParams.delete('cb');
+    cleanUrl.searchParams.delete('v');
+    
+    if (cleanUrl.toString() !== url.toString()) {
+      return new Response(null, {
+        status: 301,
+        headers: { 'Location': cleanUrl.toString() }
+      });
+    }
+  }
 
   // 1. Handle Login form submission
   if (req.method === 'POST' && url.pathname.includes('/admin-login')) {
