@@ -476,4 +476,30 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         expect(responseText).toContain('Statement_Of_Work_2025.pdf');
         expect(chatPayload).not.toBeNull();
     });
+
+    test('verifies circuit breaker fail-fast behavior on Google Drive API failure', async ({ page }) => {
+        test.setTimeout(20000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await page.waitForLoadState('networkidle');
+        
+        // Make call 1: Should trigger GDrive failure and trip the circuit breaker (or return 200 if already open)
+        const response1 = await page.evaluate(async () => {
+            const res = await fetch('/api/gdrive/list?company=CircuitBreakerTest');
+            return { status: res.status, data: await res.json().catch(() => ({})) };
+        });
+        
+        // Make call 2: Since the circuit breaker is now tripped, it must return 200 (local fallback) instantly
+        const startTime = Date.now();
+        const response2 = await page.evaluate(async () => {
+            const res = await fetch('/api/gdrive/list?company=CircuitBreakerTest');
+            return { status: res.status, data: await res.json().catch(() => ({})) };
+        });
+        const duration = Date.now() - startTime;
+        
+        expect(response2.status).toBe(200);
+        expect(response2.data.items).toBeDefined();
+        expect(duration).toBeLessThan(150); // Fallback should execute in < 150ms
+    });
 });
+

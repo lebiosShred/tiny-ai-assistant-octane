@@ -1744,6 +1744,16 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 if (gdriveAvailable) {
                     const clientFolderId = await gdriveService.findOrCreateClientFolder(activeCompany);
                     driveFile = await gdriveService.uploadFile(fileName, 'text/plain', fileBuffer, clientFolderId);
+                    if (driveFile) {
+                        gdriveService.registerRecentlyCreatedFile(
+                            driveFile.id,
+                            fileName,
+                            fileBuffer.length,
+                            'text/plain',
+                            driveFile.webViewLink,
+                            activeCompany
+                        );
+                    }
                 } else {
                     console.warn('⚠️ Google Drive client not configured. Saving file locally.');
                     const cleanCompany = activeCompany.replace(/[^a-zA-Z0-9]/g, '_');
@@ -2172,7 +2182,49 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                 if (gdriveAvailable) {
                                     try {
                                         const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                        const files = await gdriveService.listFolder(clientFolderId);
+                                        let files = await gdriveService.listFolder(clientFolderId);
+
+                                        // Merge recently created files from cache to combat eventual consistency lag
+
+                                        const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(company);
+
+                                        if (cachedCreated && cachedCreated.length > 0) {
+
+                                            for (const cachedFile of cachedCreated) {
+
+                                                if (!files.some(f => f.id === cachedFile.id || f.name === cachedFile.name)) {
+
+                                                    files.push(cachedFile);
+
+                                                }
+
+                                            }
+
+                                        }
+
+                                        // Filter out recently deleted files to prevent eventual consistency lag issues
+
+                                        const now = Date.now();
+
+                                        for (const [key, time] of recentlyDeletedFiles.entries()) {
+
+                                            if (now - time > 60000) {
+
+                                                recentlyDeletedFiles.delete(key);
+
+                                            }
+
+                                        }
+
+                                        files = files.filter(file => {
+
+                                            const fId = file.id ? file.id.toString().toLowerCase() : '';
+
+                                            const fName = file.name ? file.name.toString().toLowerCase() : '';
+
+                                            return !recentlyDeletedFiles.has(fId) && !recentlyDeletedFiles.has(fName);
+
+                                        });
                                         const found = files.find(f => f.name.toLowerCase() === targetFileId.toLowerCase());
                                         if (found) {
                                             targetFileId = found.id;
@@ -3433,6 +3485,29 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                      try {
                                                          const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
                                                          files = await gdriveService.listFolder(clientFolderId);
+                                                         
+                                                         // Merge recently created files from cache to combat eventual consistency lag
+                                                         const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(company);
+                                                         if (cachedCreated && cachedCreated.length > 0) {
+                                                             for (const cachedFile of cachedCreated) {
+                                                                 if (!files.some(f => f.id === cachedFile.id || f.name === cachedFile.name)) {
+                                                                     files.push(cachedFile);
+                                                                 }
+                                                             }
+                                                         }
+                                                         
+                                                         // Filter out recently deleted files to prevent eventual consistency lag issues
+                                                         const now = Date.now();
+                                                         for (const [key, time] of recentlyDeletedFiles.entries()) {
+                                                             if (now - time > 60000) {
+                                                                 recentlyDeletedFiles.delete(key);
+                                                             }
+                                                         }
+                                                         files = files.filter(file => {
+                                                             const fId = file.id ? file.id.toString().toLowerCase() : '';
+                                                             const fName = file.name ? file.name.toString().toLowerCase() : '';
+                                                             return !recentlyDeletedFiles.has(fId) && !recentlyDeletedFiles.has(fName);
+                                                         });
                                                      } catch (err) {
                                                          console.warn('⚠️ GDrive list failed in tool call:', err.message);
                                                      }
@@ -3475,6 +3550,16 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
                                                 const driveFile = await gdriveService.uploadFile(filename, 'text/plain', fileBuffer, clientFolderId);
                                                 gdriveAction = true;
+                                                if (driveFile) {
+                                                    gdriveService.registerRecentlyCreatedFile(
+                                                        driveFile.id,
+                                                        filename,
+                                                        fileBuffer.length,
+                                                        'text/plain',
+                                                        driveFile.webViewLink,
+                                                        company
+                                                    );
+                                                }
                                                 receipts.push(generateReceipt("UPLOAD", "FILE", filename, driveFile ? driveFile.id : null, company, {
                                                     sizeBytes: fileBuffer.length,
                                                     url: driveFile ? driveFile.webViewLink : null,
@@ -3493,7 +3578,49 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 if (gdriveAvailable) {
                                                     try {
                                                         const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                        const files = await gdriveService.listFolder(clientFolderId);
+                                                        let files = await gdriveService.listFolder(clientFolderId);
+
+                                                        // Merge recently created files from cache to combat eventual consistency lag
+
+                                                        const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(company);
+
+                                                        if (cachedCreated && cachedCreated.length > 0) {
+
+                                                            for (const cachedFile of cachedCreated) {
+
+                                                                if (!files.some(f => f.id === cachedFile.id || f.name === cachedFile.name)) {
+
+                                                                    files.push(cachedFile);
+
+                                                                }
+
+                                                            }
+
+                                                        }
+
+                                                        // Filter out recently deleted files to prevent eventual consistency lag issues
+
+                                                        const now = Date.now();
+
+                                                        for (const [key, time] of recentlyDeletedFiles.entries()) {
+
+                                                            if (now - time > 60000) {
+
+                                                                recentlyDeletedFiles.delete(key);
+
+                                                            }
+
+                                                        }
+
+                                                        files = files.filter(file => {
+
+                                                            const fId = file.id ? file.id.toString().toLowerCase() : '';
+
+                                                            const fName = file.name ? file.name.toString().toLowerCase() : '';
+
+                                                            return !recentlyDeletedFiles.has(fId) && !recentlyDeletedFiles.has(fName);
+
+                                                        });
                                                         const found = files.find(f => f.name.toLowerCase() === filename.toLowerCase());
                                                         if (found) {
                                                             await gdriveService.deleteFile(found.id);
@@ -3743,7 +3870,49 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 if (gdriveAvailable) {
                                                     try {
                                                         const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                        const files = await gdriveService.listFolder(clientFolderId);
+                                                        let files = await gdriveService.listFolder(clientFolderId);
+
+                                                        // Merge recently created files from cache to combat eventual consistency lag
+
+                                                        const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(company);
+
+                                                        if (cachedCreated && cachedCreated.length > 0) {
+
+                                                            for (const cachedFile of cachedCreated) {
+
+                                                                if (!files.some(f => f.id === cachedFile.id || f.name === cachedFile.name)) {
+
+                                                                    files.push(cachedFile);
+
+                                                                }
+
+                                                            }
+
+                                                        }
+
+                                                        // Filter out recently deleted files to prevent eventual consistency lag issues
+
+                                                        const now = Date.now();
+
+                                                        for (const [key, time] of recentlyDeletedFiles.entries()) {
+
+                                                            if (now - time > 60000) {
+
+                                                                recentlyDeletedFiles.delete(key);
+
+                                                            }
+
+                                                        }
+
+                                                        files = files.filter(file => {
+
+                                                            const fId = file.id ? file.id.toString().toLowerCase() : '';
+
+                                                            const fName = file.name ? file.name.toString().toLowerCase() : '';
+
+                                                            return !recentlyDeletedFiles.has(fId) && !recentlyDeletedFiles.has(fName);
+
+                                                        });
                                                         
                                                         for (const file of files) {
                                                             if (file.isFolder) continue;
@@ -4393,6 +4562,30 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 }
             }
 
+            // Merge recently created files from cache to combat eventual consistency lag
+            let resolvedCompany = company;
+            if (!resolvedCompany && folderId) {
+                for (const [key, val] of gdriveService.folderIdCache.entries()) {
+                    if (val === folderId) {
+                        resolvedCompany = key;
+                        break;
+                    }
+                }
+            }
+            if (resolvedCompany) {
+                const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(resolvedCompany);
+                if (cachedCreated && cachedCreated.length > 0) {
+                    if (!Array.isArray(items)) {
+                        items = [];
+                    }
+                    for (const cachedFile of cachedCreated) {
+                        if (!items.some(it => it.id === cachedFile.id || it.name === cachedFile.name)) {
+                            items.push(cachedFile);
+                        }
+                    }
+                }
+            }
+
             // Filter out recently deleted files to prevent eventual consistency lag issues
             const now = Date.now();
             for (const [key, time] of recentlyDeletedFiles.entries()) {
@@ -4676,6 +4869,16 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             }
                             driveFile = await gdriveService.uploadFile(filename, mimeType, fileBuffer, clientFolderId);
                             uploadSucceeded = true;
+                            if (driveFile) {
+                                gdriveService.registerRecentlyCreatedFile(
+                                    driveFile.id,
+                                    filename,
+                                    fileBuffer.length,
+                                    mimeType,
+                                    driveFile.webViewLink,
+                                    company
+                                );
+                            }
                         } catch (gdriveErr) {
                             console.warn(`⚠️ Google Drive upload-stream failed, falling back to local: ${gdriveErr.message}`);
                         }
@@ -4822,6 +5025,16 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         }
                         driveFile = await gdriveService.uploadFile(fileName, mimeType, fileBuffer, clientFolderId);
                         uploadSucceeded = true;
+                        if (driveFile) {
+                            gdriveService.registerRecentlyCreatedFile(
+                                driveFile.id,
+                                fileName,
+                                fileBuffer.length,
+                                mimeType,
+                                driveFile.webViewLink,
+                                company
+                            );
+                        }
                     } catch (gdriveErr) {
                         console.warn(`⚠️ Google Drive upload failed, falling back to local: ${gdriveErr.message}`);
                     }

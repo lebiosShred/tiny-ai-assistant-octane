@@ -16,6 +16,90 @@ const folderIdCache = new Map();
 let cachedCompanyFolderId = null;
 const activeResolutions = new Map();
 
+// --- Circuit Breaker State Variables ---
+let isCircuitBreakerOpen = false;
+let circuitBreakerTrippedTime = 0;
+let consecutiveFailures = 0;
+const BREAKER_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+const BREAKER_FAILURE_THRESHOLD = 3;
+
+function checkCircuitBreaker() {
+    if (isCircuitBreakerOpen) {
+        if (Date.now() - circuitBreakerTrippedTime > BREAKER_COOLDOWN_MS) {
+            console.warn('🔄 Circuit breaker: Entering HALF-OPEN state. Retrying one call.');
+            isCircuitBreakerOpen = false;
+            consecutiveFailures = 0;
+            return true;
+        }
+        console.warn('🚨 Circuit breaker: OPEN. Bypassing Google Drive API call.');
+        return false;
+    }
+    return true;
+}
+
+function recordApiSuccess() {
+    if (consecutiveFailures > 0) {
+        console.log('✅ Google Drive API call succeeded. Resetting failure counter.');
+        consecutiveFailures = 0;
+    }
+}
+
+function recordApiFailure(err) {
+    consecutiveFailures++;
+    console.warn(`⚠️ Google Drive API call failed (${consecutiveFailures}/${BREAKER_FAILURE_THRESHOLD}): ${err.message}`);
+    
+    const isFatal = err.status === 403 || err.code === 403 || 
+                    err.status === 429 || err.code === 429 ||
+                    err.message.includes('Google Drive API has not been used') ||
+                    err.message.includes('disabled') ||
+                    err.message.includes('Quota exceeded') ||
+                    err.message.includes('rate limit');
+                    
+    if (isFatal || consecutiveFailures >= BREAKER_FAILURE_THRESHOLD) {
+        isCircuitBreakerOpen = true;
+        circuitBreakerTrippedTime = Date.now();
+        console.error(`🚨 Google Drive API Circuit Breaker TRIPPED. Falling back to local storage for ${BREAKER_COOLDOWN_MS / 60000} minutes.`);
+    }
+}
+
+// --- Recently Created Files Cache ---
+const recentlyCreatedFiles = new Map();
+
+function registerRecentlyCreatedFile(id, name, size, mimeType, webViewLink, company) {
+    const cleanCompany = (company || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
+    recentlyCreatedFiles.set(id, {
+        id,
+        name,
+        size: parseInt(size, 10) || 0,
+        mimeType,
+        webViewLink,
+        company: cleanCompany,
+        timestamp: Date.now()
+    });
+    console.log(`💾 Registered recently created file in cache: "${name}" (ID: ${id}) for company "${cleanCompany}"`);
+}
+
+function getRecentlyCreatedFilesForCompany(company) {
+    const cleanCompany = (company || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
+    const now = Date.now();
+    const result = [];
+    for (const [id, file] of recentlyCreatedFiles.entries()) {
+        if (now - file.timestamp > 60000) {
+            recentlyCreatedFiles.delete(id);
+        } else if (file.company.toLowerCase() === cleanCompany.toLowerCase()) {
+            result.push({
+                id: file.id,
+                name: file.name,
+                mimeType: file.mimeType,
+                isFolder: false,
+                size: file.size,
+                webViewLink: file.webViewLink
+            });
+        }
+    }
+    return result;
+}
+
 function invalidateFolderCache(folderId) {
     if (cachedCompanyFolderId === folderId) {
         cachedCompanyFolderId = null;
@@ -30,6 +114,9 @@ function invalidateFolderCache(folderId) {
 
 // Initialize Google Drive API client
 function getDriveClient() {
+    if (!checkCircuitBreaker()) {
+        return null;
+    }
     if (driveClient) {
         return driveClient;
     }
@@ -93,6 +180,7 @@ async function listFolder(folderId) {
         });
 
         const files = response.data.files || [];
+        recordApiSuccess();
         return files.map(file => ({
             id: file.id,
             name: file.name,
@@ -106,6 +194,7 @@ async function listFolder(folderId) {
         if (err.code === 404 || err.status === 404 || err.message.includes('not found') || err.message.includes('Not Found')) {
             invalidateFolderCache(targetFolderId);
         }
+        recordApiFailure(err);
         throw err;
     }
 }
@@ -167,11 +256,15 @@ async function getFileContent(fileId, ignoreCache = false) {
             }
         } else {
             content = await fetchContentInternal(fileId);
+            recordApiSuccess();
         }
         fileContentCache.set(fileId, content);
         return content;
     } catch (err) {
         console.error(`❌ Error retrieving file content for ${fileId}:`, err.message);
+        if (fileId && !fileId.startsWith('local_')) {
+            recordApiFailure(err);
+        }
         throw err;
     }
 }
@@ -604,9 +697,11 @@ async function findOrCreateClientFolder(companyName) {
 
             // Cache the result
             folderIdCache.set(cacheKey, clientFolderId);
+            recordApiSuccess();
             return clientFolderId;
         } catch (err) {
             console.error(`❌ Error finding/creating GDrive client folder for "${cleanCompany}":`, err.message);
+            recordApiFailure(err);
             throw err;
         } finally {
             activeResolutions.delete(cacheKey);
@@ -650,6 +745,7 @@ async function uploadFile(fileName, mimeType, fileBuffer, folderId) {
             supportsAllDrives: true
         });
 
+        recordApiSuccess();
         console.log(`✅ File uploaded successfully: "${response.data.name}" (ID: ${response.data.id})`);
         return response.data;
     } catch (err) {
@@ -657,6 +753,7 @@ async function uploadFile(fileName, mimeType, fileBuffer, folderId) {
         if (err.code === 404 || err.status === 404 || err.message.includes('not found') || err.message.includes('Not Found')) {
             invalidateFolderCache(folderId);
         }
+        recordApiFailure(err);
         throw err;
     }
 }
@@ -711,6 +808,7 @@ async function deleteFile(fileId) {
             fileId: fileId,
             supportsAllDrives: true
         });
+        recordApiSuccess();
         console.log(`✅ Google Drive file deleted successfully: ${fileId}`);
         return true;
     } catch (err) {
@@ -718,6 +816,7 @@ async function deleteFile(fileId) {
         if (err.code === 404 || err.status === 404 || err.message.includes('not found') || err.message.includes('Not Found')) {
             invalidateFolderCache(fileId);
         }
+        recordApiFailure(err);
         throw err;
     }
 }
@@ -786,6 +885,8 @@ module.exports = {
     renameFolder,
     folderIdCache,
     invalidateFolderCache,
-    invalidateFileContentCache
+    invalidateFileContentCache,
+    registerRecentlyCreatedFile,
+    getRecentlyCreatedFilesForCompany
 };
 
