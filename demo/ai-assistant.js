@@ -388,7 +388,7 @@ Questions:
 ${questionFramework}
 
 --- SPEAKER IDENTIFICATION ---
-The transcript may use labels like 'Albert (Sales Team)', 'Sales Team:', 'Sarah Chen:', 'Prospect:', 'Speaker 1', or 'Speaker 2'.
+The transcript may use labels like 'Sales Team:', 'Sarah Chen:', 'Prospect:', 'Speaker 1', or 'Speaker 2'.
 Before analyzing, map the speakers: the person asking discovery questions is the Octane Sales Representative (Sales Team), and the person describing requirements, pain points, budget, and timelines is the Client Prospect. Attribute all pain points and qualifications to the Prospect, not the Sales Team.
 
 --- RECONCILING REPRESENTATIVE NOTES AND TRANSCRIPT ---
@@ -728,7 +728,7 @@ Prospect Name: ${prospectData.name}
 Prospect Title: ${prospectData.title || "Head of Finance"}
 Company Name: ${prospectData.company}
 Service Track Interest: ${prospectData.track}
-Sales Representative: ${prospectData.rep || "Albert"}
+Sales Representative: ${prospectData.rep || "Unassigned"}
 
 Prep Dossier Information:
 ${dossierData || "Not available"}
@@ -816,7 +816,7 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
         let leadTitle = "Unknown Title";
         let leadCompany = "Unknown Company";
         let leadTrack = "TM1 & AI";
-        let leadRep = "Albert";
+        let leadRep = "Unassigned";
         let leadIntake = "";
 
         if (typeof document !== 'undefined') {

@@ -128,6 +128,9 @@
                                 </div>
                             </div>
 
+                            <!-- Pending Attachments Area -->
+                            <div id="chat-pending-attachments" class="chat-pending-attachments hidden"></div>
+
                             <!-- User Input Area -->
                             <div class="chat-input-area">
                                 <textarea id="chat-user-input" class="chat-input-field" rows="2" placeholder="Ask Tiny anything about this prospect..."></textarea>
@@ -267,7 +270,14 @@
                 <input type="text" id="meta-phone" placeholder="Phone">
                 
                 <label for="meta-rep">Sales Rep</label>
-                <select id="meta-rep"><option value="Albert">Albert</option></select>
+                <select id="meta-rep">
+                    <option value="">Unassigned</option>
+                    <option value="">Select Rep...</option>
+                    <option value="Isha">Isha</option>
+                    <option value="Amendra">Amendra</option>
+                    <option value="Kevin">Kevin</option>
+                    <option value="Steny">Steny</option>
+                </select>
                 
                 <label>Service Track</label>
                 <input type="hidden" id="meta-track" value="">

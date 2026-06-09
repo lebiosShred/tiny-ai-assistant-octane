@@ -4992,3 +4992,90 @@ body {
     line-height: 1.5 !important;
 }
 
+/* Stacked pending chat attachments styling */
+.chat-pending-attachments {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem 1.5rem !important;
+    background: rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(10px) !important;
+    border-top: 1px solid rgba(15, 23, 42, 0.05) !important;
+    max-height: 120px !important;
+    overflow-y: auto !important;
+}
+
+.chat-pending-attachments.hidden {
+    display: none !important;
+}
+
+.pending-attachment-card {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.4rem 0.65rem !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+    transition: all 0.2s ease !important;
+    max-width: 220px !important;
+}
+
+.pending-attachment-card:hover {
+    background: rgba(2, 132, 199, 0.04) !important;
+    border-color: rgba(2, 132, 199, 0.2) !important;
+    transform: translateY(-1px) !important;
+}
+
+.pending-attachment-icon {
+    color: #0284c7 !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.pending-attachment-info {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    flex: 1 !important;
+}
+
+.pending-attachment-name {
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.pending-attachment-size {
+    font-size: 0.65rem !important;
+    color: #64748b !important;
+}
+
+.pending-attachment-remove {
+    background: transparent !important;
+    border: none !important;
+    color: #94a3b8 !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    padding: 2px !important;
+    border-radius: 4px !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.pending-attachment-remove:hover {
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.08) !important;
+}
+

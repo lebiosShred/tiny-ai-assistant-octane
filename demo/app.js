@@ -470,10 +470,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (metaTitle) metaTitle.value = '';
                 if (metaEmail) metaEmail.value = '';
                 if (metaPhone) metaPhone.value = '';
-                if (metaRep) metaRep.value = 'Albert';
+                if (metaRep) metaRep.value = '';
                 if (metaTrack) metaTrack.value = '';
                 
                 const resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(companyFolder.id)}`)).json();
+                
+                // Populate Contact Selector
+                const contactSelector = document.getElementById('meta-contact-selector');
+                if (contactSelector && resolvedFilesData && resolvedFilesData.files) {
+                    contactSelector.innerHTML = '<option value="">-- Select or Type Below --</option>';
+                    const uniqueNames = new Set();
+                    resolvedFilesData.files.forEach(f => {
+                        const match = f.name.match(/(?:Lead_Intake|LinkedIn|Playbook)_[^_]+_([^.]+)\./i);
+                        if (match && match[1]) {
+                            const parsedName = match[1].replace(/_/g, ' ').trim();
+                            if (parsedName && parsedName !== 'null') uniqueNames.add(parsedName);
+                        } else {
+                            // Fallback heuristic: Try to find name at end before extension
+                            const parts = f.name.replace(/\.[^\.]+$/, '').split('_');
+                            if (parts.length >= 3) {
+                                const possibleName = parts.slice(2).join(' ');
+                                if (possibleName) uniqueNames.add(possibleName);
+                            }
+                        }
+                    });
+                    
+                    uniqueNames.forEach(name => {
+                        const opt = document.createElement('option');
+                        opt.value = name;
+                        opt.textContent = name;
+                        contactSelector.appendChild(opt);
+                    });
+                    
+                    contactSelector.onchange = (e) => {
+                        if (e.target.value) {
+                            document.getElementById('meta-name').value = e.target.value;
+                        }
+                    };
+                }
                 await loadSourcesForCompany(companyFolder.id, companyFolder.name, resolvedFilesData);
             }
         } catch (err) {
@@ -557,18 +591,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (toggleSpan) toggleSpan.style.transform = 'rotate(-90deg)';
                     }
                     
-                    const sessionsList = document.createElement('div');
-                    sessionsList.className = 'sidebar-prospect-sessions'; // Reusing class for styling
-                    
-                    // 1. New Session button
-                    const newSessionBtn = document.createElement('div');
-                    newSessionBtn.className = 'sidebar-new-session-btn';
-                    newSessionBtn.innerText = '➕ New Session';
-                    newSessionBtn.addEventListener('click', (e) => {
+                    // 1. Add Prospect (Empty Session) button at Company Root
+                    const addProspectBtn = document.createElement('div');
+                    addProspectBtn.className = 'sidebar-new-session-btn';
+                    addProspectBtn.style.backgroundColor = '#f1f5f9';
+                    addProspectBtn.style.color = '#334155';
+                    addProspectBtn.style.marginBottom = '8px';
+                    addProspectBtn.innerText = '➕ Add Prospect';
+                    addProspectBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         startNewSessionForProspect(folder, '');
                     });
-                    sessionsList.appendChild(newSessionBtn);
+                    contents.appendChild(addProspectBtn);
                     
                     // 2. Fetch history items for this company
                     const matchedSessions = chatsList.filter(c => 
@@ -578,50 +612,121 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Sort by date descending
                     matchedSessions.sort((a, b) => new Date(b.date) - new Date(a.date));
                     
+                    // Group by prospect name
+                    const prospectGroups = {};
                     matchedSessions.forEach(session => {
-                        const sessionItem = document.createElement('div');
-                        sessionItem.className = 'sidebar-session-item';
-                        sessionItem.setAttribute('data-session-id', session.id);
-                        if (currentChatId === session.id) {
-                            sessionItem.classList.add('active');
+                        const pName = (session.name && session.name.trim()) ? session.name.trim() : 'Unknown Prospect';
+                        if (!prospectGroups[pName]) {
+                            prospectGroups[pName] = [];
                         }
-                        
-                        let displayDate = '';
-                        try {
-                            const d = new Date(session.date);
-                            displayDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                        } catch (e) {}
-                        
-                        // Append prospect name if available in the history metadata
-                        const sessionContact = session.name && session.name !== 'Unknown Name' ? ` [${session.name}]` : '';
-                        const titleText = (session.title || 'Untitled Session') + sessionContact;
-                        
-                        const textSpan = document.createElement('span');
-                        textSpan.className = 'session-text';
-                        textSpan.innerText = `💬 ${titleText} (${displayDate})`;
-                        sessionItem.appendChild(textSpan);
-                        
-                        const delBtn = document.createElement('button');
-                        delBtn.className = 'btn-delete-session';
-                        delBtn.type = 'button';
-                        delBtn.innerText = '🗑️';
-                        delBtn.title = 'Delete Session';
-                        delBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            confirmDeleteSession(session.id, titleText);
-                        });
-                        sessionItem.appendChild(delBtn);
-
-                        sessionItem.title = `${titleText} (${new Date(session.date).toLocaleString()})`;
-                        
-                        sessionItem.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            selectChat(session.id);
-                        });
-                        sessionsList.appendChild(sessionItem);
+                        prospectGroups[pName].push(session);
                     });
                     
-                    contents.appendChild(sessionsList);
+                    // Render Prospect Sub-folders
+                    for (const [prospectName, sessions] of Object.entries(prospectGroups)) {
+                        const prospectSubFolder = document.createElement('div');
+                        prospectSubFolder.className = 'sidebar-prospect-subfolder';
+                        prospectSubFolder.style.paddingLeft = '16px';
+                        prospectSubFolder.style.marginTop = '4px';
+                        prospectSubFolder.style.borderLeft = '2px solid #e2e8f0';
+                        prospectSubFolder.style.marginLeft = '12px';
+                        
+                        const prospectHeader = document.createElement('div');
+                        prospectHeader.className = 'sidebar-folder-title';
+                        prospectHeader.style.fontSize = '0.85rem';
+                        prospectHeader.style.color = '#475569';
+                        prospectHeader.style.cursor = 'pointer';
+                        prospectHeader.style.padding = '4px 0';
+                        prospectHeader.style.display = 'flex';
+                        prospectHeader.style.alignItems = 'center';
+                        prospectHeader.style.gap = '6px';
+                        
+                        const toggleArrow = document.createElement('span');
+                        toggleArrow.innerText = '▼';
+                        toggleArrow.style.fontSize = '0.6rem';
+                        toggleArrow.style.transition = 'transform 0.2s';
+                        
+                        const pText = document.createElement('span');
+                        pText.innerText = '👤 ' + prospectName;
+                        
+                        prospectHeader.appendChild(toggleArrow);
+                        prospectHeader.appendChild(pText);
+                        
+                        const prospectContents = document.createElement('div');
+                        prospectContents.className = 'sidebar-prospect-sessions';
+                        
+                        // Determine if we should expand this subfolder automatically
+                        let hasActiveSession = false;
+                        
+                        const newSessionBtn = document.createElement('div');
+                        newSessionBtn.className = 'sidebar-new-session-btn';
+                        newSessionBtn.style.padding = '6px 12px';
+                        newSessionBtn.style.fontSize = '0.8rem';
+                        newSessionBtn.innerText = '➕ New Session';
+                        newSessionBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            startNewSessionForProspect(folder, prospectName === 'Unknown Prospect' ? '' : prospectName);
+                        });
+                        prospectContents.appendChild(newSessionBtn);
+                        
+                        sessions.forEach(session => {
+                            const sessionItem = document.createElement('div');
+                            sessionItem.className = 'sidebar-session-item';
+                            sessionItem.setAttribute('data-session-id', session.id);
+                            if (currentChatId === session.id) {
+                                sessionItem.classList.add('active');
+                                hasActiveSession = true;
+                            }
+                            
+                            let displayDate = '';
+                            try {
+                                const d = new Date(session.date);
+                                displayDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                            } catch (e) {}
+                            
+                            const titleText = (session.title || 'Untitled Session');
+                            
+                            const textSpan = document.createElement('span');
+                            textSpan.className = 'session-text';
+                            textSpan.innerText = `💬 ${titleText} (${displayDate})`;
+                            sessionItem.appendChild(textSpan);
+                            
+                            const delBtn = document.createElement('button');
+                            delBtn.className = 'btn-delete-session';
+                            delBtn.type = 'button';
+                            delBtn.innerText = '🗑️';
+                            delBtn.title = 'Delete Session';
+                            delBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                confirmDeleteSession(session.id, titleText);
+                            });
+                            sessionItem.appendChild(delBtn);
+
+                            sessionItem.title = `${titleText} (${new Date(session.date).toLocaleString()})`;
+                            
+                            sessionItem.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                selectChat(session.id);
+                            });
+                            prospectContents.appendChild(sessionItem);
+                        });
+                        
+                        if (!hasActiveSession) {
+                            prospectContents.style.display = 'none';
+                            toggleArrow.style.transform = 'rotate(-90deg)';
+                        }
+                        
+                        prospectHeader.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const isHidden = prospectContents.style.display === 'none';
+                            prospectContents.style.display = isHidden ? 'block' : 'none';
+                            toggleArrow.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+                        });
+                        
+                        prospectSubFolder.appendChild(prospectHeader);
+                        prospectSubFolder.appendChild(prospectContents);
+                        contents.appendChild(prospectSubFolder);
+                    }
                     
                     folderItem.appendChild(contents);
                     
@@ -794,7 +899,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (metaTitle) metaTitle.value = '';
         if (metaEmail) metaEmail.value = '';
         if (metaPhone) metaPhone.value = '';
-        if (metaRep) metaRep.value = 'Albert';
+        if (metaRep) metaRep.value = '';
         if (metaTrack) metaTrack.value = '';
         
         // Set headers
@@ -884,7 +989,7 @@ document.addEventListener('DOMContentLoaded', () => {
             metaTitle.value = data.title || '';
             metaEmail.value = data.email || '';
             metaPhone.value = data.phone || '';
-            metaRep.value = data.rep || 'Albert';
+            metaRep.value = data.rep || '';
             metaTrack.value = data.track || '';
             
             // Set folder ID
@@ -1219,7 +1324,7 @@ document.addEventListener('DOMContentLoaded', () => {
             title: metaTitle ? metaTitle.value.trim() : '',
             email: email,
             phone: metaPhone ? metaPhone.value.trim() : '',
-            rep: metaRep ? metaRep.value : 'Albert',
+            rep: metaRep ? metaRep.value : '',
             track: metaTrack ? metaTrack.value : '',
             oneDriveFile: sourceGdriveFileSelect ? (sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '') : '',
             gDriveFile: sourceGdriveFileSelect ? (sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '') : '',
@@ -1315,7 +1420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         metaTitle.value = '';
         metaEmail.value = '';
         metaPhone.value = '';
-        metaRep.value = 'Albert';
+        metaRep.value = '';
         metaTrack.value = '';
         sourceGdriveFileSelect.innerHTML = '<option value="">-- Select File from GDrive --</option>';
         sourceGdriveFileId.value = '';
@@ -1564,7 +1669,7 @@ Rules:
                             if (metaTitle) metaTitle.value = '';
                             if (metaEmail) metaEmail.value = '';
                             if (metaPhone) metaPhone.value = '';
-                            if (metaRep) metaRep.value = 'Albert';
+                            if (metaRep) metaRep.value = '';
                             if (metaTrack) metaTrack.value = '';
                             
                             // Clear source fields
@@ -1645,38 +1750,6 @@ Rules:
         }
     }
 
-    // --- Helper for parsing conversational deletion queries ---
-    function parseDeleteQuery(query) {
-        let cleaned = query.trim();
-        if (cleaned.endsWith('.')) {
-            cleaned = cleaned.slice(0, -1).trim();
-        }
-        const deletePattern = /^(?:tiny,?\s+)?(?:delete|remove|destroy)\s+(.*)$/i;
-        const match = cleaned.match(deletePattern);
-        if (!match) return null;
-        
-        let target = match[1].trim();
-        if (!target) return null;
-        
-        const folderNounPattern = /^(?:prospect|client|lead|company|folder)\s+(.*)$/i;
-        const folderNounMatch = target.match(folderNounPattern);
-        if (folderNounMatch) {
-            return { type: 'folder', name: folderNounMatch[1].trim() };
-        }
-        
-        const fileNounPattern = /^(?:file|document)\s+(.*)$/i;
-        const fileNounMatch = target.match(fileNounPattern);
-        if (fileNounMatch) {
-            return { type: 'file', name: fileNounMatch[1].trim() };
-        }
-        
-        if (target.includes('.')) {
-            return { type: 'file', name: target };
-        } else {
-            return { type: 'folder', name: target };
-        }
-    }
-
     // --- Helper for parsing conversational creation queries ---
     function parseCreateQuery(query) {
         let cleaned = query.trim();
@@ -1728,44 +1801,6 @@ Rules:
                 confirmText: 'Create',
                 cancelText: 'Cancel',
                 type: 'primary'
-            });
-            if (confirmed) {
-                callTinyAPI(queryText);
-            } else {
-                chatUserInput.value = queryText;
-            }
-            return;
-        }
-
-        const parsedDelete = parseDeleteQuery(queryText);
-
-        if (parsedDelete && parsedDelete.type === 'folder') {
-            const targetCompany = parsedDelete.name;
-            chatUserInput.value = '';
-            const confirmed = await showConfirmModal({
-                title: 'Delete Prospect Folder',
-                message: `Are you sure you want to delete the prospect folder and all memory files for "${targetCompany}"? This action cannot be undone.`,
-                confirmText: 'Delete',
-                cancelText: 'Cancel',
-                type: 'danger'
-            });
-            if (confirmed) {
-                callTinyAPI(queryText);
-            } else {
-                chatUserInput.value = queryText;
-            }
-            return;
-        }
-
-        if (parsedDelete && parsedDelete.type === 'file') {
-            const fileName = parsedDelete.name;
-            chatUserInput.value = '';
-            const confirmed = await showConfirmModal({
-                title: 'Delete File',
-                message: `Are you sure you want to delete the file "${fileName}" from the prospect's folder?`,
-                confirmText: 'Delete',
-                cancelText: 'Cancel',
-                type: 'danger'
             });
             if (confirmed) {
                 callTinyAPI(queryText);
@@ -2123,15 +2158,15 @@ OneDrive Screencast Link: [Link if available]`;
                 if (!res.ok) throw new Error('Failed to fetch prep sample');
                 const data = await res.json();
 
-                metaName.value = data.name || 'Sarah Chen';
-                metaCompany.value = data.company || 'Acme Corp';
-                metaTitle.value = data.title || 'Head of FP&A';
-                metaEmail.value = data.email || 'sarah@acme.com';
-                metaPhone.value = data.phone || '+61 2 9876 5432';
-                metaRep.value = 'Albert';
-                metaTrack.value = data.track || 'Planning & Analytics (TM1)';
-                gdriveFileContent = data.gDriveFileContent || "Sample Google Drive File Content...\nSOW Details for Acme Corp.";
-                sourceGdriveFileId.value = data.gDriveFileId || "mock_gdrive_sample_id";
+                metaName.value = data.name || '';
+                metaCompany.value = data.company || '';
+                metaTitle.value = data.title || '';
+                metaEmail.value = data.email || '';
+                metaPhone.value = data.phone || '';
+                metaRep.value = '';
+                metaTrack.value = data.track || '';
+                gdriveFileContent = data.gDriveFileContent || "";
+                sourceGdriveFileId.value = data.gDriveFileId || "";
                 await loadGoogleDriveFiles();
                 let matchedOpt = Array.from(sourceGdriveFileSelect.options).find(o => o.text.includes('Statement_Of_Work_2025.pdf'));
                 if (!matchedOpt) {
@@ -2234,10 +2269,10 @@ OneDrive Screencast Link: [Link if available]`;
                             audio_base64: base64Audio,
                             mime_type: mimeType,
                             filename: file.name,
-                            name: metaName.value || 'Sarah Chen',
-                            title: metaTitle.value || 'Head of FP&A',
-                            company: metaCompany.value || 'Acme Corp',
-                            intake: sourceIntakeText.value || 'Needs planning support'
+                            name: metaName.value || '',
+                            title: metaTitle.value || '',
+                            company: metaCompany.value || '',
+                            intake: sourceIntakeText.value || ''
                         })
                     });
 
