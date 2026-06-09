@@ -73,9 +73,13 @@ test.describe('Aegis Chat Session Deletion Suite', () => {
         // Open the sidebar drawer so its child elements become visible
         await indexPage.toggleSourcesBtn.click();
 
-        // 3. Click the prospect header to expand the sessions list under Sarah Chen
-        const prospectHeader = page.locator('.sidebar-prospect-header[data-prospect-name="Sarah Chen"]').first();
-        await prospectHeader.click();
+        // 3. Click the folder header to expand the sessions list under Meridian Logistics (only if collapsed)
+        const folderItem = page.locator('.sidebar-folder-item', { hasText: 'Meridian Logistics' }).first();
+        const folderHeader = folderItem.locator('.sidebar-folder-header');
+        const contents = folderItem.locator('.sidebar-folder-contents');
+        if (await contents.evaluate(el => el.classList.contains('collapsed'))) {
+            await folderHeader.click();
+        }
 
         // 4. Locate the created session item under Meridian Logistics and get its unique ID
         const sessionItem = page.locator('[data-session-id^="synthesis_Meridian_Logistics_"]').first();

@@ -89,6 +89,91 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
     test('verifies prompt-driven file upload and deletion cycle', async ({ page }) => {
         test.setTimeout(60000);
         const indexPage = new IndexPage(page);
+
+        // Stub /api/gdrive/list for active folder to return our mocked file list
+        let mockFiles = [];
+        await page.route('**/api/gdrive/list?folderId=*', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    items: mockFiles
+                })
+            });
+        });
+
+        // Stub /api/chat to return a simulated response and update mockFiles
+        await page.route('**/api/chat', async route => {
+            const postData = route.request().postData();
+            let parsedPost = JSON.parse(postData);
+            const lastUserMsg = parsedPost.messages[parsedPost.messages.length - 1].content;
+            
+            if (lastUserMsg.includes('upload file prompt_test.txt')) {
+                mockFiles = [{
+                    id: 'mock_prompt_test_id',
+                    name: 'prompt_test.txt',
+                    size: 1024,
+                    isFolder: false,
+                    webViewLink: 'https://drive.google.com/file/d/mock_prompt_test_id/view'
+                }];
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        gdriveAction: true,
+                        receipt: {
+                            action: 'UPLOAD',
+                            type: 'FILE',
+                            targetName: 'prompt_test.txt',
+                            targetId: 'mock_prompt_test_id',
+                            company: 'QA_Meridian_Logistics'
+                        },
+                        choices: [{
+                            message: {
+                                role: 'assistant',
+                                content: 'I have successfully uploaded the prospect information file "prompt_test.txt" (ID: `mock_prompt_test_id`) to Google Drive (Client folder: *QA_Meridian_Logistics*). It is now indexed and available in the client memory context!'
+                            }
+                        }]
+                    })
+                });
+            } else if (lastUserMsg.includes('delete file prompt_test.txt')) {
+                mockFiles = [];
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        gdriveAction: true,
+                        receipt: {
+                            action: 'DELETE',
+                            type: 'FILE',
+                            targetName: 'prompt_test.txt',
+                            targetId: 'mock_prompt_test_id',
+                            company: 'QA_Meridian_Logistics'
+                        },
+                        choices: [{
+                            message: {
+                                role: 'assistant',
+                                content: 'I have successfully deleted the file "prompt_test.txt" (ID: `mock_prompt_test_id`) from Google Drive (Client folder: *QA_Meridian_Logistics*).'
+                            }
+                        }]
+                    })
+                });
+            } else {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        choices: [{
+                            message: {
+                                role: 'assistant',
+                                content: 'General assistant response.'
+                            }
+                        }]
+                    })
+                });
+            }
+        });
+
         await indexPage.goto();
         await indexPage.newChatBtn.click();
         await indexPage.fillMetadata('Sarah Chen', 'QA_Meridian_Logistics', 'sarah@meridian.com');
@@ -128,6 +213,69 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
     test('verifies nested folder tree rendering and call registration in sidebar', async ({ page }) => {
         test.setTimeout(60000);
         const indexPage = new IndexPage(page);
+
+        // Stub /api/gdrive/list for active folder to return our mocked file list
+        let mockFiles = [];
+        await page.route('**/api/gdrive/list?folderId=*', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    items: mockFiles
+                })
+            });
+        });
+
+        // Stub /api/chat to return a simulated response and update mockFiles
+        await page.route('**/api/chat', async route => {
+            const postData = route.request().postData();
+            let parsedPost = JSON.parse(postData);
+            const lastUserMsg = parsedPost.messages[parsedPost.messages.length - 1].content;
+
+            if (lastUserMsg.includes('made call:')) {
+                mockFiles = [{
+                    id: 'mock_call_log_id',
+                    name: 'call_log_12345.txt',
+                    size: 512,
+                    isFolder: false,
+                    webViewLink: 'https://drive.google.com/file/d/mock_call_log_id/view'
+                }];
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        gdriveAction: true,
+                        receipt: {
+                            action: 'UPLOAD',
+                            type: 'CALL_LOG',
+                            targetName: 'call_log_12345.txt',
+                            targetId: 'mock_call_log_id',
+                            company: 'QA_Meridian_Logistics'
+                        },
+                        choices: [{
+                            message: {
+                                role: 'assistant',
+                                content: 'I have successfully registered the new call (File ID: call_log_12345.txt).'
+                            }
+                        }]
+                    })
+                });
+            } else {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        choices: [{
+                            message: {
+                                role: 'assistant',
+                                content: 'General response.'
+                            }
+                        }]
+                    })
+                });
+            }
+        });
+
         await indexPage.goto();
         await indexPage.newChatBtn.click();
         await indexPage.fillMetadata('Sarah Chen', 'QA_Meridian_Logistics', 'sarah@meridian.com');
