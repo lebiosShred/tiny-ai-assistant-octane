@@ -2059,7 +2059,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                     const drive = gdriveService.getDriveClient();
                                     const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
                                     const prospectsSearch = await drive.files.list({
-                                        q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                                        q: `name = 'Company' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                                         fields: 'files(id)',
                                         pageSize: 1
                                     });
@@ -3294,7 +3294,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                         const drive = gdriveService.getDriveClient();
                                                         const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
                                                         const prospectsSearch = await drive.files.list({
-                                                            q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                                                            q: `name = 'Company' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                                                             fields: 'files(id)',
                                                             pageSize: 1
                                                         });
@@ -4190,23 +4190,23 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 try {
                     const drive = gdriveService.getDriveClient();
                     if (!folderId && !company) {
-                        // Resolve the Prospects folder
-                        const envProspectsId = process.env.PROSPECTS_FOLDER_ID;
+                        // Resolve the Company folder
+                        const envProspectsId = process.env.COMPANY_FOLDER_ID;
                         if (envProspectsId) {
                             folderId = envProspectsId;
                         } else {
-                            // Resolve the Prospects folder under root, and list folders inside it
+                            // Resolve the Company folder under root, and list folders inside it
                             const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
                             const prospectsSearch = await drive.files.list({
-                                q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                                q: `name = 'Company' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                                 fields: 'files(id, name)',
                                 pageSize: 1
                             });
                             let prospectsFiles = prospectsSearch.data.files || [];
                             if (prospectsFiles.length === 0) {
-                                console.log(`⚠️ Prospects folder not found under parents '${rootFolderId}'. Searching globally...`);
+                                console.log(`⚠️ Company folder not found under parents '${rootFolderId}'. Searching globally...`);
                                 const fallbackSearch = await drive.files.list({
-                                    q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+                                    q: `name = 'Company' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
                                     fields: 'files(id, name)',
                                     pageSize: 1
                                 });
@@ -4240,7 +4240,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 }
 
                 // If folderId matches a known Google Drive root folder ID, treat it as a root list query locally
-                if (folderId === process.env.PROSPECTS_FOLDER_ID || folderId === process.env.GDRIVE_ROOT_FOLDER_ID || folderId === 'root') {
+                if (folderId === process.env.COMPANY_FOLDER_ID || folderId === process.env.GDRIVE_ROOT_FOLDER_ID || folderId === 'root') {
                     folderId = null;
                 }
 

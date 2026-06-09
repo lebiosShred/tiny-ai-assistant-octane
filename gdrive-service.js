@@ -13,12 +13,12 @@ if (fs.existsSync(path.join(__dirname, '.env'))) {
 
 let driveClient = null;
 const folderIdCache = new Map();
-let cachedProspectsFolderId = null;
+let cachedCompanyFolderId = null;
 const activeResolutions = new Map();
 
 function invalidateFolderCache(folderId) {
-    if (cachedProspectsFolderId === folderId) {
-        cachedProspectsFolderId = null;
+    if (cachedCompanyFolderId === folderId) {
+        cachedCompanyFolderId = null;
     }
     for (const [key, value] of folderIdCache.entries()) {
         if (value === folderId) {
@@ -434,7 +434,7 @@ async function createIntakeFile(fileName, contentText, parentFolderId) {
 }
 
 /**
- * Resolves or creates a company-specific folder inside the central "Prospects" folder on Google Drive.
+ * Resolves or creates a company-specific folder inside the central "Company" folder on Google Drive.
  * @param {string} companyName Name of the company/client
  * @returns {Promise<string>} Google Drive Folder ID
  */
@@ -458,24 +458,24 @@ async function findOrCreateClientFolder(companyName) {
             });
             if (folderMeta && folderMeta.data && !folderMeta.data.trashed) {
                 const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
-                let prospectsFolderId = cachedProspectsFolderId;
+                let prospectsFolderId = cachedCompanyFolderId;
                 if (!prospectsFolderId) {
                     const prospectsSearch = await drive.files.list({
-                        q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                        q: `name = 'Company' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                         fields: 'files(id, name)',
                         pageSize: 1
                     });
                     const prospectsFiles = prospectsSearch.data.files || [];
                     if (prospectsFiles.length > 0) {
                         prospectsFolderId = prospectsFiles[0].id;
-                        cachedProspectsFolderId = prospectsFolderId;
+                        cachedCompanyFolderId = prospectsFolderId;
                     }
                 }
                 const parents = folderMeta.data.parents || [];
                 if (!prospectsFolderId || parents.includes(prospectsFolderId)) {
                     return cachedId;
                 }
-                console.log(`🗑️ Cached folder ID ${cachedId} for "${cleanCompany}" is not in the current Prospects directory (${prospectsFolderId}). Invalidating cache...`);
+                console.log(`🗑️ Cached folder ID ${cachedId} for "${cleanCompany}" is not in the current Company directory (${prospectsFolderId}). Invalidating cache...`);
             } else {
                 console.log(`🗑️ Cached folder ID ${cachedId} for "${cleanCompany}" is trashed. Invalidating cache...`);
             }
@@ -494,11 +494,11 @@ async function findOrCreateClientFolder(companyName) {
         const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
 
         try {
-            // 1. Resolve or create the central "Prospects" directory
-            let prospectsFolderId = cachedProspectsFolderId || process.env.PROSPECTS_FOLDER_ID;
+            // 1. Resolve or create the central "Company" directory
+            let prospectsFolderId = cachedCompanyFolderId || process.env.COMPANY_FOLDER_ID;
             if (!prospectsFolderId) {
                 const prospectsSearch = await drive.files.list({
-                    q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                    q: `name = 'Company' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                     fields: 'files(id, name)',
                     pageSize: 1
                 });
@@ -506,19 +506,19 @@ async function findOrCreateClientFolder(companyName) {
                 const prospectsFiles = prospectsSearch.data.files || [];
                 if (prospectsFiles.length > 0) {
                     prospectsFolderId = prospectsFiles[0].id;
-                    cachedProspectsFolderId = prospectsFolderId;
+                    cachedCompanyFolderId = prospectsFolderId;
                 } else {
-                    console.log(`📂 "Prospects" folder not found under root. Creating it...`);
+                    console.log(`📂 "Company" folder not found under root. Creating it...`);
                     const prospectsCreate = await drive.files.create({
                         resource: {
-                            name: 'Prospects',
+                            name: 'Company',
                             mimeType: 'application/vnd.google-apps.folder',
                             parents: [rootFolderId]
                         },
                         fields: 'id'
                     });
                     prospectsFolderId = prospectsCreate.data.id;
-                    cachedProspectsFolderId = prospectsFolderId;
+                    cachedCompanyFolderId = prospectsFolderId;
                 }
             }
 
