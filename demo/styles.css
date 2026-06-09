@@ -4992,3 +4992,8 @@ body {
     line-height: 1.5 !important;
 }
 
+/* Eradicate welcome screen flash on slow connection by enabling override of inline display: none */
+#empty-state-content:not(.hidden) {
+    display: flex !important;
+}
+
