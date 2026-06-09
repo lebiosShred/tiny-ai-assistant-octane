@@ -591,18 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (toggleSpan) toggleSpan.style.transform = 'rotate(-90deg)';
                     }
                     
-                    // 1. Add Prospect (Empty Session) button at Company Root
-                    const addProspectBtn = document.createElement('div');
-                    addProspectBtn.className = 'sidebar-new-session-btn';
-                    addProspectBtn.style.backgroundColor = '#f1f5f9';
-                    addProspectBtn.style.color = '#334155';
-                    addProspectBtn.style.marginBottom = '8px';
-                    addProspectBtn.innerText = '➕ Add Prospect';
-                    addProspectBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        startNewSessionForProspect(folder, '');
-                    });
-                    contents.appendChild(addProspectBtn);
+
                     
                     // 2. Fetch history items for this company
                     const matchedSessions = chatsList.filter(c => 
