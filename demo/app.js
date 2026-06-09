@@ -159,10 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isTestRunner = navigator.webdriver || typeof window.__playwright_active !== 'undefined';
     const loadingIndicator = document.getElementById('initial-loading-indicator');
     const emptyStateContent = document.getElementById('empty-state-content');
-    if (isTestRunner) {
-        if (loadingIndicator) loadingIndicator.classList.add('hidden');
-        if (emptyStateContent) emptyStateContent.classList.remove('hidden');
-    } else {
+    if (!isTestRunner) {
         if (loadingIndicator) loadingIndicator.classList.remove('hidden');
         if (emptyStateContent) emptyStateContent.classList.add('hidden');
     }
@@ -1253,6 +1250,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!currentChatId) {
                 currentChatId = result.id;
             }
+            if (result.gDriveFolderId) {
+                activeFolderId = result.gDriveFolderId;
+            }
             
             // Force reload of folder explorer tree
             gdriveFolders = [];
@@ -1445,7 +1445,7 @@ Rules:
     - "Competing applications": In the customers current stack, identify applications they are using that are competing with us (e.g. Anaplan, Workday Adaptive Planning, Board).
     - "Competing consulting firms": Did the client mention they are working with a firm competing with us?
 6. If a source field (such as the LinkedIn Profile Bio or Booking Intake Answers) is empty or contains placeholder text, you MUST explain the missing data to the user rather than calling the upload tool. Do not call any upload tools unless you are explicitly given new profile/content data to upload.
-7. If the user asks you to analyze, search, read, or retrieve information from a prospect's files (such as a LinkedIn profile PDF, call transcript, or intake document) and the corresponding source fields above are empty or incomplete, you MUST call 'search_prospect_files' or 'read_prospect_file' to dynamically query and fetch the content. When a prospect's name (e.g. Sarah Chen) is provided in the query, refer to the "Active Leads in System" list to map them to their correct company name (e.g. Meridian Logistics) so you can pass the correct company argument to the tool.
+7. If the user asks you to analyze, search, list, read, or retrieve information from a prospect's files (such as a LinkedIn profile PDF, call transcript, or intake document) and the corresponding source fields above are empty or incomplete, you MUST call 'list_prospect_files', 'search_prospect_files', or 'read_prospect_file' to dynamically query and fetch the content. When a prospect's name (e.g. Sarah Chen) is provided in the query, refer to the "Active Leads in System" list to map them to their correct company name (e.g. Meridian Logistics) so you can pass the correct company argument to the tool.
 8. If the user asks to save, register, or log call notes, summaries, transcripts, or details, but does not explicitly provide the conversation notes, content, or transcript text within their prompt, you MUST be skeptical. Do NOT assume or fabricate details from pre-existing profile or intake answers. Instead, politely ask the user to provide the specific details or notes of their conversation before calling 'register_call_log'.
 9. Google Drive is organized exclusively by Company Name. Do not create folders for individual people. If a user asks to 'create a folder for a contact', invoke the create_prospect_folder tool using their company name instead, and inform the user that contacts are stored as files within the parent company folder.`;
 
@@ -1795,21 +1795,51 @@ Rules:
     // --- Chat Attach Button (Multipart Streaming Upload via FormData + XHR) ---
     if (chatAttachBtn && chatAttachFile) {
         chatAttachBtn.addEventListener('click', () => {
-            const companyName = metaCompany ? metaCompany.value.trim() : '';
-            if (!companyName) {
-                showToast('Start or select a prospect chat first.');
-                return;
-            }
             chatAttachFile.click();
         });
 
         chatAttachFile.addEventListener('change', async () => {
             if (!chatAttachFile.files || chatAttachFile.files.length === 0) return;
             
-            const companyName = metaCompany ? metaCompany.value.trim() : '';
+            let companyName = metaCompany ? metaCompany.value.trim() : '';
             if (!companyName) {
-                showToast('Start or select a prospect chat first.');
-                return;
+                // Try to extract from text input
+                const userInput = chatUserInput ? chatUserInput.value.trim() : '';
+                const patterns = [
+                    /(?:store|save|upload|put|send)(?:\s+(?:this|these|the|file|files|documents?))?\s+(?:to|for)\s+([^.\n\r]+)/i,
+                    /(?:\bto|\bfor)\s+([^.\n\r]+)/i
+                ];
+
+                for (const pattern of patterns) {
+                    const match = userInput.match(pattern);
+                    if (match && match[1]) {
+                        companyName = match[1].trim().replace(/please/gi, '').trim().replace(/[.,!?;:]+$/, '').trim();
+                        if (companyName) break;
+                    }
+                }
+
+                if (!companyName) {
+                    const promptVal = prompt("Enter the company or prospect name to store this file to:");
+                    if (promptVal && promptVal.trim()) {
+                        companyName = promptVal.trim();
+                    }
+                }
+
+                if (!companyName) {
+                    showToast('Please select a prospect or enter a company name.');
+                    chatAttachFile.value = '';
+                    return;
+                }
+
+                // Initialize the UI elements for the new company
+                if (metaCompany) {
+                    metaCompany.value = companyName;
+                    metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
+                    metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (metaName && !metaName.value.trim()) {
+                    metaName.value = `${companyName} Lead`;
+                }
             }
 
             // Auto-initialize session if currentChatId is null
@@ -1834,6 +1864,9 @@ Rules:
                     const initResult = await initRes.json();
                     if (!initRes.ok) throw new Error(initResult.error || 'Failed to initialize session');
                     currentChatId = initResult.id;
+                    if (initResult.gDriveFolderId) {
+                        activeFolderId = initResult.gDriveFolderId;
+                    }
                     await loadChatsList();
                 } catch (initErr) {
                     console.error('Failed to auto-initialize chat session on file select:', initErr);
@@ -2441,10 +2474,44 @@ ${data.parsedText}`;
             e.preventDefault();
             chatDragOverlay.classList.remove('dragover');
             
-            const companyName = metaCompany ? metaCompany.value.trim() : '';
+            let companyName = metaCompany ? metaCompany.value.trim() : '';
             if (!companyName) {
-                showToast('Please select a prospect or enter a company name first.');
-                return;
+                // Try to extract from text input
+                const userInput = chatUserInput ? chatUserInput.value.trim() : '';
+                const patterns = [
+                    /(?:store|save|upload|put|send)(?:\s+(?:this|these|the|file|files|documents?))?\s+(?:to|for)\s+([^.\n\r]+)/i,
+                    /(?:\bto|\bfor)\s+([^.\n\r]+)/i
+                ];
+
+                for (const pattern of patterns) {
+                    const match = userInput.match(pattern);
+                    if (match && match[1]) {
+                        companyName = match[1].trim().replace(/please/gi, '').trim().replace(/[.,!?;:]+$/, '').trim();
+                        if (companyName) break;
+                    }
+                }
+
+                if (!companyName) {
+                    const promptVal = prompt("Enter the company or prospect name to store this file to:");
+                    if (promptVal && promptVal.trim()) {
+                        companyName = promptVal.trim();
+                    }
+                }
+
+                if (!companyName) {
+                    showToast('Please select a prospect or enter a company name.');
+                    return;
+                }
+
+                // Initialize the UI elements for the new company
+                if (metaCompany) {
+                    metaCompany.value = companyName;
+                    metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
+                    metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (metaName && !metaName.value.trim()) {
+                    metaName.value = `${companyName} Lead`;
+                }
             }
 
             const droppedFiles = Array.from(e.dataTransfer.files);
@@ -2472,6 +2539,9 @@ ${data.parsedText}`;
                     const initResult = await initRes.json();
                     if (!initRes.ok) throw new Error(initResult.error || 'Failed to initialize session');
                     currentChatId = initResult.id;
+                    if (initResult.gDriveFolderId) {
+                        activeFolderId = initResult.gDriveFolderId;
+                    }
                     await loadChatsList();
                 } catch (initErr) {
                     console.error('Failed to auto-initialize chat session on drop:', initErr);

@@ -344,4 +344,136 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         const fileItem = page.locator('.sidebar-file-item', { hasText: 'call_log_' }).first();
         await expect(fileItem).toBeVisible({ timeout: 15000 });
     });
+
+    test('verifies conversational upload company resolution when no active prospect is selected', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await page.waitForLoadState('networkidle');
+
+        // Start new chat to make active chat container visible
+        await indexPage.newChatBtn.click();
+
+        // Stub history POST and upload-stream POST
+        let historyPayload = null;
+
+        await page.route('**/api/history', async route => {
+            const method = route.request().method();
+            if (method === 'POST') {
+                historyPayload = JSON.parse(route.request().postData());
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        status: 'success',
+                        id: 'synthesis_Sarah_Chen_12345',
+                        gDriveFolderId: 'mock_gdrive_folder_id_sarah'
+                    })
+                });
+            } else {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify([])
+                });
+            }
+        });
+
+        await page.route('**/api/gdrive/upload-stream', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    success: true,
+                    fileId: 'mock_file_id_sarah',
+                    fileName: 'resume.pdf',
+                    webViewLink: 'https://drive.google.com/file/d/mock_file_id_sarah/view',
+                    parsedText: 'Sarah Chen resume content',
+                    receipt: {
+                        action: 'UPLOAD',
+                        type: 'FILE',
+                        targetName: 'resume.pdf',
+                        targetId: 'mock_file_id_sarah',
+                        company: 'Sarah Chen'
+                    }
+                })
+            });
+        });
+
+        await page.route('**/api/gdrive/list*', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    items: [
+                        {
+                            id: 'mock_gdrive_folder_id_sarah',
+                            name: 'Sarah Chen',
+                            mimeType: 'application/vnd.google-apps.folder',
+                            isFolder: true,
+                            size: 0,
+                            webViewLink: 'file:///mock/Sarah_Chen'
+                        }
+                    ]
+                })
+            });
+        });
+
+        // Set the conversational upload intent in the chat input
+        await page.fill('#chat-user-input', 'Store this file to Sarah Chen');
+
+        // Simulate attaching a file
+        const fileChooserPromise = page.waitForEvent('filechooser');
+        await page.click('#chat-attach-btn');
+        const fileChooser = await fileChooserPromise;
+        await fileChooser.setFiles({
+            name: 'resume.pdf',
+            mimeType: 'application/pdf',
+            buffer: Buffer.from('PDF Content')
+        });
+
+        // Verify the file was uploaded and system message posted
+        await expect(page.locator('#chat-messages-log')).toContainText('successfully uploaded and indexed "resume.pdf"', { timeout: 20000 });
+        expect(historyPayload).not.toBeNull();
+        expect(historyPayload.company).toBe('Sarah Chen');
+    });
+
+    test('verifies conversational folder listing query', async ({ page }) => {
+        test.setTimeout(60000);
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        await page.waitForLoadState('networkidle');
+
+        await indexPage.newChatBtn.click();
+        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.submitForm();
+        await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
+
+        let chatPayload = null;
+
+        await page.route('**/api/chat', async route => {
+            chatPayload = JSON.parse(route.request().postData());
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    choices: [{
+                        message: {
+                            role: 'assistant',
+                            content: 'Here are the files in the folder for Meridian Logistics:\n- **Statement_Of_Work_2025.pdf** (ID: `mock_gdrive_sample_id`)'
+                        }
+                    }]
+                })
+            });
+        });
+
+        await page.fill('#chat-user-input', 'what files do we have in Google Drive?');
+        await indexPage.sendBtn.click();
+        await indexPage.waitForResponse(20000);
+
+        const responseText = await indexPage.getLastResponseText();
+        expect(responseText).toContain('Statement_Of_Work_2025.pdf');
+        expect(chatPayload).not.toBeNull();
+    });
 });

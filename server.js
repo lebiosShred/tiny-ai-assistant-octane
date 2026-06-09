@@ -2885,7 +2885,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             hasSystem = true;
                             dsMessages.push({
                                 role: 'system',
-                                content: msg.content + '\n\nIMPORTANT: You have tools available to create/delete prospect files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions (e.g. "delete prospect sample", "create file readme.md at AECOM", "Please delete the file for prospect Meridian Logistics"), you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.\n\nIMPORTANT: You do NOT have the ability to create folders. Under the Account-Based Storage architecture, all files must be stored directly under the client company folder. Do not claim to have saved or created a folder.'
+                                content: msg.content + '\n\nIMPORTANT: You have tools available to create prospect folders, list prospect files, create/delete prospect files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions (e.g. "Create a prospect folder for Sarah Chen", "list files for Sarah Chen", "delete prospect sample", "create file readme.md at AECOM"), you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.'
                             });
                         } else {
                             dsMessages.push(msg);
@@ -2895,7 +2895,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 if (!hasSystem) {
                     dsMessages.unshift({
                         role: 'system',
-                        content: 'You have tools available to create/delete prospect files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions, you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.\n\nIMPORTANT: You do NOT have the ability to create folders. Under the Account-Based Storage architecture, all files must be stored directly under the client company folder. Do not claim to have saved or created a folder.'
+                        content: 'You have tools available to create prospect folders, list prospect files, create/delete prospect files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions, you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.'
                     });
                 }
 
@@ -2905,6 +2905,40 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         function: {
                             name: 'delete_prospect_folder',
                             description: 'Deletes/removes a prospect folder and all its files from Google Drive (e.g. Acme Corp, Sample). Use this when asked to delete, remove, or destroy a prospect, lead, client, or company folder.',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    company: {
+                                        type: 'string',
+                                        description: 'The company or prospect name'
+                                    }
+                                },
+                                required: ['company']
+                            }
+                        }
+                    },
+                    {
+                        type: 'function',
+                        function: {
+                            name: 'list_prospect_files',
+                            description: 'Lists all files inside the prospect/company folder in Google Drive (or local fallback folder). Use this when asked what files are available, what documents are in the folder, or to check the contents of a company folder.',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    company: {
+                                        type: 'string',
+                                        description: 'The company or prospect name'
+                                    }
+                                },
+                                required: ['company']
+                            }
+                        }
+                    },
+                    {
+                        type: 'function',
+                        function: {
+                            name: 'create_prospect_folder',
+                            description: 'Creates a new prospect/company folder in Google Drive. Use this when asked to create a prospect, add a company, or set up a folder for a client.',
                             parameters: {
                                 type: 'object',
                                 properties: {
@@ -3369,6 +3403,69 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 }
                                             } else {
                                                 toolResult = `Error: Missing 'company' parameter.`;
+                                            }
+                                        } else if (name === 'list_prospect_files') {
+                                             let { company } = args;
+                                             if (company) {
+                                                 // Dynamic name-to-company auto-resolution
+                                                 if (fs.existsSync(historyDir)) {
+                                                     try {
+                                                         const historyFiles = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+                                                         for (const hFile of historyFiles) {
+                                                             const hData = fs.readFileSync(path.join(historyDir, hFile), 'utf8');
+                                                             const hParsed = JSON.parse(hData);
+                                                             if (hParsed.name && hParsed.name.toLowerCase().trim() === company.toLowerCase().trim()) {
+                                                                 if (hParsed.company) {
+                                                                     console.log(`🔄 Resolved prospect name "${company}" to company "${hParsed.company}"`);
+                                                                     company = hParsed.company;
+                                                                     break;
+                                                                 }
+                                                             }
+                                                         }
+                                                     } catch (resolveErr) {
+                                                         console.warn('⚠️ Name-to-company resolution failed:', resolveErr.message);
+                                                     }
+                                                 }
+                                                 console.log(`📂 Tool Call: Listing files in ${company} folder`);
+                                                 const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                                                 let files = [];
+                                                 if (gdriveAvailable) {
+                                                     try {
+                                                         const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                         files = await gdriveService.listFolder(clientFolderId);
+                                                     } catch (err) {
+                                                         console.warn('⚠️ GDrive list failed in tool call:', err.message);
+                                                     }
+                                                 } else {
+                                                     const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                                                     const localFolder = path.join(historyDir, cleanCompany);
+                                                     if (fs.existsSync(localFolder)) {
+                                                         const localFiles = fs.readdirSync(localFolder).filter(f => !fs.statSync(path.join(localFolder, f)).isDirectory());
+                                                         files = localFiles.map(file => ({ name: file, id: `local_${cleanCompany}_${file}`, isFolder: false }));
+                                                     }
+                                                 }
+                                                 const fileItems = files.filter(f => !f.isFolder);
+                                                 if (fileItems.length > 0) {
+                                                     toolResult = `Here are the files in the folder for **${company}**:\n` +
+                                                         fileItems.map(f => `- **${f.name}** (ID: \`${f.id}\`)`).join('\n');
+                                                 } else {
+                                                     toolResult = `No files were found in the folder for **${company}**.`;
+                                                 }
+                                             } else {
+                                                 toolResult = `Error: Missing required parameter 'company'.`;
+                                             }
+                                         } else if (name === 'create_prospect_folder') {
+                                            const { company } = args;
+                                            if (company) {
+                                                console.log(`📂 Tool Call: Creating folder for ${company}`);
+                                                const folderId = await gdriveService.findOrCreateClientFolder(company);
+                                                gdriveAction = true;
+                                                receipts.push(generateReceipt("CREATE", "FOLDER", company, folderId, company, {
+                                                    initiator: "DeepSeek Tool Call: create_prospect_folder"
+                                                }));
+                                                toolResult = `I have successfully created/resolved the folder for **${company}** on Google Drive (ID: \`${folderId}\`).`;
+                                            } else {
+                                                toolResult = `Error: Missing required parameter 'company'.`;
                                             }
                                         } else if (name === 'create_prospect_file') {
                                             const { company, filename, content } = args;
@@ -5721,7 +5818,7 @@ ${payload.intakeAnswers || ''}`;
                         }
 
                         res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ status: 'success', id }));
+                        res.end(JSON.stringify({ status: 'success', id, gDriveFolderId: payload.gDriveFolderId }));
                     });
                 } catch (e) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
