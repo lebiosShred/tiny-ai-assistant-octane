@@ -1690,7 +1690,9 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     .replace(/\bsystem\s+prompt\b/gi, 'input instructions')
                     .replace(/\byou\s+are\s+a\b/gi, 'your role is')
                     .replace(/\byour\s+role\s+is\b/gi, 'your designation is')
-                    .replace(/\binstructions:\b/gi, 'directives:');
+                    .replace(/\binstructions:\b/gi, 'directives:')
+                    .replace(/api[_\s-]?key/gi, 'access identifier')
+                    .replace(/password/gi, 'passphrase');
             };
 
             // Universal responder helper to inject metadata

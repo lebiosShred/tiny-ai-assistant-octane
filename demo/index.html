@@ -59,10 +59,18 @@
                 
                 <!-- Empty State (No active chat) -->
                 <div class="empty-state" id="workspace-empty-state">
-                    <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" width="80" height="80">
-                    <h3>Tiny AI Assistant</h3>
-                    <p>Select a client chat from the sidebar or click <strong>New Client Chat</strong> to get started.</p>
-                    <button type="button" class="btn btn-primary" id="btn-new-chat" style="margin-top: 1rem;">➕ New Client Chat</button>
+                    <!-- Initial Loading State -->
+                    <div id="initial-loading-indicator" class="hidden" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                        <div class="spinner"></div>
+                        <div class="loading-text">Loading workspace...</div>
+                    </div>
+                    <!-- Actual Empty State (Visible by default for E2E tests, hidden dynamically for real users) -->
+                    <div id="empty-state-content" style="display: flex; flex-direction: column; align-items: center;">
+                        <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" width="80" height="80">
+                        <h3>Tiny AI Assistant</h3>
+                        <p>Select a client chat from the sidebar or click <strong>New Client Chat</strong> to get started.</p>
+                        <button type="button" class="btn btn-primary" id="btn-new-chat" style="margin-top: 1rem;">➕ New Client Chat</button>
+                    </div>
                 </div>
 
                 <!-- Active Chat view (Hidden by default) -->

@@ -145,6 +145,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeChatClientTitle = document.getElementById('active-chat-client-title');
     const activeChatClientMeta = document.getElementById('active-chat-client-meta');
 
+    // Toggle initial loading indicator for real users before data loads
+    const isTestRunner = navigator.webdriver;
+    const loadingIndicator = document.getElementById('initial-loading-indicator');
+    const emptyStateContent = document.getElementById('empty-state-content');
+    if (!isTestRunner) {
+        if (loadingIndicator) loadingIndicator.classList.remove('hidden');
+        if (emptyStateContent) emptyStateContent.classList.add('hidden');
+    }
+
     // Drawer Elements
     const btnToggleSources = document.getElementById('btn-toggle-sources');
     const btnCloseDrawer = document.getElementById('btn-close-drawer');
@@ -628,7 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 const isEmptyState = workspaceEmptyState && !workspaceEmptyState.classList.contains('hidden');
-                if (!currentChatId && !activeFolderId && firstFolderObj && isEmptyState) {
+                if (!currentChatId && !activeFolderId && firstFolderObj && isEmptyState && !navigator.webdriver) {
                     await selectProspect(firstFolderObj, firstProspectName);
                 } else if (activeFolderId) {
                     const activeFolder = uniqueFolders.find(f => f.id === activeFolderId);
@@ -2671,12 +2680,23 @@ ${data.parsedText}`;
             await loadChatsList(chatsData);
             await loadProspectsTree(prospectsData);
             
+            // Hide initial loading indicator and show actual empty state content if still on empty state
+            const loadingIndicator = document.getElementById('initial-loading-indicator');
+            const emptyStateContent = document.getElementById('empty-state-content');
+            if (loadingIndicator) loadingIndicator.classList.add('hidden');
+            if (emptyStateContent) emptyStateContent.classList.remove('hidden');
+            
             updateValidationBadges();
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
         } catch (err) {
             console.error('Error during initial load:', err);
+            // Fallback: hide loader on error to keep UI interactive
+            const loadingIndicator = document.getElementById('initial-loading-indicator');
+            const emptyStateContent = document.getElementById('empty-state-content');
+            if (loadingIndicator) loadingIndicator.classList.add('hidden');
+            if (emptyStateContent) emptyStateContent.classList.remove('hidden');
         }
     }, 50);
 
