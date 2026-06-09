@@ -10,6 +10,7 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         test.setTimeout(60000);
         const indexPage = new IndexPage(page);
         await indexPage.goto();
+        await page.waitForLoadState('networkidle');
         await indexPage.newChatBtn.click();
         await indexPage.fillMetadata('Sarah Chen', 'QA_Meridian_Logistics', 'sarah@meridian.com');
         await indexPage.submitForm();
@@ -90,16 +91,36 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         test.setTimeout(60000);
         const indexPage = new IndexPage(page);
 
-        // Stub /api/gdrive/list for active folder to return our mocked file list
+        // Stub /api/gdrive/list to handle folder list and root list queries resiliently
         let mockFiles = [];
-        await page.route('**/api/gdrive/list?folderId=*', async route => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({
-                    items: mockFiles
-                })
-            });
+        await page.route('**/api/gdrive/list*', async route => {
+            const url = route.request().url();
+            if (url.includes('folderId=') || url.includes('company=')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        items: mockFiles
+                    })
+                });
+            } else {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        items: [
+                            {
+                                id: 'local_folder_QA_Meridian_Logistics',
+                                name: 'QA_Meridian_Logistics',
+                                mimeType: 'application/vnd.google-apps.folder',
+                                isFolder: true,
+                                size: 0,
+                                webViewLink: 'file:///mock/QA_Meridian_Logistics'
+                            }
+                        ]
+                    })
+                });
+            }
         });
 
         // Stub /api/chat to return a simulated response and update mockFiles
@@ -175,6 +196,7 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         });
 
         await indexPage.goto();
+        await page.waitForLoadState('networkidle');
         await indexPage.newChatBtn.click();
         await indexPage.fillMetadata('Sarah Chen', 'QA_Meridian_Logistics', 'sarah@meridian.com');
         await indexPage.submitForm();
@@ -214,16 +236,36 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         test.setTimeout(60000);
         const indexPage = new IndexPage(page);
 
-        // Stub /api/gdrive/list for active folder to return our mocked file list
+        // Stub /api/gdrive/list to handle folder list and root list queries resiliently
         let mockFiles = [];
-        await page.route('**/api/gdrive/list?folderId=*', async route => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({
-                    items: mockFiles
-                })
-            });
+        await page.route('**/api/gdrive/list*', async route => {
+            const url = route.request().url();
+            if (url.includes('folderId=') || url.includes('company=')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        items: mockFiles
+                    })
+                });
+            } else {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        items: [
+                            {
+                                id: 'local_folder_QA_Meridian_Logistics',
+                                name: 'QA_Meridian_Logistics',
+                                mimeType: 'application/vnd.google-apps.folder',
+                                isFolder: true,
+                                size: 0,
+                                webViewLink: 'file:///mock/QA_Meridian_Logistics'
+                            }
+                        ]
+                    })
+                });
+            }
         });
 
         // Stub /api/chat to return a simulated response and update mockFiles
@@ -277,6 +319,7 @@ test.describe('Aegis v2 -- Google Drive Client Folder & Memory Ingestion', () =>
         });
 
         await indexPage.goto();
+        await page.waitForLoadState('networkidle');
         await indexPage.newChatBtn.click();
         await indexPage.fillMetadata('Sarah Chen', 'QA_Meridian_Logistics', 'sarah@meridian.com');
         await indexPage.submitForm();

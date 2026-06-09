@@ -2431,10 +2431,18 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 try {
                     const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
                     let files = [];
+                    let gdriveAccessSucceeded = false;
                     if (gdriveAvailable) {
-                        const clientFolderId = await gdriveService.findOrCreateClientFolder(companyNameForGDrive);
-                        files = await gdriveService.listFolder(clientFolderId);
-                    } else {
+                        try {
+                            const clientFolderId = await gdriveService.findOrCreateClientFolder(companyNameForGDrive);
+                            files = await gdriveService.listFolder(clientFolderId);
+                            gdriveAccessSucceeded = true;
+                        } catch (gdriveErr) {
+                            console.warn(`⚠️ Google Drive access failed in chat context, falling back to local files: ${gdriveErr.message}`);
+                        }
+                    }
+
+                    if (!gdriveAccessSucceeded) {
                         const cleanCompany = companyNameForGDrive.replace(/[^a-zA-Z0-9]/g, '_');
                         const localFolder = path.join(historyDir, cleanCompany);
                         if (fs.existsSync(localFolder)) {
@@ -4173,67 +4181,54 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
         const company = parsedUrl.searchParams.get('company');
         try {
             const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+            let items = null;
+            let listSucceeded = false;
             
             if (gdriveAvailable) {
-                const drive = gdriveService.getDriveClient();
-                if (!folderId && !company) {
-                    // Resolve the Prospects folder
-                    const envProspectsId = process.env.PROSPECTS_FOLDER_ID;
-                    if (envProspectsId) {
-                        folderId = envProspectsId;
-                    } else {
-                        // Resolve the Prospects folder under root, and list folders inside it
-                        const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
-                        const prospectsSearch = await drive.files.list({
-                            q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
-                            fields: 'files(id, name)',
-                            pageSize: 1
-                        });
-                        let prospectsFiles = prospectsSearch.data.files || [];
-                        if (prospectsFiles.length === 0) {
-                            console.log(`⚠️ Prospects folder not found under parents '${rootFolderId}'. Searching globally...`);
-                            const fallbackSearch = await drive.files.list({
-                                q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+                try {
+                    const drive = gdriveService.getDriveClient();
+                    if (!folderId && !company) {
+                        // Resolve the Prospects folder
+                        const envProspectsId = process.env.PROSPECTS_FOLDER_ID;
+                        if (envProspectsId) {
+                            folderId = envProspectsId;
+                        } else {
+                            // Resolve the Prospects folder under root, and list folders inside it
+                            const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+                            const prospectsSearch = await drive.files.list({
+                                q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                                 fields: 'files(id, name)',
                                 pageSize: 1
                             });
-                            prospectsFiles = fallbackSearch.data.files || [];
+                            let prospectsFiles = prospectsSearch.data.files || [];
+                            if (prospectsFiles.length === 0) {
+                                console.log(`⚠️ Prospects folder not found under parents '${rootFolderId}'. Searching globally...`);
+                                const fallbackSearch = await drive.files.list({
+                                    q: `name = 'Prospects' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+                                    fields: 'files(id, name)',
+                                    pageSize: 1
+                                });
+                                prospectsFiles = fallbackSearch.data.files || [];
+                            }
+                            if (prospectsFiles.length > 0) {
+                                folderId = prospectsFiles[0].id;
+                            }
                         }
-                        if (prospectsFiles.length > 0) {
-                            folderId = prospectsFiles[0].id;
-                        }
+                    } else if (company && !folderId) {
+                        folderId = await gdriveService.findOrCreateClientFolder(company);
                     }
-                } else if (company && !folderId) {
-                    folderId = await gdriveService.findOrCreateClientFolder(company);
+                    
+                    console.log(`📂 Listing GDrive folder: ${folderId || 'Default Root'}`);
+                    items = await gdriveService.listFolder(folderId);
+                    listSucceeded = true;
+                } catch (gdriveErr) {
+                    console.warn(`⚠️ Google Drive list failed, falling back to local files: ${gdriveErr.message}`);
                 }
-                
-                console.log(`📂 Listing GDrive folder: ${folderId || 'Default Root'}`);
-                let items = await gdriveService.listFolder(folderId);
+            }
 
-                // Filter out recently deleted files to prevent eventual consistency lag issues
-                const now = Date.now();
-                for (const [key, time] of recentlyDeletedFiles.entries()) {
-                    if (now - time > 60000) {
-                        recentlyDeletedFiles.delete(key);
-                    }
-                }
-                items = items.filter(item => {
-                    const itemId = item.id ? item.id.toString().toLowerCase() : '';
-                    const itemName = item.name ? item.name.toString().toLowerCase() : '';
-                    if (recentlyDeletedFiles.has(itemId)) return false;
-                    if (recentlyDeletedFiles.has(itemName)) return false;
-                    const isTestEnv = process.env.HISTORY_DIR === 'knowledge/history_test';
-                    if (!isTestEnv && (itemName.startsWith('qa_') || itemName.startsWith('local_qa_') || itemId.startsWith('qa_') || itemId.startsWith('local_qa_'))) {
-                        return false;
-                    }
-                    return true;
-                });
-
-                res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate' });
-                res.end(JSON.stringify({ items }));
-            } else {
-                console.log('⚠️ Google Drive client not configured. Listing local files.');
-                let items = [];
+            if (!listSucceeded) {
+                console.log('⚠️ Google Drive client not configured or failed. Listing local files.');
+                items = [];
                 
                 // If folderId starts with local_folder_, parse the company name
                 let resolvedCompany = company;
@@ -4242,19 +4237,43 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     folderId = null;
                 }
 
+                // If folderId matches a known Google Drive root folder ID, treat it as a root list query locally
+                if (folderId === process.env.PROSPECTS_FOLDER_ID || folderId === process.env.GDRIVE_ROOT_FOLDER_ID || folderId === 'root') {
+                    folderId = null;
+                }
+
                 if (!resolvedCompany && !folderId) {
-                    // List all subdirectories inside knowledge/history
+                    // List all subdirectories and parse JSON files to build the unique company folder list
+                    const companies = new Set();
                     if (fs.existsSync(historyDir)) {
+                        // 1. Get subdirectories
                         const localDirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
-                        items = localDirs.map(dir => ({
-                            id: `local_folder_${dir}`,
-                            name: dir.replace(/_/g, ' '),
+                        localDirs.forEach(dir => companies.add(dir.replace(/_/g, ' ')));
+
+                        // 2. Scan JSON files for companies
+                        const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+                        files.forEach(file => {
+                            try {
+                                const fileContent = fs.readFileSync(path.join(historyDir, file), 'utf8');
+                                const data = JSON.parse(fileContent);
+                                if (data && data.company) {
+                                    companies.add(data.company.trim());
+                                }
+                            } catch (e) {}
+                        });
+                    }
+
+                    items = Array.from(companies).map(companyName => {
+                        const cleanDir = companyName.replace(/[^a-zA-Z0-9]/g, '_');
+                        return {
+                            id: `local_folder_${cleanDir}`,
+                            name: companyName,
                             mimeType: 'application/vnd.google-apps.folder',
                             isFolder: true,
                             size: 0,
-                            webViewLink: `file://${path.join(historyDir, dir)}`
-                        }));
-                    }
+                            webViewLink: `file://${path.join(historyDir, cleanDir)}`
+                        };
+                    });
                 } else {
                     const cleanCompany = (resolvedCompany || '').replace(/[^a-zA-Z0-9]/g, '_');
                     const localFolder = path.join(historyDir, cleanCompany);
@@ -4273,14 +4292,17 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         });
                     }
                 }
+            }
 
-                // Filter out recently deleted files to prevent eventual consistency lag issues
-                const now = Date.now();
-                for (const [key, time] of recentlyDeletedFiles.entries()) {
-                    if (now - time > 60000) {
-                        recentlyDeletedFiles.delete(key);
-                    }
+            // Filter out recently deleted files to prevent eventual consistency lag issues
+            const now = Date.now();
+            for (const [key, time] of recentlyDeletedFiles.entries()) {
+                if (now - time > 60000) {
+                    recentlyDeletedFiles.delete(key);
                 }
+            }
+
+            if (Array.isArray(items)) {
                 items = items.filter(item => {
                     const itemId = item.id ? item.id.toString().toLowerCase() : '';
                     const itemName = item.name ? item.name.toString().toLowerCase() : '';
@@ -4292,10 +4314,12 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     }
                     return true;
                 });
-
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ items }));
+            } else {
+                items = [];
             }
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ items }));
         } catch (err) {
             console.error(`❌ GDrive folder list failed:`, err);
             res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -4337,7 +4361,44 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
         const ignoreCache = parsedUrl.searchParams.get('ignoreCache') === 'true';
         try {
             console.log(`📄 Batch reading GDrive files for folder: ${folderId} (ignoreCache: ${ignoreCache})`);
-            const files = await gdriveService.listFolder(folderId);
+            let files = [];
+            let listSucceeded = false;
+            
+            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+            if (gdriveAvailable && !folderId.startsWith('local_folder_')) {
+                try {
+                    files = await gdriveService.listFolder(folderId);
+                    listSucceeded = true;
+                } catch (gdriveErr) {
+                    console.warn(`⚠️ Google Drive batch read list failed, falling back to local: ${gdriveErr.message}`);
+                }
+            }
+            
+            if (!listSucceeded) {
+                let resolvedCompany = '';
+                if (folderId.startsWith('local_folder_')) {
+                    resolvedCompany = folderId.substring('local_folder_'.length);
+                } else {
+                    resolvedCompany = folderId;
+                }
+                const cleanCompany = resolvedCompany.replace(/[^a-zA-Z0-9]/g, '_');
+                const localFolder = path.join(historyDir, cleanCompany);
+                if (fs.existsSync(localFolder)) {
+                    const localFiles = fs.readdirSync(localFolder).filter(f => !fs.statSync(path.join(localFolder, f)).isDirectory());
+                    files = localFiles.map(file => {
+                        const stat = fs.statSync(path.join(localFolder, file));
+                        return {
+                            id: `local_${cleanCompany}_${file}`,
+                            name: file,
+                            mimeType: file.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                            isFolder: false,
+                            size: stat.size,
+                            webViewLink: `file://${path.join(localFolder, file)}`
+                        };
+                    });
+                }
+            }
+
             const nonFolderFiles = files.filter(f => !f.isFolder);
 
             const ingestionMap = [
@@ -4394,7 +4455,56 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
         }
         try {
             console.log(`🔍 Searching GDrive files for: "${query}"`);
-            const results = await gdriveService.searchFiles(query);
+            let results = [];
+            let searchSucceeded = false;
+            
+            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+            if (gdriveAvailable) {
+                try {
+                    results = await gdriveService.searchFiles(query);
+                    searchSucceeded = true;
+                } catch (gdriveErr) {
+                    console.warn(`⚠️ Google Drive search failed, falling back to local: ${gdriveErr.message}`);
+                }
+            }
+            
+            if (!searchSucceeded) {
+                results = [];
+                if (fs.existsSync(historyDir)) {
+                    const walkSync = (dir) => {
+                        let files = [];
+                        const list = fs.readdirSync(dir);
+                        list.forEach(file => {
+                            const filePath = path.join(dir, file);
+                            const stat = fs.statSync(filePath);
+                            if (stat && stat.isDirectory()) {
+                                files = files.concat(walkSync(filePath));
+                            } else {
+                                files.push({ name: file, path: filePath, size: stat.size });
+                            }
+                        });
+                        return files;
+                    };
+                    const allFiles = walkSync(historyDir);
+                    const cleanQuery = query.toLowerCase();
+                    const matched = allFiles.filter(f => f.name.toLowerCase().includes(cleanQuery));
+                    
+                    results = matched.map(f => {
+                        const relative = path.relative(historyDir, f.path);
+                        const parts = relative.split(path.sep);
+                        const cleanCompany = parts[0];
+                        return {
+                            id: `local_${cleanCompany}_${f.name}`,
+                            name: f.name,
+                            mimeType: f.name.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                            isFolder: false,
+                            size: f.size,
+                            webViewLink: `file://${f.path}`
+                        };
+                    });
+                }
+            }
+            
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ items: results }));
         } catch (err) {
@@ -4455,17 +4565,25 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 try {
                     let driveFile = null;
                     let parsedText = '';
+                    let uploadSucceeded = false;
 
                     const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
 
                     if (gdriveAvailable) {
-                        let clientFolderId = folderId;
-                        if (!clientFolderId && company) {
-                            clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                        try {
+                            let clientFolderId = folderId;
+                            if (!clientFolderId && company) {
+                                clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                            }
+                            driveFile = await gdriveService.uploadFile(filename, mimeType, fileBuffer, clientFolderId);
+                            uploadSucceeded = true;
+                        } catch (gdriveErr) {
+                            console.warn(`⚠️ Google Drive upload-stream failed, falling back to local: ${gdriveErr.message}`);
                         }
-                        driveFile = await gdriveService.uploadFile(filename, mimeType, fileBuffer, clientFolderId);
-                    } else {
-                        console.warn('⚠️ Google Drive client not configured. Saving file locally.');
+                    }
+
+                    if (!uploadSucceeded) {
+                        console.warn('⚠️ Saving file locally (Google Drive client not configured or upload failed).');
                         const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
                         const localFolder = path.join(historyDir, cleanCompany);
                         if (!fs.existsSync(localFolder)) {
@@ -4494,7 +4612,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     }
 
                     // Save companion file (summary) in Google Drive or locally
-                    if (gdriveAvailable) {
+                    if (gdriveAvailable && uploadSucceeded) {
                         try {
                             const companionFilename = filename + '.txt';
                             const companionBuffer = Buffer.from(parsedText, 'utf8');
@@ -4594,16 +4712,24 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 let driveFile = null;
                 let parsedText = '';
 
+                let uploadSucceeded = false;
                 const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
                 
                 if (gdriveAvailable) {
-                    let clientFolderId = payload.folderId;
-                    if (!clientFolderId && company) {
-                        clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                    try {
+                        let clientFolderId = payload.folderId;
+                        if (!clientFolderId && company) {
+                            clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                        }
+                        driveFile = await gdriveService.uploadFile(fileName, mimeType, fileBuffer, clientFolderId);
+                        uploadSucceeded = true;
+                    } catch (gdriveErr) {
+                        console.warn(`⚠️ Google Drive upload failed, falling back to local: ${gdriveErr.message}`);
                     }
-                    driveFile = await gdriveService.uploadFile(fileName, mimeType, fileBuffer, clientFolderId);
-                } else {
-                    console.warn('⚠️ Google Drive client not configured. Saving file locally.');
+                }
+
+                if (!uploadSucceeded) {
+                    console.warn('⚠️ Saving file locally (Google Drive client not configured or upload failed).');
                     const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
                     const localFolder = path.join(historyDir, cleanCompany);
                     if (!fs.existsSync(localFolder)) {
