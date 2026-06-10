@@ -1620,7 +1620,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         const msg = messages[i];
                         if (msg.role === 'user') {
                             if (!company) {
-                                const compMatch = msg.content.match(/(?:\bcompany(?:\s+name)?\s*(?:[:=-]|\bis\b)\s*|\bat\s+)([^\n\r]+)/i);
+                                const compMatch = msg.content.match(/(?:\bcompany(?:\s+name)?\s*(?:[:=-]|\bis\b)\s*)([^\n\r]+)/i);
                                 if (compMatch) {
                                     let tempComp = compMatch[1].trim().split('\n')[0].trim();
                                     tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim().replace(/[.,!?;:]+$/, '').trim();
