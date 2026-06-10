@@ -667,17 +667,19 @@ document.addEventListener('DOMContentLoaded', () => {
                                 hasActiveSession = true;
                             }
                             
-                            let displayDate = '';
-                            try {
+                            let displayDateSuffix = '';
+                            if (session.date) {
                                 const d = new Date(session.date);
-                                displayDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                            } catch (e) {}
+                                if (!isNaN(d.getTime())) {
+                                    displayDateSuffix = ` (${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })})`;
+                                }
+                            }
                             
                             const titleText = (session.title || 'Untitled Session');
                             
                             const textSpan = document.createElement('span');
                             textSpan.className = 'session-text';
-                            textSpan.innerText = `💬 ${titleText} (${displayDate})`;
+                            textSpan.innerText = `💬 ${titleText}${displayDateSuffix}`;
                             sessionItem.appendChild(textSpan);
                             
                             const delBtn = document.createElement('button');
