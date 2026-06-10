@@ -1026,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeChatClientTitle) {
             activeChatClientTitle.innerText = activeProspectName ? `${companyFolder.name} (${activeProspectName})` : companyFolder.name;
         }
-        if (activeChatClientMeta) activeChatClientMeta.innerText = `New Chat Session — Interest: None`;
+        if (activeChatClientMeta) activeChatClientMeta.innerText = '';
         
         if (workspaceEmptyState) workspaceEmptyState.classList.add('hidden');
         if (workspaceActiveChat) workspaceActiveChat.classList.remove('hidden');
@@ -1179,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Setup Header Info
             activeChatClientTitle.innerText = `${data.company} (${data.name})`;
-            activeChatClientMeta.innerText = `${data.title || 'No Title'} — Interest: ${data.track || 'None'}`;
+            activeChatClientMeta.innerText = '';
 
             // Distance setup
             transitDistance = data.transitDistance || "Online/Phone call only (Distance unavailable)";
@@ -1485,7 +1485,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadChatsList();
             // Setup Header Info directly to prevent clearing chat history and race conditions
             if (activeChatClientTitle) activeChatClientTitle.innerText = `${payload.company} (${payload.name})`;
-            if (activeChatClientMeta) activeChatClientMeta.innerText = `${payload.title || 'No Title'} — Interest: ${payload.track || 'None'}`;
+            if (activeChatClientMeta) activeChatClientMeta.innerText = '';
             renderChatHistory();
 
         } catch (err) {
