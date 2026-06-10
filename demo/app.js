@@ -687,26 +687,127 @@ document.addEventListener('DOMContentLoaded', () => {
                             editBtn.type = 'button';
                             editBtn.innerText = '✏️';
                             editBtn.title = 'Rename Session';
-                            editBtn.addEventListener('click', async (e) => {
+                            editBtn.addEventListener('click', (e) => {
                                 e.stopPropagation();
-                                const newTitle = prompt('Enter new session name:', titleText);
-                                if (newTitle !== null && newTitle.trim() !== '' && newTitle.trim() !== titleText) {
+                                
+                                // Create input element
+                                const input = document.createElement('input');
+                                input.type = 'text';
+                                input.className = 'edit-session-input';
+                                input.value = session.title || 'Untitled Session';
+                                
+                                // Create save button
+                                const saveBtn = document.createElement('button');
+                                saveBtn.type = 'button';
+                                saveBtn.className = 'btn-save-session';
+                                saveBtn.innerText = '✓';
+                                saveBtn.title = 'Save Name';
+                                
+                                // Create cancel button
+                                const cancelBtn = document.createElement('button');
+                                cancelBtn.type = 'button';
+                                cancelBtn.className = 'btn-cancel-session';
+                                cancelBtn.innerText = '✗';
+                                cancelBtn.title = 'Cancel';
+                                
+                                // Hide existing elements
+                                textSpan.style.display = 'none';
+                                editBtn.style.display = 'none';
+                                delBtn.style.display = 'none';
+                                
+                                // Append new elements
+                                sessionItem.insertBefore(input, editBtn);
+                                sessionItem.insertBefore(saveBtn, editBtn);
+                                sessionItem.insertBefore(cancelBtn, editBtn);
+                                
+                                input.focus();
+                                input.select();
+                                
+                                let isActionComplete = false;
+                                
+                                const cleanup = () => {
+                                    if (isActionComplete) return;
+                                    isActionComplete = true;
+                                    input.remove();
+                                    saveBtn.remove();
+                                    cancelBtn.remove();
+                                    textSpan.style.display = '';
+                                    editBtn.style.display = '';
+                                    delBtn.style.display = '';
+                                };
+                                
+                                const doSave = async () => {
+                                    const newTitle = input.value.trim();
+                                    if (newTitle === '') {
+                                        showToast('Session name cannot be empty.', 'error');
+                                        input.focus();
+                                        return;
+                                    }
+                                    if (newTitle === (session.title || 'Untitled Session')) {
+                                        cleanup();
+                                        return;
+                                    }
+                                    
+                                    isActionComplete = true;
+                                    input.disabled = true;
+                                    saveBtn.disabled = true;
+                                    cancelBtn.disabled = true;
+                                    
                                     try {
                                         const res = await fetch('/api/history/title', {
                                             method: 'PATCH',
                                             headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ id: session.id, title: newTitle.trim() })
+                                            body: JSON.stringify({ id: session.id, title: newTitle })
                                         });
                                         if (!res.ok) throw new Error(`HTTP status ${res.status}`);
-                                        session.title = newTitle.trim();
+                                        session.title = newTitle;
                                         textSpan.innerText = `💬 ${session.title}${displayDateSuffix}`;
                                         sessionItem.title = `${session.title} (${new Date(session.date).toLocaleString()})`;
                                         showToast('Session renamed successfully.');
                                     } catch (err) {
                                         console.error('Rename failed:', err);
                                         showToast('Failed to rename session.', 'error');
+                                        isActionComplete = false;
+                                        input.disabled = false;
+                                        saveBtn.disabled = false;
+                                        cancelBtn.disabled = false;
+                                        input.focus();
+                                    } finally {
+                                        if (isActionComplete) {
+                                            cleanup();
+                                        }
                                     }
-                                }
+                                };
+                                
+                                // Event listeners for inline controls
+                                saveBtn.addEventListener('click', (clickEvent) => {
+                                    clickEvent.stopPropagation();
+                                    doSave();
+                                });
+                                
+                                cancelBtn.addEventListener('click', (clickEvent) => {
+                                    clickEvent.stopPropagation();
+                                    cleanup();
+                                });
+                                
+                                input.addEventListener('click', (clickEvent) => {
+                                    clickEvent.stopPropagation();
+                                });
+                                
+                                input.addEventListener('keydown', (keyEvent) => {
+                                    if (keyEvent.key === 'Enter') {
+                                        keyEvent.preventDefault();
+                                        doSave();
+                                    } else if (keyEvent.key === 'Escape') {
+                                        keyEvent.preventDefault();
+                                        cleanup();
+                                    }
+                                });
+                                
+                                input.addEventListener('blur', () => {
+                                    // Slight delay to allow save/cancel button clicks to register first
+                                    setTimeout(cleanup, 200);
+                                });
                             });
                             sessionItem.appendChild(editBtn);
                             

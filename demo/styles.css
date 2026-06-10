@@ -4874,6 +4874,61 @@ body {
     color: #ff8a8a !important;
 }
 
+.sidebar-session-item .edit-session-input {
+    flex: 1 !important;
+    background: rgba(15, 23, 42, 0.05) !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    border-radius: 4px !important;
+    color: inherit !important;
+    font-family: inherit !important;
+    font-size: 0.78rem !important;
+    padding: 1px 4px !important;
+    outline: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+}
+
+.sidebar-session-item.active .edit-session-input {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
+
+.sidebar-session-item .btn-save-session,
+.sidebar-session-item .btn-cancel-session {
+    background: none !important;
+    border: none !important;
+    padding: 2px 4px !important;
+    cursor: pointer !important;
+    opacity: 0.8 !important;
+    transition: opacity 0.2s ease, transform 0.2s ease !important;
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+    margin-left: 0.25rem !important;
+}
+
+.sidebar-session-item .btn-save-session {
+    color: #10b981 !important;
+}
+
+.sidebar-session-item .btn-cancel-session {
+    color: #ef4444 !important;
+}
+
+.sidebar-session-item.active .btn-save-session {
+    color: #a7f3d0 !important;
+}
+
+.sidebar-session-item.active .btn-cancel-session {
+    color: #fca5a5 !important;
+}
+
+.sidebar-session-item .btn-save-session:hover,
+.sidebar-session-item .btn-cancel-session:hover {
+    opacity: 1 !important;
+    transform: scale(1.1) !important;
+}
+
 .sidebar-new-session-btn {
     font-size: 0.75rem !important;
     font-weight: 600 !important;
