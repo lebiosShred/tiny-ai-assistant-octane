@@ -1837,7 +1837,7 @@ Rules:
                 const newName = data.metadata.name ? data.metadata.name.trim() : currentName;
                 const newEmail = data.metadata.email ? data.metadata.email.trim() : currentEmail;
                 
-                if (newCo && (!currentCo || currentCo.toLowerCase() !== newCo.toLowerCase())) {
+                if (newCo && (!currentCo || currentCo.toLowerCase() !== newCo.toLowerCase()) && !data.isMismatch) {
                     console.log(`🔄 Intercepted metadata from chat response: Name: "${newName}", Company: "${newCo}", Email: "${newEmail}". Syncing UI and Google Drive...`);
                     await saveDiscoverySession(newName, newCo, newEmail);
                     try {

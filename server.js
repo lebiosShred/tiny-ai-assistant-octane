@@ -2421,7 +2421,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 let mismatchWarning = '';
                 if (isMismatch) {
                     const extractedCo = companyNameForGDrive || 'the specified company';
-                    mismatchWarning = `\n\nCRITICAL SYSTEM WARNING: An uploaded source document (LinkedIn profile bio or Google Drive SOW document) does NOT match the lead metadata company ("${extractedCo}"). This indicates a mismatch of identity. You are strictly forbidden from conflating the two identities or personalizing deliverables for the lead company using any of the mismatched document content. Ignore the mismatched document details entirely when personalizing support or packages for "${extractedCo}". Under no circumstances should you output or reference any keywords, company names, or industry details from the mismatched document (do NOT mention "nsw epa", "organics", "recycling", or "waste"), nor should you try to suggest starter templates based on them.`;
+                    mismatchWarning = `\n\nCRITICAL SYSTEM WARNING: IDENTITY MISMATCH DETECTED. An uploaded source document (LinkedIn profile bio or Google Drive SOW document) does NOT match the lead metadata company ("${extractedCo}"). You are in IDENTITY CONFLICT CONTAINMENT MODE. There is an active mismatch between source document data and the current session's target company metadata. To prevent data corruption, folder pollution, and incorrect document generation, you must remain highly skeptical. Ask clarifying questions deeply to reconcile the mismatch. Do not perform any execution actions. Refuse to write files, create directories, run web searches, map routes, or generate deliverables. Explain that you cannot proceed with folder or file actions until the user clarifies the correct company identity.`;
                 }
 
                 if (systemMsg) {
@@ -3030,13 +3030,16 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         return;
                     }
 
-                    const dsPayload = JSON.stringify({
+                    const dsPayloadObj = {
                         model: payload.model || 'deepseek-chat',
                         messages: currentMessages,
-                        temperature: payload.temperature !== undefined ? payload.temperature : 0.2,
-                        tools: dsTools,
-                        tool_choice: 'auto'
-                    });
+                        temperature: payload.temperature !== undefined ? payload.temperature : 0.2
+                    };
+                    if (!isMismatch) {
+                        dsPayloadObj.tools = dsTools;
+                        dsPayloadObj.tool_choice = 'auto';
+                    }
+                    const dsPayload = JSON.stringify(dsPayloadObj);
 
                     const dsOptions = {
                         hostname: 'api.deepseek.com',
@@ -3096,6 +3099,16 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
                                     for (const toolCall of message.tool_calls) {
                                         const { name, arguments: argsString } = toolCall.function;
+                                        if (isMismatch) {
+                                            console.warn(`⚠️ Blocking execution of tool "${name}" due to identity mismatch.`);
+                                            currentMessages.push({
+                                                role: 'tool',
+                                                tool_call_id: toolCall.id,
+                                                name: name,
+                                                content: `Error: Execution of tool "${name}" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`
+                                            });
+                                            continue;
+                                        }
                                         let args = {};
                                         try {
                                             args = JSON.parse(argsString);
