@@ -1867,6 +1867,14 @@ Rules:
             }
             console.error('Chat error:', err);
             showToast(`Error getting response: ${err.message}`);
+            
+            // Push system error bubble
+            chatHistory.push({ 
+                role: 'assistant', 
+                content: `**System Error:** Communication with the Generative AI provider failed. (${err.message}) \n\nThis is typically caused by API quota exhaustion or rate limits. Please try again later or check your API key configurations.`, 
+                timestamp: new Date().toISOString() 
+            });
+            renderChatHistory();
         }
     }
 
@@ -2923,6 +2931,16 @@ ${data.parsedText}`;
             const emptyStateContent = document.getElementById('empty-state-content');
             if (loadingIndicator) loadingIndicator.classList.add('hidden');
             if (emptyStateContent) emptyStateContent.classList.remove('hidden');
+            
+            // Fix UI State Leak: Clear default 'Loading...' HTML placeholder texts
+            const activeChatClientTitle = document.getElementById('active-chat-client-title');
+            const activeChatClientMeta = document.getElementById('active-chat-client-meta');
+            if (activeChatClientTitle && activeChatClientTitle.innerText === 'Loading...') {
+                activeChatClientTitle.innerText = "New Chat";
+            }
+            if (activeChatClientMeta && activeChatClientMeta.innerText === 'Loading...') {
+                activeChatClientMeta.innerText = "Add client sources and save to start conversation with Tiny";
+            }
             
             updateValidationBadges();
             if (typeof lucide !== 'undefined') {
