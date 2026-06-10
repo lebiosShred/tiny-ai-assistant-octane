@@ -12,4 +12,25 @@ Interest: {{interest}}
 Discussion Points:
 {{intake_notes}}
 
-Output the dossier using clean, structured HTML sections with explicit delimiters for the app to parse. Make sure you use <h3> headers and clear list items. Do not include conversational preamble.
+Output the dossier using clean, structured HTML sections with explicit delimiters for the app to parse. Do not include conversational preamble. You MUST strictly structure your response into the following 7 sections using <h3> headers based on the prospect's lead capture form and profile PDF information:
+
+<h3>1. Identify the type of sale</h3>
+State whether we are selling them TM1 planning analytics or artificial intelligence.
+
+<h3>2. Business activity</h3>
+Take the time to really analyze the provided data. Tell me which industry sector they belong to. Estimate their revenue and size of their headcount. Give me a brief description of their business. Tell me specifically each of their products and services (provide one sentence for each).
+
+<h3>3. Customer match</h3>
+Analyze how well this customer matches our list of customer profiles. Indicate if we have served this organization or a similar organization in the past.
+
+<h3>4. Assessment</h3>
+Explain how their business activity relates to TM1 or AI. Recommend what services we should offer them. Identify their likely pain points we need to address.
+
+<h3>5. Conversation starter</h3>
+Find news or interesting stories from their website/LinkedIn context to connect with them. Provide three stories at a personal level. Look at their past working history and see if there are organizations we have done work for and cite that work. If personal stories aren't available, offer stories involving the organization (from their news and press release pages). IMPORTANT: Stories regarding the organization MUST connect to our subject matter (TM1 and AI); otherwise, they are not relevant.
+
+<h3>6. Complementary applications</h3>
+Based on the customer's current stack, identify applications they are using that are complementary with us.
+
+<h3>7. Competing applications</h3>
+Based on the customer's current stack, identify applications they are using that are competing with us.
