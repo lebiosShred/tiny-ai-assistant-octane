@@ -1735,14 +1735,16 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             };
 
             // Handler helper function for uploading/saving files (scoped to the entire request handler)
-            const handleFileUpload = async (fileName, content, targetCompany) => {
+            const handleFileUpload = async (fileName, content, targetCompany, targetProspect) => {
                 const activeCompany = targetCompany || 'Unknown_Company';
+                const activeProspect = targetProspect || 'Unknown Prospect';
                 const fileBuffer = Buffer.from(content, 'utf8');
                 let driveFile = null;
                 const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
 
                 if (gdriveAvailable) {
-                    const clientFolderId = await gdriveService.findOrCreateClientFolder(activeCompany);
+                    const companyFolderId = await gdriveService.findOrCreateClientFolder(activeCompany);
+                    const clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, activeProspect);
                     driveFile = await gdriveService.uploadFile(fileName, 'text/plain', fileBuffer, clientFolderId);
                     if (driveFile) {
                         gdriveService.registerRecentlyCreatedFile(
@@ -1914,7 +1916,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         }
 
                         try {
-                            const driveFile = await handleFileUpload(fileName, contentStr, company);
+                            const driveFile = await handleFileUpload(fileName, contentStr, company, sessionName);
                             const receipt = generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
                                 sizeBytes: Buffer.byteLength(contentStr, 'utf8'),
                                 url: driveFile.webViewLink,
@@ -1949,7 +1951,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         const fileName = `call_log_${Date.now()}.txt`;
                         try {
                             // 1. Save call log to Google Drive (RAG context memory)
-                            const driveFile = await handleFileUpload(fileName, callText, company);
+                            const driveFile = await handleFileUpload(fileName, callText, company, sessionName);
                             let hubspotLogged = false;
 
                             // 2. Log call to HubSpot contact if email is resolved
@@ -2696,10 +2698,14 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 properties: {
                                     company: {
                                         type: 'string',
-                                        description: 'The company or prospect name'
+                                        description: 'The company name'
+                                    },
+                                    prospect_name: {
+                                        type: 'string',
+                                        description: 'The prospect name'
                                     }
                                 },
-                                required: ['company']
+                                required: ['company', 'prospect_name']
                             }
                         }
                     },
@@ -2713,10 +2719,14 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 properties: {
                                     company: {
                                         type: 'string',
-                                        description: 'The company or prospect name'
+                                        description: 'The company name'
+                                    },
+                                    prospect_name: {
+                                        type: 'string',
+                                        description: 'The prospect name'
                                     }
                                 },
-                                required: ['company']
+                                required: ['company', 'prospect_name']
                             }
                         }
                     },
@@ -2730,7 +2740,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 properties: {
                                     company: {
                                         type: 'string',
-                                        description: 'The company or prospect name'
+                                        description: 'The company name'
+                                    },
+                                    prospect_name: {
+                                        type: 'string',
+                                        description: 'The prospect name'
                                     },
                                     filename: {
                                         type: 'string',
@@ -2741,7 +2755,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                         description: 'The text content to save in the file'
                                     }
                                 },
-                                required: ['company', 'filename', 'content']
+                                required: ['company', 'prospect_name', 'filename', 'content']
                             }
                         }
                     },
@@ -2755,14 +2769,18 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 properties: {
                                     company: {
                                         type: 'string',
-                                        description: 'The company or prospect name'
+                                        description: 'The company name'
+                                    },
+                                    prospect_name: {
+                                        type: 'string',
+                                        description: 'The prospect name'
                                     },
                                     filename: {
                                         type: 'string',
-                                        description: 'The name of the file to delete (e.g. README.md)'
+                                        description: 'The exact name of the file to delete'
                                     }
                                 },
-                                required: ['company', 'filename']
+                                required: ['company', 'prospect_name', 'filename']
                             }
                         }
                     },
@@ -2972,7 +2990,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 properties: {
                                     company: {
                                         type: 'string',
-                                        description: 'The company or prospect name'
+                                        description: 'The company name'
+                                    },
+                                    prospect_name: {
+                                        type: 'string',
+                                        description: 'The prospect name'
                                     },
                                     filename: {
                                         type: 'string',
@@ -2983,7 +3005,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                         description: 'The text content of the proposal'
                                     }
                                 },
-                                required: ['company', 'filename', 'proposalContent']
+                                required: ['company', 'prospect_name', 'filename', 'proposalContent']
                             }
                         }
                     }
@@ -3174,33 +3196,15 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 toolResult = `Error: Missing 'company' parameter.`;
                                             }
                                         } else if (name === 'list_prospect_files') {
-                                             let { company } = args;
-                                             if (company) {
-                                                 // Dynamic name-to-company auto-resolution
-                                                 if (fs.existsSync(historyDir)) {
-                                                     try {
-                                                         const historyFiles = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
-                                                         for (const hFile of historyFiles) {
-                                                             const hData = fs.readFileSync(path.join(historyDir, hFile), 'utf8');
-                                                             const hParsed = JSON.parse(hData);
-                                                             if (hParsed.name && hParsed.name.toLowerCase().trim() === company.toLowerCase().trim()) {
-                                                                 if (hParsed.company) {
-                                                                     console.log(`🔄 Resolved prospect name "${company}" to company "${hParsed.company}"`);
-                                                                     company = hParsed.company;
-                                                                     break;
-                                                                 }
-                                                             }
-                                                         }
-                                                     } catch (resolveErr) {
-                                                         console.warn('⚠️ Name-to-company resolution failed:', resolveErr.message);
-                                                     }
-                                                 }
-                                                 console.log(`📂 Tool Call: Listing files in ${company} folder`);
+                                             const { company, prospect_name } = args;
+                                             if (company && prospect_name) {
+                                                 console.log(`📂 Tool Call: Listing files in ${prospect_name} folder at ${company}`);
                                                  const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
                                                  let files = [];
                                                  if (gdriveAvailable) {
                                                      try {
-                                                         const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                         const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                         const clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
                                                          files = await gdriveService.listFolder(clientFolderId);
                                                          
                                                          // Merge recently created files from cache to combat eventual consistency lag
@@ -3247,24 +3251,26 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                  toolResult = `Error: Missing required parameter 'company'.`;
                                              }
                                          } else if (name === 'create_prospect_folder') {
-                                            const { company } = args;
-                                            if (company) {
-                                                console.log(`📂 Tool Call: Creating folder for ${company}`);
-                                                const folderId = await gdriveService.findOrCreateClientFolder(company);
+                                            const { company, prospect_name } = args;
+                                            if (company && prospect_name) {
+                                                console.log(`📂 Tool Call: Creating folder for ${prospect_name} at ${company}`);
+                                                const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                const folderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
                                                 gdriveAction = true;
-                                                receipts.push(generateReceipt("CREATE", "FOLDER", company, folderId, company, {
+                                                receipts.push(generateReceipt("CREATE", "FOLDER", prospect_name, folderId, company, {
                                                     initiator: "DeepSeek Tool Call: create_prospect_folder"
                                                 }));
-                                                toolResult = `I have successfully created/resolved the folder for **${company}** on Google Drive (ID: \`${folderId}\`).`;
+                                                toolResult = `I have successfully created/resolved the folder for **${prospect_name}** at **${company}** on Google Drive (ID: \`${folderId}\`).`;
                                             } else {
-                                                toolResult = `Error: Missing required parameter 'company'.`;
+                                                toolResult = `Error: Missing required parameter 'company' or 'prospect_name'.`;
                                             }
                                         } else if (name === 'create_prospect_file') {
-                                            const { company, filename, content } = args;
-                                            if (company && filename && content) {
-                                                console.log(`📤 Tool Call: Creating file ${filename} for ${company}`);
+                                            const { company, prospect_name, filename, content } = args;
+                                            if (company && prospect_name && filename && content) {
+                                                console.log(`📤 Tool Call: Creating file ${filename} for ${prospect_name} at ${company}`);
                                                 const fileBuffer = Buffer.from(content, 'utf8');
-                                                const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                const clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
                                                 const driveFile = await gdriveService.uploadFile(filename, 'text/plain', fileBuffer, clientFolderId);
                                                 gdriveAction = true;
                                                 if (driveFile) {
@@ -3282,19 +3288,20 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     url: driveFile ? driveFile.webViewLink : null,
                                                     initiator: "DeepSeek Tool Call: create_prospect_file"
                                                 }));
-                                                toolResult = `I have successfully created and uploaded the file "**${filename}**" into the folder for **${company}**.`;
+                                                toolResult = `I have successfully created and uploaded the file "**${filename}**" into the folder for **${prospect_name}** at **${company}**.`;
                                             } else {
-                                                toolResult = `Error: Missing required parameters 'company', 'filename', or 'content'.`;
+                                                toolResult = `Error: Missing required parameters 'company', 'prospect_name', 'filename', or 'content'.`;
                                             }
                                         } else if (name === 'delete_prospect_file') {
-                                            const { company, filename } = args;
-                                            if (company && filename) {
-                                                console.log(`🗑️ Tool Call: Deleting file ${filename} for ${company}`);
+                                            const { company, prospect_name, filename } = args;
+                                            if (company && prospect_name && filename) {
+                                                console.log(`🗑️ Tool Call: Deleting file ${filename} for ${prospect_name} at ${company}`);
                                                 let success = false;
                                                 const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
                                                 if (gdriveAvailable) {
                                                     try {
-                                                        const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                        const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                        const clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
                                                         let files = await gdriveService.listFolder(clientFolderId);
 
                                                         // Merge recently created files from cache to combat eventual consistency lag
@@ -3375,7 +3382,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 const fileName = contact_name 
                                                     ? `${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_linkedin_profile.txt` 
                                                     : `linkedin_profile.txt`;
-                                                const driveFile = await handleFileUpload(fileName, content, company);
+                                                const driveFile = await handleFileUpload(fileName, content, company, contact_name);
                                                 gdriveAction = true;
                                                 receipts.push(generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
                                                     sizeBytes: Buffer.byteLength(content, 'utf8'),
@@ -3393,7 +3400,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 const fileName = contact_name 
                                                     ? `${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_sales_brief.txt` 
                                                     : `sales_brief.txt`;
-                                                const driveFile = await handleFileUpload(fileName, content, company);
+                                                const driveFile = await handleFileUpload(fileName, content, company, contact_name);
                                                 gdriveAction = true;
                                                 receipts.push(generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
                                                     sizeBytes: Buffer.byteLength(content, 'utf8'),
@@ -3412,7 +3419,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 const fileName = contact_name 
                                                     ? `${dateStr}_${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_call_log_${Date.now()}.txt` 
                                                     : `call_log_${Date.now()}.txt`;
-                                                const driveFile = await handleFileUpload(fileName, content, company);
+                                                const driveFile = await handleFileUpload(fileName, content, company, contact_name);
                                                 let hubspotLogged = false;
 
                                                 if (clientEmailForGDrive && clientEmailForGDrive.includes('@')) {
@@ -3840,10 +3847,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 toolResult = `Error: Missing required parameters 'email' or 'taskTitle'.`;
                                             }
                                         } else if (name === 'generate_proposal_file') {
-                                            const { company, filename, proposalContent } = args;
-                                            if (company && filename && proposalContent) {
+                                            const { company, prospect_name, filename, proposalContent } = args;
+                                            if (company && prospect_name && filename && proposalContent) {
                                                 console.log(`📤 Tool Call: Generating proposal ${filename} for ${company}`);
-                                                const driveFile = await handleFileUpload(filename, proposalContent, company);
+                                                const driveFile = await handleFileUpload(filename, proposalContent, company, prospect_name);
                                                 gdriveAction = true;
                                                 receipts.push(generateReceipt("UPLOAD", "FILE", filename, driveFile ? driveFile.id : null, company, {
                                                     sizeBytes: Buffer.byteLength(proposalContent, 'utf8'),
@@ -4164,6 +4171,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
     if (pathname === '/api/gdrive/list' && req.method === 'GET') {
         let folderId = parsedUrl.searchParams.get('folderId');
         const company = parsedUrl.searchParams.get('company');
+        let resolvedCompany = company;
         try {
             const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
             let items = null;
@@ -4215,19 +4223,41 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 console.log('⚠️ Google Drive client not configured or failed. Listing local files.');
                 items = [];
                 
-                // If folderId starts with local_folder_, parse the company name
-                let resolvedCompany = company;
+                let targetLocalFolder = null;
+                if (folderId && folderId.startsWith('local_path_')) {
+                    const encodedPath = folderId.substring('local_path_'.length);
+                    targetLocalFolder = path.join(historyDir, Buffer.from(encodedPath, 'hex').toString('utf8'));
+                }
+
                 if (folderId && folderId.startsWith('local_folder_')) {
                     resolvedCompany = folderId.substring('local_folder_'.length);
                     folderId = null;
                 }
 
-                // If folderId matches a known Google Drive root folder ID, treat it as a root list query locally
                 if (folderId === process.env.COMPANY_FOLDER_ID || folderId === process.env.GDRIVE_ROOT_FOLDER_ID || folderId === 'root') {
                     folderId = null;
                 }
 
-                if (!resolvedCompany && !folderId) {
+                if (targetLocalFolder) {
+                    if (fs.existsSync(targetLocalFolder)) {
+                        const localItems = fs.readdirSync(targetLocalFolder);
+                        items = localItems.map(item => {
+                            const itemPath = path.join(targetLocalFolder, item);
+                            const stat = fs.statSync(itemPath);
+                            const isFolder = stat.isDirectory();
+                            const relPath = path.relative(historyDir, itemPath);
+                            const hexPath = Buffer.from(relPath, 'utf8').toString('hex');
+                            return {
+                                id: isFolder ? `local_path_${hexPath}` : `local_file_${hexPath}`,
+                                name: item,
+                                mimeType: isFolder ? 'application/vnd.google-apps.folder' : (item.endsWith('.pdf') ? 'application/pdf' : 'text/plain'),
+                                isFolder: isFolder,
+                                size: stat.size,
+                                webViewLink: `file://${itemPath}`
+                            };
+                        });
+                    }
+                } else if (!resolvedCompany && !folderId) {
                     // List all subdirectories and parse JSON files to build the unique company folder list
                     const companies = new Set();
                     if (fs.existsSync(historyDir)) {
@@ -4263,16 +4293,20 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     const cleanCompany = (resolvedCompany || '').replace(/[^a-zA-Z0-9]/g, '_');
                     const localFolder = path.join(historyDir, cleanCompany);
                     if (fs.existsSync(localFolder)) {
-                        const localFiles = fs.readdirSync(localFolder).filter(f => !fs.statSync(path.join(localFolder, f)).isDirectory());
-                        items = localFiles.map(file => {
-                            const stat = fs.statSync(path.join(localFolder, file));
+                        const localItems = fs.readdirSync(localFolder);
+                        items = localItems.map(item => {
+                            const itemPath = path.join(localFolder, item);
+                            const stat = fs.statSync(itemPath);
+                            const isFolder = stat.isDirectory();
+                            const relPath = path.relative(historyDir, itemPath);
+                            const hexPath = Buffer.from(relPath, 'utf8').toString('hex');
                             return {
-                                id: `local_${cleanCompany}_${file}`,
-                                name: file,
-                                mimeType: file.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
-                                isFolder: false,
+                                id: isFolder ? `local_path_${hexPath}` : `local_file_${hexPath}`,
+                                name: item,
+                                mimeType: isFolder ? 'application/vnd.google-apps.folder' : (item.endsWith('.pdf') ? 'application/pdf' : 'text/plain'),
+                                isFolder: isFolder,
                                 size: stat.size,
-                                webViewLink: `file://${path.join(localFolder, file)}`
+                                webViewLink: `file://${itemPath}`
                             };
                         });
                     }
@@ -4280,7 +4314,6 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             }
 
             // Merge recently created files from cache to combat eventual consistency lag
-            let resolvedCompany = company;
             if (!resolvedCompany && folderId) {
                 for (const [key, val] of gdriveService.folderIdCache.entries()) {
                     if (val === folderId) {
@@ -4538,12 +4571,14 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
         }
 
         let company = 'Unknown_Company';
+        let prospectName = '';
         let folderId = null;
         const fields = {};
 
         bb.on('field', (name, val) => {
             fields[name] = val;
             if (name === 'company') company = val.trim() || 'Unknown_Company';
+            if (name === 'prospect') prospectName = val.trim() || '';
             if (name === 'folderId') folderId = val.trim() || null;
         });
 
@@ -4580,11 +4615,16 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
                     if (gdriveAvailable) {
                         try {
-                            let clientFolderId = folderId;
-                            if (!clientFolderId && company) {
-                                clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                            let companyFolderId = folderId;
+                            if (!companyFolderId && company) {
+                                companyFolderId = await gdriveService.findOrCreateClientFolder(company);
                             }
-                            driveFile = await gdriveService.uploadFile(filename, mimeType, fileBuffer, clientFolderId);
+                            
+                            let uploadTargetFolderId = companyFolderId;
+                            if (companyFolderId && prospectName) {
+                                uploadTargetFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospectName);
+                            }
+                            driveFile = await gdriveService.uploadFile(filename, mimeType, fileBuffer, uploadTargetFolderId);
                             uploadSucceeded = true;
                             if (driveFile) {
                                 gdriveService.registerRecentlyCreatedFile(
@@ -4639,7 +4679,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             if (!clientFolderId && company) {
                                 clientFolderId = await gdriveService.findOrCreateClientFolder(company);
                             }
-                            await gdriveService.uploadFile(companionFilename, 'text/plain', companionBuffer, clientFolderId);
+                            let compTargetFolderId = clientFolderId;
+                            if (clientFolderId && prospectName) {
+                                compTargetFolderId = await gdriveService.findOrCreateProspectFolder(clientFolderId, prospectName);
+                            }
+                            await gdriveService.uploadFile(companionFilename, 'text/plain', companionBuffer, compTargetFolderId);
                             console.log(`✅ Uploaded companion summary file: ${companionFilename}`);
                         } catch (err) {
                             console.warn(`⚠️ Failed to upload companion summary file:`, err.message);
@@ -4719,7 +4763,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 return;
             }
 
-            const { company, fileName, mimeType, fileData } = payload;
+            const { company, prospectName, fileName, mimeType, fileData } = payload;
             if (!company || !fileName || !mimeType || !fileData) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Missing required fields: company, fileName, mimeType, fileData.' }));
@@ -4738,7 +4782,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     try {
                         let clientFolderId = payload.folderId;
                         if (!clientFolderId && company) {
-                            clientFolderId = await gdriveService.findOrCreateClientFolder(company);
+                            const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
+                            clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospectName || 'Unknown Prospect');
                         }
                         driveFile = await gdriveService.uploadFile(fileName, mimeType, fileBuffer, clientFolderId);
                         uploadSucceeded = true;
@@ -5686,10 +5731,16 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                     }
 
                     // Resolve folder ID if missing before writing
-                    if (payload.company && !payload.gDriveFolderId) {
+                    if (payload.company) {
                         try {
-                            const folderId = await gdriveService.findOrCreateClientFolder(payload.company);
-                            payload.gDriveFolderId = folderId;
+                            const companyFolderId = await gdriveService.findOrCreateClientFolder(payload.company);
+                            if (!payload.gDriveFolderId) {
+                                payload.gDriveFolderId = companyFolderId;
+                            }
+                            // Ensure the prospect subfolder is also created
+                            if (payload.name) {
+                                await gdriveService.findOrCreateProspectFolder(companyFolderId, payload.name);
+                            }
                         } catch (e) {
                             console.warn('⚠️ Folder ID resolution failed during history save:', e.message);
                         }
@@ -5724,7 +5775,11 @@ Website: ${payload.website || ''}
 --- Intake Answers ---
 ${payload.intakeAnswers || ''}`;
 
-                                    driveFile = await gdriveService.createIntakeFile(gdriveName, formattedContent);
+                                    let prospectFolderId = null;
+                                    if (payload.gDriveFolderId && payload.name) {
+                                        prospectFolderId = await gdriveService.findOrCreateProspectFolder(payload.gDriveFolderId, payload.name);
+                                    }
+                                    driveFile = await gdriveService.createIntakeFile(gdriveName, formattedContent, prospectFolderId);
                                     
                                     // Update local dossier json with GDrive metadata for unified SDR extraction!
                                     payload.gDriveFile = driveFile.name;

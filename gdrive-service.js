@@ -219,7 +219,28 @@ async function getFileContent(fileId, ignoreCache = false) {
 
     try {
         let content;
-        if (fileId && fileId.startsWith('local_')) {
+        if (fileId && fileId.startsWith('local_file_')) {
+            const hexPath = fileId.slice('local_file_'.length);
+            const historyDir = process.env.HISTORY_DIR || 'knowledge/history';
+            const relativePath = Buffer.from(hexPath, 'hex').toString('utf8');
+            const filePath = path.join(historyDir, relativePath);
+            
+            if (fs.existsSync(filePath)) {
+                const companionPath = filePath + '.txt';
+                if (fs.existsSync(companionPath)) {
+                    console.log(`⚡ Found local companion summary: ${companionPath}`);
+                    content = fs.readFileSync(companionPath, 'utf8');
+                } else if (filePath.endsWith('.pdf')) {
+                    const pdfBuffer = fs.readFileSync(filePath);
+                    content = await parsePdfBuffer(pdfBuffer);
+                } else if (filePath.endsWith('.docx')) {
+                    const docxBuffer = fs.readFileSync(filePath);
+                    content = await parseDocxBuffer(docxBuffer);
+                } else {
+                    content = fs.readFileSync(filePath, 'utf8');
+                }
+            }
+        } else if (fileId && fileId.startsWith('local_')) {
             const withoutPrefix = fileId.slice(6);
             const historyDir = process.env.HISTORY_DIR || 'knowledge/history';
             if (fs.existsSync(historyDir)) {
@@ -712,6 +733,85 @@ async function findOrCreateClientFolder(companyName) {
     return resolutionPromise;
 }
 
+// Ensure Prospect Folder Exists
+async function findOrCreateProspectFolder(companyFolderId, prospectName) {
+    const drive = getDriveClient();
+    if (!drive) {
+        throw new Error('Google Drive client not initialized.');
+    }
+
+    const cleanProspect = (prospectName || 'Unknown Prospect').trim().replace(/['"\\/]/g, '');
+    const cacheKey = `prospect_${companyFolderId}_${cleanProspect.toLowerCase()}`;
+    
+    if (folderIdCache.has(cacheKey)) {
+        const cachedId = folderIdCache.get(cacheKey);
+        try {
+            const folderMeta = await drive.files.get({
+                fileId: cachedId,
+                fields: 'id, trashed',
+                supportsAllDrives: true
+            });
+            if (folderMeta && folderMeta.data && !folderMeta.data.trashed) {
+                return cachedId;
+            }
+        } catch (err) {
+            console.log(`⚠️ Cached prospect folder ID invalid: ${err.message}`);
+        }
+        folderIdCache.delete(cacheKey);
+    }
+
+    if (activeResolutions.has(cacheKey)) {
+        return activeResolutions.get(cacheKey);
+    }
+
+    const resolutionPromise = (async () => {
+        try {
+            let prospectFolderId = null;
+            const searchRes = await drive.files.list({
+                q: `name = '${cleanProspect}' and mimeType = 'application/vnd.google-apps.folder' and '${companyFolderId}' in parents and trashed = false`,
+                fields: 'files(id, name)',
+                pageSize: 10
+            });
+
+            const files = searchRes.data.files || [];
+            if (files.length > 0) {
+                prospectFolderId = files[0].id;
+                
+                if (files.length > 1) {
+                    // Quick dedup for prospect folder
+                    for (let i = 1; i < files.length; i++) {
+                        try {
+                            await drive.files.delete({ fileId: files[i].id, supportsAllDrives: true });
+                        } catch(e) {}
+                    }
+                }
+            } else {
+                console.log(`📂 Creating Prospect folder "${cleanProspect}" inside Company folder...`);
+                const createRes = await drive.files.create({
+                    resource: {
+                        name: cleanProspect,
+                        mimeType: 'application/vnd.google-apps.folder',
+                        parents: [companyFolderId]
+                    },
+                    fields: 'id'
+                });
+                prospectFolderId = createRes.data.id;
+            }
+
+            folderIdCache.set(cacheKey, prospectFolderId);
+            return prospectFolderId;
+        } catch (err) {
+            console.error(`❌ Error finding/creating prospect folder:`, err.message);
+            throw err;
+        } finally {
+            activeResolutions.delete(cacheKey);
+        }
+    })();
+
+    activeResolutions.set(cacheKey, resolutionPromise);
+    return resolutionPromise;
+}
+
 /**
  * Uploads a file (from buffer) directly into a target folder on Google Drive.
  * @param {string} fileName Name of the file
@@ -878,6 +978,7 @@ module.exports = {
     searchFiles,
     createIntakeFile,
     findOrCreateClientFolder,
+    findOrCreateProspectFolder,
     uploadFile,
     parsePdfBuffer,
     parseDocxBuffer,
