@@ -682,6 +682,34 @@ document.addEventListener('DOMContentLoaded', () => {
                             textSpan.innerText = `💬 ${titleText}${displayDateSuffix}`;
                             sessionItem.appendChild(textSpan);
                             
+                            const editBtn = document.createElement('button');
+                            editBtn.className = 'btn-edit-session';
+                            editBtn.type = 'button';
+                            editBtn.innerText = '✏️';
+                            editBtn.title = 'Rename Session';
+                            editBtn.addEventListener('click', async (e) => {
+                                e.stopPropagation();
+                                const newTitle = prompt('Enter new session name:', titleText);
+                                if (newTitle !== null && newTitle.trim() !== '' && newTitle.trim() !== titleText) {
+                                    try {
+                                        const res = await fetch('/api/history/title', {
+                                            method: 'PATCH',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ id: session.id, title: newTitle.trim() })
+                                        });
+                                        if (!res.ok) throw new Error(`HTTP status ${res.status}`);
+                                        session.title = newTitle.trim();
+                                        textSpan.innerText = `💬 ${session.title}${displayDateSuffix}`;
+                                        sessionItem.title = `${session.title} (${new Date(session.date).toLocaleString()})`;
+                                        showToast('Session renamed successfully.');
+                                    } catch (err) {
+                                        console.error('Rename failed:', err);
+                                        showToast('Failed to rename session.', 'error');
+                                    }
+                                }
+                            });
+                            sessionItem.appendChild(editBtn);
+                            
                             const delBtn = document.createElement('button');
                             delBtn.className = 'btn-delete-session';
                             delBtn.type = 'button';

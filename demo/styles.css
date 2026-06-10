@@ -4819,6 +4819,7 @@ body {
     white-space: nowrap;
 }
 
+.sidebar-session-item .btn-edit-session,
 .sidebar-session-item .btn-delete-session {
     background: none !important;
     border: none !important;
@@ -4833,13 +4834,19 @@ body {
     margin-left: 0.5rem !important;
 }
 
+.sidebar-session-item:hover .btn-edit-session,
 .sidebar-session-item:hover .btn-delete-session {
     opacity: 0.8 !important;
 }
 
+.sidebar-session-item .btn-edit-session:hover,
 .sidebar-session-item .btn-delete-session:hover {
     opacity: 1 !important;
     color: #ef4444 !important;
+}
+
+.sidebar-session-item .btn-edit-session:hover {
+    color: #0ea5e9 !important; /* Specific color for edit */
 }
 
 .sidebar-session-item:hover {
@@ -4854,8 +4861,13 @@ body {
     box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25) !important;
 }
 
+.sidebar-session-item.active .btn-edit-session,
 .sidebar-session-item.active .btn-delete-session {
     color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.sidebar-session-item.active .btn-edit-session:hover {
+    color: #bae6fd !important;
 }
 
 .sidebar-session-item.active .btn-delete-session:hover {

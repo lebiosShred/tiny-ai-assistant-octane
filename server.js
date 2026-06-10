@@ -5877,6 +5877,65 @@ ${payload.intakeAnswers || ''}`;
         return;
     }
 
+    if (pathname === '/api/history/title' && req.method === 'PATCH') {
+        const MAX_PAYLOAD_SIZE = 1024 * 10;
+        let body = '';
+        let bodyLength = 0;
+        req.on('data', chunk => {
+            bodyLength += chunk.length;
+            if (bodyLength > MAX_PAYLOAD_SIZE) {
+                res.writeHead(413, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Payload Too Large.' }));
+                req.destroy();
+                return;
+            }
+            body += chunk;
+        });
+        req.on('end', () => {
+            try {
+                const { id, title } = JSON.parse(body);
+                if (!id || !title) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Missing id or title in request body.' }));
+                    return;
+                }
+                const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
+                const filePath = path.join(historyDir, `${cleanId}.json`);
+                
+                fs.readFile(filePath, 'utf8', (readErr, data) => {
+                    if (readErr) {
+                        res.writeHead(404, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'History item not found.' }));
+                        return;
+                    }
+                    try {
+                        const item = JSON.parse(data);
+                        item.title = title;
+                        
+                        fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', (writeErr) => {
+                            if (writeErr) {
+                                res.writeHead(500, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ error: 'Failed to save updated title.' }));
+                                return;
+                            }
+                            // Invalidate cache
+                            historyListCache = null;
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ status: 'success', id, title }));
+                        });
+                    } catch (parseErr) {
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Failed to parse history data.' }));
+                    }
+                });
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
+            }
+        });
+        return;
+    }
+
     if (pathname === '/api/history/detail' && req.method === 'GET') {
         const id = parsedUrl.searchParams.get('id');
         if (!id) {
