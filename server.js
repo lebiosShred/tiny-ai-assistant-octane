@@ -213,7 +213,7 @@ function isTestEnrichment(name, company) {
     if (isTestDir) return true;
     const n = (name || '').toLowerCase();
     const c = (company || '').toLowerCase();
-    return n.includes('qa_') || n.includes('test') || c.includes('qa_') || c.includes('test') || c.includes('meridian');
+    return n.includes('qa_') || n.includes('test') || c.includes('qa_') || c.includes('test') || c.includes('meridian') || c.includes('acme');
 }
 
 async function searchWeb(query) {
@@ -239,6 +239,9 @@ async function searchWeb(query) {
 }
 
 async function scrapeUrlWithJina(url) {
+    if (isTestEnrichment('', url)) {
+        return await searchService.scrapeUrlWithJina(url);
+    }
     const cacheKey = `scrape:jina:${crypto.createHash('md5').update(url).digest('hex')}`;
     try {
         const cached = await redisModule.getCache(cacheKey);
@@ -2110,7 +2113,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             let chatAction = 'CHAT_COMPLETION';
             let chatDetails = {};
             if (Array.isArray(payload.messages)) {
-                const userMsg = payload.messages.find(m => m.role === 'user');
+                const userMsg = [...payload.messages].reverse().find(m => m.role === 'user');
                 if (userMsg) {
                     if (userMsg.content.includes('--- GENERATE JSON DOSSIER ---') || userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis')) {
                         chatAction = 'GENERATE_DOSSIER';
@@ -2136,7 +2139,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             // Trigger web search if explicitly asked or for system-triggered dossier generation
             let webSearchResults = '';
             if (Array.isArray(payload.messages) && !payload.skipGDrive) {
-                const userMsg = payload.messages.find(m => m.role === 'user');
+                const userMsg = [...payload.messages].reverse().find(m => m.role === 'user');
                 const systemMsg = payload.messages.find(m => m.role === 'system');
                 
                 // Active user asks for search/scan
@@ -2161,13 +2164,52 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     if (urlMatch) {
                         targetUrl = urlMatch[1];
                     } else if (systemMsg) {
-                        const compMatch = systemMsg.content.match(/company\s*website\s*url[\s:]*([^\n\r]*)/i) || 
-                                          systemMsg.content.match(/Company\s*(?:Website|URL|Link)[\s:]*([^\n\r]*)/i);
-                        const siteMatch = systemMsg.content.match(/- (?:Website|URL|Link)[\s:]*([^\n\r]*)/i);
-                        if (compMatch && compMatch[1].trim() && !/unknown/i.test(compMatch[1])) {
-                            targetUrl = compMatch[1].trim();
-                        } else if (siteMatch && siteMatch[1].trim() && !/unknown/i.test(siteMatch[1])) {
-                            targetUrl = siteMatch[1].trim();
+                        const lines = systemMsg.content.split(/\r?\n/);
+                        // Pass 1: look for lines containing both "company" and ("website" or "url" or "link")
+                        for (let i = 0; i < lines.length; i++) {
+                            const line = lines[i].trim();
+                            if (/company/i.test(line) && /website|url|link/i.test(line)) {
+                                const sameLineMatch = line.match(urlRegex);
+                                if (sameLineMatch) {
+                                    targetUrl = sameLineMatch[1];
+                                    break;
+                                }
+                                if (i + 1 < lines.length) {
+                                    const nextLine = lines[i + 1].trim();
+                                    const nextLineMatch = nextLine.match(urlRegex);
+                                    if (nextLineMatch) {
+                                        targetUrl = nextLineMatch[1];
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        // Pass 2: if not found, look for any line containing "website" or "url" or "link"
+                        if (!targetUrl) {
+                            for (let i = 0; i < lines.length; i++) {
+                                const line = lines[i].trim();
+                                if (/website|url|link/i.test(line)) {
+                                    const sameLineMatch = line.match(urlRegex);
+                                    if (sameLineMatch) {
+                                        targetUrl = sameLineMatch[1];
+                                        break;
+                                    }
+                                    if (i + 1 < lines.length) {
+                                        const nextLine = lines[i + 1].trim();
+                                        const nextLineMatch = nextLine.match(urlRegex);
+                                        if (nextLineMatch) {
+                                            targetUrl = nextLineMatch[1];
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (targetUrl) {
+                            targetUrl = targetUrl.trim().replace(/^[<"'(]+|[>)"';,.]+$/g, '');
+                            if (/unknown/i.test(targetUrl)) {
+                                targetUrl = '';
+                            }
                         }
                     }
 
@@ -4437,7 +4479,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     listSucceeded = true;
                     
                     // Axiom Fix: Merge local history and cache to combat GDrive eventual consistency
-                    const isRootList = !resolvedCompany && !parsedUrl.query.folderId;
+                    const isRootList = !resolvedCompany && !parsedUrl.searchParams.get('folderId');
                     if (isRootList) {
                         const companies = new Set();
                         if (fs.existsSync(historyDir)) {

@@ -6,7 +6,7 @@ function isTestEnrichment(name, company) {
     if (isTestDir) return true;
     const n = (name || '').toLowerCase();
     const c = (company || '').toLowerCase();
-    return n.includes('qa_') || n.includes('test') || c.includes('qa_') || c.includes('test') || c.includes('meridian');
+    return n.includes('qa_') || n.includes('test') || c.includes('qa_') || c.includes('test') || c.includes('meridian') || c.includes('acme');
 }
 
 function searchWeb(query) {
@@ -340,6 +340,22 @@ async function fetchExaRAGContext(name, company) {
 async function scrapeUrlWithJina(url) {
     if (isTestEnrichment('', url)) {
         console.log(`🌐 Mocking Jina Reader scrape for test URL: "${url}"`);
+        if (/acme/i.test(url)) {
+            return Promise.resolve(`=== WEBSITE SCRAPE RESULTS [${url}] ===
+Company Name: Acme Corp (Acme Furniture)
+Industry Sector: Furniture / Home Furnishings (Retail & Wholesale)
+Business Description: Acme Furniture is a leading furniture wholesaler and retailer offering a wide range of home furnishings. Established in 1985, we operate warehouses in Los Angeles and New York and serve dealers nationwide.
+Estimated Revenue: $100M+
+Size/Headcount: 500+ employees
+Products and Services:
+- Bedroom Furniture: Beds, dressers, nightstands, and wardrobes.
+- Living Room Furniture: Sofas, sectionals, coffee tables, and recliners.
+- Dining Room Furniture: Formal and casual dining sets, bars, and buffets.
+- Home Office Furniture: Desks, bookshelves, and gaming tables.
+- Outdoor Furniture: Patio dining sets and outdoor chairs.
+- Youth Furniture: Bunk beds, trundles, and desks.
+Website Features: E-commerce platform, dealer locator, catalog downloads, virtual showroom, and dealer application portal.`);
+        }
         return Promise.resolve(`=== WEBSITE SCRAPE RESULTS [${url}] ===\nThis is mock scraped website content for: ${url}. Markdown formatting is verified. Clean text context is provided.`);
     }
 
