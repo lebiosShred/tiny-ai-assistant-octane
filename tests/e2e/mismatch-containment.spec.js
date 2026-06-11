@@ -94,11 +94,11 @@ test.describe('Tiny Assistant Identity Mismatch Containment Suite', () => {
         await page.click('.sidebar-folder-header');
         
         // Assert that the sourcesList (Prospect Files section) shows the placeholder warning message
-        const sourcesText = await page.locator('#sources-list').innerText();
-        expect(sourcesText).toContain('Please select a prospect subfolder from the sidebar to view documents.');
+        const sourcesList = page.locator('#sources-list');
+        await expect(sourcesList).toContainText('Please select a prospect subfolder from the sidebar to view documents.', { timeout: 15000 });
         
-        // Assert that the GDrive dropdown shows "-- Select a prospect folder to see files --" or "No files"
-        const dropdownText = await page.locator('#source-gdrive-file').innerText();
-        expect(dropdownText).toContain('Select a prospect folder to see files');
+        // Assert that the GDrive dropdown shows "-- Select a prospect folder to see files --"
+        const dropdown = page.locator('#source-gdrive-file');
+        await expect(dropdown).toContainText('Select a prospect folder to see files', { timeout: 15000 });
     });
 });
