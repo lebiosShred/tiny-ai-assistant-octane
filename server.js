@@ -4437,7 +4437,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     listSucceeded = true;
                     
                     // Axiom Fix: Merge local history and cache to combat GDrive eventual consistency
-                    if (!resolvedCompany && (!folderId || folderId === process.env.COMPANY_FOLDER_ID || folderId === cachedCompanyFolderId)) {
+                    const isRootList = !resolvedCompany && !parsedUrl.searchParams.get('folderId');
+                    if (isRootList) {
                         const companies = new Set();
                         if (fs.existsSync(historyDir)) {
                             const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
