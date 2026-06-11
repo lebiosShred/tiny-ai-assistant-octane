@@ -2154,13 +2154,19 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     // 1. Check if the query asks to scan/scrape a specific website URL
                     const urlRegex = /(https?:\/\/[^\s]+|[a-zA-Z0-9-]+\.(?:com|org|net|io|co|ai|edu|gov|au|uk|ca|nz)(?:\/[^\s]*)?)/i;
                     let targetUrl = '';
-                    const urlMatch = userMsg.content.match(urlRegex);
+                    // Strip out uploaded document context so we don't accidentally scrape URLs from uploaded files
+                    const userTextWithoutContext = userMsg.content.split('[Uploaded Document Context]:')[0];
+                    const urlMatch = userTextWithoutContext.match(urlRegex);
                     
                     if (urlMatch) {
                         targetUrl = urlMatch[1];
                     } else if (systemMsg) {
-                        const siteMatch = systemMsg.content.match(/- (?:Website|URL|Link):[ \t]*([^\n\r]*)/i);
-                        if (siteMatch && siteMatch[1].trim() && !/unknown/i.test(siteMatch[1])) {
+                        const compMatch = systemMsg.content.match(/company\s*website\s*url[\s:]*([^\n\r]*)/i) || 
+                                          systemMsg.content.match(/Company\s*(?:Website|URL|Link)[\s:]*([^\n\r]*)/i);
+                        const siteMatch = systemMsg.content.match(/- (?:Website|URL|Link)[\s:]*([^\n\r]*)/i);
+                        if (compMatch && compMatch[1].trim() && !/unknown/i.test(compMatch[1])) {
+                            targetUrl = compMatch[1].trim();
+                        } else if (siteMatch && siteMatch[1].trim() && !/unknown/i.test(siteMatch[1])) {
                             targetUrl = siteMatch[1].trim();
                         }
                     }

@@ -2230,34 +2230,35 @@ Rules:
 
             const combinedQuery = queryText + (documentPayload ? `\n\n[Uploaded Document Context]:\n${documentPayload}` : "");
             
+            // ALWAYS save the updated context to the server so subsequent queries have access to it
+            const savePayload = {
+                id: currentChatId,
+                type: 'synthesis',
+                name: metaName.value.trim() || `${companyName} Lead`,
+                company: companyName,
+                title: metaTitle.value.trim(),
+                email: metaEmail.value.trim(),
+                phone: metaPhone.value.trim(),
+                rep: metaRep.value,
+                track: metaTrack.value,
+                oneDriveFile: uploadedFileNames.join(', '),
+                gDriveFile: uploadedFileNames[uploadedFileNames.length - 1],
+                gDriveFileId: sourceGdriveFileId.value,
+                gDriveFileContent: gdriveFileContent,
+                linkedinInfo: sourceLinkedinText ? sourceLinkedinText.value.trim() : '',
+                intakeAnswers: sourceIntakeText ? sourceIntakeText.value.trim() : '',
+                transcript: sourceTranscriptText ? sourceTranscriptText.value.trim() : '',
+                transitDistance: transitDistance,
+                messages: chatHistory
+            };
+            await fetch('/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(savePayload) });
+            await Promise.all([loadGoogleDriveFiles(), loadProspectsTree()]);
+            if (uploadedFileNames.length > 0 && totalFiles > 1) {
+                showToast(`✔️ All ${uploadedFileNames.length} files uploaded and indexed.`);
+            }
+
             if (queryText.trim()) {
                 callTinyAPI(queryText, combinedQuery);
-            } else {
-               const savePayload = {
-                    id: currentChatId,
-                    type: 'synthesis',
-                    name: metaName.value.trim() || `${companyName} Lead`,
-                    company: companyName,
-                    title: metaTitle.value.trim(),
-                    email: metaEmail.value.trim(),
-                    phone: metaPhone.value.trim(),
-                    rep: metaRep.value,
-                    track: metaTrack.value,
-                    oneDriveFile: uploadedFileNames.join(', '),
-                    gDriveFile: uploadedFileNames[uploadedFileNames.length - 1],
-                    gDriveFileId: sourceGdriveFileId.value,
-                    gDriveFileContent: gdriveFileContent,
-                    linkedinInfo: sourceLinkedinText ? sourceLinkedinText.value.trim() : '',
-                    intakeAnswers: sourceIntakeText ? sourceIntakeText.value.trim() : '',
-                    transcript: sourceTranscriptText ? sourceTranscriptText.value.trim() : '',
-                    transitDistance: transitDistance,
-                    messages: chatHistory
-               };
-               await fetch('/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(savePayload) });
-               await Promise.all([loadGoogleDriveFiles(), loadProspectsTree()]);
-               if (uploadedFileNames.length > 0 && totalFiles > 1) {
-                   showToast(`✔️ All ${uploadedFileNames.length} files uploaded and indexed.`);
-               }
             }
         } else {
             callTinyAPI(queryText);
