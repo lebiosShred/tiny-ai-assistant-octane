@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let gdriveFileContent = "";
     let gdriveFolders = [];
     let stagedAttachments = [];
+    const gdriveSubfolderCache = new Map();
 
     // DOM Elements
     const btnNewChat = document.getElementById('btn-new-chat');
@@ -620,6 +621,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!recentChatsList) return;
         recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Loading folders...</div>';
         try {
+            if (!preFetchedData) {
+                gdriveSubfolderCache.clear();
+            }
             const data = preFetchedData || await (await fetch('/api/gdrive/list')).json();
             recentChatsList.innerHTML = '';
             
@@ -695,12 +699,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (subfoldersRendered) return;
                         subfoldersRendered = true;
                         
-                        contents.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading subfolders...</div>';
+                        let gdriveData = gdriveSubfolderCache.get(folder.id);
+                        if (!gdriveData) {
+                            contents.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading subfolders...</div>';
+                            try {
+                                const gdriveRes = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`);
+                                gdriveData = await gdriveRes.json();
+                                gdriveSubfolderCache.set(folder.id, gdriveData);
+                            } catch (err) {
+                                console.error('Error fetching subfolders:', err);
+                                contents.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load subfolders</div>';
+                                return;
+                            }
+                        }
                         
                         try {
-                            // Fetch GDrive subfolders
-                            const gdriveRes = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`);
-                            const gdriveData = await gdriveRes.json();
                             const gdriveSubfolders = (gdriveData.items || []).filter(f => f.isFolder);
                             
                             // Fetch History
