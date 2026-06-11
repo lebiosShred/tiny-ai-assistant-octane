@@ -88,115 +88,124 @@ function extractScore(content) {
     return match ? match[1].toUpperCase() : null;
 }
 
-function loadKnowledgeBase(userQuery = '') {
-    return new Promise((resolve) => {
+async function loadKnowledgeBase(userQuery = '', bypassCache = false) {
+    const cacheKey = 'gdrive_knowledge_base_full';
+    
+    // 1. Check Cache
+    if (!bypassCache) {
+        try {
+            const cached = await redisModule.getCache(cacheKey);
+            if (cached) {
+                console.log('⚡ Using cached Knowledge Base');
+                return cached;
+            }
+        } catch (e) {
+            console.warn('⚠️ Cache fetch failed for knowledge base:', e.message);
+        }
+    }
+
+    // 2. Fetch from Google Drive
+    let concatenated = "\n\n<knowledge_base>\n";
+    let gdriveSuccess = false;
+
+    try {
+        const drive = gdriveService.getDriveClient ? gdriveService.getDriveClient() : null;
+        if (drive) {
+            const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+            // Find Knowledge base folder
+            const kbSearch = await drive.files.list({
+                q: `name = 'Knowledge base' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                fields: 'files(id, name)',
+                pageSize: 1
+            });
+            const kbFiles = kbSearch.data.files || [];
+            
+            if (kbFiles.length > 0) {
+                const kbFolderId = kbFiles[0].id;
+                console.log(`📂 Fetching files from GDrive Knowledge Base (ID: ${kbFolderId})`);
+                
+                const files = await gdriveService.listFolder(kbFolderId);
+                
+                // Fetch all file contents sequentially to avoid rate limits
+                for (const file of files) {
+                    if (!file.isFolder) {
+                        try {
+                            const content = await gdriveService.getFileContent(file.id, bypassCache);
+                            if (content && content.trim()) {
+                                concatenated += `  <playbook file="${file.name}">\n${content.trim()}\n  </playbook>\n`;
+                            }
+                        } catch (contentErr) {
+                            console.warn(`⚠️ Failed to read KB file ${file.name}:`, contentErr.message);
+                        }
+                    }
+                }
+                gdriveSuccess = true;
+            } else {
+                console.warn(`⚠️ GDrive Knowledge Base folder not found under root.`);
+            }
+        }
+    } catch (err) {
+        console.error(`❌ Error fetching GDrive Knowledge Base:`, err.message);
+    }
+
+    // 3. Fallback to local if GDrive failed
+    if (!gdriveSuccess) {
+        console.log('⚠️ Falling back to local knowledge base directory.');
         const knowledgeDir = path.join(PUBLIC_DIR, 'knowledge');
         const targetDirs = [knowledgeDir];
         const octaneServicesDir = path.join(knowledgeDir, 'Octane Services');
         const octaneCompetitorsDir = path.join(knowledgeDir, 'Octane Competitors');
         const complementaryAppsDir = path.join(knowledgeDir, 'Complementary Applications');
         
-        if (fs.existsSync(octaneServicesDir)) {
-            targetDirs.push(octaneServicesDir);
-        }
-        if (fs.existsSync(octaneCompetitorsDir)) {
-            targetDirs.push(octaneCompetitorsDir);
-        }
-        if (fs.existsSync(complementaryAppsDir)) {
-            targetDirs.push(complementaryAppsDir);
-        }
+        if (fs.existsSync(octaneServicesDir)) targetDirs.push(octaneServicesDir);
+        if (fs.existsSync(octaneCompetitorsDir)) targetDirs.push(octaneCompetitorsDir);
+        if (fs.existsSync(complementaryAppsDir)) targetDirs.push(complementaryAppsDir);
         
         const allFiles = [];
-        let completedDirs = 0;
-        const queryLower = (userQuery || '').toLowerCase();
-        
-        const processDirectory = (dirPath) => {
-            fs.readdir(dirPath, (err, files) => {
-                completedDirs++;
-                if (!err && files) {
-                    files.forEach(f => {
-                        const fullPath = path.join(dirPath, f);
-                        try {
-                            const stat = fs.statSync(fullPath);
-                            if (stat.isFile() && (f.endsWith('.md') || f.endsWith('.txt'))) {
-                                let namePrefix = '';
-                                if (dirPath === octaneServicesDir) {
-                                    namePrefix = 'Octane Services/';
-                                } else if (dirPath === octaneCompetitorsDir) {
-                                    namePrefix = 'Octane Competitors/';
-                                    
-                                    // Limit context footprint: only load matching competitor profile or base plan
-                                    const isBasePlan = f === 'competitor_research_plan.md';
-                                    const fileKey = f.split('_')[0].toLowerCase();
-                                    const isMentioned = queryLower.includes(fileKey) || queryLower.includes('competitor');
-                                    if (!isBasePlan && !isMentioned) {
-                                        return; // Skip profile
-                                    }
-                                } else if (dirPath === complementaryAppsDir) {
-                                    namePrefix = 'Complementary Applications/';
-                                    
-                                    // Limit context footprint: only load matching app profile or overview
-                                    const isOverview = f === 'complementary_apps_overview.md';
-                                    let isMentioned = queryLower.includes('complementary') || queryLower.includes('ibm');
-                                    if (f.includes('watsonx') && (queryLower.includes('watsonx') || queryLower.includes('orchestrate'))) {
-                                        isMentioned = true;
-                                    } else if (f.includes('cognos') && (queryLower.includes('cognos') || queryLower.includes('controller'))) {
-                                        isMentioned = true;
-                                    } else if (f.includes('apptio') && queryLower.includes('apptio')) {
-                                        isMentioned = true;
-                                    } else if (f.includes('app_connect') && (queryLower.includes('connect') || queryLower.includes('app connect') || queryLower.includes('appconnect'))) {
-                                        isMentioned = true;
-                                    } else if (f.includes('spss_openpages') && (queryLower.includes('spss') || queryLower.includes('openpages') || queryLower.includes('modeler') || queryLower.includes('grc'))) {
-                                        isMentioned = true;
-                                    }
-                                    if (!isOverview && !isMentioned) {
-                                        return; // Skip profile
-                                    }
-                                }
-                                allFiles.push({
-                                    name: namePrefix + f,
-                                    path: fullPath
-                                });
-                            }
-                        } catch (statErr) {
-                            // Ignore stat errors for unreadable items
-                        }
-                    });
-                }
-                
-                if (completedDirs === targetDirs.length) {
-                    if (allFiles.length === 0) {
-                        resolve("");
-                        return;
+        for (const dirPath of targetDirs) {
+            try {
+                if (!fs.existsSync(dirPath)) continue;
+                const files = fs.readdirSync(dirPath);
+                for (const f of files) {
+                    const fullPath = path.join(dirPath, f);
+                    const stat = fs.statSync(fullPath);
+                    if (stat.isFile() && (f.endsWith('.md') || f.endsWith('.txt'))) {
+                        let namePrefix = '';
+                        if (dirPath === octaneServicesDir) namePrefix = 'Octane Services/';
+                        else if (dirPath === octaneCompetitorsDir) namePrefix = 'Octane Competitors/';
+                        else if (dirPath === complementaryAppsDir) namePrefix = 'Complementary Applications/';
+                        
+                        allFiles.push({ name: namePrefix + f, path: fullPath });
                     }
-                    
-                    let concatenated = "\n\n<knowledge_base>\n";
-                    let readCount = 0;
-                    const contents = {};
-                    
-                    allFiles.forEach(fileObj => {
-                        fs.readFile(fileObj.path, 'utf8', (err2, data) => {
-                            readCount++;
-                            if (!err2) {
-                                contents[fileObj.name] = data;
-                            }
-                            if (readCount === allFiles.length) {
-                                allFiles.forEach(fo => {
-                                    if (contents[fo.name]) {
-                                        concatenated += `  <playbook file="${fo.name}">\n${contents[fo.name]}\n  </playbook>\n`;
-                                    }
-                                });
-                                concatenated += "</knowledge_base>\n";
-                                resolve(concatenated);
-                            }
-                        });
-                    });
                 }
-            });
-        };
-        
-        targetDirs.forEach(dir => processDirectory(dir));
-    });
+            } catch (e) {
+                console.warn(`⚠️ Error reading local KB dir ${dirPath}:`, e.message);
+            }
+        }
+
+        if (allFiles.length > 0) {
+            for (const fileObj of allFiles) {
+                try {
+                    const data = fs.readFileSync(fileObj.path, 'utf8');
+                    concatenated += `  <playbook file="${fileObj.name}">\n${data}\n  </playbook>\n`;
+                } catch (e) {
+                    console.warn(`⚠️ Error reading local KB file ${fileObj.name}:`, e.message);
+                }
+            }
+        }
+    }
+
+    concatenated += "</knowledge_base>\n";
+
+    // 4. Cache the result for 12 hours (43200 seconds)
+    try {
+        await redisModule.setCache(cacheKey, concatenated, 43200);
+        console.log('✅ Knowledge Base cached successfully.');
+    } catch (e) {
+        console.warn('⚠️ Failed to cache Knowledge Base:', e.message);
+    }
+
+    return concatenated;
 }
 
 function isTestEnrichment(name, company) {
@@ -2143,7 +2152,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         const scrapedContent = await scrapeUrlWithJina(targetUrl);
                         if (scrapedContent && !scrapedContent.startsWith('Error:')) {
                             console.log(`🌐 Scraped URL successfully. Size: ${scrapedContent.length} chars.`);
-                            webSearchResults = `=== WEBSITE SCRAPE RESULTS [${targetUrl}] ===\n${scrapedContent}`;
+                            webSearchResults = `\n<prospect_website_scan url="${targetUrl}">\n${scrapedContent}\n</prospect_website_scan>\n`;
                             scrapeSuccess = true;
                         } else {
                             console.warn(`⚠️ Scraping URL failed (${scrapedContent}). Falling back to general web search.`);
@@ -5746,6 +5755,19 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                     }
                 });
             });
+        });
+        return;
+    }
+
+    // API Sync GDrive Knowledge Base
+    if (pathname === '/api/knowledge/sync' && req.method === 'POST') {
+        redisModule.setCache('gdrive_knowledge_base_full', null, 0).catch(() => {});
+        loadKnowledgeBase('', true).then(() => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'success', message: 'Knowledge base synced from Google Drive.' }));
+        }).catch(err => {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Sync failed: ${err.message}` }));
         });
         return;
     }
