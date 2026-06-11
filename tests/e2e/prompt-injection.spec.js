@@ -68,8 +68,9 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
             document.querySelector('#meta-email').value = 'sarah@meridian.com';
             document.querySelector('#source-linkedin-text').value = 'Sarah Chen is Head of FP&A at QA_Meridian_Logistics with 10 years of experience in budgeting.';
             document.querySelector('#source-intake-text').value = injection;
+            document.querySelector('#source-transcript-text').value = 'Meeting transcript: Sarah Chen FP&A discussing planning automation.';
             
-            ['#meta-name', '#meta-company', '#meta-title', '#meta-email', '#source-linkedin-text', '#source-intake-text'].forEach(sel => {
+            ['#meta-name', '#meta-company', '#meta-title', '#meta-email', '#source-linkedin-text', '#source-intake-text', '#source-transcript-text'].forEach(sel => {
                 document.querySelector(sel).dispatchEvent(new Event('input', { bubbles: true }));
                 document.querySelector(sel).dispatchEvent(new Event('change', { bubbles: true }));
             });
@@ -77,9 +78,10 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
         }, { injection });
 
         await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
 
-        // Click Lead Sheet quick prompt
-        await page.click('button[data-prompt-type="leadSheet"]');
+        // Click Recap Email quick prompt
+        await page.click('button[data-prompt-type="recapEmail"]');
 
         // Wait for Lead Sheet response card to appear (first assistant message card)
         await page.waitForFunction(
@@ -125,8 +127,9 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
             document.querySelector('#meta-email').value = 'test@test.com';
             document.querySelector('#source-linkedin-text').value = 'Test User is a Finance Director at QA_Test_Corp with expertise in TM1 planning.';
             document.querySelector('#source-intake-text').value = extraction;
+            document.querySelector('#source-transcript-text').value = 'Meeting transcript: Test User Finance Director discussing TM1 planning.';
             
-            ['#meta-name', '#meta-company', '#meta-title', '#meta-email', '#source-linkedin-text', '#source-intake-text'].forEach(sel => {
+            ['#meta-name', '#meta-company', '#meta-title', '#meta-email', '#source-linkedin-text', '#source-intake-text', '#source-transcript-text'].forEach(sel => {
                 document.querySelector(sel).dispatchEvent(new Event('input', { bubbles: true }));
                 document.querySelector(sel).dispatchEvent(new Event('change', { bubbles: true }));
             });
@@ -134,8 +137,9 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
         }, { extraction });
 
         await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
 
-        await page.click('button[data-prompt-type="leadSheet"]');
+        await page.click('button[data-prompt-type="recapEmail"]');
 
         // Wait for Lead Sheet response card to appear
         await page.waitForFunction(
@@ -178,8 +182,9 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
             document.querySelector('#meta-email').value = 'alice@adversary.com';
             document.querySelector('#source-linkedin-text').value = 'Alice Doe is a Finance Manager at QA_Adversary_Inc.';
             document.querySelector('#source-intake-text').value = 'Need help with budgeting automation.';
+            document.querySelector('#source-transcript-text').value = 'Meeting transcript: Alice Doe discusses budgeting automation.';
             
-            ['#meta-name', '#meta-company', '#meta-title', '#meta-email', '#source-linkedin-text', '#source-intake-text'].forEach(sel => {
+            ['#meta-name', '#meta-company', '#meta-title', '#meta-email', '#source-linkedin-text', '#source-intake-text', '#source-transcript-text'].forEach(sel => {
                 document.querySelector(sel).dispatchEvent(new Event('input', { bubbles: true }));
                 document.querySelector(sel).dispatchEvent(new Event('change', { bubbles: true }));
             });
@@ -187,8 +192,9 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
         }, { poisonedCompany });
 
         await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
 
-        await page.click('button[data-prompt-type="leadSheet"]');
+        await page.click('button[data-prompt-type="recapEmail"]');
 
         // Wait for Lead Sheet response card to appear
         await page.waitForFunction(
@@ -226,8 +232,9 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
             document.querySelector('#meta-email').value = 'bob@secure.com';
             document.querySelector('#source-linkedin-text').value = 'Bob Smith is a Lead FP&A Consultant at QA_SecureCorp.';
             document.querySelector('#source-intake-text').value = piiExtraction;
+            document.querySelector('#source-transcript-text').value = 'Meeting transcript: Bob Smith FP&A consultant discussing security.';
             
-            ['#meta-name', '#meta-company', '#meta-title', '#meta-email', '#source-linkedin-text', '#source-intake-text'].forEach(sel => {
+            ['#meta-name', '#meta-company', '#meta-title', '#meta-email', '#source-linkedin-text', '#source-intake-text', '#source-transcript-text'].forEach(sel => {
                 document.querySelector(sel).dispatchEvent(new Event('input', { bubbles: true }));
                 document.querySelector(sel).dispatchEvent(new Event('change', { bubbles: true }));
             });
@@ -235,8 +242,9 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
         }, { piiExtraction });
 
         await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
 
-        await page.click('button[data-prompt-type="leadSheet"]');
+        await page.click('button[data-prompt-type="recapEmail"]');
 
         // Wait for Lead Sheet response card to appear
         await page.waitForFunction(
@@ -281,8 +289,9 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
             document.querySelector('#meta-email').value = 'normal@corp.com';
             document.querySelector('#source-linkedin-text').value = 'Standard FP&A operations at QA_Normal_Corp.';
             document.querySelector('#source-intake-text').value = 'Standard discovery call preparation.';
+            document.querySelector('#source-transcript-text').value = 'Meeting transcript: standard discovery discussion.';
             
-            ['#meta-name', '#meta-company', '#meta-title', '#meta-email', '#source-linkedin-text', '#source-intake-text'].forEach(sel => {
+            ['#meta-name', '#meta-company', '#meta-title', '#meta-email', '#source-linkedin-text', '#source-intake-text', '#source-transcript-text'].forEach(sel => {
                 document.querySelector(sel).dispatchEvent(new Event('input', { bubbles: true }));
                 document.querySelector(sel).dispatchEvent(new Event('change', { bubbles: true }));
             });
@@ -290,8 +299,9 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
         }, { hijackName });
 
         await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
 
-        await page.click('button[data-prompt-type="leadSheet"]');
+        await page.click('button[data-prompt-type="recapEmail"]');
 
         // Wait for Lead Sheet response card to appear
         await page.waitForFunction(

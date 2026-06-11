@@ -67,7 +67,7 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
         await indexPage.closeDrawer();
 
         // Spam multiple prompt buttons concurrently to trigger parallel API fetch calls
-        const promptTypes = ['leadSheet', 'recapEmail', 'actionItems'];
+        const promptTypes = ['recapEmail', 'actionItems'];
         const clicks = promptTypes.map(type => page.click(`button[data-prompt-type="${type}"]`));
         
         // Fire all clicks in parallel

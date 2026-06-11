@@ -63,11 +63,13 @@ test.describe('Aegis Functional E2E Suite', () => {
         await indexPage.newChatBtn.click();
         await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah.chen@meridianlogistics.com.au');
         await page.fill('#source-linkedin-text', 'Sarah Chen is Head of FP&A at Meridian Logistics.');
+        await page.fill('#source-transcript-text', 'Meeting transcript: Sarah Chen is Head of FP&A at Meridian Logistics.');
         await indexPage.submitForm();
         await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
 
-        // Click Lead Sheet quick prompt
-        await page.click('button[data-prompt-type="leadSheet"]');
+        // Click Recap Email quick prompt
+        await page.click('button[data-prompt-type="recapEmail"]');
         await indexPage.waitForResponse(20000);
 
         const responseText = await indexPage.getLastResponseText();
