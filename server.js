@@ -1759,14 +1759,15 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 } else {
                     console.warn('⚠️ Google Drive client not configured. Saving file locally.');
                     const cleanCompany = activeCompany.replace(/[^a-zA-Z0-9]/g, '_');
-                    const localFolder = path.join(historyDir, cleanCompany);
+                    const cleanProspect = activeProspect.replace(/[^a-zA-Z0-9]/g, '_');
+                    const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
                     if (!fs.existsSync(localFolder)) {
                         fs.mkdirSync(localFolder, { recursive: true });
                     }
                     const localPath = path.join(localFolder, fileName);
                     fs.writeFileSync(localPath, fileBuffer);
                     driveFile = {
-                        id: `local_${cleanCompany}_${fileName}`,
+                        id: `local_${cleanCompany}_${cleanProspect}_${fileName}`,
                         name: fileName,
                         webViewLink: `file://${localPath}`
                     };
@@ -3247,10 +3248,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                      }
                                                  } else {
                                                      const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                                                     const localFolder = path.join(historyDir, cleanCompany);
+                                                     const cleanProspect = prospect_name.replace(/[^a-zA-Z0-9]/g, '_');
+                                                     const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
                                                      if (fs.existsSync(localFolder)) {
                                                          const localFiles = fs.readdirSync(localFolder).filter(f => !fs.statSync(path.join(localFolder, f)).isDirectory());
-                                                         files = localFiles.map(file => ({ name: file, id: `local_${cleanCompany}_${file}`, isFolder: false }));
+                                                         files = localFiles.map(file => ({ name: file, id: `local_${cleanCompany}_${cleanProspect}_${file}`, isFolder: false }));
                                                      }
                                                  }
                                                  const fileItems = files.filter(f => !f.isFolder);
@@ -3267,13 +3269,28 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             const { company, prospect_name } = args;
                                             if (company && prospect_name) {
                                                 console.log(`📂 Tool Call: Creating folder for ${prospect_name} at ${company}`);
-                                                const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                const folderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
+                                                let folderId = null;
+                                                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                                                if (gdriveAvailable) {
+                                                    const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                                    folderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
+                                                } else {
+                                                    console.warn('⚠️ Google Drive not configured. Creating local folders.');
+                                                    const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                                                    const cleanProspect = prospect_name.replace(/[^a-zA-Z0-9]/g, '_');
+                                                    const companyFolder = path.join(historyDir, cleanCompany);
+                                                    const prospectFolder = path.join(companyFolder, cleanProspect);
+                                                    if (!fs.existsSync(prospectFolder)) {
+                                                        fs.mkdirSync(prospectFolder, { recursive: true });
+                                                    }
+                                                    const relPath = path.relative(historyDir, prospectFolder);
+                                                    folderId = `local_path_${Buffer.from(relPath, 'utf8').toString('hex')}`;
+                                                }
                                                 gdriveAction = true;
                                                 receipts.push(generateReceipt("CREATE", "FOLDER", prospect_name, folderId, company, {
                                                     initiator: "DeepSeek Tool Call: create_prospect_folder"
                                                 }));
-                                                toolResult = `I have successfully created/resolved the folder for **${prospect_name}** at **${company}** on Google Drive (ID: \`${folderId}\`).`;
+                                                toolResult = `I have successfully created/resolved the folder for **${prospect_name}** at **${company}** (ID: \`${folderId}\`).`;
                                             } else {
                                                 toolResult = `Error: Missing required parameter 'company' or 'prospect_name'.`;
                                             }
@@ -3538,15 +3555,31 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
                                                     const localFolder = path.join(historyDir, cleanCompany);
                                                     if (fs.existsSync(localFolder)) {
-                                                        const localFiles = fs.readdirSync(localFolder);
+                                                        const findFileRecursively = (dir, targetName) => {
+                                                            if (!fs.existsSync(dir)) return null;
+                                                            const items = fs.readdirSync(dir);
+                                                            for (const item of items) {
+                                                                const itemPath = path.join(dir, item);
+                                                                const stat = fs.statSync(itemPath);
+                                                                if (stat.isDirectory()) {
+                                                                    const found = findFileRecursively(itemPath, targetName);
+                                                                    if (found) return found;
+                                                                } else if (item.toLowerCase() === targetName.toLowerCase()) {
+                                                                    return itemPath;
+                                                                }
+                                                            }
+                                                            return null;
+                                                        };
+
                                                         const companionName = filename + '.txt';
-                                                        let matchedName = localFiles.find(f => f.toLowerCase() === companionName.toLowerCase());
-                                                        if (!matchedName) {
-                                                            matchedName = localFiles.find(f => f.toLowerCase() === filename.toLowerCase());
+                                                        let localFilePath = findFileRecursively(localFolder, companionName);
+                                                        let matchedName = localFilePath ? path.basename(localFilePath) : null;
+                                                        if (!localFilePath) {
+                                                            localFilePath = findFileRecursively(localFolder, filename);
+                                                            matchedName = localFilePath ? path.basename(localFilePath) : null;
                                                         }
-                                                        if (matchedName) {
+                                                        if (localFilePath) {
                                                             foundFile = { name: matchedName };
-                                                            const localFilePath = path.join(localFolder, matchedName);
                                                             try {
                                                                 if (matchedName.endsWith('.pdf')) {
                                                                     const pdfBuffer = fs.readFileSync(localFilePath);
@@ -3673,30 +3706,53 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
                                                     const localFolder = path.join(historyDir, cleanCompany);
                                                     if (fs.existsSync(localFolder)) {
-                                                        const localFiles = fs.readdirSync(localFolder);
-                                                        for (const file of localFiles) {
-                                                            if (file.toLowerCase().includes(searchLower)) {
-                                                                matchedFiles.push({ name: file, id: `local_${cleanCompany}_${file}` });
-                                                                continue;
-                                                            }
-                                                            try {
-                                                                const filePath = path.join(localFolder, file);
-                                                                let content = '';
-                                                                if (file.endsWith('.pdf')) {
-                                                                    const pdfBuffer = fs.readFileSync(filePath);
-                                                                    content = await gdriveService.parsePdfBuffer(pdfBuffer);
-                                                                } else if (file.endsWith('.docx')) {
-                                                                    const docxBuffer = fs.readFileSync(filePath);
-                                                                    content = await gdriveService.parseDocxBuffer(docxBuffer);
+                                                        const getFilesRecursively = (dir) => {
+                                                            let results = [];
+                                                            if (!fs.existsSync(dir)) return results;
+                                                            const list = fs.readdirSync(dir);
+                                                            list.forEach(file => {
+                                                                const filePath = path.join(dir, file);
+                                                                const stat = fs.statSync(filePath);
+                                                                if (stat.isDirectory()) {
+                                                                    results = results.concat(getFilesRecursively(filePath));
                                                                 } else {
-                                                                    content = fs.readFileSync(filePath, 'utf8');
+                                                                    results.push({
+                                                                        name: file,
+                                                                        path: filePath,
+                                                                        relPath: path.relative(historyDir, filePath)
+                                                                    });
                                                                 }
-                                                                if (content && content.toLowerCase().includes(searchLower)) {
-                                                                    matchedFiles.push({ name: file, id: `local_${cleanCompany}_${file}` });
-                                                                }
-                                                            } catch (e) {
-                                                                console.warn(`Local search failed parsing file ${file}:`, e.message);
-                                                            }
+                                                            });
+                                                            return results;
+                                                        };
+
+                                                        const localFiles = getFilesRecursively(localFolder);
+                                                        for (const fileObj of localFiles) {
+                                                             const file = fileObj.name;
+                                                             const filePath = fileObj.path;
+                                                             const hexPath = Buffer.from(fileObj.relPath, 'utf8').toString('hex');
+                                                             
+                                                             if (file.toLowerCase().includes(searchLower)) {
+                                                                 matchedFiles.push({ name: file, id: `local_file_${hexPath}` });
+                                                                 continue;
+                                                             }
+                                                             try {
+                                                                 let content = '';
+                                                                 if (file.endsWith('.pdf')) {
+                                                                     const pdfBuffer = fs.readFileSync(filePath);
+                                                                     content = await gdriveService.parsePdfBuffer(pdfBuffer);
+                                                                 } else if (file.endsWith('.docx')) {
+                                                                     const docxBuffer = fs.readFileSync(filePath);
+                                                                     content = await gdriveService.parseDocxBuffer(docxBuffer);
+                                                                 } else {
+                                                                     content = fs.readFileSync(filePath, 'utf8');
+                                                                 }
+                                                                 if (content && content.toLowerCase().includes(searchLower)) {
+                                                                     matchedFiles.push({ name: file, id: `local_file_${hexPath}` });
+                                                                 }
+                                                             } catch (e) {
+                                                                 console.warn(`Local search failed parsing file ${file}:`, e.message);
+                                                             }
                                                         }
                                                     }
                                                 }
@@ -4657,14 +4713,15 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     if (!uploadSucceeded) {
                         console.warn('⚠️ Saving file locally (Google Drive client not configured or upload failed).');
                         const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                        const localFolder = path.join(historyDir, cleanCompany);
+                        const cleanProspect = (prospectName || 'Unknown Prospect').replace(/[^a-zA-Z0-9]/g, '_');
+                        const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
                         if (!fs.existsSync(localFolder)) {
                             fs.mkdirSync(localFolder, { recursive: true });
                         }
                         const localPath = path.join(localFolder, filename);
                         fs.writeFileSync(localPath, fileBuffer);
                         driveFile = {
-                            id: `local_${cleanCompany}_${filename}`,
+                            id: `local_${cleanCompany}_${cleanProspect}_${filename}`,
                             name: filename,
                             webViewLink: `file://${localPath}`
                         };
@@ -4818,14 +4875,15 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 if (!uploadSucceeded) {
                     console.warn('⚠️ Saving file locally (Google Drive client not configured or upload failed).');
                     const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                    const localFolder = path.join(historyDir, cleanCompany);
+                    const cleanProspect = (prospectName || 'Unknown Prospect').replace(/[^a-zA-Z0-9]/g, '_');
+                    const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
                     if (!fs.existsSync(localFolder)) {
                         fs.mkdirSync(localFolder, { recursive: true });
                     }
                     const localPath = path.join(localFolder, fileName);
                     fs.writeFileSync(localPath, fileBuffer);
                     driveFile = {
-                        id: `local_${cleanCompany}_${fileName}`,
+                        id: `local_${cleanCompany}_${cleanProspect}_${fileName}`,
                         name: fileName,
                         webViewLink: `file://${localPath}`
                     };
@@ -5746,13 +5804,28 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                     // Resolve folder ID if missing before writing
                     if (payload.company) {
                         try {
-                            const companyFolderId = await gdriveService.findOrCreateClientFolder(payload.company);
-                            if (!payload.gDriveFolderId) {
-                                payload.gDriveFolderId = companyFolderId;
-                            }
-                            // Ensure the prospect subfolder is also created
-                            if (payload.name) {
-                                await gdriveService.findOrCreateProspectFolder(companyFolderId, payload.name);
+                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                            if (gdriveAvailable) {
+                                const companyFolderId = await gdriveService.findOrCreateClientFolder(payload.company);
+                                if (!payload.gDriveFolderId) {
+                                    payload.gDriveFolderId = companyFolderId;
+                                }
+                                // Ensure the prospect subfolder is also created
+                                if (payload.name) {
+                                    await gdriveService.findOrCreateProspectFolder(companyFolderId, payload.name);
+                                }
+                            } else {
+                                const cleanCompany = payload.company.replace(/[^a-zA-Z0-9]/g, '_');
+                                const cleanProspect = (payload.name || '').replace(/[^a-zA-Z0-9]/g, '_');
+                                const companyFolder = path.join(historyDir, cleanCompany);
+                                const prospectFolder = cleanProspect ? path.join(companyFolder, cleanProspect) : companyFolder;
+                                if (!fs.existsSync(prospectFolder)) {
+                                    fs.mkdirSync(prospectFolder, { recursive: true });
+                                }
+                                if (!payload.gDriveFolderId) {
+                                    const relPath = path.relative(historyDir, prospectFolder);
+                                    payload.gDriveFolderId = `local_path_${Buffer.from(relPath, 'utf8').toString('hex')}`;
+                                }
                             }
                         } catch (e) {
                             console.warn('⚠️ Folder ID resolution failed during history save:', e.message);
@@ -5788,11 +5861,42 @@ Website: ${payload.website || ''}
 --- Intake Answers ---
 ${payload.intakeAnswers || ''}`;
 
-                                    let prospectFolderId = null;
-                                    if (payload.gDriveFolderId && payload.name) {
-                                        prospectFolderId = await gdriveService.findOrCreateProspectFolder(payload.gDriveFolderId, payload.name);
+                                    const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                                    const isLocalFolderId = payload.gDriveFolderId && payload.gDriveFolderId.startsWith('local_path_');
+
+                                    if (gdriveAvailable && !isLocalFolderId) {
+                                        let prospectFolderId = null;
+                                        if (payload.gDriveFolderId && payload.name) {
+                                            prospectFolderId = await gdriveService.findOrCreateProspectFolder(payload.gDriveFolderId, payload.name);
+                                        }
+                                        driveFile = await gdriveService.createIntakeFile(gdriveName, formattedContent, prospectFolderId);
+                                    } else {
+                                        console.warn('⚠️ Google Drive client not configured or local path detected. Saving booking file locally.');
+                                        const localFolder = path.join(historyDir, cleanCompany, cleanName);
+                                        if (!fs.existsSync(localFolder)) {
+                                            fs.mkdirSync(localFolder, { recursive: true });
+                                        }
+                                        const localPath = path.join(localFolder, gdriveName);
+                                        
+                                        const PDFDocument = require('pdfkit');
+                                        const doc = new PDFDocument({ margin: 50 });
+                                        const writeStream = fs.createWriteStream(localPath);
+                                        doc.pipe(writeStream);
+                                        doc.fontSize(20).font('Helvetica-Bold').text('Octane Solutions - Lead Intake', { align: 'center' });
+                                        doc.moveDown();
+                                        doc.fontSize(12).font('Helvetica').text(formattedContent);
+                                        doc.end();
+                                        await new Promise((resolve, reject) => {
+                                            writeStream.on('finish', resolve);
+                                            writeStream.on('error', reject);
+                                        });
+
+                                        driveFile = {
+                                            id: `local_${cleanCompany}_${cleanName}_${gdriveName}`,
+                                            name: gdriveName,
+                                            webViewLink: `file://${localPath}`
+                                        };
                                     }
-                                    driveFile = await gdriveService.createIntakeFile(gdriveName, formattedContent, prospectFolderId);
                                     
                                     // Update local dossier json with GDrive metadata for unified SDR extraction!
                                     payload.gDriveFile = driveFile.name;
