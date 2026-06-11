@@ -327,29 +327,35 @@ function executeGeminiFailover(payload) {
                 res.on('data', chunk => resBody += chunk);
                 res.on('end', () => {
                     if (res.statusCode !== 200) {
-                        console.warn(`⚠️ Gemini API with key index ${keyIndex - 1} returned status ${res.statusCode}. Trying next key...`);
+                        console.warn(`⚠️ Gemini API with key index ${keyIndex - 1} failed. Status: ${res.statusCode}. Body: ${resBody.substring(0, 500)}`);
                         tryNextKey();
-                        return;
-                    }
-                    try {
-                        const data = JSON.parse(resBody);
-                        const textContent = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] ? data.candidates[0].content.parts[0].text : '';
-                        if (!textContent) {
-                            console.warn(`⚠️ Gemini API with key index ${keyIndex - 1} returned empty content. Trying next key...`);
+                    } else {
+                        try {
+                            const data = JSON.parse(resBody);
+                            const textContent = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] ? data.candidates[0].content.parts[0].text : '';
+                            if (!textContent) {
+                                console.warn(`⚠️ Gemini API with key index ${keyIndex - 1} returned empty content. Trying next key...`);
+                                tryNextKey();
+                                return;
+                            }
+                            console.log(`✅ Gemini failover succeeded using key index ${keyIndex - 1}.`);
+                            resolve(textContent);
+                        } catch (e) {
+                            console.error(`⚠️ Failed to parse Gemini API response with key index ${keyIndex - 1}:`, e);
                             tryNextKey();
-                            return;
                         }
-                        console.log(`✅ Gemini failover succeeded using key index ${keyIndex - 1}.`);
-                        resolve(textContent);
-                    } catch (e) {
-                        console.error(`⚠️ Failed to parse Gemini API response with key index ${keyIndex - 1}:`, e);
-                        tryNextKey();
                     }
                 });
             });
 
             req.on('error', (err) => {
-                console.error(`⚠️ Gemini request error with key index ${keyIndex - 1}:`, err);
+                console.error(`❌ Gemini API network error on key index ${keyIndex - 1}:`, err.message);
+                tryNextKey();
+            });
+
+            req.setTimeout(15000, () => {
+                console.error(`❌ Gemini API timeout on key index ${keyIndex - 1}.`);
+                req.destroy();
                 tryNextKey();
             });
 
@@ -1440,14 +1446,27 @@ const server = http.createServer(async (req, res) => {
                     
                     let transcriptText = payload.transcript || '';
                     if (!transcriptText) {
-                        // Fetch transcript from Fathom API
-                        const transUrl = `https://api.fathom.video/v1/recordings/${payload.recording_id}/transcript`;
-                        const transRes = await fetch(transUrl, {
-                            headers: { 'Authorization': `Bearer ${apiKey}` }
-                        });
-                        if (!transRes.ok) throw new Error(`Fathom API error: ${transRes.status}`);
-                        const transData = await transRes.json();
-                        transcriptText = transData.transcript || JSON.stringify(transData);
+                        try {
+                            // Fetch transcript from Fathom API
+                            const transUrl = `https://api.fathom.video/v1/recordings/${payload.recording_id}/transcript`;
+                            const transRes = await fetch(transUrl, {
+                                headers: { 'Authorization': `Bearer ${apiKey}` },
+                                signal: AbortSignal.timeout(30000) // 30s timeout for massive transcripts
+                            });
+                            if (!transRes.ok) throw new Error(`Fathom API error: ${transRes.status}`);
+                            
+                            // Prevent OOM from gigabyte JSON strings
+                            const contentLength = transRes.headers.get('content-length');
+                            if (contentLength && parseInt(contentLength, 10) > 10 * 1024 * 1024) {
+                                throw new Error("Fathom transcript exceeds safe memory limits (>10MB).");
+                            }
+                            
+                            const transData = await transRes.json();
+                            transcriptText = transData.transcript || JSON.stringify(transData);
+                        } catch (e) {
+                            console.error("❌ Fathom Transcript Extraction Failed:", e.message);
+                            transcriptText = "[TRANSCRIPT EXTRACTION FAILED DUE TO TIMEOUT OR PAYLOAD SIZE]";
+                        }
                     }
                     
                     const systemPrompt = `You are a Senior Solutions Architect at Octane Software Solutions.
@@ -1511,7 +1530,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             try {
                 // 1. Geocode Destination
                 const geoUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(targetCompany)}.json?access_token=${apiKey}&limit=1`;
-                const geoRes = await fetch(geoUrl);
+                const geoRes = await fetch(geoUrl, { signal: AbortSignal.timeout(10000) });
                 if (!geoRes.ok) throw new Error(`Geocoding failed: ${geoRes.status}`);
                 const geoData = await geoRes.json();
                 
@@ -1529,7 +1548,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 const originLat = -37.8226;
                 const dirUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${originLon},${originLat};${destLon},${destLat}?access_token=${apiKey}`;
                 
-                const dirRes = await fetch(dirUrl);
+                const dirRes = await fetch(dirUrl, { signal: AbortSignal.timeout(10000) });
                 if (!dirRes.ok) {
                     if (dirRes.status === 422) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -5455,6 +5474,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                signal: AbortSignal.timeout(60000),
                                 body: JSON.stringify({
                                     contents: [{
                                         parts: [
@@ -5499,15 +5519,20 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
                         const uploadResponse = await fetch('http://localhost:5000/upload', {
                             method: 'POST',
-                            body: formData
+                            body: formData,
+                            signal: AbortSignal.timeout(60000)
                         });
 
                         if (!uploadResponse.ok) {
                             throw new Error(`Local upload failed with status ${uploadResponse.status}`);
                         }
 
+                        const uploadData = await uploadResponse.json();
                         const analyzeResponse = await fetch('http://localhost:5000/analyze', {
-                            method: 'POST'
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ filename: uploadData.filename }),
+                            signal: AbortSignal.timeout(60000)
                         });
 
                         if (!analyzeResponse.ok) {
@@ -5546,7 +5571,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             headers: {
                                 'Authorization': `Bearer ${openrouterKey}`
                             },
-                            body: formData
+                            body: formData,
+                            signal: AbortSignal.timeout(60000)
                         });
 
                         if (!orResponse.ok) {

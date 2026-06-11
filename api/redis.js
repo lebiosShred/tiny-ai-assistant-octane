@@ -73,7 +73,13 @@ async function setCache(key, value, ttlSeconds = 86400) {
         }
     }
     
-    // In-memory fallback
+    // In-memory fallback (Capped to 50 items to prevent OOM)
+    if (memoryCache.size >= 50 && !memoryCache.has(key)) {
+        // Simple FIFO eviction: delete the first key
+        const firstKey = memoryCache.keys().next().value;
+        memoryCache.delete(firstKey);
+    }
+    
     memoryCache.set(key, {
         value,
         expiry: Date.now() + (ttlSeconds * 1000)
