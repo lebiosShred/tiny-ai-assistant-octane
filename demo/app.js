@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (matchSession) {
                     const promises = [ fetch(`/api/history/detail?id=${encodeURIComponent(matchSession.id)}`) ];
                     if (targetFolderId) {
-                        promises.push(filesData ? Promise.resolve({ ok: true, json: () => filesData }) : fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`));
+                        promises.push(filesData ? Promise.resolve({ ok: true, json: () => filesData }) : fetch(`/api/gdrive/list?folderId=\${encodeURIComponent(targetFolderId)}`, { headers: { 'Cache-Control': 'no-cache' } }));
                     }
                     
                     const results = await Promise.all(promises);
@@ -569,7 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (metaTrack) metaTrack.value = '';
                     
                     if (targetFolderId) {
-                        resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`)).json();
+                        resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=\${encodeURIComponent(targetFolderId)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
                     }
                 }
                 
@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!preFetchedData) {
                 gdriveSubfolderCache.clear();
             }
-            const data = preFetchedData || await (await fetch('/api/gdrive/list')).json();
+            const data = preFetchedData || await (await fetch('/api/gdrive/list', { headers: { 'Cache-Control': 'no-cache' } })).json();
             recentChatsList.innerHTML = '';
             
             if (data.items && data.items.length > 0) {
@@ -703,7 +703,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!gdriveData) {
                             contents.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading subfolders...</div>';
                             try {
-                                const gdriveRes = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`);
+                                const gdriveRes = await fetch(`/api/gdrive/list?folderId=\${encodeURIComponent(folder.id)}`, { headers: { 'Cache-Control': 'no-cache' } });
                                 gdriveData = await gdriveRes.json();
                                 gdriveSubfolderCache.set(folder.id, gdriveData);
                             } catch (err) {
@@ -1022,7 +1022,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!sourcesList) return;
         sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
         try {
-            const data = preFetchedFiles || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folderId)}`)).json();
+            const data = preFetchedFiles || await (await fetch(`/api/gdrive/list?folderId=\${encodeURIComponent(folderId)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
             sourcesList.innerHTML = '';
             
             const files = data.items ? data.items.filter(f => !f.isFolder) : [];
@@ -1171,7 +1171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sourcesList.innerHTML = `<div style="color: #64748b; font-size: 0.85rem; padding: 2rem 1rem; text-align: center; border: 1px dashed #cbd5e1; border-radius: 8px; margin-top: 1rem;">No subfolder found. Please create a folder named "<b>${prospectName}</b>" inside "<b>${companyFolder.name}</b>" to add files.</div>`;
             } else {
                 const targetFolderId = subfolderId;
-                const resolvedFilesData = await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`)).json();
+                const resolvedFilesData = await (await fetch(`/api/gdrive/list?folderId=\${encodeURIComponent(targetFolderId)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
                 await loadSourcesForCompany(targetFolderId, companyFolder.name, resolvedFilesData, prospectName);
             }
         } catch(e) {
@@ -1752,7 +1752,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (confirmed) {
                         await saveDiscoverySession(parsed.name, parsed.company, parsed.email);
                     }
-                    return;
                 }
             }
         }
@@ -1877,6 +1876,9 @@ Rules:
         chatMessagesLog.scrollTop = chatMessagesLog.scrollHeight;
 
         try {
+            if (chatMessagesLog) {
+                chatMessagesLog.setAttribute('data-state', 'streaming');
+            }
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
@@ -1889,6 +1891,10 @@ Rules:
                     temperature: 0.2
                 })
             });
+
+            if (chatMessagesLog) {
+                chatMessagesLog.setAttribute('data-state', 'idle');
+            }
 
             const data = await res.json();
             chatLoadingIndicator.classList.add('hidden');
@@ -2020,12 +2026,15 @@ Rules:
 
         } catch (err) {
             chatLoadingIndicator.classList.add('hidden');
+            console.error('Chat API Error:', err);
+            if (chatMessagesLog) {
+                chatMessagesLog.setAttribute('data-state', 'idle');
+            }
+            chatLoadingIndicator.classList.add('hidden');
             const spinnerResetSpan = chatLoadingIndicator.querySelector('span');
             if (spinnerResetSpan) {
                 spinnerResetSpan.innerText = "Tiny is thinking...";
             }
-            console.error('Chat error:', err);
-            showToast(`Error getting response: ${err.message}`);
             
             // Push system error bubble
             chatHistory.push({ 
@@ -2378,34 +2387,56 @@ I have also recorded a video briefing summarizing our discussion, which you can 
  
 You should have received an invitation confirming our appointment together.
  
-Kind regards,
-Anthony.`;
+Kind regards,`;
             } else if (promptType === 'migration') {
-                promptText = `Generate a structured Migration/Modernisation assessment report based on the call. Include:
-- CURRENT STATE: What systems, processes, and tools they use today.
-- GAPS IDENTIFIED: Where their current setup falls short.
-- RECOMMENDED MIGRATION PATH: What Octane recommends.
-- ESTIMATED COMPLEXITY: Low / Medium / High with rationale.
-- DEPENDENCIES: Any prerequisites or blockers.`;
+                promptText = `Execute a comprehensive, enterprise-grade Migration/Modernisation assessment based strictly on the transcript. Format as a professional consulting brief:
+1. EXECUTIVE SUMMARY: High-level technical objective and strategic business drivers.
+2. CURRENT ARCHITECTURE (AS-IS): Granular mapping of legacy systems, integrations, cloud footprints, and specific pain points mentioned.
+3. GAPS & TECHNICAL DEBT: Explicitly highlight security risks, operational inefficiencies, and scaling limits in their current setup.
+4. RECOMMENDED TARGET STATE (TO-BE): Propose a robust modernisation path (e.g., Cloud-Native, Serverless, AI-Augmented workflows) aligned with Octane's capabilities.
+5. COMPLEXITY & EFFORT ESTIMATION: Evaluate the migration complexity (Low/Medium/High/Critical) citing exact dependencies, required data transformations, and potential downtime risks.
+Do not use generic filler. Base all technical assertions solely on the source data.`;
             } else if (promptType === 'actionItems') {
-                promptText = `Identify all action items, follow-up tasks, and commitments made during this call. For each item, you MUST explicitly include any specific deadlines, dates, or times mentioned in the transcript. Group by owner.`;
+                promptText = `Generate a precise, zero-fluff RACI-style Action Items matrix derived from the meeting transcript. 
+For every commitment made, you MUST extract:
+- THE TASK: Explicit, actionable description.
+- THE OWNER: Assignee responsible (Account Executive, Solutions Architect, Client Contact).
+- THE DEADLINE: Exact date, time, or relative SLA (e.g., "by EOD Friday") mentioned.
+- THE BLOCKER: Any prerequisites preventing immediate execution.
+Format as a clean markdown table. If a deadline is missing, explicitly state "Unspecified". Group items by internal vs. client responsibilities.`;
             } else if (promptType === 'summarySheet') {
-                promptText = `Generate a brief, structured internal summary sheet:
-SUMMARY: [Company] — [Date]
-ATTENDEES: [Names]
-SERVICE TRACK: [TM1 / AI]
-KEY DISCUSSION POINTS: (3-5 points)
-PROSPECT SENTIMENT: (Positive / Neutral / Cautious)
-OneDrive Screencast Link: [Link if available]`;
+                promptText = `Synthesize the call into a high-density Executive Summary Sheet using the MEDDPICC or BANT framework principles where applicable.
+Include the following structured headers:
+### ACCOUNT INTELLIGENCE
+- **Company**: [Extracted Company Name]
+- **Date**: [Call Date]
+- **Key Stakeholders**: [Names, Titles, and their observed influence/buying power]
+- **Service Track**: [e.g., TM1 / AI Automation / Cloud Migration]
+
+### STRATEGIC INSIGHTS
+- **Core Business Pain**: (What is the exact problem costing them money or time?)
+- **Identified Goals**: (What does success look like for them?)
+- **Current Sentiment**: (Highly qualified, skeptical, exploratory, stalled)
+- **Technical Stack Mentioned**: (List specific software, databases, or tools they use)
+
+### NEXT STEPS
+- **Immediate Follow-up**: (Top priority action)
+- **Screencast Briefing**: [OneDrive Screencast Link if available]`;
             } else if (promptType === 'notes') {
-                promptText = `Generate detailed chronological meeting notes capturing context, technical systems discussed, and direct quotes.`;
+                promptText = `Transcribe the core essence of the meeting into an exhaustive, highly organized chronologic debrief.
+- Discard all small talk and filler.
+- Capture verbatim quotes for critical business requirements, budget constraints, or technical specifications (wrap in blockquotes).
+- Segment the notes logically by the topics discussed.
+- Highlight any objections or concerns raised by the prospect in **bold**.`;
             } else if (promptType === 'proposal') {
-                promptText = `Draft a preliminary, consultative proposal document. Do NOT include any pricing amounts, rates, or dollar figures. Include sections:
-1. UNDERSTANDING OF REQUIREMENTS
-2. PROPOSED SOLUTION
-3. APPROACH & METHODOLOGY
-4. TEAM & RESOURCES
-5. NEXT STEPS & DISCOVERY OPEN ITEMS`;
+                promptText = `Draft a premium, Fortune-50 caliber consultative Statement of Work (SOW) foundation based on the discovery call.
+(Strict Constraint: DO NOT hallucinate pricing, hourly rates, or exact project durations. Omit commercial terms entirely.)
+Structure the document rigorously:
+1. **EXECUTIVE CONTEXT**: Demonstrate a profound understanding of their unique business challenge and strategic objectives.
+2. **PROPOSED ARCHITECTURE / SOLUTION**: Detail the high-level technical or strategic solution Octane will deliver. Be highly specific to their stack.
+3. **METHODOLOGY & PHASES**: Outline the execution strategy (e.g., Phase 1: Discovery & Audit, Phase 2: Implementation, Phase 3: Handoff).
+4. **REQUIRED RESOURCES**: Identify the key personnel profiles needed from both Octane and the client.
+5. **DISCOVERY GAPS & ASSUMPTIONS**: List any critical missing information that must be clarified before finalizing a binding contract.`;
             }
  
             if (promptText) {

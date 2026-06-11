@@ -71,24 +71,81 @@ const MIME_TYPES = {
     '.webm': 'video/webm'
 };
 
-// Initialize GCS History Directory
 const historyDir = process.env.HISTORY_DIR ? path.resolve(process.env.HISTORY_DIR) : path.join(PUBLIC_DIR, 'knowledge', 'history');
 if (!fs.existsSync(historyDir)) {
     fs.mkdirSync(historyDir, { recursive: true });
+}
+
+const Database = require('better-sqlite3');
+const dbPath = path.join(PUBLIC_DIR, 'knowledge', 'aegis_state.db');
+const db = new Database(dbPath);
+db.pragma('journal_mode = WAL');
+db.exec(`
+  CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    data TEXT,
+    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// 🚨 Transparent FS Proxy for Legacy RAG Compatibility
+const originalReadFileSync = fs.readFileSync;
+fs.readFileSync = function(filePath, encoding) {
+    if (typeof filePath === 'string' && filePath.endsWith('.json') && filePath.includes(historyDir)) {
+        const id = path.basename(filePath, '.json');
+        const stmt = db.prepare('SELECT data FROM sessions WHERE id = ?');
+        const row = stmt.get(id);
+        if (row) return row.data;
+    }
+    return originalReadFileSync(filePath, encoding);
+};
+
+const originalReaddirSync = fs.readdirSync;
+fs.readdirSync = function(dirPath, options) {
+    if (dirPath === historyDir) {
+        let files = [];
+        try { files = originalReaddirSync(dirPath, options).filter(f => !f.endsWith('.json')); } catch(e) {}
+        try {
+            const stmt = db.prepare('SELECT id FROM sessions');
+            const dbFiles = stmt.all().map(row => row.id + '.json');
+            files = [...files, ...dbFiles];
+        } catch(e) {}
+        return files;
+    }
+    return originalReaddirSync(dirPath, options);
+};
+
+const originalExistsSync = fs.existsSync;
+fs.existsSync = function(filePath) {
+    if (typeof filePath === 'string' && filePath === historyDir) return true; // Force true for historyDir
+    if (typeof filePath === 'string' && filePath.endsWith('.json') && filePath.includes(historyDir)) {
+        const id = path.basename(filePath, '.json');
+        const stmt = db.prepare('SELECT 1 FROM sessions WHERE id = ?');
+        if (stmt.get()) return true;
+    }
+    return originalExistsSync(filePath);
+};
+
+function getAllHistoryItems() {
+    try {
+        const stmt = db.prepare('SELECT data FROM sessions');
+        return stmt.all().map(row => JSON.parse(row.data));
+    } catch (e) {
+        return [];
+    }
 }
 
 function saveHistoryItem(item) {
     if (!fs.existsSync(historyDir)) {
         fs.mkdirSync(historyDir, { recursive: true });
     }
-    const filePath = path.join(historyDir, `${item.id}.json`);
-    fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', (err) => {
-        if (err) {
-            console.error(`❌ Failed to save history item ${item.id}:`, err);
-        } else {
-            console.log(`✅ Saved history item: ${item.id}`);
-        }
-    });
+    try {
+        const stmt = db.prepare('INSERT OR REPLACE INTO sessions (id, data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP)');
+        stmt.run(item.id, JSON.stringify(item));
+        console.log(`✅ Saved history item to SQLite: ${item.id}`);
+    } catch (err) {
+        console.error(`❌ Failed to save history item ${item.id}:`, err);
+    }
 }
 
 function extractScore(content) {
@@ -338,6 +395,7 @@ function executeGeminiFailover(payload) {
                 port: 443,
                 path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
                 method: 'POST',
+                timeout: 15000,
                 headers: {
                     'content-type': 'application/json',
                     'content-length': Buffer.byteLength(geminiPayload)
@@ -1651,6 +1709,9 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     .filter(m => m && m.role === 'user')
                     .map(m => m.content)
                     .join(' ');
+                if (userQueryText.length > 8000) {
+                    userQueryText = userQueryText.substring(0, 8000);
+                }
             }
             
             // Load and inject knowledge base
@@ -1666,6 +1727,9 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                 payload.messages = payload.messages.map(msg => {
                     if (msg && typeof msg.content === 'string') {
                         let content = msg.content;
+                        if (content.length > 8000) {
+                            content = content.substring(0, 8000) + "\n\n[System Note: Content truncated due to length limits.]";
+                        }
                         // Replace system tags and common jailbreak keywords in client metadata
                         content = content.replace(/\]\]><\/system>/gi, '');
                         content = content.replace(/<\/system>/gi, '');
@@ -1878,7 +1942,11 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                 instructions = data.instructions || [];
                             }
                             if (!instructions.includes(instruction)) {
-                                instructions.push(instruction);
+                                const safeInstruction = instruction.substring(0, 200);
+                                instructions.push(safeInstruction);
+                                if (instructions.length > 5) {
+                                    instructions.shift();
+                                }
                             }
                             fs.writeFileSync(customInstructionsPath, JSON.stringify({ instructions }, null, 2), 'utf8');
                             res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -2586,12 +2654,17 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     mismatchWarning = `\n\nCRITICAL SYSTEM WARNING: IDENTITY MISMATCH DETECTED. An uploaded source document (LinkedIn profile bio or Google Drive SOW document) does NOT match the lead metadata company ("${extractedCo}"). You are in IDENTITY CONFLICT CONTAINMENT MODE. There is an active mismatch between source document data and the current session's target company metadata. To prevent data corruption, folder pollution, and incorrect document generation, you must remain highly skeptical. Ask clarifying questions deeply to reconcile the mismatch. Do not perform any execution actions. Refuse to write files, create directories, run web searches, map routes, or generate deliverables. Explain that you cannot proceed with folder or file actions until the user clarifies the correct company identity.`;
                 }
 
+                let entityRoutingEnforcement = '';
+                if (companyNameForGDrive) {
+                    entityRoutingEnforcement = `\n\n<strict_entity_routing_enforcement>\nThe Canonical Company for this prospect is absolute and defined by their physical folder location: "${companyNameForGDrive}". Whenever you read files or search for documents, if you discover that the document's content claims the prospect belongs to a different company, you MUST NOT change the Canonical Company. Instead, you MUST immediately warn the user by stating the discrepancy in the chat and including a 🚨 emoji.\n</strict_entity_routing_enforcement>\n`;
+                }
+
                 if (systemMsg) {
-                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + gdriveFilesContext + jsonSchemaInstruction + customInstructionsStr + mismatchWarning;
+                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + gdriveFilesContext + jsonSchemaInstruction + customInstructionsStr + mismatchWarning + entityRoutingEnforcement;
                 } else {
                     payload.messages.unshift({
                         role: 'system',
-                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${gdriveFilesContext}${jsonSchemaInstruction}${customInstructionsStr}${mismatchWarning}`
+                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${gdriveFilesContext}${jsonSchemaInstruction}${customInstructionsStr}${mismatchWarning}${entityRoutingEnforcement}`
                     });
                 }
             }
@@ -3212,6 +3285,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         port: 443,
                         path: '/chat/completions',
                         method: 'POST',
+                        timeout: 15000,
                         headers: {
                             'Authorization': `Bearer ${dsKey}`,
                             'Content-Type': 'application/json',
@@ -3816,7 +3890,13 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     if (Buffer.byteLength(text, 'utf8') > CONTENT_BUDGET_BYTES) {
                                                         text = text.substring(0, CONTENT_BUDGET_BYTES) + '\n[...TRUNCATED due to content budget limit]';
                                                     }
-                                                    toolResult = text;
+                                                    const enforcementDirective = `[STRICT ENTITY BOUNDARY ENFORCEMENT]\n` +
+                                                        `This document is physically located in the Google Drive folder for Canonical Company: "${company}".\n` +
+                                                        `You MUST treat "${company}" as the absolute source of truth for the prospect's company.\n` +
+                                                        `If the text below claims the prospect works at a different company, you MUST NOT change their company to the new one.\n` +
+                                                        `Instead, you MUST surface this discrepancy to the user by including a "🚨" emoji in your chat response, stating that the document claims a different company but they are routed to "${company}".\n` +
+                                                        `[END ENFORCEMENT]\n\n--- DOCUMENT CONTENT ---\n`;
+                                                    toolResult = enforcementDirective + text;
                                                 } else {
                                                     toolResult = `Error: File "${filename}" not found in prospect "${company}" folder.`;
                                                 }
@@ -3971,7 +4051,13 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 }
 
                                                 if (matchedFiles.length > 0) {
-                                                    toolResult = `I found ${matchedFiles.length} file(s) matching "${query}" in the folder for **${company}**:\n` +
+                                                    const enforcementDirective = `[STRICT ENTITY BOUNDARY ENFORCEMENT]\n` +
+                                                        `These files are physically located in the Google Drive folder for Canonical Company: "${company}".\n` +
+                                                        `You MUST treat "${company}" as the absolute source of truth for the prospect's company.\n` +
+                                                        `If any search results below claim the prospect works at a different company, you MUST NOT change their company to the new one.\n` +
+                                                        `Instead, you MUST surface this discrepancy to the user by including a "🚨" emoji in your chat response, stating that the search results claim a different company but they are routed to "${company}".\n` +
+                                                        `[END ENFORCEMENT]\n\n`;
+                                                    toolResult = enforcementDirective + `I found ${matchedFiles.length} file(s) matching "${query}" in the folder for **${company}**:\n` +
                                                         matchedFiles.map(f => `- **${f.name}** (ID: \`${f.id}\`)`).join('\n');
                                                 } else {
                                                     toolResult = `No files matching "${query}" were found in the folder for **${company}**.`;
@@ -4171,6 +4257,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         });
                     });
 
+                    proxyReq.on('timeout', () => {
+                        console.warn(`⚠️ Primary DeepSeek API timed out at recursion depth ${depth}.`);
+                        proxyReq.destroy(); // Will trigger 'error' event and failover
+                    });
+
                     proxyReq.on('error', async (err) => {
                         console.warn(`⚠️ DeepSeek connection error at depth ${depth}: ${err.message}. Attempting Gemini failover...`);
                         try {
@@ -4200,6 +4291,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         }
                     });
 
+                    console.log(`📡 Sending request to DeepSeek (depth ${depth})... payload length: ${Buffer.byteLength(dsPayload)}`);
                     proxyReq.write(dsPayload);
                     proxyReq.end();
                 };
@@ -4497,22 +4589,20 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     items = await gdriveService.listFolder(folderId);
                     listSucceeded = true;
                     
-                    // Axiom Fix: Merge local history and cache to combat GDrive eventual consistency
+                    // Axiom Fix: Merge only recently created folders from cache to combat GDrive eventual consistency
                     const isRootList = !resolvedCompany && !parsedUrl.searchParams.get('folderId');
                     if (isRootList) {
                         const companies = new Set();
-                        if (fs.existsSync(historyDir)) {
-                            const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
-                            files.forEach(file => {
-                                try {
-                                    const data = JSON.parse(fs.readFileSync(path.join(historyDir, file), 'utf8'));
-                                    if (data && data.company) companies.add(data.company.trim());
-                                } catch (e) {}
-                            });
-                        }
+                        const now = Date.now();
                         for (const comp of gdriveService.folderIdCache.keys()) {
                             if (!comp.startsWith('prospect_')) {
-                                companies.add(comp);
+                                const timestamp = gdriveService.folderIdCacheTimestamps ? gdriveService.folderIdCacheTimestamps.get(comp) : null;
+                                if (timestamp && (now - timestamp < 60000)) {
+                                    companies.add(comp);
+                                } else if (timestamp) {
+                                    // Evict expired entry from cache to prevent ghost listings
+                                    gdriveService.folderIdCache.delete(comp);
+                                }
                             }
                         }
                         companies.forEach(company => {
@@ -4541,100 +4631,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             }
 
             if (!listSucceeded) {
-                console.log('⚠️ Google Drive client not configured or failed. Listing local files.');
-                items = [];
-                
-                let targetLocalFolder = null;
-                if (folderId && folderId.startsWith('local_path_')) {
-                    const encodedPath = folderId.substring('local_path_'.length);
-                    targetLocalFolder = path.join(historyDir, Buffer.from(encodedPath, 'hex').toString('utf8'));
-                }
-
-                if (folderId && folderId.startsWith('local_folder_')) {
-                    resolvedCompany = folderId.substring('local_folder_'.length);
-                    folderId = null;
-                }
-
-                if (folderId === process.env.COMPANY_FOLDER_ID || folderId === process.env.GDRIVE_ROOT_FOLDER_ID || folderId === 'root') {
-                    folderId = null;
-                }
-
-                if (targetLocalFolder) {
-                    if (fs.existsSync(targetLocalFolder)) {
-                        const localItems = fs.readdirSync(targetLocalFolder);
-                        items = localItems.map(item => {
-                            const itemPath = path.join(targetLocalFolder, item);
-                            const stat = fs.statSync(itemPath);
-                            const isFolder = stat.isDirectory();
-                            const relPath = path.relative(historyDir, itemPath);
-                            const hexPath = Buffer.from(relPath, 'utf8').toString('hex');
-                            return {
-                                id: isFolder ? `local_path_${hexPath}` : `local_file_${hexPath}`,
-                                name: item,
-                                mimeType: isFolder ? 'application/vnd.google-apps.folder' : (item.endsWith('.pdf') ? 'application/pdf' : 'text/plain'),
-                                isFolder: isFolder,
-                                size: stat.size,
-                                webViewLink: `file://${itemPath}`
-                            };
-                        });
-                    }
-                } else if (!resolvedCompany && !folderId) {
-                    // List all subdirectories and parse JSON files to build the unique company folder list
-                    const companies = new Set();
-                    if (fs.existsSync(historyDir)) {
-                        // 1. Get subdirectories
-                        const localDirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
-                        localDirs.forEach(dir => companies.add(dir.replace(/_/g, ' ')));
-
-                        // 2. Scan JSON files for companies
-                        const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
-                        files.forEach(file => {
-                            try {
-                                const fileContent = fs.readFileSync(path.join(historyDir, file), 'utf8');
-                                const data = JSON.parse(fileContent);
-                                if (data && data.company) {
-                                    companies.add(data.company.trim());
-                                }
-                            } catch (e) {}
-                        });
-                    }
-
-                    items = Array.from(companies).map(companyName => {
-                        const cleanDir = companyName.replace(/[^a-zA-Z0-9]/g, '_');
-                        return {
-                            id: `local_folder_${cleanDir}`,
-                            name: companyName,
-                            mimeType: 'application/vnd.google-apps.folder',
-                            isFolder: true,
-                            size: 0,
-                            webViewLink: `file://${path.join(historyDir, cleanDir)}`
-                        };
-                    });
-                } else {
-                    const cleanCompany = (resolvedCompany || '').replace(/[^a-zA-Z0-9]/g, '_');
-                    const localFolder = path.join(historyDir, cleanCompany);
-                    if (fs.existsSync(localFolder)) {
-                        const localItems = fs.readdirSync(localFolder);
-                        items = localItems.map(item => {
-                            const itemPath = path.join(localFolder, item);
-                            const stat = fs.statSync(itemPath);
-                            const isFolder = stat.isDirectory();
-                            const relPath = path.relative(historyDir, itemPath);
-                            const hexPath = Buffer.from(relPath, 'utf8').toString('hex');
-                            return {
-                                id: isFolder ? `local_path_${hexPath}` : `local_file_${hexPath}`,
-                                name: item,
-                                mimeType: isFolder ? 'application/vnd.google-apps.folder' : (item.endsWith('.pdf') ? 'application/pdf' : 'text/plain'),
-                                isFolder: isFolder,
-                                size: stat.size,
-                                webViewLink: `file://${itemPath}`
-                            };
-                        });
-                    }
-                }
+                throw new Error("Google Drive API list operation failed.");
             }
 
-            // Merge recently created files from cache to combat eventual consistency lag
+                        // Merge recently created files from cache to combat eventual consistency lag
             if (!resolvedCompany && folderId) {
                 for (const [key, val] of gdriveService.folderIdCache.entries()) {
                     if (val === folderId) {
