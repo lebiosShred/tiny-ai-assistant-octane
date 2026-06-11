@@ -137,8 +137,10 @@ test.describe('Aegis Functional E2E Suite', () => {
             Object.defineProperty(navigator, 'webdriver', { get: () => false, configurable: true });
         });
 
-        // Fill metadata
-        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        // Fill metadata with unique values containing a timestamp to avoid duplicate warnings
+        const uniqueName = `UniqueSarah Chen ${Date.now()}`;
+        const uniqueCompany = `Unique Meridian Logistics ${Date.now()}`;
+        await indexPage.fillMetadata(uniqueName, uniqueCompany, 'sarah@meridian.com');
 
         // Click Save Sources button
         await indexPage.submitForm();

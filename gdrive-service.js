@@ -767,21 +767,28 @@ async function findOrCreateProspectFolder(companyFolderId, prospectName) {
     const resolutionPromise = (async () => {
         try {
             let prospectFolderId = null;
+            const normalizeString = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+            const targetNorm = normalizeString(cleanProspect);
+
             const searchRes = await drive.files.list({
-                q: `name = '${cleanProspect}' and mimeType = 'application/vnd.google-apps.folder' and '${companyFolderId}' in parents and trashed = false`,
+                q: `mimeType = 'application/vnd.google-apps.folder' and '${companyFolderId}' in parents and trashed = false`,
                 fields: 'files(id, name)',
-                pageSize: 10
+                pageSize: 100,
+                supportsAllDrives: true,
+                includeItemsFromAllDrives: true
             });
 
             const files = searchRes.data.files || [];
-            if (files.length > 0) {
-                prospectFolderId = files[0].id;
+            const matchedFolders = files.filter(f => normalizeString(f.name) === targetNorm);
+
+            if (matchedFolders.length > 0) {
+                prospectFolderId = matchedFolders[0].id;
                 
-                if (files.length > 1) {
+                if (matchedFolders.length > 1) {
                     // Quick dedup for prospect folder
-                    for (let i = 1; i < files.length; i++) {
+                    for (let i = 1; i < matchedFolders.length; i++) {
                         try {
-                            await drive.files.delete({ fileId: files[i].id, supportsAllDrives: true });
+                            await drive.files.delete({ fileId: matchedFolders[i].id, supportsAllDrives: true });
                         } catch(e) {}
                     }
                 }
@@ -793,7 +800,8 @@ async function findOrCreateProspectFolder(companyFolderId, prospectName) {
                         mimeType: 'application/vnd.google-apps.folder',
                         parents: [companyFolderId]
                     },
-                    fields: 'id'
+                    fields: 'id',
+                    supportsAllDrives: true
                 });
                 prospectFolderId = createRes.data.id;
             }

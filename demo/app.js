@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Google Drive Explorer Loader ---
     async function loadGoogleDriveFiles(preFetchedData = null) {
         if (!sourceGdriveFileSelect) return;
-        if (!activeProspectName) {
+        if (activeFolderId && !activeProspectName) {
             sourceGdriveFileSelect.innerHTML = '<option value="">-- Select a prospect folder to see files --</option>';
             return;
         }
@@ -735,8 +735,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             contents.innerHTML = '';
                             
+                            // Count occurrences of normalized prospect names to flag duplicates
+                            const clientNormalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+                            const normalizedCounts = {};
+                            Object.keys(prospectGroups).forEach(pName => {
+                                const norm = clientNormalize(pName);
+                                normalizedCounts[norm] = (normalizedCounts[norm] || 0) + 1;
+                            });
 
-                            
                              for (const [prospectName, groupData] of Object.entries(prospectGroups)) {
                                 const sessions = groupData.sessions;
                                 const subfolderId = groupData.gdriveId;
@@ -756,6 +762,19 @@ document.addEventListener('DOMContentLoaded', () => {
                                 pTitle.className = 'sidebar-folder-title';
                                 pTitle.style.fontSize = '0.85rem';
                                 pTitle.innerText = '👤 ' + prospectName;
+                                
+                                const normName = clientNormalize(prospectName);
+                                if (normalizedCounts[normName] > 1) {
+                                    const warningSpan = document.createElement('span');
+                                    warningSpan.innerText = ' ⚠️';
+                                    warningSpan.style.color = '#eab308';
+                                    warningSpan.style.marginLeft = '0.25rem';
+                                    warningSpan.style.fontWeight = 'bold';
+                                    warningSpan.title = 'Duplicate Warning: Multiple prospect folders exist with similar names under this company.';
+                                    warningSpan.className = 'prospect-duplicate-warning';
+                                    pTitle.appendChild(warningSpan);
+                                }
+                                
                                 prospectHeader.appendChild(pTitle);
                                 
                                 const toggleArrow = document.createElement('span');
@@ -1598,17 +1617,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const confirmed = await showConfirmModal({
-                title: 'Save Prospect Sources',
-                message: `Are you sure you want to save the prospect details and initialize/update the session for "${name}" at "${company}"?`,
-                confirmText: 'Save',
-                cancelText: 'Cancel',
-                type: 'primary'
-            });
+            const clientNormalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+            const normNewName = clientNormalize(name);
+            const normNewCompany = clientNormalize(company);
+            const isDuplicate = chatsList.some(chat => 
+                chat.id !== currentChatId &&
+                clientNormalize(chat.company) === normNewCompany &&
+                clientNormalize(chat.name) === normNewName
+            );
 
-            if (confirmed) {
-                await saveDiscoverySession(name, company, email);
+            if (isDuplicate) {
+                const confirmed = await showConfirmModal({
+                    title: '⚠️ Duplicate Prospect Warning',
+                    message: `A prospect named "${name}" already exists under "${company}". Saving this will create another session for the same client. Do you want to proceed?`,
+                    confirmText: 'Yes, Save Anyway',
+                    cancelText: 'Cancel',
+                    type: 'danger',
+                    forceShow: !!window.__test_force_duplicate_warning
+                });
+                if (!confirmed) return;
+            } else {
+                const confirmed = await showConfirmModal({
+                    title: 'Save Prospect Sources',
+                    message: `Are you sure you want to save the prospect details and initialize/update the session for "${name}" at "${company}"?`,
+                    confirmText: 'Save',
+                    cancelText: 'Cancel',
+                    type: 'primary'
+                });
+                if (!confirmed) return;
             }
+
+            await saveDiscoverySession(name, company, email);
         });
     }
 
@@ -2986,10 +3025,10 @@ Identifier: ${receipt.targetId}
      * Display a clean, glassmorphic confirmation modal.
      * Returns a promise that resolves to true (Confirm) or false (Cancel).
      */
-    function showConfirmModal({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'primary' }) {
+    function showConfirmModal({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'primary', forceShow = false }) {
         return new Promise((resolve) => {
             // E2E/Playwright test bypass
-            if (navigator.webdriver || window.__playwright_active) {
+            if ((navigator.webdriver || window.__playwright_active) && !forceShow) {
                 resolve(true);
                 return;
             }
@@ -3086,7 +3125,7 @@ Identifier: ${receipt.targetId}
     if (btnCancelAddProspect) btnCancelAddProspect.addEventListener('click', closeAddModal);
 
     if (btnSubmitAddProspect) {
-        btnSubmitAddProspect.addEventListener('click', () => {
+        btnSubmitAddProspect.addEventListener('click', async () => {
             const nameVal = quickMetaName.value.trim();
             const companyVal = quickMetaCompany.value.trim();
             
@@ -3094,6 +3133,26 @@ Identifier: ${receipt.targetId}
                 showToast('Company Name is required.');
                 quickMetaCompany.focus();
                 return;
+            }
+
+            const clientNormalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+            const normNewName = clientNormalize(nameVal);
+            const normNewCompany = clientNormalize(companyVal);
+            const isDuplicate = chatsList.some(chat => 
+                clientNormalize(chat.company) === normNewCompany &&
+                clientNormalize(chat.name) === normNewName
+            );
+
+            if (isDuplicate) {
+                const confirmed = await showConfirmModal({
+                    title: '⚠️ Duplicate Prospect Warning',
+                    message: `A prospect named "${nameVal}" already exists under "${companyVal}". Do you still want to proceed and create a new one?`,
+                    confirmText: 'Yes, Create Anyway',
+                    cancelText: 'Cancel',
+                    type: 'danger',
+                    forceShow: !!window.__test_force_duplicate_warning
+                });
+                if (!confirmed) return;
             }
 
             activeFolderId = null; // Prevent state leakage to new prospect

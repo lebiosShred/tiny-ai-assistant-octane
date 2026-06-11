@@ -3319,7 +3319,19 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
                                                     const cleanProspect = prospect_name.replace(/[^a-zA-Z0-9]/g, '_');
                                                     const companyFolder = path.join(historyDir, cleanCompany);
-                                                    const prospectFolder = path.join(companyFolder, cleanProspect);
+                                                    
+                                                    const normalizeString = (str) => (str || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
+                                                    const targetNorm = normalizeString(prospect_name);
+                                                    let resolvedProspectFolder = null;
+                                                    if (fs.existsSync(companyFolder)) {
+                                                        const existingDirs = fs.readdirSync(companyFolder).filter(f => fs.statSync(path.join(companyFolder, f)).isDirectory());
+                                                        const matchedDir = existingDirs.find(d => normalizeString(d) === targetNorm);
+                                                        if (matchedDir) {
+                                                            resolvedProspectFolder = path.join(companyFolder, matchedDir);
+                                                        }
+                                                    }
+                                                    const prospectFolder = resolvedProspectFolder || path.join(companyFolder, cleanProspect);
+
                                                     if (!fs.existsSync(prospectFolder)) {
                                                         fs.mkdirSync(prospectFolder, { recursive: true });
                                                     }
@@ -5858,7 +5870,19 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                                 const cleanCompany = payload.company.replace(/[^a-zA-Z0-9]/g, '_');
                                 const cleanProspect = (payload.name || '').replace(/[^a-zA-Z0-9]/g, '_');
                                 const companyFolder = path.join(historyDir, cleanCompany);
-                                const prospectFolder = cleanProspect ? path.join(companyFolder, cleanProspect) : companyFolder;
+                                
+                                const normalizeString = (str) => (str || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
+                                const targetNorm = normalizeString(payload.name || '');
+                                let resolvedProspectFolder = null;
+                                if (cleanProspect && fs.existsSync(companyFolder)) {
+                                    const existingDirs = fs.readdirSync(companyFolder).filter(f => fs.statSync(path.join(companyFolder, f)).isDirectory());
+                                    const matchedDir = existingDirs.find(d => normalizeString(d) === targetNorm);
+                                    if (matchedDir) {
+                                        resolvedProspectFolder = path.join(companyFolder, matchedDir);
+                                    }
+                                }
+                                const prospectFolder = resolvedProspectFolder || (cleanProspect ? path.join(companyFolder, cleanProspect) : companyFolder);
+
                                 if (!fs.existsSync(prospectFolder)) {
                                     fs.mkdirSync(prospectFolder, { recursive: true });
                                 }
