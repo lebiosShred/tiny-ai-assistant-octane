@@ -337,10 +337,70 @@ async function fetchExaRAGContext(name, company) {
     }
 }
 
+async function scrapeUrlWithJina(url) {
+    if (isTestEnrichment('', url)) {
+        console.log(`🌐 Mocking Jina Reader scrape for test URL: "${url}"`);
+        return Promise.resolve(`=== WEBSITE SCRAPE RESULTS [${url}] ===\nThis is mock scraped website content for: ${url}. Markdown formatting is verified. Clean text context is provided.`);
+    }
+
+    return new Promise((resolve) => {
+        const apiKey = (process.env.JINA_API_KEY || '').trim();
+        if (!apiKey) {
+            console.warn("⚠️ JINA_API_KEY is not configured.");
+            resolve("Error: Jina Reader API key is not configured on the server.");
+            return;
+        }
+
+        let targetUrl = (url || '').trim();
+        if (!/^https?:\/\//i.test(targetUrl)) {
+            targetUrl = 'https://' + targetUrl;
+        }
+
+        console.log(`🌐 Performing Jina Reader scrape for: ${targetUrl}`);
+        const options = {
+            hostname: 'r.jina.ai',
+            port: 443,
+            path: `/${targetUrl}`,
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Accept': 'text/plain'
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let resBody = '';
+            res.on('data', chunk => resBody += chunk);
+            res.on('end', () => {
+                if (res.statusCode !== 200) {
+                    console.error(`⚠️ Jina Reader API returned status ${res.statusCode}: ${resBody}`);
+                    resolve(`Error: Jina Reader API returned status ${res.statusCode}`);
+                    return;
+                }
+                resolve(resBody);
+            });
+        });
+
+        req.on('error', (err) => {
+            console.error("⚠️ Jina Reader request error:", err);
+            resolve(`Error: Jina Reader request failed: ${err.message}`);
+        });
+
+        req.setTimeout(15000, () => {
+            console.warn("⚠️ Jina Reader request timed out.");
+            req.destroy();
+            resolve("Error: Jina Reader request timed out.");
+        });
+
+        req.end();
+    });
+}
+
 module.exports = {
     searchWeb,
     fetchTavilyRAGContext,
     fetchTavilyCompanyNews,
     fetchGithubTechnographics,
-    fetchExaRAGContext
+    fetchExaRAGContext,
+    scrapeUrlWithJina
 };

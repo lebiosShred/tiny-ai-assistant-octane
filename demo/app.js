@@ -1854,7 +1854,9 @@ Rules:
 
         let loadingText = "Tiny is thinking...";
         const lowerPrompt = promptText.toLowerCase();
-        if (lowerPrompt.includes('search') || lowerPrompt.includes('find') || lowerPrompt.includes('information') || lowerPrompt.includes('info') || lowerPrompt.includes('tell me')) {
+        if (lowerPrompt.includes('scan') || lowerPrompt.includes('scrape') || lowerPrompt.includes('website')) {
+            loadingText = "Tiny is scanning website contents...";
+        } else if (lowerPrompt.includes('search') || lowerPrompt.includes('find') || lowerPrompt.includes('information') || lowerPrompt.includes('info') || lowerPrompt.includes('tell me')) {
             loadingText = "Tiny is searching files on Google Drive...";
         } else if (lowerPrompt.includes('read') || lowerPrompt.includes('open') || lowerPrompt.includes('show') || lowerPrompt.includes('analyze') || lowerPrompt.includes('linkedin') || lowerPrompt.includes('pdf')) {
             loadingText = "Tiny is reading Google Drive documents...";

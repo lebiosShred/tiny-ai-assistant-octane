@@ -229,6 +229,30 @@ async function searchWeb(query) {
     return result;
 }
 
+async function scrapeUrlWithJina(url) {
+    const cacheKey = `scrape:jina:${crypto.createHash('md5').update(url).digest('hex')}`;
+    try {
+        const cached = await redisModule.getCache(cacheKey);
+        if (cached !== null && cached !== undefined) {
+            console.log(`⚡ Cache hit for URL scrape: "${url}"`);
+            return cached;
+        }
+    } catch (e) {
+        console.warn('⚠️ Cache fetch failed in scrapeUrlWithJina:', e.message);
+    }
+
+    const result = await searchService.scrapeUrlWithJina(url);
+    
+    if (result && !result.startsWith('Error:')) {
+        try {
+            await redisModule.setCache(cacheKey, result, 86400); // 24 hours TTL
+        } catch (e) {
+            console.warn('⚠️ Cache store failed in scrapeUrlWithJina:', e.message);
+        }
+    }
+    return result;
+}
+
 function executeGeminiFailover(payload) {
     return new Promise((resolve, reject) => {
         const geminiKeys = (process.env.GOOGLE_API_KEYS || "").split(",");
@@ -2081,68 +2105,110 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             chatDetails.model = payload.model || 'deepseek-chat';
             logAuditEvent(req, chatAction, chatDetails);
 
-            // Trigger web search if this is a pre-screen call preparation request or search-related query
+            // Trigger web search if explicitly asked or for system-triggered dossier generation
             let webSearchResults = '';
             if (Array.isArray(payload.messages) && !payload.skipGDrive) {
                 const userMsg = payload.messages.find(m => m.role === 'user');
                 const systemMsg = payload.messages.find(m => m.role === 'system');
-                const searchKeywords = ['scan', 'website', 'news', 'competitor', 'linkedin', 'industry', 'products', 'services', 'stories', 'revenue', 'headcount', 'dossier', 'lead sheet', 'starter', 'profiles'];
-                const hasSearchKeyword = userMsg && searchKeywords.some(kw => userMsg.content.toLowerCase().includes(kw));
+                
+                // Active user asks for search/scan
+                const explicitSearchKeywords = ['scan', 'search', 'lookup', 'google', 'tavily', 'crawl', 'scrape', 'find on the web'];
+                const hasExplicitRequest = userMsg && explicitSearchKeywords.some(kw => userMsg.content.toLowerCase().includes(kw));
+                
+                // System-level dossier generation triggers
+                const isSystemDossierAction = userMsg && (
+                    userMsg.content.includes('--- GENERATE JSON DOSSIER ---') ||
+                    userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') ||
+                    userMsg.content.includes('LinkedIn profile analysis')
+                );
 
-                if (userMsg && (hasSearchKeyword || userMsg.content.includes('--- GENERATE JSON DOSSIER ---') || userMsg.content.includes('--- PRODUCE THESE 10 POINTS ---') || userMsg.content.includes('LinkedIn profile analysis'))) {
-                    // Try to extract client and company from the system prompt first for robust coverage
-                    let prospectName = '';
-                    let companyName = '';
+                if (userMsg && (hasExplicitRequest || isSystemDossierAction)) {
+                    // 1. Check if the query asks to scan/scrape a specific website URL
+                    const urlRegex = /(https?:\/\/[^\s]+|[a-zA-Z0-9-]+\.(?:com|org|net|io|co|ai|edu|gov|au|uk|ca|nz)(?:\/[^\s]*)?)/i;
+                    let targetUrl = '';
+                    const urlMatch = userMsg.content.match(urlRegex);
                     
-                    if (systemMsg) {
-                        const nameMatch = systemMsg.content.match(/- Client Name:[ \t]*([^\n\r]*)/i);
-                        const compMatch = systemMsg.content.match(/- Company:[ \t]*([^\n\r]*)/i);
-                        if (nameMatch && nameMatch[1].trim() && nameMatch[1].trim() !== 'Unknown Name') {
-                            prospectName = nameMatch[1].trim();
-                        }
-                        if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
-                            companyName = compMatch[1].trim();
+                    if (urlMatch) {
+                        targetUrl = urlMatch[1];
+                    } else if (systemMsg) {
+                        const siteMatch = systemMsg.content.match(/- (?:Website|URL|Link):[ \t]*([^\n\r]*)/i);
+                        if (siteMatch && siteMatch[1].trim() && !/unknown/i.test(siteMatch[1])) {
+                            targetUrl = siteMatch[1].trim();
                         }
                     }
 
-                    // Fallback to user message extraction if system prompt is missing
-                    if (!prospectName || !companyName) {
-                        const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
-                        const companyMatch = userMsg.content.match(/\bat\s+([^\n]+)/i);
-                        if (clientMatch) {
-                            prospectName = clientMatch[1].trim();
-                        }
-                        if (companyMatch) {
-                            let tempComp = companyMatch[1].trim().split('\n')[0].trim();
-                            tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
-                            companyName = tempComp;
+                    let scrapeSuccess = false;
+                    if (targetUrl) {
+                        console.log(`🌐 Explicit request to scan URL: ${targetUrl}`);
+                        const scrapedContent = await scrapeUrlWithJina(targetUrl);
+                        if (scrapedContent && !scrapedContent.startsWith('Error:')) {
+                            console.log(`🌐 Scraped URL successfully. Size: ${scrapedContent.length} chars.`);
+                            webSearchResults = `=== WEBSITE SCRAPE RESULTS [${targetUrl}] ===\n${scrapedContent}`;
+                            scrapeSuccess = true;
+                        } else {
+                            console.warn(`⚠️ Scraping URL failed (${scrapedContent}). Falling back to general web search.`);
                         }
                     }
-                    
-                    let query = '';
-                    let competitorQuery = '';
-                    if (prospectName && companyName) {
-                        query = `"${prospectName}" "${companyName}"`;
-                        competitorQuery = `competitors competing applications planning PA TM1 ERP for "${companyName}"`;
-                    } else if (companyName) {
-                        query = `"${companyName}" news OR products`;
-                        competitorQuery = `competitors competing applications planning PA TM1 ERP for "${companyName}"`;
-                    } else if (prospectName) {
-                        query = `"${prospectName}" LinkedIn`;
-                    }
-                    
-                    if (query) {
-                        console.log(`🌐 Performing Tavily web search for: ${query}`);
-                        webSearchResults = await searchWeb(query);
-                        if (webSearchResults) {
-                            console.log(`🌐 Web search completed. Results size: ${webSearchResults.length} chars.`);
+
+                    // 2. If no URL was targetable or direct scraping failed, run Tavily search queries
+                    if (!scrapeSuccess) {
+                        // Try to extract client and company from the system prompt first for robust coverage
+                        let prospectName = '';
+                        let companyName = '';
+                        
+                        if (systemMsg) {
+                            const nameMatch = systemMsg.content.match(/- Client Name:[ \t]*([^\n\r]*)/i);
+                            const compMatch = systemMsg.content.match(/- Company:[ \t]*([^\n\r]*)/i);
+                            if (nameMatch && nameMatch[1].trim() && nameMatch[1].trim() !== 'Unknown Name') {
+                                prospectName = nameMatch[1].trim();
+                            }
+                            if (compMatch && compMatch[1].trim() && compMatch[1].trim() !== 'Unknown Company') {
+                                companyName = compMatch[1].trim();
+                            }
                         }
-                        if (competitorQuery) {
-                            console.log(`🌐 Performing parallel Tavily competitor search for: ${competitorQuery}`);
-                            const compResults = await searchWeb(competitorQuery);
-                            if (compResults) {
-                                console.log(`🌐 Competitor search completed. Results size: ${compResults.length} chars.`);
-                                webSearchResults += `\n\n=== COMPETITOR WEB SEARCH ===\n${compResults}`;
+
+                        // Fallback to user message extraction if system prompt is missing
+                        if (!prospectName || !companyName) {
+                            const clientMatch = userMsg.content.match(/Client:\s*([^,\n]+)/i);
+                            const companyMatch = userMsg.content.match(/\bat\s+([^\n]+)/i);
+                            if (clientMatch) {
+                                prospectName = clientMatch[1].trim();
+                            }
+                            if (companyMatch) {
+                                let tempComp = companyMatch[1].trim().split('\n')[0].trim();
+                                tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
+                                companyName = tempComp;
+                            }
+                        }
+                        
+                        let query = '';
+                        let competitorQuery = '';
+                        if (prospectName && companyName) {
+                            query = `"${prospectName}" "${companyName}"`;
+                            competitorQuery = `competitors competing applications planning PA TM1 ERP for "${companyName}"`;
+                        } else if (companyName) {
+                            query = `"${companyName}" news OR products`;
+                            competitorQuery = `competitors competing applications planning PA TM1 ERP for "${companyName}"`;
+                        } else if (prospectName) {
+                            query = `"${prospectName}" LinkedIn`;
+                        } else {
+                            // Extract raw search query from message if extraction fails
+                            query = userMsg.content.replace(/(scan|search|lookup|google|tavily|crawl|scrape|find on the web)\s+/i, '').trim();
+                        }
+                        
+                        if (query) {
+                            console.log(`🌐 Performing Tavily web search for: ${query}`);
+                            webSearchResults = await searchWeb(query);
+                            if (webSearchResults) {
+                                console.log(`🌐 Web search completed. Results size: ${webSearchResults.length} chars.`);
+                            }
+                            if (competitorQuery) {
+                                console.log(`🌐 Performing parallel Tavily competitor search for: ${competitorQuery}`);
+                                const compResults = await searchWeb(competitorQuery);
+                                if (compResults) {
+                                    console.log(`🌐 Competitor search completed. Results size: ${compResults.length} chars.`);
+                                    webSearchResults += `\n\n=== COMPETITOR WEB SEARCH ===\n${compResults}`;
+                                }
                             }
                         }
                     }
