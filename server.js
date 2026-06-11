@@ -4435,6 +4435,44 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     console.log(`📂 Listing GDrive folder: ${folderId || 'Default Root'}`);
                     items = await gdriveService.listFolder(folderId);
                     listSucceeded = true;
+                    
+                    // Axiom Fix: Merge local history and cache to combat GDrive eventual consistency
+                    if (!resolvedCompany && (!folderId || folderId === process.env.COMPANY_FOLDER_ID || folderId === cachedCompanyFolderId)) {
+                        const companies = new Set();
+                        if (fs.existsSync(historyDir)) {
+                            const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+                            files.forEach(file => {
+                                try {
+                                    const data = JSON.parse(fs.readFileSync(path.join(historyDir, file), 'utf8'));
+                                    if (data && data.company) companies.add(data.company.trim());
+                                } catch (e) {}
+                            });
+                        }
+                        for (const comp of gdriveService.folderIdCache.keys()) {
+                            if (!comp.startsWith('prospect_')) {
+                                companies.add(comp);
+                            }
+                        }
+                        companies.forEach(company => {
+                            const exists = items.some(item => item.name.toLowerCase() === company.toLowerCase());
+                            if (!exists) {
+                                let mappedId = `local_folder_${company.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                                for (const [key, val] of gdriveService.folderIdCache.entries()) {
+                                    if (key.toLowerCase() === company.toLowerCase()) {
+                                        mappedId = val;
+                                        break;
+                                    }
+                                }
+                                items.push({
+                                    id: mappedId,
+                                    name: company,
+                                    mimeType: 'application/vnd.google-apps.folder',
+                                    isFolder: true,
+                                    size: 0
+                                });
+                            }
+                        });
+                    }
                 } catch (gdriveErr) {
                     console.warn(`⚠️ Google Drive list failed, falling back to local files: ${gdriveErr.message}`);
                 }
@@ -4544,16 +4582,45 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 }
             }
             if (resolvedCompany) {
+                if (!Array.isArray(items)) {
+                    items = [];
+                }
                 const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(resolvedCompany);
                 if (cachedCreated && cachedCreated.length > 0) {
-                    if (!Array.isArray(items)) {
-                        items = [];
-                    }
                     for (const cachedFile of cachedCreated) {
                         if (!items.some(it => it.id === cachedFile.id || it.name === cachedFile.name)) {
                             items.push(cachedFile);
                         }
                     }
+                }
+                
+                // Axiom Fix: Merge prospect folders from local history to combat GDrive eventual consistency
+                if (fs.existsSync(historyDir)) {
+                    const prospects = new Set();
+                    const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+                    files.forEach(file => {
+                        try {
+                            const data = JSON.parse(fs.readFileSync(path.join(historyDir, file), 'utf8'));
+                            if (data && data.company && data.company.toLowerCase() === resolvedCompany.toLowerCase() && data.name) {
+                                prospects.add(data.name.trim());
+                            }
+                        } catch (e) {}
+                    });
+                    
+                    prospects.forEach(prospect => {
+                        const exists = items.some(item => item.name.toLowerCase() === prospect.toLowerCase() && item.mimeType === 'application/vnd.google-apps.folder');
+                        if (!exists) {
+                            const cleanComp = resolvedCompany.replace(/[^a-zA-Z0-9]/g, '_');
+                            const cleanPros = prospect.replace(/[^a-zA-Z0-9]/g, '_');
+                            items.push({
+                                id: `local_folder_${cleanComp}_${cleanPros}`,
+                                name: prospect,
+                                mimeType: 'application/vnd.google-apps.folder',
+                                isFolder: true,
+                                size: 0
+                            });
+                        }
+                    });
                 }
             }
 
