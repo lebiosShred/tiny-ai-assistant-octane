@@ -1916,7 +1916,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         }
 
                         try {
-                            const driveFile = await handleFileUpload(fileName, contentStr, company, sessionName);
+                            const driveFile = await handleFileUpload(fileName, contentStr, company, clientNameForGDrive);
                             const receipt = generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
                                 sizeBytes: Buffer.byteLength(contentStr, 'utf8'),
                                 url: driveFile.webViewLink,
@@ -1951,7 +1951,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         const fileName = `call_log_${Date.now()}.txt`;
                         try {
                             // 1. Save call log to Google Drive (RAG context memory)
-                            const driveFile = await handleFileUpload(fileName, callText, company, sessionName);
+                            const driveFile = await handleFileUpload(fileName, callText, company, clientNameForGDrive);
                             let hubspotLogged = false;
 
                             // 2. Log call to HubSpot contact if email is resolved

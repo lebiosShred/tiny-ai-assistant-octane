@@ -1568,6 +1568,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.gDriveFolderId) {
                 activeFolderId = result.gDriveFolderId;
             }
+            activeProspectName = name;
             
             // Force reload of folder explorer tree
             gdriveFolders = [];
@@ -2032,6 +2033,10 @@ Rules:
 
         if (stagedAttachments.length > 0) {
             let companyName = metaCompany ? metaCompany.value.trim() : '';
+            let prospectName = metaName ? metaName.value.trim() : '';
+            if (!prospectName && typeof activeProspectName === 'string') {
+                prospectName = activeProspectName.trim();
+            }
             if (!companyName) {
                 // Try to extract from text input
                 const patterns = [
