@@ -4437,7 +4437,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     listSucceeded = true;
                     
                     // Axiom Fix: Merge local history and cache to combat GDrive eventual consistency
-                    const isRootList = !resolvedCompany && !parsedUrl.searchParams.get('folderId');
+                    const isRootList = !resolvedCompany && !parsedUrl.query.folderId;
                     if (isRootList) {
                         const companies = new Set();
                         if (fs.existsSync(historyDir)) {
