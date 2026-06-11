@@ -422,6 +422,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Google Drive Explorer Loader ---
     async function loadGoogleDriveFiles(preFetchedData = null) {
         if (!sourceGdriveFileSelect) return;
+        if (!activeProspectName) {
+            sourceGdriveFileSelect.innerHTML = '<option value="">-- Select a prospect folder to see files --</option>';
+            return;
+        }
         if (preFetchedData) {
             const files = preFetchedData.items ? preFetchedData.items.filter(f => !f.isFolder) : [];
             populateGdriveDropdown(files);
@@ -513,9 +517,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (metaRep) metaRep.value = '';
                 if (metaTrack) metaTrack.value = '';
                 
-                const targetFolderId = companyFolder.id;
-                const resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`)).json();
-                await loadSourcesForCompany(targetFolderId, companyFolder.name, resolvedFilesData, '');
+                if (sourceGdriveFileSelect) {
+                    sourceGdriveFileSelect.innerHTML = '<option value="">-- Select a prospect folder to see files --</option>';
+                }
+                if (sourcesList) {
+                    sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.85rem; padding: 2rem 1rem; text-align: center; border: 1px dashed #cbd5e1; border-radius: 8px; margin-top: 1rem;">Please select a prospect subfolder from the sidebar to view documents.</div>';
+                }
             } else {
                 if (!subfolderId) {
                     sourcesList.innerHTML = `<div style="color: #64748b; font-size: 0.85rem; padding: 2rem 1rem; text-align: center; border: 1px dashed #cbd5e1; border-radius: 8px; margin-top: 1rem;">No subfolder found. Please create a folder named "<b>${prospectName}</b>" inside "<b>${companyFolder.name}</b>" to add files.</div>`;

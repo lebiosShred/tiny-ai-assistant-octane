@@ -82,4 +82,23 @@ test.describe('Tiny Assistant Identity Mismatch Containment Suite', () => {
         expect(systemMsg).toContain('NSW EPA');
         expect(systemMsg).toContain('Acme Corp');
     });
+
+    test('verifies that selecting only the root company folder displays a placeholder and does not load files', async ({ page }) => {
+        const indexPage = new IndexPage(page);
+        await indexPage.goto();
+        
+        // Wait for folders to load in the sidebar
+        await page.waitForSelector('.sidebar-folder-header');
+        
+        // Click on the first company folder header
+        await page.click('.sidebar-folder-header');
+        
+        // Assert that the sourcesList (Prospect Files section) shows the placeholder warning message
+        const sourcesText = await page.locator('#sources-list').innerText();
+        expect(sourcesText).toContain('Please select a prospect subfolder from the sidebar to view documents.');
+        
+        // Assert that the GDrive dropdown shows "-- Select a prospect folder to see files --" or "No files"
+        const dropdownText = await page.locator('#source-gdrive-file').innerText();
+        expect(dropdownText).toContain('Select a prospect folder to see files');
+    });
 });
