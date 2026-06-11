@@ -81,17 +81,14 @@ test.describe('Aegis v2 -- Duplicate Prospect Alerts & Warning Badges', () => {
         // Wait for subfolder rendering
         await page.waitForSelector('.sidebar-prospect-header');
         
-        // Verify both nodes exist
+        // Verify duplicates are merged into a single node
         const headers = page.locator('.sidebar-prospect-header');
-        await expect(headers).toHaveCount(2);
-
-        // Verify duplicate warnings render next to both Sarah_Chen and Sarah Chen
-        const warningBadges = page.locator('.prospect-duplicate-warning');
-        await expect(warningBadges).toHaveCount(2);
+        await expect(headers).toHaveCount(1);
+        await expect(headers.first()).toContainText('Sarah Chen');
         
-        // Verify tooltip title exists on the warnings
-        const warningTitle = await warningBadges.first().getAttribute('title');
-        expect(warningTitle).toContain('Duplicate Warning: Multiple prospect folders exist');
+        // Verify no duplicate warnings render in the sidebar since they are merged
+        const warningBadges = page.locator('.prospect-duplicate-warning');
+        await expect(warningBadges).toHaveCount(0);
 
         // 2. Open drawer and fill details for Sarah Chen under Meridian Logistics to trigger duplicate warning
         await indexPage.newChatBtn.click();

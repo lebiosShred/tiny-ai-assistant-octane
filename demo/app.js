@@ -707,26 +707,41 @@ document.addEventListener('DOMContentLoaded', () => {
                             const matchedSessions = chatsList.filter(c => 
                                 c.company && c.company.toLowerCase().trim() === folder.name.toLowerCase().trim()
                             );
-                            matchedSessions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                            matchedSessions.sort((a, b) => new Date(b.date) - new Date(a.date));                            const prospectGroups = {};
+                            const clientNormalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
                             
-                            const prospectGroups = {};
-                            
-                            // 1. Initialize from GDrive
+                            // 1. Initialize from GDrive (deduplicating by normalized name)
                             gdriveSubfolders.forEach(subf => {
-                                prospectGroups[subf.name] = {
-                                    gdriveId: subf.id,
-                                    sessions: []
-                                };
+                                const norm = clientNormalize(subf.name);
+                                let existingKey = Object.keys(prospectGroups).find(k => clientNormalize(k) === norm);
+                                if (existingKey) {
+                                    if (!prospectGroups[existingKey].gdriveId) {
+                                        prospectGroups[existingKey].gdriveId = subf.id;
+                                    }
+                                } else {
+                                    const displayName = subf.name.replace(/_/g, ' ').trim();
+                                    prospectGroups[displayName] = {
+                                        gdriveId: subf.id,
+                                        sessions: []
+                                    };
+                                }
                             });
                             
-                            // 2. Merge History
+                            // 2. Merge History (deduplicating by normalized name)
                             matchedSessions.forEach(session => {
                                 const pName = (session.name && session.name.trim()) ? session.name.trim() : 'Unknown Prospect';
-                                let existingKey = Object.keys(prospectGroups).find(k => k.toLowerCase() === pName.toLowerCase());
+                                const norm = clientNormalize(pName);
+                                let existingKey = Object.keys(prospectGroups).find(k => clientNormalize(k) === norm);
                                 if (existingKey) {
                                     prospectGroups[existingKey].sessions.push(session);
+                                    if (existingKey.includes('_') && !pName.includes('_')) {
+                                        const groupData = prospectGroups[existingKey];
+                                        delete prospectGroups[existingKey];
+                                        prospectGroups[pName] = groupData;
+                                    }
                                 } else {
-                                    prospectGroups[pName] = {
+                                    const displayName = pName.replace(/_/g, ' ').trim();
+                                    prospectGroups[displayName] = {
                                         gdriveId: null,
                                         sessions: [session]
                                     };
@@ -735,14 +750,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             contents.innerHTML = '';
                             
-                            // Count occurrences of normalized prospect names to flag duplicates
-                            const clientNormalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+                            // Count occurrences of normalized prospect names to flag duplicates (should be 1 for each after merge)
                             const normalizedCounts = {};
                             Object.keys(prospectGroups).forEach(pName => {
                                 const norm = clientNormalize(pName);
                                 normalizedCounts[norm] = (normalizedCounts[norm] || 0) + 1;
                             });
-
+ 
                              for (const [prospectName, groupData] of Object.entries(prospectGroups)) {
                                 const sessions = groupData.sessions;
                                 const subfolderId = groupData.gdriveId;
@@ -753,7 +767,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const prospectHeader = document.createElement('div');
                                 prospectHeader.className = 'sidebar-prospect-header';
                                 
-                                const isProspectActive = (activeProspectName && activeProspectName.toLowerCase() === prospectName.toLowerCase());
+                                const isProspectActive = (activeProspectName && clientNormalize(activeProspectName) === clientNormalize(prospectName));
                                 if (isProspectActive) {
                                     prospectHeader.classList.add('active');
                                 }
