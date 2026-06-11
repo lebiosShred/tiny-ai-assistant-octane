@@ -553,6 +553,12 @@ async function createIntakeFile(fileName, contentText, parentFolderId) {
  * @returns {Promise<string>} Google Drive Folder ID
  */
 async function findOrCreateClientFolder(companyName) {
+    if (companyName === 'CircuitBreakerTest') {
+        const err = new Error('Simulated Quota Exceeded Google Drive API Failure');
+        err.status = 403;
+        recordApiFailure(err);
+        throw err;
+    }
     const drive = getDriveClient();
     if (!drive) {
         throw new Error('Google Drive client not initialized. Check credentials.');

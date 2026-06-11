@@ -3159,8 +3159,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 ];
 
                 const executeDeepSeekRecursively = async (currentMessages, depth = 0, gdriveAction = false, folderDeleted = false, deletedCompany = '', receipts = []) => {
-                    if (depth >= 5) {
-                        console.warn('⚠️ Maximum tool recursion depth (5) reached.');
+                    if (depth >= 15) {
+                        console.warn('⚠️ Maximum tool recursion depth (15) reached.');
                         const fallbackContent = 'I performed the requested actions but hit the maximum reasoning recursion limit. Please verify the state of your files.';
                         injectMetadataAndSend(res, {
                             gdriveAction: gdriveAction,
@@ -3239,8 +3239,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 const choice = data.choices && data.choices[0];
                                 const message = choice && choice.message;
                                 console.log(`🤖 DeepSeek response at depth ${depth}:`, JSON.stringify(message));
-
                                 if (message && message.tool_calls && message.tool_calls.length > 0) {
+                                    console.warn(`🤖 DeepSeek tool calls at depth ${depth}: ${JSON.stringify(message.tool_calls.map(tc => tc.function.name))}`);
                                     // Append the assistant's tool-call response to history
                                     currentMessages.push(message);
 
