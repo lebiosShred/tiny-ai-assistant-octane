@@ -27,6 +27,25 @@ function registerRecentlyDeletedFile(identifier) {
     recentlyDeletedFiles.set(identifier.toString().toLowerCase(), Date.now());
 }
 
+// Robust recursive folder listing for Google Drive to support nested prospect subfolders
+async function listFolderRecursive(folderId) {
+    let results = [];
+    try {
+        const list = await gdriveService.listFolder(folderId);
+        for (const item of list) {
+            if (item.isFolder) {
+                const subFiles = await listFolderRecursive(item.id);
+                results = results.concat(subFiles);
+            } else {
+                results.push(item);
+            }
+        }
+    } catch (err) {
+        console.warn(`⚠️ Recursive folder listing failed for ${folderId}:`, err.message);
+    }
+    return results;
+}
+
 // Centralized Pricing Catalog Loader
 let pricingCatalogString = "";
 try {
@@ -2351,7 +2370,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     if (gdriveAvailable) {
                         try {
                             const clientFolderId = await gdriveService.findOrCreateClientFolder(companyNameForGDrive);
-                            files = await gdriveService.listFolder(clientFolderId);
+                            files = await listFolderRecursive(clientFolderId);
                             gdriveAccessSucceeded = true;
                         } catch (gdriveErr) {
                             console.warn(`⚠️ Google Drive access failed in chat context, falling back to local files: ${gdriveErr.message}`);
@@ -3727,7 +3746,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 if (gdriveAvailable) {
                                                     try {
                                                         const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                        files = await gdriveService.listFolder(clientFolderId);
+                                                        files = await listFolderRecursive(clientFolderId);
                                                         
                                                         // Check for companion summary text file first (e.g. filename.pdf.txt)
                                                         const companionName = filename + '.txt';
@@ -3834,7 +3853,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 if (gdriveAvailable) {
                                                     try {
                                                         const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                        let files = await gdriveService.listFolder(clientFolderId);
+                                                        let files = await listFolderRecursive(clientFolderId);
 
                                                         // Merge recently created files from cache to combat eventual consistency lag
 

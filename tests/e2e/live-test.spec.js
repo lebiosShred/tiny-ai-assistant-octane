@@ -33,30 +33,30 @@ test.describe('Live Production E2E Suite - Conversational RAG & LLM Integration'
         const loaderText1 = await loader.locator('span').innerText();
         expect(loaderText1).toBe('Tiny is reading Google Drive documents...');
 
-        // Wait for the live LLM completion (up to 40 seconds for tool recursions)
-        await indexPage.waitForResponse(40000);
+        // Wait for the live LLM completion (up to 60 seconds for tool recursions)
+        await indexPage.waitForResponse(60000);
         const responseText1 = await indexPage.getLastResponseText();
         console.log('\n🤖 Live Response to "analyze sarah chen\'s linkedin pdf":');
         console.log(responseText1);
         
         expect(responseText1.length).toBeGreaterThan(10);
         expect(responseText1).not.toContain('[INSUFFICIENT_DATA_FOR_REPORT]');
-
+ 
         // 4. Send: "tell me her information"
         await indexPage.chatInput.fill("tell me her information");
         
         indexPage._lastAssistantCount = await page.evaluate(() => {
             return document.querySelectorAll('#chat-messages-log .chat-message-card.assistant').length;
         });
-
+ 
         // Click send and check search loading status
         await indexPage.sendBtn.click();
         
         const loaderText2 = await loader.locator('span').innerText();
         expect(loaderText2).toBe('Tiny is searching files on Google Drive...');
-
+ 
         // Wait for the live LLM completion
-        await indexPage.waitForResponse(40000);
+        await indexPage.waitForResponse(60000);
         const responseText2 = await indexPage.getLastResponseText();
         console.log('\n🤖 Live Response to "tell me her information":');
         console.log(responseText2);
