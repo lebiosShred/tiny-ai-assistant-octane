@@ -156,10 +156,10 @@
                         </div>
                     </div>
 
-                    <!-- STEP 2: Calendar Selection -->
-                    <div id="booking-step-calendar" class="booking-step">
+                    <!-- STEP 2: Calendar Selection (HubSpot Embed) -->
+                    <div id="booking-step-calendar" class="booking-step" style="display: none;">
                         <div class="hero__calendar-header hero__calendar-header--with-back">
-                            <button type="button" id="btn-back-step" class="btn-back" title="Go back" aria-label="Go back" style="display: none;">←</button>
+                            <button type="button" id="btn-back-step" class="btn-back" title="Go back" aria-label="Go back">←</button>
                             <div class="header-details">
                                 <div class="header-details__title">Requirements Meeting</div>
                                 <div class="header-details__subtitle" id="selected-reason-display">Requirements Meeting | 30 mins</div>
@@ -171,38 +171,8 @@
                                 <div class="selected-meeting-desc" id="selected-meeting-desc">30-minute introductory call to discuss your business challenges, data architecture, and potential alignment with Octane.</div>
                             </div>
 
-                            <div class="scheduler-container">
-                                <div class="calendar-mock-iframe">
-                                    <div class="calendar-mock-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                        <button type="button" id="btn-prev-month" class="btn-month-nav" title="Previous Month" style="background: none; border: none; color: inherit; cursor: pointer; font-size: 1rem; opacity: 0.6; transition: opacity 0.2s;">◀</button>
-                                        <div class="calendar-mock-header" style="font-size: 0.95rem; font-weight: 700; color: var(--text-white); margin-bottom: 0;">
-                                            <span id="calendar-month-display">May 2026</span>
-                                        </div>
-                                        <button type="button" id="btn-next-month" class="btn-month-nav" title="Next Month" style="background: none; border: none; color: inherit; cursor: pointer; font-size: 1rem; opacity: 0.6; transition: opacity 0.2s;">▶</button>
-                                    </div>
-                                    <div class="calendar-weekdays" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase;">
-                                        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
-                                    </div>
-                                    <div class="calendar-mock-grid" id="calendar-days-grid">
-                                        <!-- Days are rendered dynamically by JS -->
-                                    </div>
-                                </div>
-
-                                <div class="time-slots-container">
-                                    <div class="time-slots-header" id="time-slots-header">Select a time</div>
-                                    <div class="time-slots-grid" id="time-slots-grid">
-                                        <!-- Time slots are rendered dynamically by JS -->
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="booking-confirmation-details" id="booking-confirmation-details" style="display: none;">
-                                <div class="confirmation-summary-text">
-                                    You selected <strong id="summary-date-time">May 26 @ 10:30 AM</strong>.
-                                </div>
-                                <button type="button" id="btn-confirm-booking" class="booking-btn booking-btn--primary">
-                                    Book a quick call <span>→</span>
-                                </button>
+                            <div class="scheduler-container" id="hubspot-calendar-wrapper" style="min-height: 650px; position: relative; border-radius: 8px; overflow: hidden; margin-top: 1rem;">
+                                <!-- HubSpot Script will be injected dynamically here after step 2 -->
                             </div>
                         </div>
                     </div>
@@ -220,21 +190,21 @@
                             <form id="details-form">
                                 <div class="form-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
                                     <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-name" class="booking-label">your name *</label>
-                                        <input type="text" id="booking-name" class="booking-input" required placeholder="sarah chen">
+                                        <label for="booking-firstname" class="booking-label">first name *</label>
+                                        <input type="text" id="booking-firstname" class="booking-input" required placeholder="sarah">
                                     </div>
                                     <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-email" class="booking-label">company email *</label>
-                                        <input type="email" id="booking-email" class="booking-input" required placeholder="sarah.chen@company.com">
+                                        <label for="booking-lastname" class="booking-label">last name *</label>
+                                        <input type="text" id="booking-lastname" class="booking-input" required placeholder="chen">
                                     </div>
                                 </div>
                                 <div class="form-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
                                     <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-company" class="booking-label">company name *</label>
-                                        <input type="text" id="booking-company" class="booking-input" required placeholder="acme corp">
+                                        <label for="booking-email" class="booking-label">company email *</label>
+                                        <input type="email" id="booking-email" class="booking-input" required placeholder="sarah.chen@company.com">
                                     </div>
                                     <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-position" class="booking-label">your position *</label>
+                                        <label for="booking-position" class="booking-label">your role *</label>
                                         <input type="text" id="booking-position" class="booking-input" required placeholder="head of fp&a">
                                     </div>
                                 </div>
@@ -249,13 +219,9 @@
                                         </div>
                                     </div>
                                     <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-url" class="booking-label">company website url *</label>
-                                        <input type="url" id="booking-url" class="booking-input" required placeholder="https://company.com">
+                                        <label for="booking-phone" class="booking-label">phone number *</label>
+                                        <input type="tel" id="booking-phone" class="booking-input" required placeholder="e.g. +61 2 9876 5432">
                                     </div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="booking-phone" class="booking-label">phone number *</label>
-                                    <input type="tel" id="booking-phone" class="booking-input" required placeholder="e.g. +61 2 9876 5432">
                                 </div>
                                 <div class="form-group">
                                     <label for="booking-discuss" class="booking-label">What would you like to discuss? *</label>
@@ -376,12 +342,11 @@
         const btnBackDetails = document.getElementById('btn-back-details');
         const detailsReasonDisplay = document.getElementById('details-reason-display');
         const detailsForm = document.getElementById('details-form');
-        const bookingName = document.getElementById('booking-name');
+        const bookingFirstName = document.getElementById('booking-firstname');
+        const bookingLastName = document.getElementById('booking-lastname');
         const bookingEmail = document.getElementById('booking-email');
-        const bookingCompany = document.getElementById('booking-company');
         const bookingPosition = document.getElementById('booking-position');
         const bookingTrack = document.getElementById('booking-track');
-        const bookingUrlInput = document.getElementById('booking-url');
         const bookingPhone = document.getElementById('booking-phone');
         const bookingDiscuss = document.getElementById('booking-discuss');
         
@@ -405,16 +370,7 @@
         const selectedMeetingTitle = document.getElementById('selected-meeting-title');
         const selectedMeetingDesc = document.getElementById('selected-meeting-desc');
 
-        const calendarGrid = document.getElementById('calendar-days-grid');
-        const timeSlotsHeader = document.getElementById('time-slots-header');
-        const timeSlotsGrid = document.getElementById('time-slots-grid');
-        const confirmationDetails = document.getElementById('booking-confirmation-details');
-        const summaryDateTime = document.getElementById('summary-date-time');
-        const btnConfirm = document.getElementById('btn-confirm-booking');
 
-        // State Variables
-        let selectedDay = '26'; // Default
-        let selectedTime = '';
 
         // Reasons details mapping
         const reasonDetails = {
@@ -514,165 +470,33 @@
         otherReasonText.addEventListener('input', validateSelection);
 
         btnNext.addEventListener('click', () => {
-            const val = selectReason.value;
-            let displayReason = val;
-            let title = 'Custom Consultation';
-            let desc = 'Please choose a convenient date and time on the calendar below.';
-
-            if (val === 'other') {
-                displayReason = otherReasonText.value.trim();
-                title = 'Custom Consultation';
-                desc = `Special request details: "${displayReason}"`;
-            } else if (reasonDetails[val]) {
-                title = reasonDetails[val].title;
-                desc = reasonDetails[val].desc;
+            const val = selectReason.value || 'Requirements Meeting | 30 mins';
+            let displayReason = val === 'other' ? otherReasonText.value.trim() : val;
+            
+            // Pre-fill track selection based on booking reason keyword
+            const reasonLower = displayReason.toLowerCase();
+            if (reasonLower.includes('ai') || reasonLower.includes('artificial') || reasonLower.includes('watsonx')) {
+                bookingTrack.value = 'AI';
+            } else {
+                bookingTrack.value = 'planning & analytics (tm1)';
             }
+            bookingTrack.dispatchEvent(new Event('change'));
+            
+            detailsReasonDisplay.textContent = `Reason: ${displayReason}`;
 
-            // Update details
-            selectedReasonDisplay.textContent = `Reason: ${displayReason} (Host: Sales Representative)`;
-            selectedMeetingTitle.textContent = title;
-            selectedMeetingDesc.textContent = desc;
-
-            // Transition views
+            // Transition views directly to Details Form (inverting the flow)
             stepReason.style.display = 'none';
-            stepCalendar.style.display = 'block';
+            stepDetails.style.display = 'block';
         });
 
         btnBack.addEventListener('click', () => {
             stepCalendar.style.display = 'none';
-            stepReason.style.display = 'block';
+            stepDetails.style.display = 'block';
         });
-
-        // Pre-configured times for demonstration
-        const timesData = {
-            '25': ['9:30 AM', '11:00 AM', '2:00 PM', '4:30 PM'],
-            '26': ['9:00 AM', '10:30 AM', '1:00 PM', '3:30 PM'],
-            '27': ['10:00 AM', '11:30 AM', '2:30 PM', '5:00 PM'],
-            '28': ['9:00 AM', '11:00 AM', '1:30 PM', '4:00 PM'],
-            '29': ['8:30 AM', '10:00 AM', '12:30 PM', '3:00 PM'],
-            '01': ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM'],
-            '02': ['10:00 AM', '12:00 PM', '2:00 PM', '4:00 PM'],
-            '03': ['9:30 AM', '11:30 AM', '1:30 PM', '3:30 PM'],
-            '04': ['10:30 AM', '1:30 PM', '2:30 PM', '4:30 PM'],
-            '05': ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM']
-        };
-
-        function renderTimeSlots(day, isKevin = false) {
-            const monthText = isKevin ? 'June' : 'May';
-            timeSlotsHeader.textContent = `Times for ${monthText} ${day}`;
-            timeSlotsGrid.innerHTML = '';
-            selectedTime = '';
-            confirmationDetails.style.display = 'none';
-
-            const times = timesData[day] || timesData['26'];
-            times.forEach(time => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'time-slot-btn';
-                btn.textContent = time;
-                btn.setAttribute('data-time', time);
-                
-                btn.addEventListener('click', () => {
-                    // Reset others
-                    const activeSlots = timeSlotsGrid.querySelectorAll('.time-slot-btn--active');
-                    activeSlots.forEach(s => s.classList.remove('time-slot-btn--active'));
-                    
-                    // Set active
-                    btn.classList.add('time-slot-btn--active');
-                    selectedTime = time;
-                    
-                    // Show confirmation
-                    summaryDateTime.textContent = `${monthText} ${day} @ ${time}`;
-                    confirmationDetails.style.display = 'block';
-                });
-                
-                timeSlotsGrid.appendChild(btn);
-            });
-        }
 
         function updateCalendarDatesForHost(host) {
-            const isKevin = (host === 'Kevin');
-            calendarGrid.innerHTML = '';
-            
-            let availableDays = [];
-            let monthIndex = 4; // May (0-indexed)
-            let monthName = 'May 2026';
-            if (isKevin) {
-                // Kevin gets next week (1-week buffer) in June
-                availableDays = ['01', '02', '03', '04', '05'];
-                monthIndex = 5; // June
-                monthName = 'June 2026';
-            } else {
-                // Others get this week in May
-                availableDays = ['25', '26', '27', '28', '29'];
-                monthIndex = 4; // May
-                monthName = 'May 2026';
-            }
-            
-            // Update calendar header month
-            const monthHeader = document.getElementById('calendar-month-display');
-            if (monthHeader) {
-                monthHeader.textContent = monthName;
-            }
-            
-            // May 2026 starts on Friday (offset 5)
-            // June 2026 starts on Monday (offset 1)
-            const startDayOffset = (monthIndex === 4) ? 5 : 1;
-            const daysInMonth = (monthIndex === 4) ? 31 : 30;
-            
-            // Render empty cells for start offset
-            for (let i = 0; i < startDayOffset; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'calendar-day--empty';
-                calendarGrid.appendChild(cell);
-            }
-            
-            // Render all days in the month
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayStr = day < 10 ? `0${day}` : `${day}`;
-                const isAvailable = availableDays.includes(dayStr);
-                
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                
-                if (isAvailable) {
-                    btn.className = 'calendar-day';
-                    // May: default to 26, June: default to 02
-                    const defaultSelectedDay = availableDays[1];
-                    if (dayStr === defaultSelectedDay) {
-                        btn.classList.add('calendar-day--active');
-                        selectedDay = dayStr;
-                    }
-                    
-                    btn.setAttribute('data-day', dayStr);
-                    btn.textContent = day;
-                } else {
-                    btn.className = 'calendar-day calendar-day--disabled';
-                    btn.textContent = day;
-                    btn.disabled = true;
-                }
-                
-                calendarGrid.appendChild(btn);
-            }
-            
-            renderTimeSlots(selectedDay, isKevin);
+            // No-op for now since calendar is dynamically loaded from HubSpot
         }
-
-        calendarGrid.addEventListener('click', (e) => {
-            const dayBtn = e.target.closest('.calendar-day');
-            if (!dayBtn) return;
-
-            // Remove active from other days
-            const activeDays = calendarGrid.querySelectorAll('.calendar-day--active');
-            activeDays.forEach(d => d.classList.remove('calendar-day--active'));
-
-            // Set active day
-            dayBtn.classList.add('calendar-day--active');
-            selectedDay = dayBtn.getAttribute('data-day');
-            
-            // Render slots
-            renderTimeSlots(selectedDay, false);
-        });
 
         // Initialize default calendar state and host display panel
         initHostDisplay();
@@ -687,53 +511,20 @@
             }
         });
 
-        // URL Auto-prepend helper listener (Row 6)
-        bookingUrlInput.addEventListener('blur', () => {
-            let val = bookingUrlInput.value.trim();
-            if (val && !/^https?:\/\//i.test(val)) {
-                bookingUrlInput.value = 'https://' + val;
-            }
-        });
-
-        btnConfirm.addEventListener('click', () => {
-            const val = selectReason.value || 'Requirements Meeting | 30 mins';
-            let displayReason = val === 'other' ? otherReasonText.value.trim() : val;
-            detailsReasonDisplay.textContent = `Reason: ${displayReason} (Host: Sales Representative)`;
-            
-            // Pre-fill track selection based on booking reason keyword
-            const reasonLower = displayReason.toLowerCase();
-            if (reasonLower.includes('ai') || reasonLower.includes('artificial') || reasonLower.includes('watsonx')) {
-                bookingTrack.value = 'AI';
-            } else {
-                bookingTrack.value = 'planning & analytics (tm1)';
-            }
-            
-            // Trigger track change logic
-            bookingTrack.dispatchEvent(new Event('change'));
-            
-            // Leave discuss field clean for user input
-            if (!bookingDiscuss.value) {
-                bookingDiscuss.value = '';
-            }
-            
-            stepCalendar.style.display = 'none';
-            stepDetails.style.display = 'block';
-        });
-
         btnBackDetails.addEventListener('click', () => {
             stepDetails.style.display = 'none';
-            stepCalendar.style.display = 'block';
+            stepReason.style.display = 'block';
         });
 
         detailsForm.addEventListener('submit', (e) => {
             e.preventDefault();
             
-            const name = bookingName.value.trim();
+            const firstName = bookingFirstName.value.trim();
+            const lastName = bookingLastName.value.trim();
+            const name = `${firstName} ${lastName}`;
             const email = bookingEmail.value.trim();
-            const company = bookingCompany.value.trim();
             const position = bookingPosition.value.trim();
             const track = bookingTrack.value;
-            const url = bookingUrlInput.value.trim();
             const phone = bookingPhone.value.trim();
             const discuss = bookingDiscuss.value.trim();
             const host = 'Round Robin';
@@ -745,9 +536,7 @@
             // Format intake summary dynamically from form inputs
             const summaryText = `Service track interest: ${track === 'AI' ? 'AI' : 'Planning & Analytics (TM1)'}
 Workflow description: ${discuss}
-Company Website: ${url}
 Position: ${position}
-Company: ${company}
 Email: ${email}
 Phone: ${phone}
 Name: ${name}
@@ -764,10 +553,10 @@ Booking Host: ${assignedRep}`;
                     stage: 'prep',
                     name: name,
                     title: position,
-                    company: company,
+                    company: '',
                     email: email,
                     phone: phone,
-                    url: url,
+                    url: '',
                     track: track === 'AI' ? 'AI' : 'Planning & Analytics (TM1)',
                     rep: assignedRep,
                     intakeAnswers: summaryText
@@ -780,12 +569,47 @@ Booking Host: ${assignedRep}`;
                 console.error("Network error saving booking dossier:", err);
             });
 
-            // Update Success page details
-            successNameDisplay.textContent = name;
-            successTimeDisplay.textContent = `Your requirements meeting with ${assignedRep} is scheduled for ${monthText} ${selectedDay} at ${selectedTime}.`;
+            // Prepare Calendar Step Title
+            const val = selectReason.value || 'Requirements Meeting | 30 mins';
+            let displayReason = val === 'other' ? otherReasonText.value.trim() : val;
+            let title = 'Custom Consultation';
+            let desc = 'Please choose a convenient date and time on the calendar below.';
+            if (val === 'other') {
+                title = 'Custom Consultation';
+                desc = `Special request details: "${displayReason}"`;
+            } else if (reasonDetails[val]) {
+                title = reasonDetails[val].title;
+                desc = reasonDetails[val].desc;
+            }
+            selectedMeetingTitle.textContent = title;
+            selectedMeetingDesc.textContent = desc;
+
+            // Load HubSpot Calendar iframe dynamically
+            const wrapper = document.getElementById('hubspot-calendar-wrapper');
+            wrapper.innerHTML = ''; // Clear previous
+            
+            // Construct query params to pre-fill HubSpot Form
+            const qs = new URLSearchParams({
+                firstName: firstName,
+                lastName: lastName,
+                email: email
+            }).toString();
+
+            const targetMeetingUrl = 'https://octanesolutions.com.au/meetings/albert-francis?uuid=fee9c796-fcee-4cc9-beaa-6dbad06b4017';
+            
+            const hsDiv = document.createElement('div');
+            hsDiv.className = 'meetings-iframe-container';
+            hsDiv.setAttribute('data-src', `${targetMeetingUrl}&embed=true&${qs}`);
+            wrapper.appendChild(hsDiv);
+            
+            const hsScript = document.createElement('script');
+            hsScript.src = 'https://static.hsappstatic.net/MeetingsEmbed/ex/MeetingsEmbedCode.js';
+            hsScript.type = 'text/javascript';
+            hsScript.async = true;
+            document.body.appendChild(hsScript);
             
             stepDetails.style.display = 'none';
-            stepSuccess.style.display = 'block';
+            stepCalendar.style.display = 'block';
         });
 
         btnBookAnother.addEventListener('click', () => {
