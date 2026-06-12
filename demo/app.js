@@ -1734,7 +1734,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- LLM Interaction Helpers ---
-    async function callTinyAPI(promptText, apiPayloadOverride = null) {
+    async function callTinyAPI(promptText, apiPayloadOverride = null, skipLocalPush = false) {
         // Parse metadata on first prompt if session is not yet initialized
         if (!currentChatId) {
             // Bypass metadata parser if the prompt is a file/folder creation command
@@ -1849,8 +1849,10 @@ Rules:
         messages.push({ role: 'user', content: apiPayloadOverride || promptText });
 
         // Update local history and render immediately to reduce visual lag
-        chatHistory.push({ role: 'user', content: promptText, timestamp: new Date().toISOString() });
-        renderChatHistory();
+        if (!skipLocalPush) {
+            chatHistory.push({ role: 'user', content: promptText, timestamp: new Date().toISOString() });
+            renderChatHistory();
+        }
 
         let loadingText = "Tiny is thinking...";
         const lowerPrompt = promptText.toLowerCase();
@@ -2110,6 +2112,12 @@ Rules:
         chatUserInput.value = '';
 
         if (stagedAttachments.length > 0) {
+            // Push user query first to render it at correct chronological starting point
+            if (queryText.trim()) {
+                chatHistory.push({ role: 'user', content: queryText, timestamp: new Date().toISOString() });
+                renderChatHistory();
+            }
+
             let companyName = metaCompany ? metaCompany.value.trim() : '';
             let prospectName = metaName ? metaName.value.trim() : '';
             if (!prospectName && typeof activeProspectName === 'string') {
@@ -2261,14 +2269,18 @@ Rules:
                 transitDistance: transitDistance,
                 messages: chatHistory
             };
-            await fetch('/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(savePayload) });
-            await Promise.all([loadGoogleDriveFiles(), loadProspectsTree()]);
-            if (uploadedFileNames.length > 0 && totalFiles > 1) {
-                showToast(`✔️ All ${uploadedFileNames.length} files uploaded and indexed.`);
+            try {
+                await fetch('/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(savePayload) });
+                await Promise.all([loadGoogleDriveFiles(), loadProspectsTree()]);
+                if (uploadedFileNames.length > 0 && totalFiles > 1) {
+                    showToast(`✔️ All ${uploadedFileNames.length} files uploaded and indexed.`);
+                }
+            } catch (postUploadErr) {
+                console.error('Failed to update session or refresh files/tree:', postUploadErr);
             }
 
             if (queryText.trim()) {
-                callTinyAPI(queryText, combinedQuery);
+                callTinyAPI(queryText, combinedQuery, true);
             }
         } else {
             callTinyAPI(queryText);
