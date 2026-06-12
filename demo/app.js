@@ -158,7 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Toggle initial loading indicator for real users before data loads
-    const isTestRunner = navigator.webdriver || typeof window.__playwright_active !== 'undefined';
+    const isTestRunner = (navigator.webdriver || typeof window.__playwright_active !== 'undefined') && 
+                         (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.search.includes('demo=true'));
     const loadingIndicator = document.getElementById('initial-loading-indicator');
     const emptyStateContent = document.getElementById('empty-state-content');
     if (!isTestRunner) {
@@ -3076,7 +3077,9 @@ Identifier: ${receipt.targetId}
     function showConfirmModal({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'primary', forceShow = false }) {
         return new Promise((resolve) => {
             // E2E/Playwright test bypass
-            if ((navigator.webdriver || window.__playwright_active) && !forceShow) {
+            const isTestRunnerDynamic = (navigator.webdriver || window.__playwright_active) && 
+                                        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.search.includes('demo=true'));
+            if (isTestRunnerDynamic && !forceShow) {
                 resolve(true);
                 return;
             }
