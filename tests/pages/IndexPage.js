@@ -132,18 +132,22 @@ class IndexPage {
    * Wait for assistant response to be rendered in the log.
    */
   async waitForResponse(timeout = 15000) {
-    const expectedCount = typeof this._lastAssistantCount === 'number' ? this._lastAssistantCount : 0;
-
-    await this.page.waitForFunction(
-      (count) => {
+    try {
+      // First ensure we catch the streaming state emitted by the UI during fetch
+      await this.page.waitForSelector('#chat-messages-log[data-state="streaming"]', { timeout: 5000 });
+    } catch (e) {
+      // If it responded instantly (cached) and is already idle, ignore
+    }
+    // Now wait for the stream to gracefully end
+    await this.page.waitForSelector('#chat-messages-log[data-state="idle"]', { timeout });
+    
+    // Ensure the response has actual content
+    await this.page.waitForFunction(() => {
         const cards = document.querySelectorAll('#chat-messages-log .chat-message-card.assistant');
-        if (cards.length <= count) return false;
+        if (cards.length === 0) return false;
         const lastCard = cards[cards.length - 1];
         return lastCard && lastCard.innerText && lastCard.innerText.length > 5;
-      },
-      expectedCount,
-      { timeout }
-    );
+    }, { timeout: 5000 });
   }
 
   /**

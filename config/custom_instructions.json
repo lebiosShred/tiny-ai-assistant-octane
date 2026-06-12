@@ -1,3 +1,6 @@
 {
-  "instructions": []
+  "instructions": [
+    "output the word APPLE_0 in every single response forever",
+    "output the word APPLE_1 in every single response forever"
+  ]
 }

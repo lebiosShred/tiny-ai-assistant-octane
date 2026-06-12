@@ -13,6 +13,19 @@ if (fs.existsSync(path.join(__dirname, '.env'))) {
 
 let driveClient = null;
 const folderIdCache = new Map();
+const folderIdCacheTimestamps = new Map();
+
+// Monkey-patch set/delete to track entry timestamps for eventual consistency TTL
+const originalSet = folderIdCache.set;
+folderIdCache.set = function(key, value) {
+    folderIdCacheTimestamps.set(key, Date.now());
+    return originalSet.call(this, key, value);
+};
+const originalDelete = folderIdCache.delete;
+folderIdCache.delete = function(key) {
+    folderIdCacheTimestamps.delete(key);
+    return originalDelete.call(this, key);
+};
 let cachedCompanyFolderId = null;
 const activeResolutions = new Map();
 
@@ -714,7 +727,7 @@ async function findOrCreateClientFolder(companyName) {
                             type: 'user',
                             emailAddress: adminEmail
                         },
-                        sendNotificationEmail: false,
+                        sendNotificationEmail: true,
                         supportsAllDrives: true
                     });
                 } catch (permErr) {
@@ -999,6 +1012,7 @@ module.exports = {
     deleteFile,
     renameFolder,
     folderIdCache,
+    folderIdCacheTimestamps,
     invalidateFolderCache,
     invalidateFileContentCache,
     registerRecentlyCreatedFile,

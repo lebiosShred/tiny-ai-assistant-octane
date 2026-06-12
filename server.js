@@ -76,73 +76,158 @@ if (!fs.existsSync(historyDir)) {
     fs.mkdirSync(historyDir, { recursive: true });
 }
 
-const Database = require('better-sqlite3');
-const dbPath = path.join(PUBLIC_DIR, 'knowledge', 'aegis_state.db');
-const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
-db.exec(`
-  CREATE TABLE IF NOT EXISTS sessions (
-    id TEXT PRIMARY KEY,
-    data TEXT,
-    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+const { db } = require('./src/db/index.js');
+const { sessions } = require('./src/db/schema.js');
 
-// 🚨 Transparent FS Proxy for Legacy RAG Compatibility
-const originalReadFileSync = fs.readFileSync;
-fs.readFileSync = function(filePath, encoding) {
-    if (typeof filePath === 'string' && filePath.endsWith('.json') && filePath.includes(historyDir)) {
-        const id = path.basename(filePath, '.json');
-        const stmt = db.prepare('SELECT data FROM sessions WHERE id = ?');
-        const row = stmt.get(id);
-        if (row) return row.data;
+// 🚨 Transparent FS Proxy for Legacy RAG Compatibility powered by Neon Postgres
+let pgCache = new Map();
+let redisSubClient = null;
+
+async function syncPgCache() {
+    try {
+        const items = await db.select().from(sessions);
+        const currentIds = new Set();
+        for (const row of items) {
+            pgCache.set(row.id, row.data);
+            currentIds.add(row.id);
+        }
+        // Evict keys from pgCache that are no longer in DB (synced deletions)
+        for (const cachedId of pgCache.keys()) {
+            if (!currentIds.has(cachedId)) {
+                pgCache.delete(cachedId);
+            }
+        }
+    } catch(e) {
+        console.error("⚠️ Background PG sync failed:", e.message);
     }
-    return originalReadFileSync(filePath, encoding);
-};
+}
 
-const originalReaddirSync = fs.readdirSync;
-fs.readdirSync = function(dirPath, options) {
-    if (dirPath === historyDir) {
-        let files = [];
-        try { files = originalReaddirSync(dirPath, options).filter(f => !f.endsWith('.json')); } catch(e) {}
+// Initial sync and setup Pub/Sub
+syncPgCache().then(() => {
+    setupRedisPubSub();
+});
+
+// Fallback background refresh (longer interval to reduce DB strain since Pub/Sub handles real-time sync)
+setInterval(syncPgCache, 60000);
+
+function setupRedisPubSub() {
+    if (redisModule.isRedisActive()) {
         try {
-            const stmt = db.prepare('SELECT id FROM sessions');
-            const dbFiles = stmt.all().map(row => row.id + '.json');
-            files = [...files, ...dbFiles];
-        } catch(e) {}
-        return files;
+            const Redis = require('ioredis');
+            const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+            redisSubClient = new Redis(REDIS_URL, {
+                connectTimeout: 2000,
+                maxRetriesPerRequest: 1
+            });
+            
+            redisSubClient.subscribe('session-updates', (err) => {
+                if (err) {
+                    console.error('⚠️ Failed to subscribe to Redis session-updates channel:', err.message);
+                } else {
+                    console.log('📡 Subscribed to Redis session-updates channel.');
+                }
+            });
+            
+            redisSubClient.on('message', (channel, message) => {
+                if (channel === 'session-updates') {
+                    try {
+                        const update = JSON.parse(message);
+                        if (update.action === 'save') {
+                            pgCache.set(update.id, update.data);
+                            console.log(`📡 Pub/Sub: Updated session ${update.id} in local cache.`);
+                        } else if (update.action === 'delete') {
+                            pgCache.delete(update.id);
+                            console.log(`📡 Pub/Sub: Deleted session ${update.id} from local cache.`);
+                        }
+                    } catch (e) {
+                        console.error('⚠️ Failed to parse Pub/Sub message:', e.message);
+                    }
+                }
+            });
+            
+            redisSubClient.on('error', (err) => {
+                console.warn(`⚠️ Redis Sub client connection issue: ${err.message}`);
+            });
+        } catch (e) {
+            console.warn(`⚠️ Failed to setup Redis Pub/Sub client: ${e.message}`);
+        }
     }
-    return originalReaddirSync(dirPath, options);
-};
+}
 
-const originalExistsSync = fs.existsSync;
-fs.existsSync = function(filePath) {
-    if (typeof filePath === 'string' && filePath === historyDir) return true; // Force true for historyDir
-    if (typeof filePath === 'string' && filePath.endsWith('.json') && filePath.includes(historyDir)) {
-        const id = path.basename(filePath, '.json');
-        const stmt = db.prepare('SELECT 1 FROM sessions WHERE id = ?');
-        if (stmt.get()) return true;
+function existsHistorySession(id) {
+    return pgCache.has(id);
+}
+
+function readHistorySessionSync(id) {
+    if (pgCache.has(id)) {
+        const data = pgCache.get(id);
+        return typeof data === 'string' ? data : JSON.stringify(data);
     }
-    return originalExistsSync(filePath);
-};
+    return null;
+}
+
+async function deleteHistorySession(id) {
+    pgCache.delete(id);
+    const { eq } = require('drizzle-orm');
+    try {
+        await db.delete(sessions).where(eq(sessions.id, id));
+    } catch (err) {
+        console.error('Error deleting session from DB:', err);
+    }
+    if (redisModule.isRedisActive()) {
+        try {
+            const pub = redisModule.getRedisClient();
+            if (pub) {
+                await pub.publish('session-updates', JSON.stringify({ action: 'delete', id }));
+            }
+        } catch (e) {}
+    }
+    const filePath = path.join(historyDir, `${id}.json`);
+    if (fs.existsSync(filePath)) {
+        try {
+            fs.unlinkSync(filePath);
+        } catch (e) {}
+    }
+}
+
 
 function getAllHistoryItems() {
     try {
-        const stmt = db.prepare('SELECT data FROM sessions');
-        return stmt.all().map(row => JSON.parse(row.data));
+        return Array.from(pgCache.values()).map(data => typeof data === 'string' ? JSON.parse(data) : data);
     } catch (e) {
         return [];
     }
 }
 
-function saveHistoryItem(item) {
+async function saveHistoryItem(item) {
     if (!fs.existsSync(historyDir)) {
         fs.mkdirSync(historyDir, { recursive: true });
     }
     try {
-        const stmt = db.prepare('INSERT OR REPLACE INTO sessions (id, data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP)');
-        stmt.run(item.id, JSON.stringify(item));
-        console.log(`✅ Saved history item to SQLite: ${item.id}`);
+        await db.insert(sessions)
+            .values({
+                id: item.id,
+                data: item,
+                gdrive_folder_id: item.gDriveFolderId || null
+            })
+            .onConflictDoUpdate({
+                target: sessions.id,
+                set: {
+                    data: item,
+                    gdrive_folder_id: item.gDriveFolderId || null,
+                    last_updated: new Date()
+                }
+            });
+            
+        // Optimistic UI cache update for local instance
+        pgCache.set(item.id, item);
+        if (redisModule.isRedisActive()) {
+            const pub = redisModule.getRedisClient();
+            if (pub) {
+                await pub.publish('session-updates', JSON.stringify({ action: 'save', id: item.id, data: item }));
+            }
+        }
+        console.log(`✅ Saved history item to Neon Postgres and broadcasted: ${item.id}`);
     } catch (err) {
         console.error(`❌ Failed to save history item ${item.id}:`, err);
     }
@@ -190,7 +275,7 @@ async function loadKnowledgeBase(userQuery = '', bypassCache = false) {
             const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
             // Find Knowledge base folder
             const kbSearch = await drive.files.list({
-                q: `name = 'Knowledge base' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                q: `(name = 'Knowledge base' or name = 'Knowledge Base') and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
                 fields: 'files(id, name)',
                 pageSize: 1
             });
@@ -608,6 +693,104 @@ function makeHubSpotRequest(method, endpoint, payload = null) {
     });
 }
 
+class CustomCircuitBreaker {
+    constructor(action, options = {}) {
+        this.action = action;
+        this.failureThreshold = options.failureThreshold || 3;
+        this.cooldownPeriod = options.cooldownPeriod || 30000; // 30s cooldown
+        this.state = 'CLOSED'; // CLOSED, OPEN, HALF-OPEN
+        this.failureCount = 0;
+        this.nextAttemptTime = 0;
+    }
+    async fire(...args) {
+        if (this.state === 'OPEN') {
+            if (Date.now() > this.nextAttemptTime) {
+                this.state = 'HALF-OPEN';
+                console.warn(`🔌 Mistral Circuit Breaker: HALF-OPEN. Testing connection...`);
+            } else {
+                throw new Error('Circuit breaker is OPEN. Mistral API is temporarily disabled.');
+            }
+        }
+        try {
+            const result = await this.action(...args);
+            this.state = 'CLOSED';
+            this.failureCount = 0;
+            return result;
+        } catch (err) {
+            this.failureCount++;
+            console.warn(`⚠️ Mistral Circuit Breaker: Failure count: ${this.failureCount}/${this.failureThreshold}`);
+            if (this.failureCount >= this.failureThreshold || this.state === 'HALF-OPEN') {
+                this.state = 'OPEN';
+                this.nextAttemptTime = Date.now() + this.cooldownPeriod;
+                console.error(`🚨 Mistral Circuit Breaker: Tripped OPEN. Cooldown active for ${this.cooldownPeriod}ms.`);
+            }
+            throw err;
+        }
+    }
+}
+
+function sleepWithJitter(attempt, baseDelay = 1000, maxDelay = 5000) {
+    const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+    const jitter = delay * 0.1 * (Math.random() - 0.5);
+    return new Promise(resolve => setTimeout(resolve, delay + jitter));
+}
+
+const mistralCircuitBreaker = new CustomCircuitBreaker(async (payload, mistralKeys, errors) => {
+    for (let i = 0; i < mistralKeys.length; i++) {
+        const apiKey = mistralKeys[i];
+        console.log(`🤖 Attempting Mistral completion using key index ${i}...`);
+        
+        if (i > 0) {
+            await sleepWithJitter(i);
+        }
+        
+        try {
+            const result = await new Promise((resolve, reject) => {
+                const options = {
+                    hostname: 'api.mistral.ai',
+                    port: 443,
+                    path: '/v1/chat/completions',
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(payload)
+                    }
+                };
+                const req = https.request(options, (res) => {
+                    let data = '';
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => {
+                        if (res.statusCode >= 200 && res.statusCode < 300) {
+                            try {
+                                const parsed = JSON.parse(data);
+                                resolve(parsed.choices[0].message.content);
+                            } catch (e) {
+                                reject(new Error(`Failed to parse Mistral API JSON: ${e.message}`));
+                            }
+                        } else {
+                            reject(new Error(`Mistral API error status ${res.statusCode}: ${data}`));
+                        }
+                    });
+                });
+                req.on('error', reject);
+                req.setTimeout(15000, () => {
+                    console.warn(`⚠️ Mistral API request timed out for key index ${i}.`);
+                    req.destroy();
+                    reject(new Error("Mistral API request timed out (15s)."));
+                });
+                req.write(payload);
+                req.end();
+            });
+            return result; // Success!
+        } catch (err) {
+            console.warn(`⚠️ Mistral API attempt ${i} failed: ${err.message}`);
+            errors.push(`Mistral index ${i}: ${err.message}`);
+        }
+    }
+    throw new Error(`All Mistral keys failed or timed out.`);
+}, { failureThreshold: 3, cooldownPeriod: 30000 });
+
 async function generateAICompletion(systemPrompt, userPrompt) {
     const knowledgeBase = await loadKnowledgeBase(userPrompt);
     const safetyRules = `
@@ -737,52 +920,13 @@ async function generateAICompletion(systemPrompt, userPrompt) {
         temperature: 0.2
     });
 
-    // Attempt Mistral keys sequentially
-    for (let i = 0; i < mistralKeys.length; i++) {
-        const apiKey = mistralKeys[i];
-        console.log(`🤖 Attempting Mistral completion using key index ${i}...`);
+    if (mistralKeys.length > 0) {
         try {
-            const result = await new Promise((resolve, reject) => {
-                const options = {
-                    hostname: 'api.mistral.ai',
-                    port: 443,
-                    path: '/v1/chat/completions',
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json',
-                        'Content-Length': Buffer.byteLength(payload)
-                    }
-                };
-                const req = https.request(options, (res) => {
-                    let data = '';
-                    res.on('data', chunk => data += chunk);
-                    res.on('end', () => {
-                        if (res.statusCode >= 200 && res.statusCode < 300) {
-                            try {
-                                const parsed = JSON.parse(data);
-                                resolve(parsed.choices[0].message.content);
-                            } catch (e) {
-                                reject(new Error(`Failed to parse Mistral API JSON: ${e.message}`));
-                            }
-                        } else {
-                            reject(new Error(`Mistral API error status ${res.statusCode}: ${data}`));
-                        }
-                    });
-                });
-                req.on('error', reject);
-                req.setTimeout(15000, () => {
-                    console.warn(`⚠️ Mistral API request timed out for key index ${i}.`);
-                    req.destroy();
-                    reject(new Error("Mistral API request timed out (15s)."));
-                });
-                req.write(payload);
-                req.end();
-            });
-            return result; // Success!
-        } catch (err) {
-            console.warn(`⚠️ Mistral API attempt ${i} failed: ${err.message}`);
-            errors.push(`Mistral index ${i}: ${err.message}`);
+            const result = await mistralCircuitBreaker.fire(payload, mistralKeys, errors);
+            return result;
+        } catch (mistralErr) {
+            console.warn(`⚠️ Mistral execution failed or circuit was open: ${mistralErr.message}`);
+            errors.push(`Mistral Service: ${mistralErr.message}`);
         }
     }
 
@@ -1931,30 +2075,30 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     const showRememberMatch = trimmedMsg.match(showRememberRegex);
                     const forgetMatch = trimmedMsg.match(forgetRegex);
 
+                    const instructionSessionId = 'memory_' + (companyNameForGDrive || 'unknown_company').toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + (clientNameForGDrive || 'unknown_name').toLowerCase().replace(/[^a-z0-9]/g, '_');
+
                     if (rememberMatch) {
                         const instruction = rememberMatch[1].trim();
                         try {
-                            const customInstructionsPath = path.join(__dirname, 'config', 'custom_instructions.json');
-                            let instructions = [];
-                            if (fs.existsSync(customInstructionsPath)) {
-                                const raw = fs.readFileSync(customInstructionsPath, 'utf8');
-                                const data = JSON.parse(raw);
-                                instructions = data.instructions || [];
-                            }
-                            if (!instructions.includes(instruction)) {
+                            const sessionData = pgCache.get(instructionSessionId) || { id: instructionSessionId, customInstructions: [] };
+                            if (!sessionData.customInstructions) sessionData.customInstructions = [];
+                            
+                            if (!sessionData.customInstructions.includes(instruction)) {
                                 const safeInstruction = instruction.substring(0, 200);
-                                instructions.push(safeInstruction);
-                                if (instructions.length > 5) {
-                                    instructions.shift();
+                                sessionData.customInstructions.push(safeInstruction);
+                                if (sessionData.customInstructions.length > 5) {
+                                    sessionData.customInstructions.shift();
                                 }
                             }
-                            fs.writeFileSync(customInstructionsPath, JSON.stringify({ instructions }, null, 2), 'utf8');
+                            await saveHistoryItem(sessionData);
+                            pgCache.set(instructionSessionId, sessionData);
+
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({
                                 choices: [{
                                     message: {
                                         role: 'assistant',
-                                        content: `Understood. I have updated my configurations to remember: "${instruction}". This instruction is now persistently configured in the backend.`
+                                        content: `Understood. I have updated my configurations to remember: "${instruction}". This instruction is now persistently configured for this prospect.`
                                     }
                                 }]
                             }));
@@ -1969,18 +2113,14 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 
                     if (showRememberMatch) {
                         try {
-                            const customInstructionsPath = path.join(__dirname, 'config', 'custom_instructions.json');
-                            let instructions = [];
-                            if (fs.existsSync(customInstructionsPath)) {
-                                const raw = fs.readFileSync(customInstructionsPath, 'utf8');
-                                const data = JSON.parse(raw);
-                                instructions = data.instructions || [];
-                            }
+                            const sessionData = pgCache.get(instructionSessionId) || {};
+                            const instructions = sessionData.customInstructions || [];
+                            
                             let contentStr = '';
                             if (instructions.length === 0) {
-                                contentStr = "I do not have any custom instructions configured in my backend settings.";
+                                contentStr = "I do not have any custom instructions configured for this prospect.";
                             } else {
-                                contentStr = "Here are the custom instructions currently configured in my backend:\n\n" + 
+                                contentStr = "Here are the custom instructions currently configured for this prospect:\n\n" + 
                                              instructions.map((inst, index) => `${index + 1}. ${inst}`).join('\n');
                             }
                             res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -2003,14 +2143,17 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 
                     if (forgetMatch) {
                         try {
-                            const customInstructionsPath = path.join(__dirname, 'config', 'custom_instructions.json');
-                            fs.writeFileSync(customInstructionsPath, JSON.stringify({ instructions: [] }, null, 2), 'utf8');
+                            const sessionData = pgCache.get(instructionSessionId) || { id: instructionSessionId };
+                            sessionData.customInstructions = [];
+                            await saveHistoryItem(sessionData);
+                            pgCache.set(instructionSessionId, sessionData);
+                            
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({
                                 choices: [{
                                     message: {
                                         role: 'assistant',
-                                        content: "Understood. I have cleared all custom instructions from my backend settings."
+                                        content: "Understood. I have cleared all custom instructions for this prospect."
                                     }
                                 }]
                             }));
@@ -2633,16 +2776,13 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 // Read and inject custom instructions
                 let customInstructionsStr = '';
                 try {
-                    const customInstructionsPath = path.join(__dirname, 'config', 'custom_instructions.json');
-                    if (fs.existsSync(customInstructionsPath)) {
-                        const raw = fs.readFileSync(customInstructionsPath, 'utf8');
-                        const data = JSON.parse(raw);
-                        const instructions = data.instructions || [];
-                        if (instructions.length > 0) {
-                            customInstructionsStr = `\n\n<custom_instructions>\n` + 
-                                instructions.map(inst => `- ${inst}`).join('\n') + 
-                                `\n</custom_instructions>\n`;
-                        }
+                    const instructionSessionId = 'memory_' + (companyNameForGDrive || 'unknown_company').toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + (clientNameForGDrive || 'unknown_name').toLowerCase().replace(/[^a-z0-9]/g, '_');
+                    const sessionData = pgCache.get(instructionSessionId) || {};
+                    const instructions = sessionData.customInstructions || [];
+                    if (instructions.length > 0) {
+                        customInstructionsStr = `\n\n<custom_instructions>\n` + 
+                            instructions.map(inst => `- ${inst}`).join('\n') + 
+                            `\n</custom_instructions>\n`;
                     }
                 } catch (err) {
                     console.error('⚠️ Failed to load custom instructions for system prompt:', err.message);
@@ -3426,7 +3566,13 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                      }
                                                  } else {
                                                      if (fs.existsSync(historyDir)) {
-                                                         const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
+                                                         const subdirs = fs.readdirSync(historyDir).filter(f => {
+                                                              try {
+                                                                  return fs.statSync(path.join(historyDir, f)).isDirectory();
+                                                              } catch (e) {
+                                                                  return false;
+                                                              }
+                                                          });
                                                          for (const subdir of subdirs) {
                                                              if (normalizeString(subdir) === targetNorm) {
                                                                  const localFolder = path.join(historyDir, subdir);
@@ -3443,30 +3589,26 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                  }
 
                                                  // Local session metadata deletion
-                                                 if (fs.existsSync(historyDir)) {
-                                                     const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
-                                                     for (const file of files) {
-                                                         const filePath = path.join(historyDir, file);
-                                                         try {
-                                                             const fileContent = fs.readFileSync(filePath, 'utf8');
-                                                             const data = JSON.parse(fileContent);
-                                                             if (data.company && normalizeString(data.company) === targetNorm) {
-                                                                 if (cleanProspect) {
-                                                                     if (data.name && normalizeString(data.name) === prospectNorm) {
-                                                                         fs.unlinkSync(filePath);
-                                                                         console.log(`🗑️ Deleted local history file matching prospect "${prospect_name}" at company "${company}": ${filePath}`);
-                                                                         success = true;
-                                                                     }
-                                                                 } else {
-                                                                     fs.unlinkSync(filePath);
-                                                                     console.log(`🗑️ Deleted local history file matching company "${company}": ${filePath}`);
+                                                 try {
+                                                     const sessionIds = Array.from(pgCache.keys());
+                                                     for (const id of sessionIds) {
+                                                         const data = pgCache.get(id);
+                                                         if (data && data.company && normalizeString(data.company) === targetNorm) {
+                                                             if (cleanProspect) {
+                                                                 if (data.name && normalizeString(data.name) === prospectNorm) {
+                                                                     await deleteHistorySession(id);
+                                                                     console.log(`🗑️ Deleted local history session matching prospect "${prospect_name}" at company "${company}": ${id}`);
                                                                      success = true;
                                                                  }
+                                                             } else {
+                                                                 await deleteHistorySession(id);
+                                                                 console.log(`🗑️ Deleted local history session matching company "${company}": ${id}`);
+                                                                 success = true;
                                                              }
-                                                         } catch (e) {
-                                                             console.warn(`⚠️ Error reading history file during folder deletion:`, e.message);
                                                          }
                                                      }
+                                                 } catch (e) {
+                                                     console.warn(`⚠️ Error deleting local history session during folder deletion:`, e.message);
                                                  }
 
                                                  if (success) {
@@ -3526,7 +3668,13 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                      const cleanProspect = prospect_name.replace(/[^a-zA-Z0-9]/g, '_');
                                                      const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
                                                      if (fs.existsSync(localFolder)) {
-                                                         const localFiles = fs.readdirSync(localFolder).filter(f => !fs.statSync(path.join(localFolder, f)).isDirectory());
+                                                         const localFiles = fs.readdirSync(localFolder).filter(f => {
+                                                              try {
+                                                                  return !fs.statSync(path.join(localFolder, f)).isDirectory();
+                                                              } catch (e) {
+                                                                  return false;
+                                                              }
+                                                          });
                                                          files = localFiles.map(file => ({ name: file, id: `local_${cleanCompany}_${cleanProspect}_${file}`, isFolder: false }));
                                                      }
                                                  }
@@ -3559,7 +3707,13 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                     const targetNorm = normalizeString(prospect_name);
                                                     let resolvedProspectFolder = null;
                                                     if (fs.existsSync(companyFolder)) {
-                                                        const existingDirs = fs.readdirSync(companyFolder).filter(f => fs.statSync(path.join(companyFolder, f)).isDirectory());
+                                                        const existingDirs = fs.readdirSync(companyFolder).filter(f => {
+                                                            try {
+                                                                return fs.statSync(path.join(companyFolder, f)).isDirectory();
+                                                            } catch (e) {
+                                                                return false;
+                                                            }
+                                                        });
                                                         const matchedDir = existingDirs.find(d => normalizeString(d) === targetNorm);
                                                         if (matchedDir) {
                                                             resolvedProspectFolder = path.join(companyFolder, matchedDir);
@@ -3793,23 +3947,18 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                             let { company, filename } = args;
                                             if (company && filename) {
                                                 // Dynamic name-to-company auto-resolution
-                                                if (fs.existsSync(historyDir)) {
-                                                    try {
-                                                        const historyFiles = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
-                                                        for (const hFile of historyFiles) {
-                                                            const hData = fs.readFileSync(path.join(historyDir, hFile), 'utf8');
-                                                            const hParsed = JSON.parse(hData);
-                                                            if (hParsed.name && hParsed.name.toLowerCase().trim() === company.toLowerCase().trim()) {
-                                                                if (hParsed.company) {
-                                                                    console.log(`🔄 Resolved prospect name "${company}" to company "${hParsed.company}"`);
-                                                                    company = hParsed.company;
-                                                                    break;
-                                                                }
+                                                try {
+                                                    for (const [id, hParsed] of pgCache.entries()) {
+                                                        if (hParsed && hParsed.name && hParsed.name.toLowerCase().trim() === company.toLowerCase().trim()) {
+                                                            if (hParsed.company) {
+                                                                console.log(`🔄 Resolved prospect name "${company}" to company "${hParsed.company}"`);
+                                                                company = hParsed.company;
+                                                                break;
                                                             }
                                                         }
-                                                    } catch (resolveErr) {
-                                                        console.warn('⚠️ Name-to-company resolution failed:', resolveErr.message);
                                                     }
+                                                } catch (resolveErr) {
+                                                    console.warn('⚠️ Name-to-company resolution failed:', resolveErr.message);
                                                 }
                                                 console.log(`📄 Tool Call: Reading file ${filename} for ${company}`);
                                                 const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
@@ -4631,7 +4780,105 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
             }
 
             if (!listSucceeded) {
-                throw new Error("Google Drive API list operation failed.");
+                console.log('⚠️ Google Drive client not configured or failed. Listing local files.');
+                items = [];
+                
+                let targetLocalFolder = null;
+                if (folderId && folderId.startsWith('local_path_')) {
+                    const encodedPath = folderId.substring('local_path_'.length);
+                    targetLocalFolder = path.join(historyDir, Buffer.from(encodedPath, 'hex').toString('utf8'));
+                }
+
+                if (folderId && folderId.startsWith('local_folder_')) {
+                    resolvedCompany = folderId.substring('local_folder_'.length);
+                    folderId = null;
+                }
+
+                if (folderId === process.env.COMPANY_FOLDER_ID || folderId === process.env.GDRIVE_ROOT_FOLDER_ID || folderId === 'root') {
+                    folderId = null;
+                }
+
+                if (targetLocalFolder) {
+                    if (fs.existsSync(targetLocalFolder)) {
+                        const localItems = fs.readdirSync(targetLocalFolder);
+                        items = localItems.map(item => {
+                            const itemPath = path.join(targetLocalFolder, item);
+                            const stat = fs.statSync(itemPath);
+                            const isFolder = stat.isDirectory();
+                            const relPath = path.relative(historyDir, itemPath);
+                            const hexPath = Buffer.from(relPath, 'utf8').toString('hex');
+                            return {
+                                id: isFolder ? `local_path_${hexPath}` : `local_file_${hexPath}`,
+                                name: item,
+                                mimeType: isFolder ? 'application/vnd.google-apps.folder' : (item.endsWith('.pdf') ? 'application/pdf' : 'text/plain'),
+                                isFolder: isFolder,
+                                size: stat.size,
+                                webViewLink: `file://${itemPath}`
+                            };
+                        });
+                    }
+                } else if (!resolvedCompany && !folderId) {
+                    // List all subdirectories and parse JSON files to build the unique company folder list
+                    const companies = new Set();
+                    if (fs.existsSync(historyDir)) {
+                        // 1. Get subdirectories
+                        const localDirs = fs.readdirSync(historyDir).filter(f => {
+                            try {
+                                return fs.statSync(path.join(historyDir, f)).isDirectory();
+                            } catch (e) {
+                                return false;
+                            }
+                        });
+                        localDirs.forEach(dir => companies.add(dir.replace(/_/g, ' ')));
+
+                        // 2. Scan JSON files for companies (replaced with pgCache memory scan)
+                        for (const [id, data] of pgCache.entries()) {
+                            try {
+                                if (data && data.company) {
+                                    companies.add(data.company.trim());
+                                }
+                            } catch (e) {}
+                        }
+                    }
+
+                    items = Array.from(companies).map(companyName => {
+                        const cleanDir = companyName.replace(/[^a-zA-Z0-9]/g, '_');
+                        return {
+                            id: `local_folder_${cleanDir}`,
+                            name: companyName,
+                            mimeType: 'application/vnd.google-apps.folder',
+                            isFolder: true,
+                            size: 0,
+                            webViewLink: `file://${path.join(historyDir, cleanDir)}`
+                        };
+                    });
+                } else if (resolvedCompany) {
+                    const cleanCompany = resolvedCompany.replace(/[^a-zA-Z0-9]/g, '_');
+                    const localFolder = path.join(historyDir, cleanCompany);
+                    if (fs.existsSync(localFolder)) {
+                        const localItems = fs.readdirSync(localFolder);
+                        items = [];
+                        for (const item of localItems) {
+                            try {
+                                const itemPath = path.join(localFolder, item);
+                                const stat = fs.statSync(itemPath);
+                                const isFolder = stat.isDirectory();
+                                const relPath = path.relative(historyDir, itemPath);
+                                const hexPath = Buffer.from(relPath, 'utf8').toString('hex');
+                                items.push({
+                                    id: isFolder ? `local_path_${hexPath}` : `local_file_${hexPath}`,
+                                    name: item,
+                                    mimeType: isFolder ? 'application/vnd.google-apps.folder' : (item.endsWith('.pdf') ? 'application/pdf' : 'text/plain'),
+                                    isFolder: isFolder,
+                                    size: stat.size,
+                                    webViewLink: `file://${itemPath}`
+                                });
+                            } catch (e) {
+                                // Ignore deleted files
+                            }
+                        }
+                    }
+                }
             }
 
                         // Merge recently created files from cache to combat eventual consistency lag
@@ -4657,17 +4904,14 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 }
                 
                 // Axiom Fix: Merge prospect folders from local history to combat GDrive eventual consistency
-                if (fs.existsSync(historyDir)) {
-                    const prospects = new Set();
-                    const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
-                    files.forEach(file => {
-                        try {
-                            const data = JSON.parse(fs.readFileSync(path.join(historyDir, file), 'utf8'));
-                            if (data && data.company && data.company.toLowerCase() === resolvedCompany.toLowerCase() && data.name) {
-                                prospects.add(data.name.trim());
-                            }
-                        } catch (e) {}
-                    });
+                const prospects = new Set();
+                for (const [id, data] of pgCache.entries()) {
+                    try {
+                        if (data && data.company && data.company.toLowerCase() === resolvedCompany.toLowerCase() && data.name) {
+                            prospects.add(data.name.trim());
+                        }
+                    } catch (e) {}
+                }
                     
                     prospects.forEach(prospect => {
                         const exists = items.some(item => item.name.toLowerCase() === prospect.toLowerCase() && item.mimeType === 'application/vnd.google-apps.folder');
@@ -4683,7 +4927,6 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             });
                         }
                     });
-                }
             }
 
             // Filter out recently deleted files to prevent eventual consistency lag issues
@@ -4776,18 +5019,29 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 const cleanCompany = resolvedCompany.replace(/[^a-zA-Z0-9]/g, '_');
                 const localFolder = path.join(historyDir, cleanCompany);
                 if (fs.existsSync(localFolder)) {
-                    const localFiles = fs.readdirSync(localFolder).filter(f => !fs.statSync(path.join(localFolder, f)).isDirectory());
-                    files = localFiles.map(file => {
-                        const stat = fs.statSync(path.join(localFolder, file));
-                        return {
-                            id: `local_${cleanCompany}_${file}`,
-                            name: file,
-                            mimeType: file.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
-                            isFolder: false,
-                            size: stat.size,
-                            webViewLink: `file://${path.join(localFolder, file)}`
-                        };
+                    const localFiles = fs.readdirSync(localFolder).filter(f => {
+                        try {
+                            return !fs.statSync(path.join(localFolder, f)).isDirectory();
+                        } catch (e) {
+                            return false;
+                        }
                     });
+                    files = [];
+                    for (const file of localFiles) {
+                        try {
+                            const stat = fs.statSync(path.join(localFolder, file));
+                            files.push({
+                                id: `local_${cleanCompany}_${file}`,
+                                name: file,
+                                mimeType: file.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                                isFolder: false,
+                                size: stat.size,
+                                webViewLink: `file://${path.join(localFolder, file)}`
+                            });
+                        } catch (e) {
+                            // Ignore deleted files
+                        }
+                    }
                 }
             }
 
@@ -4865,14 +5119,23 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 if (fs.existsSync(historyDir)) {
                     const walkSync = (dir) => {
                         let files = [];
-                        const list = fs.readdirSync(dir);
+                        let list = [];
+                        try {
+                            list = fs.readdirSync(dir);
+                        } catch (e) {
+                            return [];
+                        }
                         list.forEach(file => {
-                            const filePath = path.join(dir, file);
-                            const stat = fs.statSync(filePath);
-                            if (stat && stat.isDirectory()) {
-                                files = files.concat(walkSync(filePath));
-                            } else {
-                                files.push({ name: file, path: filePath, size: stat.size });
+                            try {
+                                const filePath = path.join(dir, file);
+                                const stat = fs.statSync(filePath);
+                                if (stat && stat.isDirectory()) {
+                                    files = files.concat(walkSync(filePath));
+                                } else {
+                                    files.push({ name: file, path: filePath, size: stat.size });
+                                }
+                            } catch (e) {
+                                // Ignore deleted files
                             }
                         });
                         return files;
@@ -5221,17 +5484,27 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
                 if (fId.startsWith('local_')) {
                     if (fs.existsSync(historyDir)) {
-                        const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
+                        const subdirs = fs.readdirSync(historyDir).filter(f => {
+                            try {
+                                return fs.statSync(path.join(historyDir, f)).isDirectory();
+                            } catch (e) {
+                                return false;
+                            }
+                        });
                         for (const subdir of subdirs) {
                             const prefix = `local_${subdir}_`;
                             if (fId.startsWith(prefix)) {
                                 const fileName = fId.slice(prefix.length);
                                 const filePath = path.join(historyDir, subdir, fileName);
                                 if (fs.existsSync(filePath)) {
-                                    fs.unlinkSync(filePath);
-                                    console.log(`✅ Deleted local file: ${filePath}`);
-                                    success = true;
-                                    break;
+                                    try {
+                                        fs.unlinkSync(filePath);
+                                        console.log(`✅ Deleted local file: ${filePath}`);
+                                        success = true;
+                                        break;
+                                    } catch (e) {
+                                        // Ignore deletion errors
+                                    }
                                 }
                             }
                         }
@@ -5435,23 +5708,17 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
     if (pathname === '/api/prep-sample-loadout' && req.method === 'GET') {
         let latestBooking = null;
 
-        if (fs.existsSync(historyDir)) {
-            const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
-            if (files.length > 0) {
-                const items = [];
-                files.forEach(file => {
-                    try {
-                        const parsed = JSON.parse(fs.readFileSync(path.join(historyDir, file), 'utf8'));
-                        if (parsed.type === 'dossier') {
-                            items.push(parsed);
-                        }
-                    } catch (e) {}
-                });
-                if (items.length > 0) {
-                    items.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    latestBooking = items[0];
+        const items = [];
+        for (const [id, parsed] of pgCache.entries()) {
+            try {
+                if (parsed && parsed.type === 'dossier') {
+                    items.push(parsed);
                 }
-            }
+            } catch (e) {}
+        }
+        if (items.length > 0) {
+            items.sort((a, b) => new Date(b.date) - new Date(a.date));
+            latestBooking = items[0];
         }
 
         let name = "";
@@ -5556,26 +5823,19 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 let company = payload.company;
                 let intake = payload.intake;
 
-                // Fallback to latest history dossier if missing in request payload
                 if (!name || !company) {
                     let latestBooking = null;
-                    if (fs.existsSync(historyDir)) {
-                        const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
-                        if (files.length > 0) {
-                            const items = [];
-                            files.forEach(file => {
-                                try {
-                                    const parsed = JSON.parse(fs.readFileSync(path.join(historyDir, file), 'utf8'));
-                                    if (parsed.type === 'dossier') {
-                                        items.push(parsed);
-                                    }
-                                } catch (e) {}
-                            });
-                            if (items.length > 0) {
-                                items.sort((a, b) => new Date(b.date) - new Date(a.date));
-                                latestBooking = items[0];
+                    const items = [];
+                    for (const [id, parsed] of pgCache.entries()) {
+                        try {
+                            if (parsed && parsed.type === 'dossier') {
+                                items.push(parsed);
                             }
-                        }
+                        } catch (e) {}
+                    }
+                    if (items.length > 0) {
+                        items.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        latestBooking = items[0];
                     }
                     if (latestBooking) {
                         name = name || latestBooking.name;
@@ -5948,76 +6208,49 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                 historyListCache = null;
             }
 
-            if (!fs.existsSync(historyDir)) {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify([]));
-                return;
+            const items = [];
+            const isTestEnv = process.env.HISTORY_DIR === 'knowledge/history_test';
+            for (const [id, parsedObj] of pgCache.entries()) {
+                try {
+                    const parsed = typeof parsedObj === 'string' ? JSON.parse(parsedObj) : parsedObj;
+                    const companyName = parsed.company ? parsed.company.toLowerCase() : '';
+                    const leadName = parsed.name ? parsed.name.toLowerCase() : '';
+                    if (!isTestEnv && (companyName.startsWith('qa_') || leadName.startsWith('qa_'))) {
+                        // Skip E2E test history entries in non-test mode
+                    } else {
+                        if (parsed.company && parsed.gDriveFolderId) {
+                            gdriveService.folderIdCache.set(parsed.company.toLowerCase(), parsed.gDriveFolderId);
+                        }
+                        items.push({
+                            id: parsed.id,
+                            type: parsed.type,
+                            date: parsed.date,
+                            name: parsed.name,
+                            company: parsed.company,
+                            title: parsed.title,
+                            track: parsed.track,
+                            variant: parsed.variant,
+                            score: parsed.score || (parsed.type === 'synthesis' ? extractScore(parsed.content) : null),
+                            rep: parsed.rep,
+                            oneDriveFile: parsed.oneDriveFile || parsed.gDriveFile,
+                            gDriveFile: parsed.gDriveFile || parsed.oneDriveFile,
+                            gDriveFileId: parsed.gDriveFileId || null,
+                            gDriveFolderId: parsed.gDriveFolderId || null,
+                            gDriveFileContent: null, // Exclude heavy content from listing payload
+                            phone: parsed.phone,
+                            stage: parsed.stage || (parsed.type === 'synthesis' ? 'reports' : 'prep'),
+                            filename: `${parsed.id}.json`
+                        });
+                    }
+                } catch (e) {
+                    console.error(`Error parsing history item ${id}:`, e);
+                }
             }
-            fs.readdir(historyDir, (err, files) => {
-                if (err) {
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'Failed to read history directory.' }));
-                    return;
-                }
-                const jsonFiles = files.filter(f => f.endsWith('.json'));
-                if (jsonFiles.length === 0) {
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify([]));
-                    return;
-                }
-
-                const items = [];
-                let readCount = 0;
-                jsonFiles.forEach(file => {
-                    fs.readFile(path.join(historyDir, file), 'utf8', (readErr, data) => {
-                        readCount++;
-                        if (!readErr) {
-                            try {
-                                const parsed = JSON.parse(data);
-                                const isTestEnv = process.env.HISTORY_DIR === 'knowledge/history_test';
-                                const companyName = parsed.company ? parsed.company.toLowerCase() : '';
-                                const leadName = parsed.name ? parsed.name.toLowerCase() : '';
-                                if (!isTestEnv && (companyName.startsWith('qa_') || leadName.startsWith('qa_'))) {
-                                    // Skip E2E test history entries in non-test mode
-                                } else {
-                                    if (parsed.company && parsed.gDriveFolderId) {
-                                        gdriveService.folderIdCache.set(parsed.company.toLowerCase(), parsed.gDriveFolderId);
-                                    }
-                                    items.push({
-                                        id: parsed.id,
-                                        type: parsed.type,
-                                        date: parsed.date,
-                                        name: parsed.name,
-                                        company: parsed.company,
-                                        title: parsed.title,
-                                        track: parsed.track,
-                                        variant: parsed.variant,
-                                        score: parsed.score || (parsed.type === 'synthesis' ? extractScore(parsed.content) : null),
-                                        rep: parsed.rep,
-                                        oneDriveFile: parsed.oneDriveFile || parsed.gDriveFile,
-                                        gDriveFile: parsed.gDriveFile || parsed.oneDriveFile,
-                                        gDriveFileId: parsed.gDriveFileId || null,
-                                        gDriveFolderId: parsed.gDriveFolderId || null,
-                                        gDriveFileContent: null, // Exclude heavy content from listing payload
-                                        phone: parsed.phone,
-                                        stage: parsed.stage || (parsed.type === 'synthesis' ? 'reports' : 'prep'),
-                                        filename: file
-                                    });
-                                }
-                            } catch (e) {
-                                console.error(`Error parsing history file ${file}:`, e);
-                            }
-                        }
-                        if (readCount === jsonFiles.length) {
-                            items.sort((a, b) => new Date(b.date) - new Date(a.date));
-                            // Store in memory cache
-                            historyListCache = items;
-                            res.writeHead(200, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify(items));
-                        }
-                    });
-                });
-            });
+            items.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // Store in memory cache
+            historyListCache = items;
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(items));
             return;
         }
 
@@ -6025,6 +6258,7 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
             const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024;
             let body = '';
             let bodyLength = 0;
+            req.setEncoding('utf8');
             req.on('data', chunk => {
                 bodyLength += chunk.length;
                 if (bodyLength > MAX_PAYLOAD_SIZE) {
@@ -6072,12 +6306,13 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                         }
                     }
 
-                    // Read old file if exists to check for company renaming and pull old folder ID
+                    // Read old session if exists to check for company renaming and pull old folder ID
                     let oldCompany = null;
                     let oldFolderId = null;
-                    if (fs.existsSync(filePath)) {
+                    if (existsHistorySession(id)) {
                         try {
-                            const oldData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                            const oldDataRaw = pgCache.get(id);
+                            const oldData = typeof oldDataRaw === 'string' ? JSON.parse(oldDataRaw) : oldDataRaw;
                             oldCompany = oldData.company;
                             oldFolderId = oldData.gDriveFolderId;
                             if (oldFolderId && !payload.gDriveFolderId) {
@@ -6104,6 +6339,7 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
 
                     // Resolve folder ID if missing before writing
                     if (payload.company) {
+                        let resolvedViaGDrive = false;
                         try {
                             const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
                             if (gdriveAvailable) {
@@ -6115,7 +6351,14 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                                 if (payload.name) {
                                     await gdriveService.findOrCreateProspectFolder(companyFolderId, payload.name);
                                 }
-                            } else {
+                                resolvedViaGDrive = true;
+                            }
+                        } catch (e) {
+                            console.warn('⚠️ Folder ID resolution failed during history save:', e.message);
+                        }
+
+                        if (!resolvedViaGDrive) {
+                            try {
                                 const cleanCompany = payload.company.replace(/[^a-zA-Z0-9]/g, '_');
                                 const cleanProspect = (payload.name || '').replace(/[^a-zA-Z0-9]/g, '_');
                                 const companyFolder = path.join(historyDir, cleanCompany);
@@ -6124,7 +6367,13 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                                 const targetNorm = normalizeString(payload.name || '');
                                 let resolvedProspectFolder = null;
                                 if (cleanProspect && fs.existsSync(companyFolder)) {
-                                    const existingDirs = fs.readdirSync(companyFolder).filter(f => fs.statSync(path.join(companyFolder, f)).isDirectory());
+                                    const existingDirs = fs.readdirSync(companyFolder).filter(f => {
+                                         try {
+                                             return fs.statSync(path.join(companyFolder, f)).isDirectory();
+                                         } catch (e) {
+                                             return false;
+                                         }
+                                     });
                                     const matchedDir = existingDirs.find(d => normalizeString(d) === targetNorm);
                                     if (matchedDir) {
                                         resolvedProspectFolder = path.join(companyFolder, matchedDir);
@@ -6139,11 +6388,13 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                                     const relPath = path.relative(historyDir, prospectFolder);
                                     payload.gDriveFolderId = `local_path_${Buffer.from(relPath, 'utf8').toString('hex')}`;
                                 }
+                            } catch (fallbackErr) {
+                                console.error('⚠️ Local folder fallback creation failed:', fallbackErr.message);
                             }
-                        } catch (e) {
-                            console.warn('⚠️ Folder ID resolution failed during history save:', e.message);
                         }
                     }
+
+                    try { await saveHistoryItem(payload); } catch (e) { console.error("⚠️ Failed to sync to Postgres:", e); }
 
                     fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', async (writeErr) => {
                         if (writeErr) {
@@ -6236,8 +6487,9 @@ ${payload.intakeAnswers || ''}`;
                         res.end(JSON.stringify({ status: 'success', id, gDriveFolderId: payload.gDriveFolderId }));
                     });
                 } catch (e) {
+                    console.error("🚨 CRITICAL ERROR inside POST /api/history:", e);
                     res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
+                    res.end(JSON.stringify({ error: 'Invalid JSON payload. Details: ' + e.message }));
                 }
             });
             return;
@@ -6251,17 +6503,14 @@ ${payload.intakeAnswers || ''}`;
                 return;
             }
             const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
-            const filePath = path.join(historyDir, `${cleanId}.json`);
-            fs.unlink(filePath, (err) => {
-                if (err) {
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'Failed to delete history item.' }));
-                    return;
-                }
+            deleteHistorySession(cleanId).then(() => {
                 // Invalidate cache
                 historyListCache = null;
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'success' }));
+            }).catch((err) => {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Failed to delete history item.' }));
             });
             return;
         }
@@ -6326,34 +6575,31 @@ ${payload.intakeAnswers || ''}`;
                     return;
                 }
                 const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
-                const filePath = path.join(historyDir, `${cleanId}.json`);
-                
-                fs.readFile(filePath, 'utf8', (readErr, data) => {
-                    if (readErr) {
-                        res.writeHead(404, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ error: 'History item not found.' }));
-                        return;
-                    }
+                if (pgCache.has(cleanId)) {
                     try {
-                        const item = JSON.parse(data);
+                        const itemRaw = pgCache.get(cleanId);
+                        const item = typeof itemRaw === 'string' ? JSON.parse(itemRaw) : itemRaw;
                         item.stage = stage;
-                        
-                        fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', (writeErr) => {
-                            if (writeErr) {
-                                res.writeHead(500, { 'Content-Type': 'application/json' });
-                                res.end(JSON.stringify({ error: 'Failed to save updated stage.' }));
-                                return;
-                            }
-                            // Invalidate cache
+                        saveHistoryItem(item).then(() => {
+                            // Non-blocking write to file system for backup
+                            const filePath = path.join(historyDir, `${cleanId}.json`);
+                            fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', () => {});
+                            
                             historyListCache = null;
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ status: 'success', id, stage }));
+                        }).catch(() => {
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'Failed to save updated stage.' }));
                         });
                     } catch (parseErr) {
                         res.writeHead(500, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: 'Failed to parse history data.' }));
                     }
-                });
+                } else {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'History item not found.' }));
+                }
             } catch (e) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
@@ -6385,34 +6631,31 @@ ${payload.intakeAnswers || ''}`;
                     return;
                 }
                 const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
-                const filePath = path.join(historyDir, `${cleanId}.json`);
-                
-                fs.readFile(filePath, 'utf8', (readErr, data) => {
-                    if (readErr) {
-                        res.writeHead(404, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ error: 'History item not found.' }));
-                        return;
-                    }
+                if (pgCache.has(cleanId)) {
                     try {
-                        const item = JSON.parse(data);
+                        const itemRaw = pgCache.get(cleanId);
+                        const item = typeof itemRaw === 'string' ? JSON.parse(itemRaw) : itemRaw;
                         item.title = title;
-                        
-                        fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', (writeErr) => {
-                            if (writeErr) {
-                                res.writeHead(500, { 'Content-Type': 'application/json' });
-                                res.end(JSON.stringify({ error: 'Failed to save updated title.' }));
-                                return;
-                            }
-                            // Invalidate cache
+                        saveHistoryItem(item).then(() => {
+                            // Non-blocking write to file system for backup
+                            const filePath = path.join(historyDir, `${cleanId}.json`);
+                            fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', () => {});
+                            
                             historyListCache = null;
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ status: 'success', id, title }));
+                        }).catch(() => {
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'Failed to save updated title.' }));
                         });
                     } catch (parseErr) {
                         res.writeHead(500, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: 'Failed to parse history data.' }));
                     }
-                });
+                } else {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'History item not found.' }));
+                }
             } catch (e) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
@@ -6431,21 +6674,23 @@ ${payload.intakeAnswers || ''}`;
         const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
         const filePath = path.join(historyDir, `${cleanId}.json`);
         
-        fs.readFile(filePath, 'utf8', (err, data) => {
-            if (err) {
-                res.writeHead(404, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'History item not found.' }));
-                return;
-            }
+        if (pgCache.has(cleanId)) {
             try {
-                const parsed = JSON.parse(data);
+                const parsedRaw = pgCache.get(cleanId);
+                const parsed = typeof parsedRaw === 'string' ? JSON.parse(parsedRaw) : parsedRaw;
                 if (parsed.company && parsed.gDriveFolderId) {
                     gdriveService.folderIdCache.set(parsed.company.toLowerCase(), parsed.gDriveFolderId);
                 }
-            } catch (e) {}
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(data);
-        });
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(typeof parsedRaw === 'string' ? parsedRaw : JSON.stringify(parsedRaw));
+            } catch (e) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Failed to parse history data.' }));
+            }
+        } else {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'History item not found.' }));
+        }
         return;
     }
 
