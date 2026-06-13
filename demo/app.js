@@ -1659,6 +1659,10 @@ document.addEventListener('DOMContentLoaded', () => {
             gdriveFolders = [];
             
             await loadChatsList();
+            await Promise.all([
+                loadProspectsTree(),
+                loadGoogleDriveFiles()
+            ]);
             // Setup Header Info directly to prevent clearing chat history and race conditions
             if (activeChatClientTitle) activeChatClientTitle.innerText = `${payload.company} (${payload.name})`;
             if (activeChatClientMeta) activeChatClientMeta.innerText = '';
@@ -1718,7 +1722,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Create New Chat (Global / Sidebar) ---
-    const handleGlobalNewChat = () => {
+    const handleGlobalNewChat = (prefilledCompanyName = '', prefilledProspectName = '') => {
         currentChatId = null;
         activeFolderId = null;
         activeProspectName = null;
@@ -1731,8 +1735,8 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleDrawer(true);
 
         // Clear inputs
-        metaName.value = '';
-        metaCompany.value = '';
+        metaName.value = prefilledProspectName;
+        metaCompany.value = prefilledCompanyName;
         metaTitle.value = '';
         metaEmail.value = '';
         metaPhone.value = '';
@@ -1764,6 +1768,60 @@ document.addEventListener('DOMContentLoaded', () => {
         updateValidationBadges();
     };
 
+    // --- Create Prospect Modal Logic ---
+    const createProspectModal = document.getElementById('create-prospect-modal');
+    const modalCompanyName = document.getElementById('modal-company-name');
+    const modalProspectName = document.getElementById('modal-prospect-name');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const cancelModalBtn = document.getElementById('cancel-modal-btn');
+    const saveModalBtn = document.getElementById('save-modal-btn');
+
+    const openCreateProspectModal = () => {
+        if (!createProspectModal) return;
+        modalCompanyName.value = '';
+        modalProspectName.value = '';
+        createProspectModal.classList.remove('hidden');
+        modalCompanyName.focus();
+    };
+
+    const closeCreateProspectModal = () => {
+        if (!createProspectModal) return;
+        createProspectModal.classList.add('hidden');
+    };
+
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeCreateProspectModal);
+    if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeCreateProspectModal);
+    
+    if (saveModalBtn) {
+        saveModalBtn.addEventListener('click', async () => {
+            const comp = modalCompanyName.value.trim();
+            const pros = modalProspectName.value.trim();
+            if (!comp || !pros) {
+                showToast("Please enter both Company Name and Prospect Name", "error");
+                return;
+            }
+            
+            const originalText = saveModalBtn.innerText;
+            saveModalBtn.disabled = true;
+            saveModalBtn.innerText = "Creating...";
+            
+            try {
+                // Initialize the session state globally first
+                handleGlobalNewChat(comp, pros);
+                // Call saveDiscoverySession directly to trigger backend DB and Google Drive folder initialization
+                await saveDiscoverySession(pros, comp, '');
+                closeCreateProspectModal();
+                showToast(`Prospect "${pros}" created successfully.`);
+            } catch (err) {
+                console.error("Error creating prospect:", err);
+                showToast(`Failed to create prospect: ${err.message || err}`, "error");
+            } finally {
+                saveModalBtn.disabled = false;
+                saveModalBtn.innerText = originalText;
+            }
+        });
+    }
+
     // --- Create New Chat (Contextual / Active Prospect Header) ---
     const handleProspectNewChat = () => {
         // Soft reset: Only nullify the current session ID. 
@@ -1776,7 +1834,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (btnNewChat) {
-        btnNewChat.addEventListener('click', handleGlobalNewChat);
+        btnNewChat.addEventListener('click', openCreateProspectModal);
     }
     if (btnNewChatActive) {
         btnNewChatActive.addEventListener('click', handleProspectNewChat);
@@ -2134,7 +2192,11 @@ Rules:
     }
 
     // --- Custom Chat Prompt send ---
+    let isSending = false;
+
     async function sendUserQuery() {
+        if (isSending) return;
+        
         const queryText = chatUserInput.value.trim();
         if (!queryText && stagedAttachments.length === 0) return;
 
@@ -2160,14 +2222,17 @@ Rules:
 
         chatUserInput.value = '';
 
-        if (stagedAttachments.length > 0) {
-            // Push user query first to render it at correct chronological starting point
-            if (queryText.trim()) {
-                chatHistory.push({ role: 'user', content: queryText, timestamp: new Date().toISOString() });
-                renderChatHistory();
-            }
+        isSending = true;
 
-            let companyName = metaCompany ? metaCompany.value.trim() : '';
+        // --- ATOMIC TRANSACTION LOCK ---
+        chatUserInput.disabled = true;
+        chatSendBtn.disabled = true;
+
+        try {
+            if (stagedAttachments.length > 0) {
+                // Buffer the user query locally; do NOT push it to chatHistory until uploads successfully complete.
+
+                let companyName = metaCompany ? metaCompany.value.trim() : '';
             let prospectName = metaName ? metaName.value.trim() : '';
             if (!prospectName && typeof activeProspectName === 'string') {
                 prospectName = activeProspectName.trim();
@@ -2340,12 +2405,25 @@ Rules:
             }
 
             if (queryText.trim()) {
+                // Synchronized Release: Push text to chat log ONLY after files safely uploaded
+                chatHistory.push({ role: 'user', content: queryText, timestamp: new Date().toISOString() });
+                renderChatHistory();
                 callTinyAPI(queryText, combinedQuery, true);
             }
         } else {
             callTinyAPI(queryText);
         }
+    } catch (err) {
+        console.error('Error in sendUserQuery:', err);
+        chatUserInput.value = queryText;
+        showToast(`Failed to send query: ${err.message}`);
+    } finally {
+        isSending = false;
+        chatUserInput.disabled = false;
+        chatSendBtn.disabled = false;
+        chatUserInput.focus();
     }
+}
 
     if (chatSendBtn) {
         chatSendBtn.addEventListener('click', sendUserQuery);
@@ -3024,22 +3102,32 @@ ${data.parsedText}`;
             const hasNoChats = !chatsData || chatsData.length === 0;
             const hasNoProspects = !prospectsData || !prospectsData.items || prospectsData.items.length === 0;
             const emptyStateContent = document.getElementById('empty-state-content');
-            
-            if (hasNoChats && hasNoProspects && emptyStateContent) {
-                emptyStateContent.innerHTML = `
-                    <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" width="80" height="80">
-                    <h3 style="margin-top: 1rem; color: #1e293b;">No Prospects Available</h3>
-                    <p style="text-align: center; max-width: 400px; color: #64748b; font-size: 0.95rem; margin-top: 0.5rem;">You don't have any prospect folders in Google Drive. Click below to create your first prospect and start a conversation.</p>
-                    <button type="button" class="btn btn-primary" id="btn-create-first-prospect" style="margin-top: 1.5rem; padding: 0.5rem 1rem;">➕ Create Prospect</button>
-                `;
-                const btnCreateFirst = document.getElementById('btn-create-first-prospect');
-                if (btnCreateFirst) {
-                    btnCreateFirst.addEventListener('click', () => {
-                        if (typeof handleGlobalNewChat === 'function') handleGlobalNewChat();
-                    });
+            if (emptyStateContent) {
+                if (hasNoChats && hasNoProspects) {
+                    emptyStateContent.innerHTML = `
+                        <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" width="80" height="80">
+                        <h3 style="margin-top: 1rem; color: #1e293b;">No Prospects Available</h3>
+                        <p style="text-align: center; max-width: 400px; color: #64748b; font-size: 0.95rem; margin-top: 0.5rem;">You don't have any prospect folders in Google Drive. Click below to create your first prospect and start a conversation.</p>
+                        <button type="button" class="btn btn-primary" id="btn-create-first-prospect" style="margin-top: 1.5rem; padding: 0.5rem 1rem;">➕ Create Prospect</button>
+                    `;
+                    const btnCreateFirst = document.getElementById('btn-create-first-prospect');
+                    if (btnCreateFirst) {
+                        btnCreateFirst.addEventListener('click', openCreateProspectModal);
+                    }
+                } else {
+                    emptyStateContent.innerHTML = `
+                        <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" width="80" height="80">
+                        <h3>Tiny AI Assistant</h3>
+                        <p>Select a client chat from the sidebar or click <strong>New Client Chat</strong> to get started.</p>
+                        <button type="button" class="btn btn-primary" id="btn-new-chat-dynamic" style="margin-top: 1rem;">➕ New Client Chat</button>
+                    `;
+                    const btnNewChatDynamic = document.getElementById('btn-new-chat-dynamic');
+                    if (btnNewChatDynamic) {
+                        btnNewChatDynamic.addEventListener('click', openCreateProspectModal);
+                    }
                 }
             }
-            
+
             // Auto-select most recent chat session or explicitly display empty state
             if (!isTestRunner) {
                 if (!hasNoChats) {
