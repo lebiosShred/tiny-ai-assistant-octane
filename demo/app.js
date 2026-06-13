@@ -3022,7 +3022,7 @@ ${data.parsedText}`;
             
             // Dynamic Empty State Check
             const hasNoChats = !chatsData || chatsData.length === 0;
-            const hasNoProspects = !prospectsData || !prospectsData.items || prospectsData.items.filter(i => i.isFolder).length === 0;
+            const hasNoProspects = !prospectsData || !prospectsData.items || prospectsData.items.length === 0;
             const emptyStateContent = document.getElementById('empty-state-content');
             
             if (hasNoChats && hasNoProspects && emptyStateContent) {
