@@ -673,7 +673,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         folderHeader.classList.add('active');
                     }
                     
-                    const toggleHtml = `<span class="sidebar-folder-toggle" style="display:inline-block; transition:transform 0.2s ease;">▼</span>`;
+                    const toggleHtml = `
+                        <div class="sidebar-folder-actions">
+                            <span class="sidebar-folder-add-btn" title="Quick Add Prospect">+</span>
+                            <span class="sidebar-folder-toggle">▼</span>
+                        </div>
+                    `;
                     
                     folderHeader.innerHTML = `
                         <div class="sidebar-folder-title">
@@ -681,6 +686,32 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         ${toggleHtml}
                     `;
+                    
+                    // Attach event listener to the + button
+                    const addBtn = folderHeader.querySelector('.sidebar-folder-add-btn');
+                    if (addBtn) {
+                        addBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const btnNewChat = document.getElementById('btn-new-chat');
+                            if (btnNewChat) btnNewChat.click();
+                            
+                            const addProspectModal = document.getElementById('add-prospect-modal');
+                            const quickMetaName = document.getElementById('quick-meta-name');
+                            const quickMetaCompany = document.getElementById('quick-meta-company');
+                            
+                            if (quickMetaName) quickMetaName.value = '';
+                            if (quickMetaCompany) {
+                                quickMetaCompany.value = folder.name;
+                                quickMetaCompany.setAttribute('readonly', 'true');
+                                quickMetaCompany.style.backgroundColor = '#f1f5f9';
+                                quickMetaCompany.style.cursor = 'not-allowed';
+                                quickMetaCompany.style.color = '#64748b';
+                            }
+                            
+                            if (addProspectModal) addProspectModal.classList.remove('modal-hidden');
+                            setTimeout(() => { if (quickMetaName) quickMetaName.focus(); }, 100);
+                        });
+                    }
                     
                     folderItem.appendChild(folderHeader);
                     
@@ -3197,6 +3228,10 @@ Identifier: ${receipt.targetId}
             if (btnNewChat) btnNewChat.click();
             quickMetaName.value = '';
             quickMetaCompany.value = '';
+            quickMetaCompany.removeAttribute('readonly');
+            quickMetaCompany.style.backgroundColor = '';
+            quickMetaCompany.style.cursor = '';
+            quickMetaCompany.style.color = '';
             if (addProspectModal) addProspectModal.classList.remove('modal-hidden');
             setTimeout(() => quickMetaName.focus(), 100);
         });
