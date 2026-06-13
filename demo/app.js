@@ -3020,15 +3020,34 @@ ${data.parsedText}`;
             const loadingIndicator = document.getElementById('initial-loading-indicator');
             if (loadingIndicator) loadingIndicator.classList.add('hidden');
             
-            // Auto-select most recent chat session or trigger handleNewChat (bypassed for E2E test runners)
+            // Dynamic Empty State Check
+            const hasNoChats = !chatsData || chatsData.length === 0;
+            const hasNoProspects = !prospectsData || !prospectsData.items || prospectsData.items.filter(i => i.isFolder).length === 0;
+            const emptyStateContent = document.getElementById('empty-state-content');
+            
+            if (hasNoChats && hasNoProspects && emptyStateContent) {
+                emptyStateContent.innerHTML = `
+                    <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" width="80" height="80">
+                    <h3 style="margin-top: 1rem; color: #1e293b;">No Prospects Available</h3>
+                    <p style="text-align: center; max-width: 400px; color: #64748b; font-size: 0.95rem; margin-top: 0.5rem;">You don't have any prospect folders in Google Drive. Click below to create your first prospect and start a conversation.</p>
+                    <button type="button" class="btn btn-primary" id="btn-create-first-prospect" style="margin-top: 1.5rem; padding: 0.5rem 1rem;">➕ Create Prospect</button>
+                `;
+                const btnCreateFirst = document.getElementById('btn-create-first-prospect');
+                if (btnCreateFirst) {
+                    btnCreateFirst.addEventListener('click', () => {
+                        if (typeof handleGlobalNewChat === 'function') handleGlobalNewChat();
+                    });
+                }
+            }
+            
+            // Auto-select most recent chat session or explicitly display empty state
             if (!isTestRunner) {
-                if (chatsData && chatsData.length > 0) {
+                if (!hasNoChats) {
                     await selectChat(chatsData[0].id);
                 } else {
-                    handleNewChat();
+                    if (emptyStateContent) emptyStateContent.classList.remove('hidden');
                 }
             } else {
-                const emptyStateContent = document.getElementById('empty-state-content');
                 if (emptyStateContent) emptyStateContent.classList.remove('hidden');
             }
             
