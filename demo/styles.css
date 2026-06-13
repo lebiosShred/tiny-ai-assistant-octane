@@ -5111,6 +5111,53 @@ body {
     line-height: 1.5 !important;
 }
 
+/* Premium styled tables inside chat messages */
+.chat-message-content table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 1.25rem 0 !important;
+    font-size: 0.88rem !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    white-space: normal !important;
+}
+
+.chat-message-content th,
+.chat-message-content td {
+    padding: 0.75rem 0.95rem !important;
+    text-align: left !important;
+}
+
+.chat-message-content th {
+    background: rgba(15, 23, 42, 0.04) !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    border-bottom: 2px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+.chat-message-content td {
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
+    color: inherit !important;
+}
+
+.chat-message-content tr:last-child td {
+    border-bottom: none !important;
+}
+
+.chat-message-content tr:nth-child(even) {
+    background: rgba(15, 23, 42, 0.015) !important;
+}
+
+.chat-message-content tr {
+    transition: background-color 0.2s ease !important;
+}
+
+.chat-message-content tr:hover {
+    background-color: rgba(15, 23, 42, 0.03) !important;
+}
+
 /* Stacked pending chat attachments styling */
 .chat-pending-attachments {
     display: flex !important;

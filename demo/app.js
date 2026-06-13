@@ -1392,6 +1392,28 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Parse simple Markdown inline code, bolding, and lists into HTML.
      */
+    function buildHtmlTable(headers, rows) {
+        let html = '<table>';
+        html += '<thead><tr>';
+        headers.forEach(h => {
+            html += `<th>${h}</th>`;
+        });
+        html += '</tr></thead>';
+        html += '<tbody>';
+        rows.forEach(row => {
+            html += '<tr>';
+            row.forEach(cell => {
+                html += `<td>${cell}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    /**
+     * Parse simple Markdown inline code, bolding, tables, and lists into HTML.
+     */
     function formatMessageContent(content) {
         if (!content) return '';
         let escaped = content
@@ -1407,33 +1429,77 @@ document.addEventListener('DOMContentLoaded', () => {
         // Parse bold markdown
         escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-        // Parse lists
+        // Parse lists and tables
         const lines = escaped.split('\n');
         let inList = false;
-        const processedLines = lines.map(line => {
+        let inTable = false;
+        let tableHeader = null;
+        let tableRows = [];
+        const processedLines = [];
+
+        const isSeparator = (l) => {
+            const t = l.trim();
+            return t.startsWith('|') && t.endsWith('|') && /^[|:\s-]+$/.test(t) && t.includes('-');
+        };
+
+        const isTableRow = (l) => {
+            const t = l.trim();
+            return t.startsWith('|') && t.endsWith('|');
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
             const trimmed = line.trim();
+
+            if (!inTable) {
+                if (isTableRow(line) && i + 1 < lines.length && isSeparator(lines[i + 1])) {
+                    inTable = true;
+                    const cols = line.split('|').slice(1, -1).map(c => c.trim());
+                    tableHeader = cols;
+                    i++; // skip separator line
+                    tableRows = [];
+                    if (inList) {
+                        processedLines.push('</ul>');
+                        inList = false;
+                    }
+                    continue;
+                }
+            } else {
+                if (isTableRow(line)) {
+                    const cols = line.split('|').slice(1, -1).map(c => c.trim());
+                    tableRows.push(cols);
+                    continue;
+                } else {
+                    inTable = false;
+                    processedLines.push(buildHtmlTable(tableHeader, tableRows));
+                    tableHeader = null;
+                    tableRows = [];
+                }
+            }
+
             if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
                 const liContent = trimmed.substring(2);
-                let listHtml = '';
                 if (!inList) {
-                    listHtml += '<ul class="chat-message-list">';
+                    processedLines.push('<ul class="chat-message-list">');
                     inList = true;
                 }
-                listHtml += `<li>${liContent}</li>`;
-                return listHtml;
+                processedLines.push(`<li>${liContent}</li>`);
             } else {
-                let suffix = '';
                 if (inList) {
-                    suffix = '</ul>';
+                    processedLines.push('</ul>');
                     inList = false;
                 }
-                return suffix + line;
+                processedLines.push(line);
             }
-        });
+        }
+
+        if (inTable) {
+            processedLines.push(buildHtmlTable(tableHeader, tableRows));
+        }
         if (inList) {
             processedLines.push('</ul>');
         }
-        
+
         let htmlResult = processedLines.join('\n');
         htmlResult = htmlResult.replace(/\n/g, '<br>');
         return htmlResult;

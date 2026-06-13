@@ -1,15 +1,19 @@
 const fs = require('fs');
 const path = require('path');
+
+// Load environment variables if dotenv is available (local dev)
+if (fs.existsSync(path.join(__dirname, '.env'))) {
+    require('dotenv').config();
+}
+
 const { google } = require('googleapis');
 const pdfParse = require('pdf-parse');
 const PDFDocument = require('pdfkit');
 const mammoth = require('mammoth');
 const TurndownService = require('turndown');
 
-// Load environment variables if dotenv is available (local dev)
-if (fs.existsSync(path.join(__dirname, '.env'))) {
-    require('dotenv').config();
-}
+const { db } = require('./src/db/index.js');
+const { documentCompanionMetadata } = require('./src/db/schema.js');
 
 let driveClient = null;
 const folderIdCache = new Map();
@@ -263,67 +267,91 @@ async function getFileContent(fileId, ignoreCache = false) {
 
     try {
         let content;
-        if (fileId && fileId.startsWith('local_file_')) {
-            const hexPath = fileId.slice('local_file_'.length);
-            const historyDir = process.env.HISTORY_DIR || 'knowledge/history';
-            const relativePath = Buffer.from(hexPath, 'hex').toString('utf8');
-            const filePath = path.join(historyDir, relativePath);
-            
-            if (fs.existsSync(filePath)) {
-                const companionPath = filePath + '.txt';
-                if (fs.existsSync(companionPath)) {
-                    console.log(`⚡ Found local companion summary: ${companionPath}`);
-                    content = fs.readFileSync(companionPath, 'utf8');
-                } else if (filePath.endsWith('.pdf')) {
-                    const pdfBuffer = fs.readFileSync(filePath);
-                    content = await parsePdfBuffer(pdfBuffer);
-                } else if (filePath.endsWith('.docx')) {
-                    const docxBuffer = fs.readFileSync(filePath);
-                    content = await parseDocxBuffer(docxBuffer);
-                } else {
-                    content = fs.readFileSync(filePath, 'utf8');
+
+        // 1. Query database companion cache first
+        if (fileId) {
+            try {
+                const { eq } = require('drizzle-orm');
+                const cached = await db.select()
+                    .from(documentCompanionMetadata)
+                    .where(eq(documentCompanionMetadata.fileId, fileId))
+                    .limit(1);
+                if (cached && cached.length > 0) {
+                    console.log(`⚡ Found companion summary in database for file ID: ${fileId}`);
+                    content = cached[0].extractedProfile;
                 }
+            } catch (dbErr) {
+                console.warn(`⚠️ Failed to query database companion cache:`, dbErr.message);
             }
-        } else if (fileId && fileId.startsWith('local_')) {
-            const withoutPrefix = fileId.slice(6);
-            const historyDir = process.env.HISTORY_DIR || 'knowledge/history';
-            if (fs.existsSync(historyDir)) {
-                const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
-                for (const subdir of subdirs) {
-                    const companyPrefix = `${subdir}_`;
-                    if (withoutPrefix.startsWith(companyPrefix)) {
-                        const filename = withoutPrefix.slice(companyPrefix.length);
-                        // Check for companion structured summary file first
-                        const companionPath = path.join(historyDir, subdir, filename + '.txt');
-                        if (fs.existsSync(companionPath)) {
-                            console.log(`⚡ Found local companion summary: ${companionPath}`);
-                            content = fs.readFileSync(companionPath, 'utf8');
-                            break;
-                        }
-                        const filePath = path.join(historyDir, subdir, filename);
-                        if (fs.existsSync(filePath)) {
-                            if (filename.endsWith('.pdf')) {
-                                const pdfBuffer = fs.readFileSync(filePath);
-                                content = await parsePdfBuffer(pdfBuffer);
-                            } else if (filename.endsWith('.docx')) {
-                                const docxBuffer = fs.readFileSync(filePath);
-                                content = await parseDocxBuffer(docxBuffer);
-                            } else {
-                                content = fs.readFileSync(filePath, 'utf8');
+        }
+
+        // 2. Fallback to physical file loading / parsing
+        if (!content) {
+            if (fileId && fileId.startsWith('local_file_')) {
+                const hexPath = fileId.slice('local_file_'.length);
+                const historyDir = process.env.HISTORY_DIR || 'knowledge/history';
+                const relativePath = Buffer.from(hexPath, 'hex').toString('utf8');
+                const filePath = path.join(historyDir, relativePath);
+                
+                if (fs.existsSync(filePath)) {
+                    const companionPath = filePath + '.txt';
+                    if (fs.existsSync(companionPath)) {
+                        console.log(`⚡ Found local companion summary: ${companionPath}`);
+                        content = fs.readFileSync(companionPath, 'utf8');
+                    } else if (filePath.endsWith('.pdf')) {
+                        const pdfBuffer = fs.readFileSync(filePath);
+                        content = await parsePdfBuffer(pdfBuffer);
+                    } else if (filePath.endsWith('.docx')) {
+                        const docxBuffer = fs.readFileSync(filePath);
+                        content = await parseDocxBuffer(docxBuffer);
+                    } else {
+                        content = fs.readFileSync(filePath, 'utf8');
+                    }
+                }
+            } else if (fileId && fileId.startsWith('local_')) {
+                const withoutPrefix = fileId.slice(6);
+                const historyDir = process.env.HISTORY_DIR || 'knowledge/history';
+                if (fs.existsSync(historyDir)) {
+                    const subdirs = fs.readdirSync(historyDir).filter(f => fs.statSync(path.join(historyDir, f)).isDirectory());
+                    for (const subdir of subdirs) {
+                        const companyPrefix = `${subdir}_`;
+                        if (withoutPrefix.startsWith(companyPrefix)) {
+                            const filename = withoutPrefix.slice(companyPrefix.length);
+                            // Check for companion structured summary file first
+                            const companionPath = path.join(historyDir, subdir, filename + '.txt');
+                            if (fs.existsSync(companionPath)) {
+                                console.log(`⚡ Found local companion summary: ${companionPath}`);
+                                content = fs.readFileSync(companionPath, 'utf8');
+                                break;
                             }
-                            break;
+                            const filePath = path.join(historyDir, subdir, filename);
+                            if (fs.existsSync(filePath)) {
+                                if (filename.endsWith('.pdf')) {
+                                    const pdfBuffer = fs.readFileSync(filePath);
+                                    content = await parsePdfBuffer(pdfBuffer);
+                                } else if (filename.endsWith('.docx')) {
+                                    const docxBuffer = fs.readFileSync(filePath);
+                                    content = await parseDocxBuffer(docxBuffer);
+                                } else {
+                                    content = fs.readFileSync(filePath, 'utf8');
+                                }
+                                break;
+                            }
                         }
                     }
                 }
+                if (!content) {
+                    throw new Error(`Local file not found for ID: ${fileId}`);
+                }
+            } else {
+                content = await fetchContentInternal(fileId);
+                recordApiSuccess();
             }
-            if (!content) {
-                throw new Error(`Local file not found for ID: ${fileId}`);
-            }
-        } else {
-            content = await fetchContentInternal(fileId);
-            recordApiSuccess();
         }
-        fileContentCache.set(fileId, content);
+
+        if (content) {
+            fileContentCache.set(fileId, content);
+        }
         return content;
     } catch (err) {
         console.error(`❌ Error retrieving file content for ${fileId}:`, err.message);

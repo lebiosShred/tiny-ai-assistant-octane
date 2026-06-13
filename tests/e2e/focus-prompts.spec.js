@@ -86,7 +86,10 @@ test.describe('Aegis v2 -- Focus Prompts Validation', () => {
         
         expect(responseText).toContain('Sarah Chen');
         expect(responseText).toContain('Meridian Logistics');
-        expect(responseText).toContain('|');
+        const hasTable = await page.locator('#chat-messages-log .chat-message-card.assistant:last-child pre.chat-message-content table').count() > 0;
+        if (!hasTable) {
+            expect(responseText).toContain('|');
+        }
     });
 
     test('verifies "Identify the type of sale" prompt accuracy', async ({ page }) => {

@@ -81,7 +81,7 @@ if (!fs.existsSync(historyDir)) {
 }
 
 const { db } = require('./src/db/index.js');
-const { sessions } = require('./src/db/schema.js');
+const { sessions, documentCompanionMetadata } = require('./src/db/schema.js');
 
 // 🚨 Transparent FS Proxy for Legacy RAG Compatibility powered by Neon Postgres
 let pgCache = new Map();
@@ -3682,7 +3682,14 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                          files = localFiles.map(file => ({ name: file, id: `local_${cleanCompany}_${cleanProspect}_${file}`, isFolder: false }));
                                                      }
                                                  }
-                                                 const fileItems = files.filter(f => !f.isFolder);
+                                                 const fileItems = files.filter(f => {
+                                                     if (f.isFolder) return false;
+                                                     const fName = f.name ? f.name.toLowerCase() : '';
+                                                     if (fName.endsWith('.pdf.txt') || fName.endsWith('.docx.txt') || fName.endsWith('.txt.txt') || fName.endsWith('.md.txt')) {
+                                                         return false;
+                                                     }
+                                                     return true;
+                                                 });
                                                  if (fileItems.length > 0) {
                                                      toolResult = `Here are the files in the folder for **${company}**:\n` +
                                                          fileItems.map(f => `- **${f.name}** (ID: \`${f.id}\`)`).join('\n');
@@ -4947,6 +4954,9 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     const itemName = item.name ? item.name.toString().toLowerCase() : '';
                     if (recentlyDeletedFiles.has(itemId)) return false;
                     if (recentlyDeletedFiles.has(itemName)) return false;
+                    if (itemName.endsWith('.pdf.txt') || itemName.endsWith('.docx.txt') || itemName.endsWith('.txt.txt') || itemName.endsWith('.md.txt')) {
+                        return false;
+                    }
                     const isTestEnv = process.env.HISTORY_DIR === 'knowledge/history_test';
                     if (!isTestEnv && (itemName.startsWith('qa_') || itemName.startsWith('local_qa_') || itemId.startsWith('qa_') || itemId.startsWith('local_qa_'))) {
                         return false;
@@ -5222,8 +5232,48 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 }
 
                 const fileBuffer = Buffer.concat(chunks);
+                const hashHex = crypto.createHash('sha256').update(fileBuffer).digest('hex');
 
                 try {
+                    const { eq } = require('drizzle-orm');
+                    // Query if content hash already exists in document_companion_metadata
+                    const cached = await db.select()
+                        .from(documentCompanionMetadata)
+                        .where(eq(documentCompanionMetadata.contentHash, hashHex))
+                        .limit(1);
+
+                    if (cached && cached.length > 0) {
+                        console.log(`⚡ Content hash match found: ${hashHex}. Returning cached summary.`);
+                        const matchedRecord = cached[0];
+                        
+                        let webViewLink = '';
+                        if (matchedRecord.fileId.startsWith('local_')) {
+                            const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                            const cleanProspect = (prospectName || 'Unknown Prospect').replace(/[^a-zA-Z0-9]/g, '_');
+                            webViewLink = `file://${path.join(historyDir, cleanCompany, cleanProspect, matchedRecord.fileName)}`;
+                        } else {
+                            webViewLink = `https://drive.google.com/open?id=${matchedRecord.fileId}`;
+                        }
+                        
+                        const receipt = generateReceipt("UPLOAD", "FILE", matchedRecord.fileName || filename, matchedRecord.fileId, company, {
+                            sizeBytes: fileBuffer.length,
+                            mimeType: mimeType,
+                            url: webViewLink,
+                            initiator: "UI Attach Streaming (Cached)"
+                        });
+
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({
+                            success: true,
+                            fileId: matchedRecord.fileId,
+                            fileName: matchedRecord.fileName || filename,
+                            webViewLink: webViewLink,
+                            parsedText: matchedRecord.extractedProfile,
+                            receipt: receipt
+                        }));
+                        return;
+                    }
+
                     let driveFile = null;
                     let parsedText = '';
                     let uploadSucceeded = false;
@@ -5288,33 +5338,22 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         parsedText = await extractStructuredProfile(parsedText, filename);
                     }
 
-                    // Save companion file (summary) in Google Drive or locally
-                    if (gdriveAvailable && uploadSucceeded) {
+                    // Cache companion summary in PostgreSQL using Drizzle
+                    if (parsedText && parsedText.trim().length > 0 && driveFile) {
                         try {
-                            const companionFilename = filename + '.txt';
-                            const companionBuffer = Buffer.from(parsedText, 'utf8');
-                            let clientFolderId = folderId;
-                            if (!clientFolderId && company) {
-                                clientFolderId = await gdriveService.findOrCreateClientFolder(company);
-                            }
-                            let compTargetFolderId = clientFolderId;
-                            if (clientFolderId && prospectName) {
-                                compTargetFolderId = await gdriveService.findOrCreateProspectFolder(clientFolderId, prospectName);
-                            }
-                            await gdriveService.uploadFile(companionFilename, 'text/plain', companionBuffer, compTargetFolderId);
-                            console.log(`✅ Uploaded companion summary file: ${companionFilename}`);
-                        } catch (err) {
-                            console.warn(`⚠️ Failed to upload companion summary file:`, err.message);
-                        }
-                    } else {
-                        try {
-                            const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                            const localFolder = path.join(historyDir, cleanCompany);
-                            const localCompanionPath = path.join(localFolder, filename + '.txt');
-                            fs.writeFileSync(localCompanionPath, parsedText, 'utf8');
-                            console.log(`✅ Saved local companion summary: ${localCompanionPath}`);
-                        } catch (err) {
-                            console.warn(`⚠️ Failed to save local companion summary file:`, err.message);
+                            const uuid = crypto.randomUUID ? crypto.randomUUID() : `meta_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                            await db.insert(documentCompanionMetadata).values({
+                                id: uuid,
+                                fileId: driveFile.id,
+                                fileName: driveFile.name,
+                                contentHash: hashHex,
+                                extractedProfile: parsedText,
+                                company: company,
+                                prospectName: prospectName
+                            });
+                            console.log(`✅ Cached companion summary in database for file: ${driveFile.name} (Hash: ${hashHex})`);
+                        } catch (dbErr) {
+                            console.error(`⚠️ Failed to cache companion summary in database:`, dbErr.message);
                         }
                     }
 
