@@ -162,9 +162,9 @@ document.addEventListener('DOMContentLoaded', () => {
                          (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.search.includes('demo=true'));
     const loadingIndicator = document.getElementById('initial-loading-indicator');
     const emptyStateContent = document.getElementById('empty-state-content');
-    if (!isTestRunner) {
-        if (loadingIndicator) loadingIndicator.classList.remove('hidden');
-        if (emptyStateContent) emptyStateContent.classList.add('hidden');
+    if (isTestRunner) {
+        if (loadingIndicator) loadingIndicator.classList.add('hidden');
+        if (emptyStateContent) emptyStateContent.classList.remove('hidden');
     }
 
     // Drawer Elements
