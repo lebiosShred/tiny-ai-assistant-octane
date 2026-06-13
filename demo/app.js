@@ -990,8 +990,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 
                                 prospectHeader.addEventListener('click', async (e) => {
                                     e.stopPropagation();
+                                    const wasAlreadyActive = prospectHeader.classList.contains('active');
                                     const isCollapsedNow = prospectContents.classList.toggle('collapsed');
                                     toggleArrow.style.transform = isCollapsedNow ? 'rotate(-90deg)' : 'rotate(0deg)';
+                                    
+                                    if (wasAlreadyActive) return;
                                     
                                     // Highlight active prospect header
                                     document.querySelectorAll('.sidebar-prospect-header').forEach(el => el.classList.remove('active'));
@@ -1416,92 +1419,25 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function formatMessageContent(content) {
         if (!content) return '';
+        
+        // Use marked to parse all markdown (tables, lists, bold) if available
+        if (window.marked && typeof window.marked.parse === 'function') {
+            const rawHtml = window.marked.parse(content);
+            if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
+                return window.DOMPurify.sanitize(rawHtml);
+            }
+            return rawHtml; // Trusting marked if DOMPurify isn't loaded
+        }
+        
+        // Fallback if marked is not available
         let escaped = content
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
-
-        // Parse inline code
-        escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-        // Parse bold markdown
-        escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-        // Parse lists and tables
-        const lines = escaped.split('\n');
-        let inList = false;
-        let inTable = false;
-        let tableHeader = null;
-        let tableRows = [];
-        const processedLines = [];
-
-        const isSeparator = (l) => {
-            const t = l.trim();
-            return t.startsWith('|') && t.endsWith('|') && /^[|:\s-]+$/.test(t) && t.includes('-');
-        };
-
-        const isTableRow = (l) => {
-            const t = l.trim();
-            return t.startsWith('|') && t.endsWith('|');
-        };
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const trimmed = line.trim();
-
-            if (!inTable) {
-                if (isTableRow(line) && i + 1 < lines.length && isSeparator(lines[i + 1])) {
-                    inTable = true;
-                    const cols = line.split('|').slice(1, -1).map(c => c.trim());
-                    tableHeader = cols;
-                    i++; // skip separator line
-                    tableRows = [];
-                    if (inList) {
-                        processedLines.push('</ul>');
-                        inList = false;
-                    }
-                    continue;
-                }
-            } else {
-                if (isTableRow(line)) {
-                    const cols = line.split('|').slice(1, -1).map(c => c.trim());
-                    tableRows.push(cols);
-                    continue;
-                } else {
-                    inTable = false;
-                    processedLines.push(buildHtmlTable(tableHeader, tableRows));
-                    tableHeader = null;
-                    tableRows = [];
-                }
-            }
-
-            if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-                const liContent = trimmed.substring(2);
-                if (!inList) {
-                    processedLines.push('<ul class="chat-message-list">');
-                    inList = true;
-                }
-                processedLines.push(`<li>${liContent}</li>`);
-            } else {
-                if (inList) {
-                    processedLines.push('</ul>');
-                    inList = false;
-                }
-                processedLines.push(line);
-            }
-        }
-
-        if (inTable) {
-            processedLines.push(buildHtmlTable(tableHeader, tableRows));
-        }
-        if (inList) {
-            processedLines.push('</ul>');
-        }
-
-        let htmlResult = processedLines.join('\n');
-        htmlResult = htmlResult.replace(/\n/g, '<br>');
+            
+        let htmlResult = escaped.replace(/\n/g, '<br>');
         return htmlResult;
     }
 
