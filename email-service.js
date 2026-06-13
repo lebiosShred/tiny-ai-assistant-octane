@@ -10,7 +10,15 @@ const path = require('path');
  * @returns {Promise<boolean>} Success status of the email dispatch
  */
 async function sendLeadNotificationEmail(lead) {
-    const recipient = 'amiel.lebios@octanesolutions.com.au';
+    // 1. Defend against automated QA/Test spam payloads
+    const companyName = (lead.company || '').toLowerCase();
+    const contactName = (lead.name || '').toLowerCase();
+    if (companyName.includes('qa') || companyName.includes('test') || contactName.includes('test agent')) {
+        console.log(`🛡️ QA/Test payload detected for company '${lead.company}'. Suppressing operational alert email.`);
+        return true;
+    }
+
+    const recipient = process.env.ADMIN_NOTIFY_EMAIL || 'amiel.lebios@octanesolutions.com.au';
     const timestamp = new Date().toLocaleString();
     
     const subject = `🔔 [New Booking Alert] discovery call scheduled for ${lead.company}`;
@@ -132,6 +140,14 @@ function formatICSDate(dateObj) {
  * Sends a calendar confirmation email directly to the prospect.
  */
 async function sendProspectConfirmationEmail(lead) {
+    // 1. Defend against automated QA/Test spam payloads
+    const companyName = (lead.company || '').toLowerCase();
+    const contactName = (lead.name || '').toLowerCase();
+    if (companyName.includes('qa') || companyName.includes('test') || contactName.includes('test agent')) {
+        console.log(`🛡️ QA/Test payload detected for company '${lead.company}'. Suppressing prospect confirmation email.`);
+        return true;
+    }
+
     const recipient = lead.email;
     if (!recipient) {
         console.warn('⚠️ No prospect email provided for confirmation.');

@@ -1648,6 +1648,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             activeProspectName = name;
             
+            // Add company to expanded list to seamlessly show newly added prospect
+            if (typeof expandedCompanies !== 'undefined' && payload.company) {
+                expandedCompanies.add(payload.company);
+            }
+
             // Force reload of folder explorer tree
             gdriveFolders = [];
             

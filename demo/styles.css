@@ -4519,18 +4519,18 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    background: #ffffff;
+    background: #1e293b;
     border: 1px solid rgba(15, 23, 42, 0.06);
     border-radius: 12px;
     cursor: pointer;
     font-weight: 600;
     font-size: 0.9rem;
-    color: #0f172a;
+    color: #ffffff;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
 }
 .sidebar-folder-header:hover {
-    background: #ffffff;
+    background: #334155;
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
     border-color: rgba(2, 132, 199, 0.2);
@@ -4552,19 +4552,20 @@ body {
 }
 .sidebar-folder-toggle {
     font-size: 0.75rem;
-    color: #94a3b8;
+    color: #ffffff !important;
     transition: transform 0.2s ease;
 }
 .sidebar-folder-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: flex-end;
+    gap: 8px;
 }
 .sidebar-folder-add-btn {
     font-weight: bold;
     font-size: 1.25rem;
     cursor: pointer;
-    color: #94a3b8;
+    color: #ffffff !important;
     transition: color 0.2s ease, transform 0.2s ease;
     line-height: 1;
     display: flex;

@@ -68,7 +68,11 @@ const MIME_TYPES = {
     '.ico': 'image/x-icon',
     '.svg': 'image/svg+xml',
     '.mp4': 'video/mp4',
-    '.webm': 'video/webm'
+    '.webm': 'video/webm',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.txt': 'text/plain'
 };
 
 const historyDir = process.env.HISTORY_DIR ? path.resolve(process.env.HISTORY_DIR) : path.join(PUBLIC_DIR, 'knowledge', 'history');
@@ -6884,7 +6888,35 @@ ${payload.intakeAnswers || ''}`;
         }
     }
 
-    // Static Files Resolution
+    // SPA Phase 3 (demo-v2) Integration
+    if (pathname.startsWith('/v2')) {
+        let v2Path = pathname.replace(/^\/v2/, '');
+        if (v2Path === '' || v2Path === '/') {
+            v2Path = '/index.html';
+        }
+        
+        const distDir = path.join(PUBLIC_DIR, 'demo-v2', 'dist');
+        const targetDistPath = path.join(distDir, v2Path);
+        
+        // Security check
+        if (!targetDistPath.startsWith(distDir)) {
+            res.writeHead(403, { 'Content-Type': 'text/plain' });
+            res.end('403 Forbidden');
+            return;
+        }
+
+        fs.stat(targetDistPath, (err, stats) => {
+            if (err || !stats.isFile()) {
+                // SPA Fallback: Serve index.html for React Router
+                serveFile(res, path.join(distDir, 'index.html'));
+            } else {
+                serveFile(res, targetDistPath);
+            }
+        });
+        return; // Prevent fallthrough to legacy static server
+    }
+
+    // Legacy Static Files Resolution
     let relativePath = pathname;
     if (pathname === '/') {
         relativePath = '/demo/index.html';

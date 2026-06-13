@@ -99,7 +99,27 @@ function getRecentlyCreatedFilesForCompany(company) {
     for (const [id, file] of recentlyCreatedFiles.entries()) {
         if (now - file.timestamp > 60000) {
             recentlyCreatedFiles.delete(id);
-        } else if (file.company.toLowerCase() === cleanCompany.toLowerCase()) {
+        } else if (file.company && file.company.toLowerCase() === cleanCompany.toLowerCase()) {
+            result.push({
+                id: file.id,
+                name: file.name,
+                mimeType: file.mimeType,
+                isFolder: false,
+                size: file.size,
+                webViewLink: file.webViewLink
+            });
+        }
+    }
+    return result;
+}
+
+function getRecentlyCreatedFilesForFolder(folderId) {
+    const now = Date.now();
+    const result = [];
+    for (const [id, file] of recentlyCreatedFiles.entries()) {
+        if (now - file.timestamp > 60000) {
+            recentlyCreatedFiles.delete(id);
+        } else if (file.folderId === folderId) {
             result.push({
                 id: file.id,
                 name: file.name,
@@ -194,7 +214,8 @@ async function listFolder(folderId) {
 
         const files = response.data.files || [];
         recordApiSuccess();
-        return files.map(file => ({
+        
+        let mappedFiles = files.map(file => ({
             id: file.id,
             name: file.name,
             mimeType: file.mimeType,
@@ -202,6 +223,16 @@ async function listFolder(folderId) {
             size: file.size ? parseInt(file.size, 10) : 0,
             parents: file.parents
         }));
+
+        // Merge in recently uploaded files to defeat eventual consistency
+        const recentFiles = getRecentlyCreatedFilesForFolder(targetFolderId);
+        recentFiles.forEach(recent => {
+            if (!mappedFiles.some(f => f.id === recent.id)) {
+                mappedFiles.push(recent);
+            }
+        });
+
+        return mappedFiles;
     } catch (err) {
         console.error(`❌ Error listing folder ${targetFolderId}:`, err.message);
         if (err.code === 404 || err.status === 404 || err.message.includes('not found') || err.message.includes('Not Found')) {
@@ -823,6 +854,17 @@ async function findOrCreateProspectFolder(companyFolderId, prospectName) {
                     supportsAllDrives: true
                 });
                 prospectFolderId = createRes.data.id;
+                
+                // Register in cache by folderId to bypass eventual consistency on immediate list operations
+                recentlyCreatedFiles.set(prospectFolderId, {
+                    id: prospectFolderId,
+                    name: cleanProspect,
+                    size: 0,
+                    mimeType: 'application/vnd.google-apps.folder',
+                    webViewLink: '',
+                    folderId: companyFolderId,
+                    timestamp: Date.now()
+                });
             }
 
             folderIdCache.set(cacheKey, prospectFolderId);
@@ -874,6 +916,18 @@ async function uploadFile(fileName, mimeType, fileBuffer, folderId) {
 
         recordApiSuccess();
         console.log(`✅ File uploaded successfully: "${response.data.name}" (ID: ${response.data.id})`);
+        
+        // Register in cache by folderId to bypass eventual consistency on immediate list operations
+        recentlyCreatedFiles.set(response.data.id, {
+            id: response.data.id,
+            name: response.data.name,
+            size: fileBuffer.length,
+            mimeType: mimeType,
+            webViewLink: response.data.webViewLink,
+            folderId: folderId,
+            timestamp: Date.now()
+        });
+        
         return response.data;
     } catch (err) {
         console.error(`❌ Error uploading file "${fileName}" to GDrive:`, err.message);
