@@ -2039,7 +2039,8 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                             fileBuffer.length,
                             'text/plain',
                             driveFile.webViewLink,
-                            activeCompany
+                            activeCompany,
+                            clientFolderId
                         );
                     }
                 } else {
@@ -3762,7 +3763,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                         fileBuffer.length,
                                                         'text/plain',
                                                         driveFile.webViewLink,
-                                                        company
+                                                        company,
+                                                        clientFolderId
                                                     );
                                                 }
                                                 receipts.push(generateReceipt("UPLOAD", "FILE", filename, driveFile ? driveFile.id : null, company, {
@@ -4766,7 +4768,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             }
                         }
                         companies.forEach(company => {
-                            const exists = items.some(item => item.name.toLowerCase() === company.toLowerCase());
+                            const exists = items.some(item => {
+                                const itemName = item.name.toLowerCase().replace(/\.pdf$/, '').replace(/\.txt$/, '').replace(/\.docx$/, '').replace(/\.md$/, '').trim();
+                                return itemName === company.toLowerCase().trim();
+                            });
                             if (!exists) {
                                 let mappedId = `local_folder_${company.replace(/[^a-zA-Z0-9]/g, '_')}`;
                                 for (const [key, val] of gdriveService.folderIdCache.entries()) {
@@ -4925,7 +4930,10 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 }
                     
                     prospects.forEach(prospect => {
-                        const exists = items.some(item => item.name.toLowerCase() === prospect.toLowerCase() && item.mimeType === 'application/vnd.google-apps.folder');
+                        const exists = items.some(item => {
+                            const itemName = item.name.toLowerCase().replace(/\.pdf$/, '').replace(/\.txt$/, '').replace(/\.docx$/, '').replace(/\.md$/, '').trim();
+                            return itemName === prospect.toLowerCase().trim();
+                        });
                         if (!exists) {
                             const cleanComp = resolvedCompany.replace(/[^a-zA-Z0-9]/g, '_');
                             const cleanPros = prospect.replace(/[^a-zA-Z0-9]/g, '_');
@@ -5300,7 +5308,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                     fileBuffer.length,
                                     mimeType,
                                     driveFile.webViewLink,
-                                    company
+                                    company,
+                                    uploadTargetFolderId
                                 );
                             }
                         } catch (gdriveErr) {
@@ -5309,20 +5318,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     }
 
                     if (!uploadSucceeded) {
-                        console.warn('⚠️ Saving file locally (Google Drive client not configured or upload failed).');
-                        const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                        const cleanProspect = (prospectName || 'Unknown Prospect').replace(/[^a-zA-Z0-9]/g, '_');
-                        const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
-                        if (!fs.existsSync(localFolder)) {
-                            fs.mkdirSync(localFolder, { recursive: true });
-                        }
-                        const localPath = path.join(localFolder, filename);
-                        fs.writeFileSync(localPath, fileBuffer);
-                        driveFile = {
-                            id: `local_${cleanCompany}_${cleanProspect}_${filename}`,
-                            name: filename,
-                            webViewLink: `file://${localPath}`
-                        };
+                        throw new Error('Google Drive upload failed or client not configured. Local fallback disabled in production.');
                     }
 
                     if (mimeType === 'application/pdf') {
@@ -5451,7 +5447,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                 fileBuffer.length,
                                 mimeType,
                                 driveFile.webViewLink,
-                                company
+                                company,
+                                clientFolderId
                             );
                         }
                     } catch (gdriveErr) {
@@ -5460,20 +5457,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 }
 
                 if (!uploadSucceeded) {
-                    console.warn('⚠️ Saving file locally (Google Drive client not configured or upload failed).');
-                    const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                    const cleanProspect = (prospectName || 'Unknown Prospect').replace(/[^a-zA-Z0-9]/g, '_');
-                    const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
-                    if (!fs.existsSync(localFolder)) {
-                        fs.mkdirSync(localFolder, { recursive: true });
-                    }
-                    const localPath = path.join(localFolder, fileName);
-                    fs.writeFileSync(localPath, fileBuffer);
-                    driveFile = {
-                        id: `local_${cleanCompany}_${cleanProspect}_${fileName}`,
-                        name: fileName,
-                        webViewLink: `file://${localPath}`
-                    };
+                    throw new Error('Google Drive upload failed or client not configured. Local fallback disabled in production.');
                 }
 
                 if (mimeType === 'application/pdf') {

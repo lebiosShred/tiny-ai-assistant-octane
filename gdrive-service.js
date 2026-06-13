@@ -19,16 +19,41 @@ let driveClient = null;
 const folderIdCache = new Map();
 const folderIdCacheTimestamps = new Map();
 
-// Monkey-patch set/delete to track entry timestamps for eventual consistency TTL
+// Monkey-patch set/get/has/delete to track entry timestamps for eventual consistency TTL
+const FOLDER_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes TTL
+
 const originalSet = folderIdCache.set;
 folderIdCache.set = function(key, value) {
     folderIdCacheTimestamps.set(key, Date.now());
     return originalSet.call(this, key, value);
 };
+
 const originalDelete = folderIdCache.delete;
 folderIdCache.delete = function(key) {
     folderIdCacheTimestamps.delete(key);
     return originalDelete.call(this, key);
+};
+
+const originalGet = folderIdCache.get;
+folderIdCache.get = function(key) {
+    const timestamp = folderIdCacheTimestamps.get(key);
+    if (timestamp && Date.now() - timestamp > FOLDER_CACHE_TTL_MS) {
+        console.log(`⏰ Folder cache TTL expired for key: "${key}"`);
+        this.delete(key);
+        return undefined; // Force re-fetch
+    }
+    return originalGet.call(this, key);
+};
+
+const originalHas = folderIdCache.has;
+folderIdCache.has = function(key) {
+    const timestamp = folderIdCacheTimestamps.get(key);
+    if (timestamp && Date.now() - timestamp > FOLDER_CACHE_TTL_MS) {
+        console.log(`⏰ Folder cache TTL expired for key (during has check): "${key}"`);
+        this.delete(key);
+        return false;
+    }
+    return originalHas.call(this, key);
 };
 let cachedCompanyFolderId = null;
 const activeResolutions = new Map();
@@ -82,7 +107,7 @@ function recordApiFailure(err) {
 // --- Recently Created Files Cache ---
 const recentlyCreatedFiles = new Map();
 
-function registerRecentlyCreatedFile(id, name, size, mimeType, webViewLink, company) {
+function registerRecentlyCreatedFile(id, name, size, mimeType, webViewLink, company, folderId) {
     const cleanCompany = (company || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
     recentlyCreatedFiles.set(id, {
         id,
@@ -91,6 +116,7 @@ function registerRecentlyCreatedFile(id, name, size, mimeType, webViewLink, comp
         mimeType,
         webViewLink,
         company: cleanCompany,
+        folderId: folderId,
         timestamp: Date.now()
     });
     console.log(`💾 Registered recently created file in cache: "${name}" (ID: ${id}) for company "${cleanCompany}"`);
