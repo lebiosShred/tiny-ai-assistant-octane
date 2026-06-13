@@ -1679,8 +1679,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Create New Chat ---
-    const handleNewChat = () => {
+    // --- Create New Chat (Global / Sidebar) ---
+    const handleGlobalNewChat = () => {
         currentChatId = null;
         activeFolderId = null;
         activeProspectName = null;
@@ -1726,11 +1726,22 @@ document.addEventListener('DOMContentLoaded', () => {
         updateValidationBadges();
     };
 
+    // --- Create New Chat (Contextual / Active Prospect Header) ---
+    const handleProspectNewChat = () => {
+        // Soft reset: Only nullify the current session ID. 
+        // Do NOT nullify activeFolderId, activeProspectName, or overwrite the DOM metadata/header titles.
+        currentChatId = null;
+        renderChatsList();
+
+        chatHistory = [];
+        chatMessagesLog.innerHTML = `<div style="font-size:0.95rem;color:#64748b;text-align:center;padding:2rem;">Ready for a new session with <strong>${activeProspectName || 'this prospect'}</strong>.</div>`;
+    };
+
     if (btnNewChat) {
-        btnNewChat.addEventListener('click', handleNewChat);
+        btnNewChat.addEventListener('click', handleGlobalNewChat);
     }
     if (btnNewChatActive) {
-        btnNewChatActive.addEventListener('click', handleNewChat);
+        btnNewChatActive.addEventListener('click', handleProspectNewChat);
     }
 
     // --- LLM Interaction Helpers ---
@@ -2196,6 +2207,9 @@ Rules:
 
             if (chatUploadProgress) chatUploadProgress.classList.remove('hidden');
             
+            // Apply Global UI Lock during heavy upload I/O
+            document.body.classList.add('opacity-50', 'pointer-events-none');
+            
             const totalFiles = stagedAttachments.length;
             const uploadedFileNames = [];
             let documentPayload = "";
@@ -2214,12 +2228,6 @@ Rules:
 
                     uploadedFileNames.push(file.name);
                     
-                    chatHistory.push({
-                        role: 'assistant',
-                        content: `[SYSTEM: Document Uploaded] I have successfully uploaded and indexed "${file.name}" into the Google Drive memory folder for ${companyName}. I can now search and answer questions based on this file!`,
-                        timestamp: new Date().toISOString()
-                    });
-
                     if (result.fileId) {
                         sourceGdriveFileSelect.innerHTML = `<option value="${result.fileId}">${file.name} (Uploaded)</option>`;
                         sourceGdriveFileSelect.value = result.fileId;
@@ -2239,12 +2247,26 @@ Rules:
                 }
             }
 
+            // Consolidate the upload message to prevent UI chat spam
+            if (uploadedFileNames.length > 0) {
+                const formattedNames = uploadedFileNames.map(name => `"${name}"`).join(', ');
+                chatHistory.push({
+                    role: 'assistant',
+                    content: `[SYSTEM: Document Uploaded] I have successfully uploaded and indexed ${formattedNames} into the Google Drive memory folder for ${companyName}. I can now search and answer questions based on these files!`,
+                    timestamp: new Date().toISOString()
+                });
+            }
+
             if (chatUploadProgress) chatUploadProgress.classList.add('hidden');
             if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', '0%');
 
             stagedAttachments = [];
             renderStagingArea();
             renderChatHistory();
+            
+            // Synchronize the Prospect Files Column and Release UI Lock
+            await loadSourcesForCompany(activeFolderId, companyName, null, prospectName);
+            document.body.classList.remove('opacity-50', 'pointer-events-none');
 
             const combinedQuery = queryText + (documentPayload ? `\n\n[Uploaded Document Context]:\n${documentPayload}` : "");
             

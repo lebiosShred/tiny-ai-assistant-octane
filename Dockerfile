@@ -24,6 +24,7 @@ COPY knowledge/ ./knowledge/
 COPY knowledge_backup/ ./knowledge_backup/
 COPY api/ ./api/
 COPY src/ ./src/
+COPY demo-v2/dist/ ./demo-v2/dist/
 # Expose default HTTP port
 EXPOSE 8080
 
