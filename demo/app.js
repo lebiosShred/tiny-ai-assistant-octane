@@ -2990,18 +2990,31 @@ ${data.parsedText}`;
         try {
             // Fetch chats list and prospects tree in parallel to eliminate sequential roundtrip latency
             const [chatsRes, prospectsRes] = await Promise.all([
-                fetch('/api/history', { headers: { 'Cache-Control': 'no-cache' } }),
-                fetch('/api/gdrive/list', { headers: { 'Cache-Control': 'no-cache' } })
+                fetch('/api/history', { headers: { 'Cache-Control': 'no-cache' } }).catch(err => ({ ok: false, error: err, json: async () => [] })),
+                fetch('/api/gdrive/list', { headers: { 'Cache-Control': 'no-cache' } }).catch(err => ({ ok: false, error: err, json: async () => ({ items: [] }) }))
             ]);
             
-            if (!chatsRes.ok) throw new Error('Failed to fetch history');
-            if (!prospectsRes.ok) throw new Error('Failed to list folders');
-            
-            const chatsData = await chatsRes.json();
-            const prospectsData = await prospectsRes.json();
+            let chatsData = [];
+            let prospectsData = { items: [] };
+
+            if (!chatsRes.ok) {
+                console.error('Failed to fetch history:', chatsRes.status || chatsRes.error);
+            } else {
+                try { chatsData = await chatsRes.json(); } catch(e) { console.error('Error parsing history:', e); }
+            }
+
+            if (!prospectsRes.ok) {
+                console.error('Failed to list folders:', prospectsRes.status || prospectsRes.error);
+                const recentChatsList = document.getElementById('recent-chats-list');
+                if (recentChatsList) {
+                    recentChatsList.innerHTML = '<div style="padding: 1rem; color: #ef4444; font-size: 0.875rem; text-align: center; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin: 1rem;">Network Error: Proxy or API unreachable.</div>';
+                }
+            } else {
+                try { prospectsData = await prospectsRes.json(); } catch(e) { console.error('Error parsing folders:', e); }
+            }
             
             await loadChatsList(chatsData);
-            await loadProspectsTree(prospectsData);
+            if (prospectsRes.ok && prospectsData) await loadProspectsTree(prospectsData);
             
             // Hide initial loading indicator
             const loadingIndicator = document.getElementById('initial-loading-indicator');
