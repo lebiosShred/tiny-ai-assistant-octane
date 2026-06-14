@@ -43,7 +43,8 @@ module.exports = defineConfig({
             cwd: __dirname,
             timeout: 15000,
             env: {
-                HISTORY_DIR: 'knowledge/history_test'
+                HISTORY_DIR: 'knowledge/history_test',
+                DATABASE_URL: 'postgresql://db_isolation_user:db_isolation_pass@localhost:5432/db_isolation_test'
             }
         }
     }),

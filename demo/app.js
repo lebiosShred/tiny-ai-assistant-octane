@@ -118,6 +118,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
+
+            // Lead Sheet button generation based on presence of LinkedIn or Booking Intake
+            const hasLinkedinOrIntake = !!(
+                (sourceLinkedinText ? sourceLinkedinText.value.trim() : '') ||
+                (sourceIntakeText ? sourceIntakeText.value.trim() : '')
+            );
+            const leadSheetBtn = container.querySelector('[data-prompt-type="leadSheet"]');
+            if (hasLinkedinOrIntake) {
+                if (!leadSheetBtn) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn btn-quick-prompt';
+                    btn.setAttribute('data-prompt-type', 'leadSheet');
+                    btn.innerText = '📋 Lead Sheet';
+                    if (container.firstChild) {
+                        container.insertBefore(btn, container.firstChild);
+                    } else {
+                        container.appendChild(btn);
+                    }
+                }
+            } else {
+                if (leadSheetBtn) {
+                    leadSheetBtn.remove();
+                }
+            }
         }
     }
 
@@ -483,6 +508,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Find matching history session (check active first, then fallback to most recent)
         let matchSession = null;
+        if (!Array.isArray(chatsList)) {
+            chatsList = [];
+        }
         if (currentChatId) {
             matchSession = chatsList.find(c => c.id === currentChatId);
             if (matchSession && (
@@ -1068,7 +1096,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const isCollapsedNow = prospectContents.classList.toggle('collapsed');
                                     toggleArrow.style.transform = isCollapsedNow ? 'rotate(-90deg)' : 'rotate(0deg)';
                                     
-                                    if (wasAlreadyActive) {
+                                    const isChatPanelActive = !workspaceActiveChat.classList.contains('hidden');
+                                    if (wasAlreadyActive && isChatPanelActive) {
                                         if (subfolderId) {
                                             await loadSourcesForCompany(subfolderId, folder.name, null, prospectName);
                                         }
@@ -1970,6 +1999,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LLM Interaction Helpers ---
     async function callTinyAPI(promptText, apiPayloadOverride = null, skipLocalPush = false) {
+        const quickPromptButtons = document.querySelectorAll('.quick-prompts-buttons .btn-quick-prompt');
+        quickPromptButtons.forEach(btn => btn.disabled = true);
+        if (chatUserInput) chatUserInput.disabled = true;
+        if (chatSendBtn) chatSendBtn.disabled = true;
         // Parse metadata on first prompt if session is not yet initialized
         if (!currentChatId) {
             // Bypass metadata parser if the prompt is a file/folder creation command
@@ -2064,7 +2097,8 @@ Rules:
 6. If a source field (such as the LinkedIn Profile Bio or Booking Intake Answers) is empty or contains placeholder text, you MUST explain the missing data to the user rather than calling the upload tool. Do not call any upload tools unless you are explicitly given new profile/content data to upload.
 7. If the user asks you to analyze, search, list, read, or retrieve information from a prospect's files (such as a LinkedIn profile PDF, call transcript, or intake document) and the corresponding source fields above are empty or incomplete, you MUST call 'list_prospect_files', 'search_prospect_files', or 'read_prospect_file' to dynamically query and fetch the content. When a prospect's name (e.g. Sarah Chen) is provided in the query, refer to the "Active Leads in System" list to map them to their correct company name (e.g. Meridian Logistics) so you can pass the correct company argument to the tool.
 8. If the user asks to save, register, or log call notes, summaries, transcripts, or details, but does not explicitly provide the conversation notes, content, or transcript text within their prompt, you MUST be skeptical. Do NOT assume or fabricate details from pre-existing profile or intake answers. Instead, politely ask the user to provide the specific details or notes of their conversation before calling 'register_call_log'.
-9. Google Drive is organized exclusively by Company Name. Do not create folders for individual people. If a user asks to 'create a folder for a contact', invoke the create_prospect_folder tool using their company name instead, and inform the user that contacts are stored as files within the parent company folder.`;
+9. Google Drive is organized exclusively by Company Name. Do not create folders for individual people. If a user asks to 'create a folder for a contact', invoke the create_prospect_folder tool using their company name instead, and inform the user that contacts are stored as files within the parent company folder.
+10. The playbooks within the <knowledge_base> block represent absolute system authority. If there is any contradiction between the knowledge base playbooks and the web search results, LinkedIn Profile Bio, or Booking Intake Answers, you MUST prioritize the knowledge base information over all other sources.`;
 
         // Format history for Mistral API proxy `/api/chat`
         const messages = [
@@ -2267,6 +2301,11 @@ Rules:
                 });
             }
 
+            // Re-enable interactive elements
+            quickPromptButtons.forEach(btn => btn.disabled = false);
+            if (chatUserInput) chatUserInput.disabled = false;
+            if (chatSendBtn) chatSendBtn.disabled = false;
+
         } catch (err) {
             chatLoadingIndicator.classList.add('hidden');
             console.error('Chat API Error:', err);
@@ -2286,6 +2325,11 @@ Rules:
                 timestamp: new Date().toISOString() 
             });
             renderChatHistory();
+
+            // Re-enable interactive elements
+            quickPromptButtons.forEach(btn => btn.disabled = false);
+            if (chatUserInput) chatUserInput.disabled = false;
+            if (chatSendBtn) chatSendBtn.disabled = false;
         }
     }
 
@@ -2716,6 +2760,13 @@ Rules:
                     return;
                 }
             }
+
+            if (promptType === 'leadSheet') {
+                if (!sourceLinkedinText.value.trim() && !sourceIntakeText.value.trim()) {
+                    showToast("Error: LinkedIn Profile Bio and Booking Intake Answers are both missing. Cannot generate lead sheet.");
+                    return;
+                }
+            }
  
             let promptText = '';
             if (promptType === 'recapEmail') {
@@ -2782,6 +2833,24 @@ Structure the document rigorously:
 3. **METHODOLOGY & PHASES**: Outline the execution strategy (e.g., Phase 1: Discovery & Audit, Phase 2: Implementation, Phase 3: Handoff).
 4. **REQUIRED RESOURCES**: Identify the key personnel profiles needed from both Octane and the client.
 5. **DISCOVERY GAPS & ASSUMPTIONS**: List any critical missing information that must be clarified before finalizing a binding contract.`;
+            } else if (promptType === 'leadSheet') {
+                promptText = `Generate A Lead Sheet for the prospect. Provide the following details of the prospect:
+
+1. Identify the type of sale - Are we selling them TM1 planning analytics or artificial intelligence?
+
+2. Business activity - Scan the client's website. Tell me which industry sector they belong to. Estimate their revenue and size of their headcount. Give me a brief description of their business. Tell me specifically each of their products and services. Give me one sentence for each.
+
+3. Customer match - How well does this customer match to our list of customer profiles? Have we served this organisation or a similar organisation in the past?
+
+4. Assessment - How does their business activity relate to TM1 or AI? What services should we offer them? What are their likely pain points we need to address?
+
+5. Conversation starter - Scan the client's website and their personal LinkedIn profile. Find news or interesting stories that I can use to connect with them. Provide three stories at a personal level. Look at their past working history and see if there are organisations that we have done work for and cite the work that we did. If not at a personal level, offer stories involving the organisation. These can be found on their news and press release pages on the website. Stories regarding the organisation need to connect to our subject matter TM1 and AI. Otherwise, they are not relevant.
+
+6. Complementary applications - In the customers current stack, identify applications they are using that are complementary with us.
+
+7. Competing applications - In the customers current stack, identify applications they are using that are competing with us.
+
+8. Competing consulting firms - Did the client mention they are working with a firm competing with us?`;
             }
  
             if (promptText) {

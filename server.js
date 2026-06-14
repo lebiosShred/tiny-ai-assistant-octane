@@ -85,6 +85,7 @@ const { sessions, documentCompanionMetadata } = require('./src/db/schema.js');
 
 // 🚨 Transparent FS Proxy for Legacy RAG Compatibility powered by Neon Postgres
 let pgCache = new Map();
+let pgCacheSyncPromise = null;
 let redisSubClient = null;
 
 async function syncPgCache() {
@@ -126,7 +127,8 @@ async function syncPgCache() {
 }
 
 // Initial sync and setup Pub/Sub
-syncPgCache().then(() => {
+pgCacheSyncPromise = syncPgCache();
+pgCacheSyncPromise.then(() => {
     setupRedisPubSub();
 });
 
@@ -226,6 +228,9 @@ async function saveHistoryItem(item) {
     if (!fs.existsSync(historyDir)) {
         fs.mkdirSync(historyDir, { recursive: true });
     }
+    // Optimistic UI cache update for local instance
+    pgCache.set(item.id, item);
+
     try {
         await db.insert(sessions)
             .values({
@@ -242,8 +247,6 @@ async function saveHistoryItem(item) {
                 }
             });
             
-        // Optimistic UI cache update for local instance
-        pgCache.set(item.id, item);
         if (redisModule.isRedisActive()) {
             const pub = redisModule.getRedisClient();
             if (pub) {
@@ -253,6 +256,7 @@ async function saveHistoryItem(item) {
         console.log(`✅ Saved history item to Neon Postgres and broadcasted: ${item.id}`);
     } catch (err) {
         console.error(`❌ Failed to save history item ${item.id}:`, err);
+        throw err;
     }
 }
 
@@ -473,7 +477,7 @@ function isTestEnrichment(name, company) {
     if (isTestDir) return true;
     const n = (name || '').toLowerCase();
     const c = (company || '').toLowerCase();
-    return n.includes('qa_') || n.includes('test') || c.includes('qa_') || c.includes('test') || c.includes('meridian') || c.includes('acme');
+    return n.includes('qa_') || n.includes('test') || c.includes('qa_') || c.includes('test');
 }
 
 async function searchWeb(query) {
@@ -523,6 +527,65 @@ async function scrapeUrlWithJina(url) {
         }
     }
     return result;
+}
+
+async function fetchWikidataEnrichment(companyName) {
+    if (!companyName || companyName === 'Unknown_Company' || companyName === 'Unknown Company') {
+        return null;
+    }
+    const cacheKey = `enrich:wikidata:${crypto.createHash('md5').update(companyName).digest('hex')}`;
+    try {
+        const cached = await redisModule.getCache(cacheKey);
+        if (cached !== null && cached !== undefined) {
+            console.log(`⚡ Cache hit for Wikidata: "${companyName}"`);
+            return JSON.parse(cached);
+        }
+    } catch (e) {
+        console.warn('⚠️ Cache fetch failed in fetchWikidataEnrichment:', e.message);
+    }
+
+    try {
+        const sparqlQuery = `
+SELECT ?item ?itemLabel ?itemDescription ?employees ?revenue WHERE {
+  ?item rdfs:label "${companyName.replace(/"/g, '\\"')}"@en.
+  OPTIONAL { ?item wdt:P1128 ?employees. }
+  OPTIONAL { ?item wdt:P2295 ?revenue. }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+} LIMIT 1`;
+        
+        const url = `https://query.wikidata.org/sparql?query=${encodeURIComponent(sparqlQuery)}&format=json`;
+        const res = await fetch(url, {
+            headers: {
+                'User-Agent': 'TinySalesAssistant/2.0 (admin@octanesolutions.com.au)',
+                'Accept': 'application/sparql-results+json'
+            },
+            signal: AbortSignal.timeout(5000)
+        });
+
+        if (!res.ok) {
+            throw new Error(`HTTP error ${res.status}`);
+        }
+
+        const data = await res.json();
+        const bindings = data.results?.bindings || [];
+        if (bindings.length > 0) {
+            const binding = bindings[0];
+            const result = {
+                description: binding.itemDescription?.value || null,
+                employees: binding.employees?.value ? parseInt(binding.employees.value, 10) : null,
+                revenue: binding.revenue?.value ? parseFloat(binding.revenue.value) : null
+            };
+            try {
+                await redisModule.setCache(cacheKey, JSON.stringify(result), 86400); // 24 hours TTL
+            } catch (e) {
+                console.warn('⚠️ Cache store failed in fetchWikidataEnrichment:', e.message);
+            }
+            return result;
+        }
+    } catch (err) {
+        console.warn(`⚠️ Wikidata enrichment failed for "${companyName}":`, err.message);
+    }
+    return null;
 }
 
 function executeGeminiFailover(payload) {
@@ -2069,6 +2132,16 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
             let clientEmailForGDrive = extracted.email;
             const company = companyNameForGDrive || 'Unknown_Company';
 
+            // Fetch Wikidata firmographic enrichment asynchronously
+            let wikidataData = null;
+            if (companyNameForGDrive) {
+                try {
+                    wikidataData = await fetchWikidataEnrichment(companyNameForGDrive);
+                } catch (e) {
+                    console.warn('⚠️ fetchWikidataEnrichment failed:', e.message);
+                }
+            }
+
             // Output sanitization helper to prevent system prompt extraction leaks
             const sanitizeAssistantOutput = (content) => {
                 if (typeof content !== 'string') return content;
@@ -2899,17 +2972,22 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     mismatchWarning = `\n\nCRITICAL SYSTEM WARNING: IDENTITY MISMATCH DETECTED. An uploaded source document (LinkedIn profile bio or Google Drive SOW document) does NOT match the lead metadata company ("${extractedCo}"). You are in IDENTITY CONFLICT CONTAINMENT MODE. There is an active mismatch between source document data and the current session's target company metadata. To prevent data corruption, folder pollution, and incorrect document generation, you must remain highly skeptical. Ask clarifying questions deeply to reconcile the mismatch. Do not perform any execution actions. Refuse to write files, create directories, run web searches, map routes, or generate deliverables. Explain that you cannot proceed with folder or file actions until the user clarifies the correct company identity.`;
                 }
 
+                let wikidataContext = '';
+                if (wikidataData) {
+                    wikidataContext = `\n\n<firmographic_context>\n- Description: ${wikidataData.description || 'Unknown'}\n- Estimated Headcount: ${wikidataData.employees || 'Unknown'}\n- Estimated Revenue: ${wikidataData.revenue || 'Unknown'}\n</firmographic_context>\n`;
+                }
+
                 let entityRoutingEnforcement = '';
                 if (companyNameForGDrive) {
                     entityRoutingEnforcement = `\n\n<strict_entity_routing_enforcement>\nThe Canonical Company for this prospect is absolute and defined by their physical folder location: "${companyNameForGDrive}". Whenever you read files or search for documents, if you discover that the document's content claims the prospect belongs to a different company, you MUST NOT change the Canonical Company. Instead, you MUST immediately warn the user by stating the discrepancy in the chat and including a 🚨 emoji.\n</strict_entity_routing_enforcement>\n`;
                 }
 
                 if (systemMsg) {
-                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + gdriveFilesContext + jsonSchemaInstruction + customInstructionsStr + mismatchWarning + entityRoutingEnforcement;
+                    systemMsg.content += knowledgeBase + safetyRules + webSearchContext + gdriveFilesContext + jsonSchemaInstruction + customInstructionsStr + mismatchWarning + entityRoutingEnforcement + wikidataContext;
                 } else {
                     payload.messages.unshift({
                         role: 'system',
-                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${gdriveFilesContext}${jsonSchemaInstruction}${customInstructionsStr}${mismatchWarning}${entityRoutingEnforcement}`
+                        content: `You are a professional B2B sales operations assistant.${knowledgeBase}${safetyRules}${webSearchContext}${gdriveFilesContext}${jsonSchemaInstruction}${customInstructionsStr}${mismatchWarning}${entityRoutingEnforcement}${wikidataContext}`
                     });
                 }
             }
@@ -6173,6 +6251,15 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                 historyListCache = null;
             }
 
+            if (pgCache.size === 0 && pgCacheSyncPromise) {
+                console.log('🔄 pgCache is empty. Awaiting startup DB sync before returning history.');
+                try {
+                    await pgCacheSyncPromise;
+                } catch (syncErr) {
+                    console.error('⚠️ Awaiting startup DB sync failed:', syncErr.message);
+                }
+            }
+
             const items = [];
             const isTestEnv = process.env.HISTORY_DIR === 'knowledge/history_test';
             for (const [id, parsedObj] of pgCache.entries()) {
@@ -6545,17 +6632,20 @@ ${payload.intakeAnswers || ''}`;
                         const itemRaw = pgCache.get(cleanId);
                         const item = typeof itemRaw === 'string' ? JSON.parse(itemRaw) : itemRaw;
                         item.stage = stage;
-                        saveHistoryItem(item).then(() => {
-                            // Non-blocking write to file system for backup
-                            const filePath = path.join(historyDir, `${cleanId}.json`);
-                            fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', () => {});
-                            
+                        saveHistoryItem(item).catch(err => {
+                            console.error("⚠️ Failed to sync updated stage to Postgres:", err.message);
+                        });
+
+                        const filePath = path.join(historyDir, `${cleanId}.json`);
+                        fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', (writeErr) => {
+                            if (writeErr) {
+                                res.writeHead(500, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ error: 'Failed to save updated stage.' }));
+                                return;
+                            }
                             historyListCache = null;
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ status: 'success', id, stage }));
-                        }).catch(() => {
-                            res.writeHead(500, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ error: 'Failed to save updated stage.' }));
                         });
                     } catch (parseErr) {
                         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -6601,17 +6691,20 @@ ${payload.intakeAnswers || ''}`;
                         const itemRaw = pgCache.get(cleanId);
                         const item = typeof itemRaw === 'string' ? JSON.parse(itemRaw) : itemRaw;
                         item.title = title;
-                        saveHistoryItem(item).then(() => {
-                            // Non-blocking write to file system for backup
-                            const filePath = path.join(historyDir, `${cleanId}.json`);
-                            fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', () => {});
-                            
+                        saveHistoryItem(item).catch(err => {
+                            console.error("⚠️ Failed to sync updated title to Postgres:", err.message);
+                        });
+
+                        const filePath = path.join(historyDir, `${cleanId}.json`);
+                        fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf8', (writeErr) => {
+                            if (writeErr) {
+                                res.writeHead(500, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ error: 'Failed to save updated title.' }));
+                                return;
+                            }
                             historyListCache = null;
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ status: 'success', id, title }));
-                        }).catch(() => {
-                            res.writeHead(500, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ error: 'Failed to save updated title.' }));
                         });
                     } catch (parseErr) {
                         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -6641,13 +6734,20 @@ ${payload.intakeAnswers || ''}`;
         
         if (!pgCache.has(cleanId)) {
             try {
-                if (fs.existsSync(filePath)) {
+                // Try database query first
+                const { eq } = require('drizzle-orm');
+                const dbRows = await db.select().from(sessions).where(eq(sessions.id, cleanId));
+                if (dbRows && dbRows.length > 0) {
+                    const parsed = dbRows[0].data;
+                    pgCache.set(cleanId, parsed);
+                } else if (fs.existsSync(filePath)) {
+                    // Fallback to local file backup
                     const content = fs.readFileSync(filePath, 'utf8');
                     const parsed = JSON.parse(content);
                     pgCache.set(cleanId, parsed);
                 }
-            } catch (fsErr) {
-                console.error(`⚠️ Failed to lazy load history item ${cleanId} from file:`, fsErr.message);
+            } catch (dbErr) {
+                console.error(`⚠️ Failed to lazy load history item ${cleanId} from DB/file:`, dbErr.message);
             }
         }
         

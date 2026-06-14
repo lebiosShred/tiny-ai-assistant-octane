@@ -6,7 +6,7 @@ function isTestEnrichment(name, company) {
     if (isTestDir) return true;
     const n = (name || '').toLowerCase();
     const c = (company || '').toLowerCase();
-    return n.includes('qa_') || n.includes('test') || c.includes('qa_') || c.includes('test') || c.includes('meridian') || c.includes('acme');
+    return n.includes('qa_') || n.includes('test') || c.includes('qa_') || c.includes('test');
 }
 
 function executeHttpRequestWithRetry(options, payload = null, retries = 3, delay = 1000) {
