@@ -598,6 +598,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (metaRep) metaRep.value = '';
                     if (metaTrack) metaTrack.value = '';
                     
+                    if (activeChatClientTitle) {
+                        activeChatClientTitle.innerText = prospectName ? `${companyFolder.name} (${prospectName})` : companyFolder.name;
+                    }
+                    if (activeChatClientMeta) {
+                        activeChatClientMeta.innerText = '';
+                    }
+                    
                     if (targetFolderId) {
                         resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
                     }

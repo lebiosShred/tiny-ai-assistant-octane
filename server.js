@@ -2490,15 +2490,16 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 
                 }
             }
-
             // Check if key is the mock decoy or empty
             const isMockKey = apiKey === "N1V4ErGCSlQSLdDrc7vhkSfpf334TgRo";
             let isOpenRouter = false;
-            
+
             if (!apiKey || isMockKey) {
-                // If the client requested deepseek, prioritize the native DeepSeek key
+                // If the client requested deepseek or mistral, prioritize the native key
                 if (payload.provider === 'deepseek' && process.env.DEEPSEEK_API_KEY) {
                     apiKey = process.env.DEEPSEEK_API_KEY.trim();
+                } else if (payload.provider === 'mistral' && process.env.MISTRAL_API_KEY) {
+                    apiKey = process.env.MISTRAL_API_KEY.trim();
                 } else if (process.env.DEEPSEEK_API_KEY && !process.env.MISTRAL_API_KEY && !process.env.OPENROUTER_API_KEY) {
                     apiKey = process.env.DEEPSEEK_API_KEY.trim();
                 } else if (process.env.OPENROUTER_API_KEY) {
@@ -3193,15 +3194,18 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 return;
             }
 
-            if (payload.provider === 'deepseek') {
+            if (payload.provider === 'deepseek' || payload.provider === 'mistral') {
+                const isMistral = payload.provider === 'mistral';
                 let dsKey = req.headers['authorization'] ? req.headers['authorization'].substring(7).trim() : '';
                 if (!dsKey || dsKey === 'N1V4ErGCSlQSLdDrc7vhkSfpf334TgRo') {
-                    dsKey = (process.env.DEEPSEEK_API_KEY || '').trim();
+                    dsKey = isMistral
+                        ? (process.env.MISTRAL_API_KEY || '').trim()
+                        : (process.env.DEEPSEEK_API_KEY || '').trim();
                 }
                 
                 if (!dsKey) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'DeepSeek API key missing.' }));
+                    res.end(JSON.stringify({ error: `${isMistral ? 'Mistral' : 'DeepSeek'} API key missing.` }));
                     return;
                 }
                 
@@ -3547,8 +3551,13 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         return;
                     }
 
+                    let targetModel = payload.model || (payload.provider === 'mistral' ? 'mistral-large-latest' : 'deepseek-chat');
+                    if (payload.provider === 'mistral' && (!targetModel || !targetModel.includes('mistral'))) {
+                        targetModel = process.env.MISTRAL_API_MODEL || 'mistral-large-latest';
+                    }
+
                     const dsPayloadObj = {
-                        model: payload.model || 'deepseek-chat',
+                        model: targetModel,
                         messages: currentMessages,
                         temperature: payload.temperature !== undefined ? payload.temperature : 0.2
                     };
@@ -3559,9 +3568,9 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     const dsPayload = JSON.stringify(dsPayloadObj);
 
                     const dsOptions = {
-                        hostname: 'api.deepseek.com',
+                        hostname: payload.provider === 'mistral' ? 'api.mistral.ai' : 'api.deepseek.com',
                         port: 443,
-                        path: '/chat/completions',
+                        path: payload.provider === 'mistral' ? '/v1/chat/completions' : '/chat/completions',
                         method: 'POST',
                         timeout: 15000,
                         headers: {
@@ -3576,7 +3585,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         proxyRes.on('data', chunk => resBody += chunk);
                         proxyRes.on('end', async () => {
                             if (proxyRes.statusCode !== 200) {
-                                console.warn(`⚠️ Primary DeepSeek API returned status ${proxyRes.statusCode} at recursion depth ${depth}. Attempting Gemini failover...`);
+                                console.warn(`⚠️ Primary ${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} API returned status ${proxyRes.statusCode} at recursion depth ${depth}. Attempting Gemini failover...`);
                                 try {
                                     const failoverPayload = {
                                         ...payload,
@@ -4427,12 +4436,12 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     });
 
                     proxyReq.on('timeout', () => {
-                        console.warn(`⚠️ Primary DeepSeek API timed out at recursion depth ${depth}.`);
+                        console.warn(`⚠️ Primary ${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} API timed out at recursion depth ${depth}.`);
                         proxyReq.destroy(); // Will trigger 'error' event and failover
                     });
 
                     proxyReq.on('error', async (err) => {
-                        console.warn(`⚠️ DeepSeek connection error at depth ${depth}: ${err.message}. Attempting Gemini failover...`);
+                        console.warn(`⚠️ ${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} connection error at depth ${depth}: ${err.message}. Attempting Gemini failover...`);
                         try {
                             const failoverPayload = {
                                 ...payload,
@@ -4456,11 +4465,11 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             });
                         } catch (geminiError) {
                             res.writeHead(502, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ error: `DeepSeek failed: ${err.message}. Gemini failover failed: ${geminiError.message}` }));
+                            res.end(JSON.stringify({ error: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} failed: ${err.message}. Gemini failover failed: ${geminiError.message}` }));
                         }
                     });
 
-                    console.log(`📡 Sending request to DeepSeek (depth ${depth})... payload length: ${Buffer.byteLength(dsPayload)}`);
+                    console.log(`📡 Sending request to ${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} (depth ${depth})... payload length: ${Buffer.byteLength(dsPayload)}`);
                     proxyReq.write(dsPayload);
                     proxyReq.end();
                 };
