@@ -177,6 +177,10 @@ function invalidateFolderCache(folderId) {
 
 // Initialize Google Drive API client
 function getDriveClient() {
+    if (process.env.HISTORY_DIR === 'knowledge/history_test' || process.env.NODE_ENV === 'test') {
+        console.warn('ℹ️ E2E Test environment detected (HISTORY_DIR=knowledge/history_test). Bypassing real Google Drive API client to prevent pollution.');
+        return null;
+    }
     if (!checkCircuitBreaker()) {
         return null;
     }
@@ -343,7 +347,7 @@ async function getFileContent(fileId, ignoreCache = false) {
         let content;
 
         // 1. Query database companion cache first
-        if (fileId) {
+        if (fileId && !ignoreCache) {
             try {
                 const { eq } = require('drizzle-orm');
                 const cached = await db.select()

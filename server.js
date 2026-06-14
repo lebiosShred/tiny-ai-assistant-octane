@@ -1718,7 +1718,7 @@ const server = http.createServer(async (req, res) => {
     const pathname = parsedUrl.pathname;
 
     // Lightweight API Security Guard
-    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/hubspot/webhook') && !pathname.startsWith('/api/config/pricing')) {
+    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/config/pricing')) {
         const apiKey = req.headers['x-api-key'];
         const validKey = process.env.API_KEY;
         if (validKey && apiKey !== validKey) {
@@ -3418,52 +3418,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             }
                         }
                     },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'update_hubspot_deal_stage',
-                            description: 'Updates the deal/ticket stage in the HubSpot CRM. Stages: 1 (Lead Captured), 2 (MQL), 3 (Prescreen Booked), 4 (Prescreen Completed), 5 (Discovery Booked), 6 (Discovery Completed), 7 (Positioning Meeting).',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    email: {
-                                        type: 'string',
-                                        description: 'The prospect email address to find the contact and ticket'
-                                    },
-                                    stage: {
-                                        type: 'integer',
-                                        description: 'The pipeline stage number (1-7)'
-                                    }
-                                },
-                                required: ['email', 'stage']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'create_hubspot_task',
-                            description: 'Creates a task or follow-up reminder in HubSpot CRM associated with the prospect.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    email: {
-                                        type: 'string',
-                                        description: 'The prospect email address to associate the task with'
-                                    },
-                                    taskTitle: {
-                                        type: 'string',
-                                        description: 'The title or description of the task'
-                                    },
-                                    dueDate: {
-                                        type: 'string',
-                                        description: 'The due date for the task in YYYY-MM-DD format'
-                                    }
-                                },
-                                required: ['email', 'taskTitle']
-                            }
-                        }
-                    },
+
                     {
                         type: 'function',
                         function: {
@@ -4349,137 +4304,6 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                 }
                                             } else {
                                                 toolResult = `Error: Missing required parameters 'email', 'name', 'company', or 'recapText'.`;
-                                            }
-                                        } else if (name === 'update_hubspot_deal_stage') {
-                                            const { email, stage } = args;
-                                            if (email && stage !== undefined) {
-                                                console.log(`📈 Tool Call: Updating HubSpot deal stage to ${stage} for ${email}`);
-                                                let contactId = null;
-                                                try {
-                                                    const searchResponse = await makeHubSpotRequest('POST', '/crm/v3/objects/contacts/search', {
-                                                        filterGroups: [{
-                                                            filters: [{
-                                                                propertyName: 'email',
-                                                                operator: 'EQ',
-                                                                value: email
-                                                            }]
-                                                        }]
-                                                    });
-                                                    if (searchResponse && searchResponse.results && searchResponse.results.length > 0) {
-                                                        contactId = searchResponse.results[0].id;
-                                                    }
-                                                } catch (e) {
-                                                    console.warn('Failed to find contact for deal/ticket stage update:', e.message);
-                                                }
-
-                                                if (contactId) {
-                                                    const stageNames = {
-                                                        1: 'Lead Captured',
-                                                        2: 'MQL',
-                                                        3: 'Prescreen Booked',
-                                                        4: 'Prescreen Completed',
-                                                        5: 'Discovery Booked',
-                                                        6: 'Discovery Completed',
-                                                        7: 'Positioning Meeting'
-                                                    };
-                                                    const stageName = stageNames[stage] || 'Lead Captured';
-                                                    let dealUpdated = false;
-                                                    let ticketUpdated = false;
-
-                                                    // Try updating associated Deals
-                                                    try {
-                                                        const dealAssociations = await makeHubSpotRequest('GET', `/crm/v3/objects/contacts/${contactId}/associations/deals`);
-                                                        if (dealAssociations && dealAssociations.results && dealAssociations.results.length > 0) {
-                                                            for (const deal of dealAssociations.results) {
-                                                                await makeHubSpotRequest('PATCH', `/crm/v3/objects/deals/${deal.id}`, {
-                                                                    properties: {
-                                                                        dealstage: stageName.toLowerCase().replace(/\s+/g, '_')
-                                                                    }
-                                                                });
-                                                                dealUpdated = true;
-                                                            }
-                                                        }
-                                                    } catch (e) {
-                                                        console.warn('Failed to update associated HubSpot deals stage:', e.message);
-                                                    }
-
-                                                    // Try updating associated Tickets
-                                                    try {
-                                                        const ticketAssociations = await makeHubSpotRequest('GET', `/crm/v3/objects/contacts/${contactId}/associations/tickets`);
-                                                        if (ticketAssociations && ticketAssociations.results && ticketAssociations.results.length > 0) {
-                                                            for (const ticket of ticketAssociations.results) {
-                                                                await makeHubSpotRequest('PATCH', `/crm/v3/objects/tickets/${ticket.id}`, {
-                                                                    properties: {
-                                                                        hs_pipeline_stage: stageName.toLowerCase().replace(/\s+/g, '_')
-                                                                    }
-                                                                });
-                                                                ticketUpdated = true;
-                                                            }
-                                                        }
-                                                    } catch (e) {
-                                                        console.warn('Failed to update associated HubSpot tickets stage:', e.message);
-                                                    }
-
-                                                    if (dealUpdated || ticketUpdated) {
-                                                        toolResult = `Successfully updated HubSpot stage to "${stageName}" (${stage}) for prospect contact ${email}.`;
-                                                    } else {
-                                                        toolResult = `Found contact ${email} (ID: ${contactId}) but no associated deals or tickets were found to update.`;
-                                                    }
-                                                } else {
-                                                    toolResult = `Could not find a HubSpot contact record matching "${email}" to update stages.`;
-                                                }
-                                            } else {
-                                                toolResult = `Error: Missing required parameters 'email' or 'stage'.`;
-                                            }
-                                        } else if (name === 'create_hubspot_task') {
-                                            const { email, taskTitle, dueDate } = args;
-                                            if (email && taskTitle) {
-                                                console.log(`📝 Tool Call: Creating HubSpot task for ${email}`);
-                                                let contactId = null;
-                                                try {
-                                                    const searchResponse = await makeHubSpotRequest('POST', '/crm/v3/objects/contacts/search', {
-                                                        filterGroups: [{
-                                                            filters: [{
-                                                                propertyName: 'email',
-                                                                operator: 'EQ',
-                                                                value: email
-                                                            }]
-                                                        }]
-                                                    });
-                                                    if (searchResponse && searchResponse.results && searchResponse.results.length > 0) {
-                                                        contactId = searchResponse.results[0].id;
-                                                    }
-                                                } catch (e) {
-                                                    console.warn('Failed to find contact for task association:', e.message);
-                                                }
-
-                                                try {
-                                                    const properties = {
-                                                        hs_task_subject: taskTitle,
-                                                        hs_task_status: 'NOT_STARTED',
-                                                        hs_timestamp: new Date().toISOString()
-                                                    };
-                                                    if (dueDate) {
-                                                        properties.hs_task_remind_date = new Date(dueDate).toISOString();
-                                                    }
-                                                    const assoc = contactId ? [{
-                                                        to: { id: contactId },
-                                                        types: [{
-                                                            associationCategory: 'HUBSPOT_DEFINED',
-                                                            associationTypeId: 204
-                                                        }]
-                                                    }] : [];
-                                                    await makeHubSpotRequest('POST', '/crm/v3/objects/tasks', {
-                                                        properties,
-                                                        associations: assoc
-                                                    });
-                                                    toolResult = `Successfully created HubSpot task "${taskTitle}" associated with contact ${email}.`;
-                                                } catch (taskErr) {
-                                                    console.error('Failed to create HubSpot task:', taskErr.message);
-                                                    toolResult = `Error creating HubSpot task: ${taskErr.message}`;
-                                                }
-                                            } else {
-                                                toolResult = `Error: Missing required parameters 'email' or 'taskTitle'.`;
                                             }
                                         } else if (name === 'generate_proposal_file') {
                                             const { company, prospect_name, filename, proposalContent } = args;
