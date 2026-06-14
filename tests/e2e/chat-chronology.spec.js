@@ -110,6 +110,9 @@ test.describe('Aegis Chat Chronology E2E Suite', () => {
         const userMsgIndex = cardTexts.findIndex(text => text.includes(queryText));
         expect(userMsgIndex).toBeGreaterThan(-1);
 
+        // Verify that the user message card contains the attached file name
+        expect(cardTexts[userMsgIndex]).toContain('sarah-chen-linkedin-profile.pdf');
+
         // Find the index of the upload system notification card
         const uploadNotificationIndex = cardTexts.findIndex(text => text.includes('[SYSTEM: Document Uploaded]'));
         expect(uploadNotificationIndex).toBeGreaterThan(-1);

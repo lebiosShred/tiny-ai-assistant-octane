@@ -9,6 +9,72 @@ function isTestEnrichment(name, company) {
     return n.includes('qa_') || n.includes('test') || c.includes('qa_') || c.includes('test') || c.includes('meridian') || c.includes('acme');
 }
 
+function executeHttpRequestWithRetry(options, payload = null, retries = 3, delay = 1000) {
+    return new Promise((resolve, reject) => {
+        let attempt = 0;
+
+        function doRequest() {
+            attempt++;
+            const req = https.request(options, (res) => {
+                let resBody = '';
+                res.on('data', chunk => resBody += chunk);
+                res.on('end', () => {
+                    const statusCode = res.statusCode;
+                    if ((statusCode === 429 || statusCode >= 500) && attempt < retries) {
+                        const backoffDelay = delay * Math.pow(2, attempt - 1);
+                        console.warn(`⚠️ Request to ${options.hostname}${options.path} returned ${statusCode}. Retrying in ${backoffDelay}ms (attempt ${attempt}/${retries})...`);
+                        setTimeout(doRequest, backoffDelay);
+                    } else {
+                        resolve({ statusCode, body: resBody });
+                    }
+                });
+            });
+
+            req.on('error', (err) => {
+                if (attempt < retries) {
+                    const backoffDelay = delay * Math.pow(2, attempt - 1);
+                    console.warn(`⚠️ Request to ${options.hostname}${options.path} failed: ${err.message}. Retrying in ${backoffDelay}ms (attempt ${attempt}/${retries})...`);
+                    setTimeout(doRequest, backoffDelay);
+                } else {
+                    reject(err);
+                }
+            });
+
+            const timeoutMs = options.timeout || 15000;
+            req.setTimeout(timeoutMs, () => {
+                req.destroy(new Error('Timeout'));
+            });
+
+            if (payload) {
+                req.write(payload);
+            }
+            req.end();
+        }
+
+        doRequest();
+    });
+}
+
+async function executePromiseWithRetry(fn, retries = 3, delay = 1000) {
+    let attempt = 0;
+    while (attempt < retries) {
+        attempt++;
+        try {
+            return await fn();
+        } catch (error) {
+            const status = error.status || error.statusCode;
+            const isTransient = !status || status === 429 || status >= 500;
+            if (isTransient && attempt < retries) {
+                const backoffDelay = delay * Math.pow(2, attempt - 1);
+                console.warn(`⚠️ Promise execution failed: ${error.message}. Retrying in ${backoffDelay}ms (attempt ${attempt}/${retries})...`);
+                await new Promise(r => setTimeout(r, backoffDelay));
+            } else {
+                throw error;
+            }
+        }
+    }
+}
+
 function searchWeb(query) {
     if (isTestEnrichment('', query)) {
         console.log(`🌐 Mocking web search for test query: "${query}"`);
@@ -38,20 +104,19 @@ function searchWeb(query) {
             headers: {
                 'content-type': 'application/json',
                 'content-length': Buffer.byteLength(payload)
-            }
+            },
+            timeout: 8000
         };
 
-        const req = https.request(options, (res) => {
-            let resBody = '';
-            res.on('data', chunk => resBody += chunk);
-            res.on('end', () => {
-                if (res.statusCode !== 200) {
-                    console.error(`⚠️ Tavily API returned status ${res.statusCode}: ${resBody}`);
+        executeHttpRequestWithRetry(options, payload, 3, 1000)
+            .then(({ statusCode, body }) => {
+                if (statusCode !== 200) {
+                    console.error(`⚠️ Tavily API returned status ${statusCode}: ${body}`);
                     resolve("");
                     return;
                 }
                 try {
-                    const data = JSON.parse(resBody);
+                    const data = JSON.parse(body);
                     if (!data.results || !Array.isArray(data.results)) {
                         resolve("");
                         return;
@@ -62,22 +127,11 @@ function searchWeb(query) {
                     console.error("⚠️ Failed to parse Tavily API response:", e);
                     resolve("");
                 }
+            })
+            .catch((err) => {
+                console.error("⚠️ Tavily request error:", err);
+                resolve("");
             });
-        });
-
-        req.on('error', (err) => {
-            console.error("⚠️ Tavily request error:", err);
-            resolve("");
-        });
-
-        req.setTimeout(8000, () => {
-            console.warn("⚠️ Tavily searchWeb request timed out.");
-            req.destroy();
-            resolve("");
-        });
-
-        req.write(payload);
-        req.end();
     });
 }
 
@@ -100,58 +154,44 @@ async function fetchTavilyRAGContext(name, company) {
         max_results: 5
     });
 
-    return new Promise((resolve) => {
-        const options = {
-            hostname: 'api.tavily.com',
-            port: 443,
-            path: '/search',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(payload)
-            }
-        };
+    const options = {
+        hostname: 'api.tavily.com',
+        port: 443,
+        path: '/search',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(payload)
+        },
+        timeout: 15000
+    };
 
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    try {
-                        const parsed = JSON.parse(data);
-                        if (parsed.results && parsed.results.length > 0) {
-                            const formatted = parsed.results.map(item => 
-                                `Title: ${item.title}\nURL: ${item.url}\nContent: ${item.content}`
-                            ).join('\n\n');
-                            resolve(formatted);
-                        } else {
-                            resolve("No search results returned for this lead.");
-                        }
-                    } catch (e) {
-                        console.error("⚠️ Failed to parse Tavily API response:", e.message);
-                        resolve("Failed to parse search results.");
+    return executeHttpRequestWithRetry(options, payload, 3, 1000)
+        .then(({ statusCode, body }) => {
+            if (statusCode >= 200 && statusCode < 300) {
+                try {
+                    const parsed = JSON.parse(body);
+                    if (parsed.results && parsed.results.length > 0) {
+                        const formatted = parsed.results.map(item => 
+                            `Title: ${item.title}\nURL: ${item.url}\nContent: ${item.content}`
+                        ).join('\n\n');
+                        return formatted;
+                    } else {
+                        return "No search results returned for this lead.";
                     }
-                } else {
-                    console.error(`⚠️ Tavily API returned status ${res.statusCode}: ${data}`);
-                    resolve("Tavily RAG search service unavailable.");
+                } catch (e) {
+                    console.error("⚠️ Failed to parse Tavily API response:", e.message);
+                    return "Failed to parse search results.";
                 }
-            });
-        });
-
-        req.on('error', (err) => {
+            } else {
+                console.error(`⚠️ Tavily API returned status ${statusCode}: ${body}`);
+                return "Tavily RAG search service unavailable.";
+            }
+        })
+        .catch((err) => {
             console.error("❌ Tavily request failed:", err.message);
-            resolve("Failed to fetch search context due to network error.");
+            return "Failed to fetch search context due to network error.";
         });
-
-        req.setTimeout(15000, () => {
-            console.warn("⚠️ Tavily request timed out.");
-            req.destroy();
-            resolve("Tavily search request timed out.");
-        });
-
-        req.write(payload);
-        req.end();
-    });
 }
 
 async function fetchTavilyCompanyNews(company, website) {
@@ -173,58 +213,44 @@ async function fetchTavilyCompanyNews(company, website) {
         max_results: 6
     });
 
-    return new Promise((resolve) => {
-        const options = {
-            hostname: 'api.tavily.com',
-            port: 443,
-            path: '/search',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(payload)
-            }
-        };
+    const options = {
+        hostname: 'api.tavily.com',
+        port: 443,
+        path: '/search',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(payload)
+        },
+        timeout: 15000
+    };
 
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    try {
-                        const parsed = JSON.parse(data);
-                        if (parsed.results && parsed.results.length > 0) {
-                            const formatted = parsed.results.map(item => 
-                                `Title: ${item.title}\nURL: ${item.url}\nContent: ${item.content}`
-                            ).join('\n\n');
-                            resolve(formatted);
-                        } else {
-                            resolve("No news updates returned for this company.");
-                        }
-                    } catch (e) {
-                        console.error("⚠️ Failed to parse Tavily news response:", e.message);
-                        resolve("Failed to parse company updates.");
+    return executeHttpRequestWithRetry(options, payload, 3, 1000)
+        .then(({ statusCode, body }) => {
+            if (statusCode >= 200 && statusCode < 300) {
+                try {
+                    const parsed = JSON.parse(body);
+                    if (parsed.results && parsed.results.length > 0) {
+                        const formatted = parsed.results.map(item => 
+                            `Title: ${item.title}\nURL: ${item.url}\nContent: ${item.content}`
+                        ).join('\n\n');
+                        return formatted;
+                    } else {
+                        return "No news updates returned for this company.";
                     }
-                } else {
-                    console.error(`⚠️ Tavily news API returned status ${res.statusCode}: ${data}`);
-                    resolve("Tavily news service unavailable.");
+                } catch (e) {
+                    console.error("⚠️ Failed to parse Tavily news response:", e.message);
+                    return "Failed to parse company updates.";
                 }
-            });
-        });
-
-        req.on('error', (err) => {
+            } else {
+                console.error(`⚠️ Tavily news API returned status ${statusCode}: ${body}`);
+                return "Tavily news service unavailable.";
+            }
+        })
+        .catch((err) => {
             console.error("❌ Tavily company search request failed:", err.message);
-            resolve("Failed to fetch company search context due to network error.");
+            return "Failed to fetch company search context due to network error.";
         });
-
-        req.setTimeout(15000, () => {
-            console.warn("⚠️ Tavily company search request timed out.");
-            req.destroy();
-            resolve("Tavily company search request timed out.");
-        });
-
-        req.write(payload);
-        req.end();
-    });
 }
 
 async function fetchGithubTechnographics(companyName) {
@@ -241,59 +267,46 @@ async function fetchGithubTechnographics(companyName) {
 
     const githubPat = (process.env.GITHUB_PAT || '').trim();
 
-    return new Promise((resolve) => {
-        const options = {
-            hostname: 'api.github.com',
-            port: 443,
-            path: `/orgs/${formattedOrg}/repos?sort=updated&per_page=5`,
-            method: 'GET',
-            headers: {
-                'User-Agent': 'Octane-Sales-Assistant-Backend',
-                ...(githubPat && { 'Authorization': `token ${githubPat}` })
-            }
-        };
+    const options = {
+        hostname: 'api.github.com',
+        port: 443,
+        path: `/orgs/${formattedOrg}/repos?sort=updated&per_page=5`,
+        method: 'GET',
+        headers: {
+            'User-Agent': 'Octane-Sales-Assistant-Backend',
+            ...(githubPat && { 'Authorization': `token ${githubPat}` })
+        },
+        timeout: 10000
+    };
 
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                if (res.statusCode === 200) {
-                    try {
-                        const repos = JSON.parse(data);
-                        if (Array.isArray(repos) && repos.length > 0) {
-                            const repoDetails = repos.map(r => 
-                                `- Repo: ${r.name} | Primary Language: ${r.language || 'Unspecified'} | Description: ${r.description || 'None provided'}`
-                            ).join('\n');
-                            resolve(`Public GitHub Organization Found [${formattedOrg}]:\n${repoDetails}`);
-                        } else {
-                            resolve("GitHub organization exists but has no public repositories.");
-                        }
-                    } catch (e) {
-                        console.error("⚠️ Failed to parse GitHub API response:", e.message);
-                        resolve("Failed to parse GitHub technographics.");
+    return executeHttpRequestWithRetry(options, null, 3, 1000)
+        .then(({ statusCode, body }) => {
+            if (statusCode === 200) {
+                try {
+                    const repos = JSON.parse(body);
+                    if (Array.isArray(repos) && repos.length > 0) {
+                        const repoDetails = repos.map(r => 
+                            `- Repo: ${r.name} | Primary Language: ${r.language || 'Unspecified'} | Description: ${r.description || 'None provided'}`
+                        ).join('\n');
+                        return `Public GitHub Organization Found [${formattedOrg}]:\n${repoDetails}`;
+                    } else {
+                        return "GitHub organization exists but has no public repositories.";
                     }
-                } else if (res.statusCode === 404) {
-                    resolve("No public GitHub organization found for this company.");
-                } else {
-                    console.error(`⚠️ GitHub API returned status ${res.statusCode}: ${data}`);
-                    resolve("GitHub API rate-limited or temporarily unavailable.");
+                } catch (e) {
+                    console.error("⚠️ Failed to parse GitHub API response:", e.message);
+                    return "Failed to parse GitHub technographics.";
                 }
-            });
-        });
-
-        req.on('error', (err) => {
+            } else if (statusCode === 404) {
+                return "No public GitHub organization found for this company.";
+            } else {
+                console.error(`⚠️ GitHub API returned status ${statusCode}: ${body}`);
+                return "GitHub API rate-limited or temporarily unavailable.";
+            }
+        })
+        .catch((err) => {
             console.error("❌ GitHub request failed:", err.message);
-            resolve("Failed to fetch GitHub technographics due to network error.");
+            return "Failed to fetch GitHub technographics due to network error.";
         });
-
-        req.setTimeout(10000, () => {
-            console.warn("⚠️ GitHub request timed out.");
-            req.destroy();
-            resolve("GitHub request timed out.");
-        });
-
-        req.end();
-    });
 }
 
 async function fetchExaRAGContext(name, company) {
@@ -308,10 +321,11 @@ async function fetchExaRAGContext(name, company) {
     }
 
     const query = `"${name}" "${company}" LinkedIn profile background history`;
-    try {
+    
+    const exaCall = () => {
         const exa = new Exa(apiKey);
         console.log(`🌐 Performing Exa semantic search for: ${query}`);
-        const response = await Promise.race([
+        return Promise.race([
             exa.searchAndContents(query, {
                 type: "neural",
                 numResults: 5,
@@ -319,7 +333,10 @@ async function fetchExaRAGContext(name, company) {
             }),
             new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000))
         ]);
+    };
 
+    try {
+        const response = await executePromiseWithRetry(exaCall, 3, 1000);
         if (response.results && response.results.length > 0) {
             const formatted = response.results.map(item => {
                 const text = (item.highlights && item.highlights.length > 0)
@@ -359,57 +376,42 @@ Website Features: E-commerce platform, dealer locator, catalog downloads, virtua
         return Promise.resolve(`=== WEBSITE SCRAPE RESULTS [${url}] ===\nThis is mock scraped website content for: ${url}. Markdown formatting is verified. Clean text context is provided.`);
     }
 
-    return new Promise((resolve) => {
-        const apiKey = (process.env.JINA_API_KEY || '').trim();
-        if (!apiKey) {
-            console.warn("⚠️ JINA_API_KEY is not configured.");
-            resolve("Error: Jina Reader API key is not configured on the server.");
-            return;
-        }
+    const apiKey = (process.env.JINA_API_KEY || '').trim();
+    if (!apiKey) {
+        console.warn("⚠️ JINA_API_KEY is not configured.");
+        return "Error: Jina Reader API key is not configured on the server.";
+    }
 
-        let targetUrl = (url || '').trim();
-        if (!/^https?:\/\//i.test(targetUrl)) {
-            targetUrl = 'https://' + targetUrl;
-        }
+    let targetUrl = (url || '').trim();
+    if (!/^https?:\/\//i.test(targetUrl)) {
+        targetUrl = 'https://' + targetUrl;
+    }
 
-        console.log(`🌐 Performing Jina Reader scrape for: ${targetUrl}`);
-        const options = {
-            hostname: 'r.jina.ai',
-            port: 443,
-            path: `/${targetUrl}`,
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Accept': 'text/plain'
+    console.log(`🌐 Performing Jina Reader scrape for: ${targetUrl}`);
+    const options = {
+        hostname: 'r.jina.ai',
+        port: 443,
+        path: `/${targetUrl}`,
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Accept': 'text/plain'
+        },
+        timeout: 15000
+    };
+
+    return executeHttpRequestWithRetry(options, null, 3, 1000)
+        .then(({ statusCode, body }) => {
+            if (statusCode !== 200) {
+                console.error(`⚠️ Jina Reader API returned status ${statusCode}: ${body}`);
+                return `Error: Jina Reader API returned status ${statusCode}`;
             }
-        };
-
-        const req = https.request(options, (res) => {
-            let resBody = '';
-            res.on('data', chunk => resBody += chunk);
-            res.on('end', () => {
-                if (res.statusCode !== 200) {
-                    console.error(`⚠️ Jina Reader API returned status ${res.statusCode}: ${resBody}`);
-                    resolve(`Error: Jina Reader API returned status ${res.statusCode}`);
-                    return;
-                }
-                resolve(resBody);
-            });
-        });
-
-        req.on('error', (err) => {
+            return body;
+        })
+        .catch((err) => {
             console.error("⚠️ Jina Reader request error:", err);
-            resolve(`Error: Jina Reader request failed: ${err.message}`);
+            return `Error: Jina Reader request failed: ${err.message}`;
         });
-
-        req.setTimeout(15000, () => {
-            console.warn("⚠️ Jina Reader request timed out.");
-            req.destroy();
-            resolve("Error: Jina Reader request timed out.");
-        });
-
-        req.end();
-    });
 }
 
 module.exports = {

@@ -2346,14 +2346,12 @@ Rules:
                 type: 'primary'
             });
             if (confirmed) {
-                callTinyAPI(queryText);
+                await callTinyAPI(queryText);
             } else {
                 chatUserInput.value = queryText;
             }
             return;
         }
-
-        chatUserInput.value = '';
 
         isSending = true;
 
@@ -2363,203 +2361,260 @@ Rules:
 
         try {
             if (stagedAttachments.length > 0) {
-                // Optimistic UI: Push user message to chat log immediately before starting uploads
-                if (queryText.trim()) {
-                    chatHistory.push({ role: 'user', content: queryText, timestamp: new Date().toISOString() });
-                    renderChatHistory();
-                }
+                // Atomic Clear: clear the input text and staged files simultaneously
+                chatUserInput.value = '';
+                const attachmentsToUpload = [...stagedAttachments];
+                stagedAttachments = [];
+                renderStagingArea();
+
+                // Optimistic UI: Push user message with attachments to chat log immediately
+                const attachmentNames = attachmentsToUpload.map(f => f.name).join(', ');
+                const userMsgContent = queryText.trim()
+                    ? `${queryText}\n\n📁 Sent Attachments: ${attachmentNames}`
+                    : `📁 Sent Attachments: ${attachmentNames}`;
+                chatHistory.push({ role: 'user', content: userMsgContent, timestamp: new Date().toISOString() });
+                renderChatHistory();
 
                 let companyName = metaCompany ? metaCompany.value.trim() : '';
-            let prospectName = metaName ? metaName.value.trim() : '';
-            if (!prospectName && typeof activeProspectName === 'string') {
-                prospectName = activeProspectName.trim();
-            }
-            if (!companyName) {
-                // Try to extract from text input
-                const patterns = [
-                    /(?:store|save|upload|put|send)(?:\s+(?:this|these|the|file|files|documents?))?\s+(?:to|for)\s+([^.\n\r]+)/i,
-                    /(?:\bto|\bfor)\s+([^.\n\r]+)/i
-                ];
-
-                for (const pattern of patterns) {
-                    const match = queryText.match(pattern);
-                    if (match && match[1]) {
-                        companyName = match[1].trim().replace(/please/gi, '').trim().replace(/[.,!?;:]+$/, '').trim();
-                        if (companyName) break;
-                    }
+                let prospectName = metaName ? metaName.value.trim() : '';
+                if (!prospectName && typeof activeProspectName === 'string') {
+                    prospectName = activeProspectName.trim();
                 }
-
                 if (!companyName) {
-                    const promptVal = prompt("Enter the company or prospect name to store this file to:");
-                    if (promptVal && promptVal.trim()) {
-                        companyName = promptVal.trim();
-                    }
-                }
+                    // Try to extract from text input
+                    const patterns = [
+                        /(?:store|save|upload|put|send)(?:\s+(?:this|these|the|file|files|documents?))?\s+(?:to|for)\s+([^.\n\r]+)/i,
+                        /(?:\bto|\bfor)\s+([^.\n\r]+)/i
+                    ];
 
-                if (!companyName) {
-                    showToast('Please select a prospect or enter a company name.');
-                    return;
-                }
-
-                // Initialize the UI elements for the new company
-                if (metaCompany) {
-                    metaCompany.value = companyName;
-                    metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
-                    metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-                if (metaName && !metaName.value.trim()) {
-                    metaName.value = `${companyName} Lead`;
-                }
-            }
-
-            // Auto-initialize session if currentChatId is null
-            if (!currentChatId) {
-                try {
-                    const initPayload = {
-                        type: 'synthesis',
-                        name: metaName.value.trim() || `${companyName} Lead`,
-                        company: companyName,
-                        title: metaTitle.value.trim(),
-                        email: metaEmail.value.trim(),
-                        phone: metaPhone.value.trim(),
-                        rep: metaRep.value,
-                        track: metaTrack.value,
-                        messages: chatHistory
-                    };
-                    const initRes = await fetch('/api/history', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(initPayload)
-                    });
-                    const initResult = await initRes.json();
-                    if (!initRes.ok) throw new Error(initResult.error || 'Failed to initialize session');
-                    currentChatId = initResult.id;
-                    if (initResult.gDriveFolderId) {
-                        activeFolderId = initResult.gDriveFolderId;
-                    }
-                    await loadChatsList();
-                } catch (initErr) {
-                    console.error('Failed to auto-initialize chat session on file select:', initErr);
-                    showToast(`Failed to initialize session: ${initErr.message}`);
-                    return;
-                }
-            }
-
-            if (chatUploadProgress) chatUploadProgress.classList.remove('hidden');
-            
-            // Apply Global UI Lock during heavy upload I/O
-            document.body.classList.add('opacity-50', 'pointer-events-none');
-            
-            const totalFiles = stagedAttachments.length;
-            const uploadedFileNames = [];
-            let documentPayload = "";
-
-            for (let i = 0; i < totalFiles; i++) {
-                const file = stagedAttachments[i];
-                if (chatUploadProgressText) chatUploadProgressText.textContent = `Uploading ${i+1}/${totalFiles}: ${file.name}`;
-                if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', '0%');
-                try {
-                    const result = await uploadFileStreaming(file, companyName, prospectName);
-
-                    // Suppress modal for chat inline uploads to prevent conversational interruption
-                    // if (result.receipt) {
-                    //     showReceiptModal(result.receipt);
-                    // }
-
-                    uploadedFileNames.push(file.name);
-                    
-                    if (result.fileId) {
-                        sourceGdriveFileSelect.innerHTML = `<option value="${result.fileId}">${file.name} (Uploaded)</option>`;
-                        sourceGdriveFileSelect.value = result.fileId;
-                        sourceGdriveFileId.value = result.fileId;
-                        if (gdriveFileContent && result.parsedText) {
-                            gdriveFileContent += `\n\n--- [${file.name}] ---\n${result.parsedText}`;
-                        } else {
-                            gdriveFileContent = result.parsedText || '';
+                    for (const pattern of patterns) {
+                        const match = queryText.match(pattern);
+                        if (match && match[1]) {
+                            companyName = match[1].trim().replace(/please/gi, '').trim().replace(/[.,!?;:]+$/, '').trim();
+                            if (companyName) break;
                         }
                     }
-                    if (result.parsedText) {
-                        documentPayload += `\n\n--- [${file.name}] ---\n${result.parsedText}`;
+
+                    // Match extracted name against chatsList to find company
+                    if (companyName) {
+                        const matchedChat = chatsList.find(c => 
+                            c.name.toLowerCase() === companyName.toLowerCase() || 
+                            c.company.toLowerCase() === companyName.toLowerCase()
+                        );
+                        if (matchedChat) {
+                            companyName = matchedChat.company;
+                            prospectName = matchedChat.name;
+                        }
                     }
-                } catch (err) {
-                    console.error(`Upload failed for ${file.name}:`, err);
-                    showToast(`Upload failed for ${file.name}: ${err.message}`);
+
+                    if (!companyName) {
+                        const promptVal = prompt("Enter the company or prospect name to store this file to:");
+                        if (promptVal && promptVal.trim()) {
+                            companyName = promptVal.trim();
+                            const matchedChat = chatsList.find(c => 
+                                c.name.toLowerCase() === companyName.toLowerCase() || 
+                                c.company.toLowerCase() === companyName.toLowerCase()
+                            );
+                            if (matchedChat) {
+                                companyName = matchedChat.company;
+                                prospectName = matchedChat.name;
+                            }
+                        }
+                    }
+
+                    if (!companyName) {
+                        showToast('Please select a prospect or enter a company name.');
+                        // Restore staged files if failed to enter name
+                        stagedAttachments = attachmentsToUpload;
+                        renderStagingArea();
+                        // Remove last message from history since we aborted
+                        chatHistory.pop();
+                        renderChatHistory();
+                        return;
+                    }
+
+                    // Initialize the UI elements for the resolved company
+                    if (metaCompany) {
+                        metaCompany.value = companyName;
+                        metaCompany.dispatchEvent(new Event('input', { bubbles: true }));
+                        metaCompany.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    if (metaName && !metaName.value.trim()) {
+                        metaName.value = prospectName || `${companyName} Lead`;
+                    }
                 }
-            }
 
-            // Consolidate the upload message to prevent UI chat spam
-            if (uploadedFileNames.length > 0) {
-                const formattedNames = uploadedFileNames.map(name => `"${name}"`).join(', ');
-                chatHistory.push({
-                    role: 'assistant',
-                    content: `[SYSTEM: Document Uploaded] I have successfully uploaded and indexed ${formattedNames} into the Google Drive memory folder for ${companyName}. I can now search and answer questions based on these files!`,
-                    timestamp: new Date().toISOString()
-                });
-            }
-
-            if (chatUploadProgress) chatUploadProgress.classList.add('hidden');
-            if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', '0%');
-
-            stagedAttachments = [];
-            renderStagingArea();
-            renderChatHistory();
-            
-            // Synchronize the Prospect Files Column and Release UI Lock
-            await loadSourcesForCompany(activeFolderId, companyName, null, prospectName);
-            document.body.classList.remove('opacity-50', 'pointer-events-none');
-
-            const combinedQuery = queryText + (documentPayload ? `\n\n[Uploaded Document Context]:\n${documentPayload}` : "");
-            
-            // ALWAYS save the updated context to the server so subsequent queries have access to it
-            const savePayload = {
-                id: currentChatId,
-                type: 'synthesis',
-                name: metaName.value.trim() || `${companyName} Lead`,
-                company: companyName,
-                title: metaTitle.value.trim(),
-                email: metaEmail.value.trim(),
-                phone: metaPhone.value.trim(),
-                rep: metaRep.value,
-                track: metaTrack.value,
-                oneDriveFile: uploadedFileNames.join(', '),
-                gDriveFile: uploadedFileNames[uploadedFileNames.length - 1],
-                gDriveFileId: sourceGdriveFileId.value,
-                gDriveFileContent: gdriveFileContent,
-                linkedinInfo: sourceLinkedinText ? sourceLinkedinText.value.trim() : '',
-                intakeAnswers: sourceIntakeText ? sourceIntakeText.value.trim() : '',
-                transcript: sourceTranscriptText ? sourceTranscriptText.value.trim() : '',
-                transitDistance: transitDistance,
-                messages: chatHistory
-            };
-            try {
-                await fetch('/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(savePayload) });
-                await Promise.all([loadGoogleDriveFiles(), loadProspectsTree()]);
-                if (uploadedFileNames.length > 0 && totalFiles > 1) {
-                    showToast(`✔️ All ${uploadedFileNames.length} files uploaded and indexed.`);
+                // Auto-initialize session if currentChatId is null
+                if (!currentChatId) {
+                    try {
+                        const initPayload = {
+                            type: 'synthesis',
+                            name: metaName.value.trim() || `${companyName} Lead`,
+                            company: companyName,
+                            title: metaTitle.value.trim(),
+                            email: metaEmail.value.trim(),
+                            phone: metaPhone.value.trim(),
+                            rep: metaRep.value,
+                            track: metaTrack.value,
+                            messages: chatHistory
+                        };
+                        const initRes = await fetch('/api/history', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(initPayload)
+                        });
+                        const initResult = await initRes.json();
+                        if (!initRes.ok) throw new Error(initResult.error || 'Failed to initialize session');
+                        currentChatId = initResult.id;
+                        if (initResult.gDriveFolderId) {
+                            activeFolderId = initResult.gDriveFolderId;
+                        }
+                        await loadChatsList();
+                    } catch (initErr) {
+                        console.error('Failed to auto-initialize chat session on file select:', initErr);
+                        showToast(`Failed to initialize session: ${initErr.message}`);
+                        return;
+                    }
                 }
-            } catch (postUploadErr) {
-                console.error('Failed to update session or refresh files/tree:', postUploadErr);
-            }
 
-            if (queryText.trim()) {
-                // Synchronized Release: Render chat log and call API
+                if (chatUploadProgress) chatUploadProgress.classList.remove('hidden');
+                
+                // Apply Global UI Lock during heavy upload I/O
+                document.body.classList.add('opacity-50', 'pointer-events-none');
+                
+                const uploadOverlay = document.getElementById('upload-loading-overlay');
+                const uploadProgressEl = document.getElementById('upload-loading-progress');
+                if (uploadOverlay) {
+                    uploadOverlay.classList.remove('modal-hidden');
+                }
+
+                const totalFiles = attachmentsToUpload.length;
+                const uploadedFileNames = [];
+                let documentPayload = "";
+                const receipts = [];
+
+                for (let i = 0; i < totalFiles; i++) {
+                    const file = attachmentsToUpload[i];
+                    if (uploadProgressEl) {
+                        uploadProgressEl.textContent = `File ${i + 1} of ${totalFiles}: ${file.name} (0%)`;
+                    }
+                    if (chatUploadProgressText) chatUploadProgressText.textContent = `Uploading ${i+1}/${totalFiles}: ${file.name}`;
+                    if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', '0%');
+                    try {
+                        const result = await uploadFileStreaming(file, companyName, prospectName, (percent) => {
+                            if (uploadProgressEl) {
+                                uploadProgressEl.textContent = `File ${i + 1} of ${totalFiles}: ${file.name} (${percent}%)`;
+                            }
+                        });
+
+                        if (result.receipt) {
+                            receipts.push(result.receipt);
+                        }
+
+                        uploadedFileNames.push(file.name);
+                        
+                        if (result.fileId) {
+                            sourceGdriveFileSelect.innerHTML = `<option value="${result.fileId}">${file.name} (Uploaded)</option>`;
+                            sourceGdriveFileSelect.value = result.fileId;
+                            sourceGdriveFileId.value = result.fileId;
+                            if (gdriveFileContent && result.parsedText) {
+                                gdriveFileContent += `\n\n--- [${file.name}] ---\n${result.parsedText}`;
+                            } else {
+                                gdriveFileContent = result.parsedText || '';
+                            }
+                        }
+                        if (result.parsedText) {
+                            documentPayload += `\n\n--- [${file.name}] ---\n${result.parsedText}`;
+                        }
+                    } catch (err) {
+                        console.error(`Upload failed for ${file.name}:`, err);
+                        showToast(`Upload failed for ${file.name}: ${err.message}`);
+                    }
+                }
+
+                if (uploadOverlay) {
+                    uploadOverlay.classList.add('modal-hidden');
+                }
+
+                // Show receipt modals sequentially BEFORE proceeding
+                for (const receipt of receipts) {
+                    await showReceiptModal(receipt);
+                }
+
+                // Consolidate the upload message to prevent UI chat spam
+                if (uploadedFileNames.length > 0) {
+                    const formattedNames = uploadedFileNames.map(name => `"${name}"`).join(', ');
+                    chatHistory.push({
+                        role: 'assistant',
+                        content: `[SYSTEM: Document Uploaded] I have successfully uploaded and indexed ${formattedNames} into the Google Drive memory folder for ${companyName}. I can now search and answer questions based on these files!`,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+
+                if (chatUploadProgress) chatUploadProgress.classList.add('hidden');
+                if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', '0%');
+
                 renderChatHistory();
-                callTinyAPI(queryText, combinedQuery, true);
+                
+                // Synchronize the Prospect Files Column and Release UI Lock
+                await loadSourcesForCompany(activeFolderId, companyName, null, prospectName);
+                document.body.classList.remove('opacity-50', 'pointer-events-none');
+
+                const combinedQuery = queryText + (documentPayload ? `\n\n[Uploaded Document Context]:\n${documentPayload}` : "");
+                
+                // ALWAYS save the updated context to the server so subsequent queries have access to it
+                const savePayload = {
+                    id: currentChatId,
+                    type: 'synthesis',
+                    name: metaName.value.trim() || `${companyName} Lead`,
+                    company: companyName,
+                    title: metaTitle.value.trim(),
+                    email: metaEmail.value.trim(),
+                    phone: metaPhone.value.trim(),
+                    rep: metaRep.value,
+                    track: metaTrack.value,
+                    oneDriveFile: uploadedFileNames.join(', '),
+                    gDriveFile: uploadedFileNames[uploadedFileNames.length - 1],
+                    gDriveFileId: sourceGdriveFileId.value,
+                    gDriveFileContent: gdriveFileContent,
+                    linkedinInfo: sourceLinkedinText ? sourceLinkedinText.value.trim() : '',
+                    intakeAnswers: sourceIntakeText ? sourceIntakeText.value.trim() : '',
+                    transcript: sourceTranscriptText ? sourceTranscriptText.value.trim() : '',
+                    transitDistance: transitDistance,
+                    messages: chatHistory
+                };
+                try {
+                    await fetch('/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(savePayload) });
+                    await Promise.all([loadGoogleDriveFiles(), loadProspectsTree()]);
+                    if (uploadedFileNames.length > 0 && totalFiles > 1) {
+                        showToast(`✔️ All ${uploadedFileNames.length} files uploaded and indexed.`);
+                    }
+                } catch (postUploadErr) {
+                    console.error('Failed to update session or refresh files/tree:', postUploadErr);
+                }
+
+                if (queryText.trim()) {
+                    // Synchronized Release: Render chat log and call API
+                    renderChatHistory();
+                    await callTinyAPI(queryText, combinedQuery, true);
+                }
+            } else {
+                chatUserInput.value = '';
+                chatHistory.push({ role: 'user', content: queryText, timestamp: new Date().toISOString() });
+                renderChatHistory();
+                await callTinyAPI(queryText);
             }
-        } else {
-            callTinyAPI(queryText);
+        } catch (err) {
+            console.error('Error in sendUserQuery:', err);
+            chatUserInput.value = queryText;
+            showToast(`Failed to send query: ${err.message}`);
+        } finally {
+            isSending = false;
+            chatUserInput.disabled = false;
+            chatSendBtn.disabled = false;
+            chatUserInput.focus();
         }
-    } catch (err) {
-        console.error('Error in sendUserQuery:', err);
-        chatUserInput.value = queryText;
-        showToast(`Failed to send query: ${err.message}`);
-    } finally {
-        isSending = false;
-        chatUserInput.disabled = false;
-        chatSendBtn.disabled = false;
-        chatUserInput.focus();
     }
-}
 
     if (chatSendBtn) {
         chatSendBtn.addEventListener('click', sendUserQuery);
@@ -2602,7 +2657,7 @@ Rules:
     }
 
     // XHR-based FormData upload with progress tracking (no Base64 overhead)
-    function uploadFileStreaming(file, companyName, prospectName) {
+    function uploadFileStreaming(file, companyName, prospectName, onProgress) {
         return new Promise((resolve, reject) => {
             const formData = new FormData();
             formData.append('company', companyName || 'Unknown_Company');
@@ -2620,6 +2675,9 @@ Rules:
                     const percent = Math.round((event.loaded / event.total) * 100);
                     if (chatUploadProgressBar) chatUploadProgressBar.style.setProperty('--upload-progress', percent + '%');
                     if (chatUploadProgressText) chatUploadProgressText.textContent = `${percent}% -- ${file.name}`;
+                    if (onProgress) {
+                        onProgress(percent);
+                    }
                 }
             };
 
@@ -3321,64 +3379,74 @@ ${data.parsedText}`;
 
     // Audit Transaction Receipt Modal Controller
     window.showReceiptModal = function(receipt) {
-        if (isTestRunner) return; // Disable during automated testing to prevent click interception
-        if (!receipt) return;
-        const modal = document.getElementById('receipt-modal');
-        const badge = document.getElementById('receipt-action-badge');
-        const idValue = document.getElementById('receipt-id-value');
-        const timeValue = document.getElementById('receipt-time-value');
-        const opValue = document.getElementById('receipt-op-value');
-        const targetValue = document.getElementById('receipt-target-value');
-        const companyValue = document.getElementById('receipt-company-value');
-        const providerValue = document.getElementById('receipt-provider-value');
-        const sizeRow = document.getElementById('receipt-size-row');
-        const sizeValue = document.getElementById('receipt-size-value');
-        
-        if (!modal) return;
+        return new Promise((resolve) => {
+            if (isTestRunner) {
+                resolve();
+                return;
+            }
+            if (!receipt) {
+                resolve();
+                return;
+            }
+            const modal = document.getElementById('receipt-modal');
+            const badge = document.getElementById('receipt-action-badge');
+            const idValue = document.getElementById('receipt-id-value');
+            const timeValue = document.getElementById('receipt-time-value');
+            const opValue = document.getElementById('receipt-op-value');
+            const targetValue = document.getElementById('receipt-target-value');
+            const companyValue = document.getElementById('receipt-company-value');
+            const providerValue = document.getElementById('receipt-provider-value');
+            const sizeRow = document.getElementById('receipt-size-row');
+            const sizeValue = document.getElementById('receipt-size-value');
+            
+            if (!modal) {
+                resolve();
+                return;
+            }
 
-        // Configure Action Badge and Operation Type
-        const isUpload = receipt.action === 'UPLOAD';
-        if (isUpload) {
-            badge.innerText = `${receipt.action} SUCCESS`;
-            badge.className = 'badge success';
-            opValue.innerText = receipt.targetType === 'CALL_LOG' ? 'Call Log Registered' : 'File Upload';
-        } else {
-            badge.innerText = `${receipt.action} SUCCESS`;
-            badge.className = 'badge warning';
-            opValue.innerText = receipt.targetType === 'FOLDER' ? 'Prospect Folder Deleted' : 'File Deleted';
-        }
+            // Configure Action Badge and Operation Type
+            const isUpload = receipt.action === 'UPLOAD';
+            if (isUpload) {
+                badge.innerText = `${receipt.action} SUCCESS`;
+                badge.className = 'badge success';
+                opValue.innerText = receipt.targetType === 'CALL_LOG' ? 'Call Log Registered' : 'File Upload';
+            } else {
+                badge.innerText = `${receipt.action} SUCCESS`;
+                badge.className = 'badge warning';
+                opValue.innerText = receipt.targetType === 'FOLDER' ? 'Prospect Folder Deleted' : 'File Deleted';
+            }
 
-        // Set Text Values
-        idValue.innerText = receipt.receiptId || 'N/A';
-        
-        // Format timestamp
-        let formattedTime = receipt.timestamp;
-        try {
-            formattedTime = new Date(receipt.timestamp).toLocaleString();
-        } catch (e) {}
-        timeValue.innerText = formattedTime;
-        
-        targetValue.innerText = receipt.targetName || 'N/A';
-        companyValue.innerText = receipt.company || 'N/A';
-        providerValue.innerText = receipt.targetId.startsWith('local_') ? 'Local History Storage' : 'Google Drive';
+            // Set Text Values
+            idValue.innerText = receipt.receiptId || 'N/A';
+            
+            // Format timestamp
+            let formattedTime = receipt.timestamp;
+            try {
+                formattedTime = new Date(receipt.timestamp).toLocaleString();
+            } catch (e) {}
+            timeValue.innerText = formattedTime;
+            
+            targetValue.innerText = receipt.targetName || 'N/A';
+            companyValue.innerText = receipt.company || 'N/A';
+            providerValue.innerText = receipt.targetId.startsWith('local_') ? 'Local History Storage' : 'Google Drive';
 
-        // Size configuration
-        if (isUpload && receipt.sizeBytes) {
-            sizeRow.style.display = 'flex';
-            const kb = (receipt.sizeBytes / 1024).toFixed(2);
-            sizeValue.innerText = `${kb} KB`;
-        } else {
-            sizeRow.style.display = 'none';
-        }
+            // Size configuration
+            if (isUpload && receipt.sizeBytes) {
+                sizeRow.style.display = 'flex';
+                const kb = (receipt.sizeBytes / 1024).toFixed(2);
+                sizeValue.innerText = `${kb} KB`;
+            } else {
+                sizeRow.style.display = 'none';
+            }
 
-        // Reveal Modal Overlay
-        modal.classList.remove('modal-hidden');
+            // Reveal Modal Overlay
+            modal.classList.remove('modal-hidden');
 
-        // Copy Button Handler
-        const copyBtn = document.getElementById('btn-copy-receipt');
-        if (copyBtn) {
-            copyBtn.onclick = function() {
-                const textToCopy = `--- TRANSACTION AUDIT RECEIPT ---
+            // Copy Button Handler
+            const copyBtn = document.getElementById('btn-copy-receipt');
+            if (copyBtn) {
+                copyBtn.onclick = function() {
+                    const textToCopy = `--- TRANSACTION AUDIT RECEIPT ---
 Receipt ID: ${receipt.receiptId}
 Timestamp: ${formattedTime}
 Operation: ${opValue.innerText}
@@ -3388,26 +3456,30 @@ Client: ${receipt.company}
 Storage: ${providerValue.innerText}
 Identifier: ${receipt.targetId}
 ---------------------------------`;
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                    const originalText = copyBtn.innerText;
-                    copyBtn.innerText = '📋 Copied!';
-                    setTimeout(() => copyBtn.innerText = originalText, 2000);
-                }).catch(err => {
-                    console.error('Failed to copy receipt text:', err);
-                });
-            };
-        }
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const originalText = copyBtn.innerText;
+                        copyBtn.innerText = '📋 Copied!';
+                        setTimeout(() => copyBtn.innerText = originalText, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy receipt text:', err);
+                    });
+                };
+            }
 
-        // Close Buttons Handlers
-        const closeBtn = document.getElementById('btn-close-receipt');
-        const closeIconBtn = document.getElementById('close-receipt-modal-btn');
-        const backdrop = modal.querySelector('.modal-backdrop');
-        
-        const closeModal = () => modal.classList.add('modal-hidden');
-        
-        if (closeBtn) closeBtn.onclick = closeModal;
-        if (closeIconBtn) closeIconBtn.onclick = closeModal;
-        if (backdrop) backdrop.onclick = closeModal;
+            // Close Buttons Handlers
+            const closeBtn = document.getElementById('btn-close-receipt');
+            const closeIconBtn = document.getElementById('close-receipt-modal-btn');
+            const backdrop = modal.querySelector('.modal-backdrop');
+            
+            const closeModal = () => {
+                modal.classList.add('modal-hidden');
+                resolve();
+            };
+            
+            if (closeBtn) closeBtn.onclick = closeModal;
+            if (closeIconBtn) closeIconBtn.onclick = closeModal;
+            if (backdrop) backdrop.onclick = closeModal;
+        });
     };
 
     /**

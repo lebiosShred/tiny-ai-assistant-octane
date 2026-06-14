@@ -273,6 +273,54 @@ async function listFolder(folderId) {
     }
 }
 
+async function listFolderRecursive(folderId, currentPath = '') {
+    const drive = getDriveClient();
+    if (!drive) {
+        throw new Error('Google Drive client not initialized. Check credentials.');
+    }
+
+    const targetFolderId = folderId || process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+
+    let results = [];
+    try {
+        const response = await drive.files.list({
+            q: `'${targetFolderId}' in parents and trashed = false`,
+            fields: 'files(id, name, mimeType, size, md5Checksum, parents)',
+            orderBy: 'folder,name',
+            pageSize: 100
+        });
+
+        const files = response.data.files || [];
+        recordApiSuccess();
+
+        for (const file of files) {
+            const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+            const itemPath = currentPath ? `${currentPath}/${file.name}` : file.name;
+
+            if (isFolder) {
+                const subResults = await listFolderRecursive(file.id, itemPath);
+                results = results.concat(subResults);
+            } else {
+                results.push({
+                    id: file.id,
+                    name: file.name,
+                    mimeType: file.mimeType,
+                    size: file.size ? parseInt(file.size, 10) : 0,
+                    md5Checksum: file.md5Checksum,
+                    parents: file.parents,
+                    isFolder: false,
+                    path: itemPath
+                });
+            }
+        }
+    } catch (err) {
+        console.error(`❌ Error in listFolderRecursive for folder ${targetFolderId}:`, err.message);
+        recordApiFailure(err);
+        throw err;
+    }
+    return results;
+}
+
 const fileContentCache = new Map();
 
 /**
@@ -814,7 +862,7 @@ async function findOrCreateClientFolder(companyName) {
 
                 // Axiom Requirement: Ensure folder is visible to the administrative user
                 try {
-                    const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_FROM || 'amie.lebios@octanesolutions.com.au';
+                    const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_FROM || 'amiel.lebios@octanesolutions.com.au';
                     console.log(`🔐 Sharing folder "${cleanCompany}" with ${adminEmail}...`);
                     await drive.permissions.create({
                         fileId: clientFolderId,
@@ -1140,6 +1188,7 @@ function invalidateFileContentCache(fileId) {
 module.exports = {
     getDriveClient,
     listFolder,
+    listFolderRecursive,
     getFileContent,
     searchFiles,
     createIntakeFile,

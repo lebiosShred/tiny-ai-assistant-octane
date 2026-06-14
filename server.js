@@ -103,6 +103,25 @@ async function syncPgCache() {
         }
     } catch(e) {
         console.error("⚠️ Background PG sync failed:", e.message);
+        try {
+            if (fs.existsSync(historyDir)) {
+                const files = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+                for (const file of files) {
+                    const id = file.slice(0, -5);
+                    if (!pgCache.has(id)) {
+                        try {
+                            const content = fs.readFileSync(path.join(historyDir, file), 'utf8');
+                            const parsed = JSON.parse(content);
+                            pgCache.set(id, parsed);
+                        } catch (parseErr) {
+                            console.error(`⚠️ Failed to parse local history file ${file}:`, parseErr.message);
+                        }
+                    }
+                }
+            }
+        } catch (readErr) {
+            console.error("⚠️ Failed to read local history directory for fallback:", readErr.message);
+        }
     }
 }
 
@@ -253,124 +272,200 @@ function extractScore(content) {
     return match ? match[1].toUpperCase() : null;
 }
 
-async function loadKnowledgeBase(userQuery = '', bypassCache = false) {
-    const cacheKey = 'gdrive_knowledge_base_full';
+function loadLocalKnowledgeBase() {
+    console.log('⚠️ Falling back to local knowledge base directory.');
+    let concatenated = "\n\n<knowledge_base>\n";
+    const knowledgeDir = path.join(PUBLIC_DIR, 'knowledge');
+    const targetDirs = [knowledgeDir];
+    const octaneServicesDir = path.join(knowledgeDir, 'Octane Services');
+    const octaneCompetitorsDir = path.join(knowledgeDir, 'Octane Competitors');
+    const complementaryAppsDir = path.join(knowledgeDir, 'Complementary Applications');
     
-    // 1. Check Cache
-    if (!bypassCache) {
+    if (fs.existsSync(octaneServicesDir)) targetDirs.push(octaneServicesDir);
+    if (fs.existsSync(octaneCompetitorsDir)) targetDirs.push(octaneCompetitorsDir);
+    if (fs.existsSync(complementaryAppsDir)) targetDirs.push(complementaryAppsDir);
+    
+    const allFiles = [];
+    for (const dirPath of targetDirs) {
         try {
-            const cached = await redisModule.getCache(cacheKey);
-            if (cached) {
-                console.log('⚡ Using cached Knowledge Base');
-                return cached;
+            if (!fs.existsSync(dirPath)) continue;
+            const files = fs.readdirSync(dirPath);
+            for (const f of files) {
+                const fullPath = path.join(dirPath, f);
+                const stat = fs.statSync(fullPath);
+                if (stat.isFile() && (f.endsWith('.md') || f.endsWith('.txt'))) {
+                    let namePrefix = '';
+                    if (dirPath === octaneServicesDir) namePrefix = 'Octane Services/';
+                    else if (dirPath === octaneCompetitorsDir) namePrefix = 'Octane Competitors/';
+                    else if (dirPath === complementaryAppsDir) namePrefix = 'Complementary Applications/';
+                    
+                    allFiles.push({ name: namePrefix + f, path: fullPath });
+                }
             }
         } catch (e) {
-            console.warn('⚠️ Cache fetch failed for knowledge base:', e.message);
+            console.warn(`⚠️ Error reading local KB dir ${dirPath}:`, e.message);
         }
     }
 
-    // 2. Fetch from Google Drive
-    let concatenated = "\n\n<knowledge_base>\n";
-    let gdriveSuccess = false;
+    if (allFiles.length > 0) {
+        for (const fileObj of allFiles) {
+            try {
+                const data = fs.readFileSync(fileObj.path, 'utf8');
+                concatenated += `  <playbook file="${fileObj.name}">\n${data}\n  </playbook>\n`;
+            } catch (e) {
+                console.warn(`⚠️ Error reading local KB file ${fileObj.name}:`, e.message);
+            }
+        }
+    }
+    concatenated += "</knowledge_base>\n";
+    return concatenated;
+}
 
+async function loadKnowledgeBase(userQuery = '', bypassCache = false) {
+    try {
+        const { eq } = require('drizzle-orm');
+        const dbDocs = await db.select()
+            .from(documentCompanionMetadata)
+            .where(eq(documentCompanionMetadata.company, '__SYSTEM_KB__'));
+
+        if (dbDocs.length === 0) {
+            console.log('⚠️ No cloud cached Knowledge Base files found. Falling back to local files.');
+            return loadLocalKnowledgeBase();
+        }
+
+        let concatenated = "\n\n<knowledge_base>\n";
+        for (const doc of dbDocs) {
+            const content = doc.extractedProfile || '';
+            const pathName = doc.prospectName || doc.fileName;
+            if (content.trim()) {
+                concatenated += `  <playbook file="${pathName}">\n${content.trim()}\n  </playbook>\n`;
+            }
+        }
+        concatenated += "</knowledge_base>\n";
+        return concatenated;
+    } catch (err) {
+        console.error('❌ Failed to load Cloud Knowledge Base, falling back to local:', err.message);
+        return loadLocalKnowledgeBase();
+    }
+}
+
+let isKBSyncInProgress = false;
+
+async function syncKnowledgeBaseFromGDrive() {
+    if (isKBSyncInProgress) {
+        console.warn('⚠️ Knowledge Base sync is already in progress. Skipping execution.');
+        return;
+    }
+    isKBSyncInProgress = true;
+    console.log('🔄 Starting automated Knowledge Base sync from Google Drive...');
     try {
         const drive = gdriveService.getDriveClient ? gdriveService.getDriveClient() : null;
-        if (drive) {
-            const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
-            // Find Knowledge base folder
-            const kbSearch = await drive.files.list({
-                q: `(name = 'Knowledge base' or name = 'Knowledge Base') and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
-                fields: 'files(id, name)',
-                pageSize: 1
-            });
-            const kbFiles = kbSearch.data.files || [];
-            
-            if (kbFiles.length > 0) {
-                const kbFolderId = kbFiles[0].id;
-                console.log(`📂 Fetching files from GDrive Knowledge Base (ID: ${kbFolderId})`);
-                
-                const files = await gdriveService.listFolder(kbFolderId);
-                
-                // Fetch all file contents sequentially to avoid rate limits
-                for (const file of files) {
-                    if (!file.isFolder) {
-                        try {
-                            const content = await gdriveService.getFileContent(file.id, bypassCache);
-                            if (content && content.trim()) {
-                                concatenated += `  <playbook file="${file.name}">\n${content.trim()}\n  </playbook>\n`;
-                            }
-                        } catch (contentErr) {
-                            console.warn(`⚠️ Failed to read KB file ${file.name}:`, contentErr.message);
-                        }
-                    }
-                }
-                gdriveSuccess = true;
-            } else {
-                console.warn(`⚠️ GDrive Knowledge Base folder not found under root.`);
+        if (!drive) {
+            console.warn('⚠️ Google Drive client not initialized. Skipping KB sync.');
+            isKBSyncInProgress = false;
+            return;
+        }
+
+        const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+        
+        const kbSearch = await drive.files.list({
+            q: `(name = 'Knowledge base' or name = 'Knowledge Base') and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+            fields: 'files(id, name)',
+            pageSize: 1
+        });
+        const kbFiles = kbSearch.data.files || [];
+        if (kbFiles.length === 0) {
+            console.warn('⚠️ GDrive Knowledge Base folder not found. Skipping KB sync.');
+            isKBSyncInProgress = false;
+            return;
+        }
+
+        const kbFolderId = kbFiles[0].id;
+        console.log(`📂 Found Knowledge Base root folder ID: ${kbFolderId}. Recursively listing files...`);
+        
+        const remoteFiles = await gdriveService.listFolderRecursive(kbFolderId);
+        console.log(`🔍 Found ${remoteFiles.length} files in Google Drive Knowledge Base.`);
+
+        const { eq, and } = require('drizzle-orm');
+        const dbDocs = await db.select()
+            .from(documentCompanionMetadata)
+            .where(eq(documentCompanionMetadata.company, '__SYSTEM_KB__'));
+        
+        const dbDocsMap = new Map(dbDocs.map(d => [d.fileId, d]));
+        const remoteFileIds = new Set(remoteFiles.map(f => f.id));
+
+        // 1. Purge deleted files
+        for (const dbDoc of dbDocs) {
+            if (!remoteFileIds.has(dbDoc.fileId)) {
+                console.log(`🗑️ File deleted in Google Drive. Removing from DB cache: ${dbDoc.fileName} (Path: ${dbDoc.prospectName})`);
+                await db.delete(documentCompanionMetadata)
+                    .where(eq(documentCompanionMetadata.id, dbDoc.id));
             }
         }
-    } catch (err) {
-        console.error(`❌ Error fetching GDrive Knowledge Base:`, err.message);
-    }
 
-    // 3. Fallback to local if GDrive failed
-    if (!gdriveSuccess) {
-        console.log('⚠️ Falling back to local knowledge base directory.');
-        const knowledgeDir = path.join(PUBLIC_DIR, 'knowledge');
-        const targetDirs = [knowledgeDir];
-        const octaneServicesDir = path.join(knowledgeDir, 'Octane Services');
-        const octaneCompetitorsDir = path.join(knowledgeDir, 'Octane Competitors');
-        const complementaryAppsDir = path.join(knowledgeDir, 'Complementary Applications');
-        
-        if (fs.existsSync(octaneServicesDir)) targetDirs.push(octaneServicesDir);
-        if (fs.existsSync(octaneCompetitorsDir)) targetDirs.push(octaneCompetitorsDir);
-        if (fs.existsSync(complementaryAppsDir)) targetDirs.push(complementaryAppsDir);
-        
-        const allFiles = [];
-        for (const dirPath of targetDirs) {
+        // 2. Add or update files
+        for (const file of remoteFiles) {
             try {
-                if (!fs.existsSync(dirPath)) continue;
-                const files = fs.readdirSync(dirPath);
-                for (const f of files) {
-                    const fullPath = path.join(dirPath, f);
-                    const stat = fs.statSync(fullPath);
-                    if (stat.isFile() && (f.endsWith('.md') || f.endsWith('.txt'))) {
-                        let namePrefix = '';
-                        if (dirPath === octaneServicesDir) namePrefix = 'Octane Services/';
-                        else if (dirPath === octaneCompetitorsDir) namePrefix = 'Octane Competitors/';
-                        else if (dirPath === complementaryAppsDir) namePrefix = 'Complementary Applications/';
-                        
-                        allFiles.push({ name: namePrefix + f, path: fullPath });
+                if (file.name.endsWith('.pdf.md') || file.name.endsWith('.docx.md') || file.name.startsWith('.') || (!file.name.endsWith('.md') && !file.name.endsWith('.txt') && !file.name.endsWith('.pdf') && !file.name.endsWith('.docx'))) {
+                    continue;
+                }
+
+                const fileHash = file.md5Checksum || `${file.size}_${file.name}`;
+                const cachedDoc = dbDocsMap.get(file.id);
+                if (cachedDoc && cachedDoc.contentHash === fileHash) {
+                    if (cachedDoc.fileName !== file.name || cachedDoc.prospectName !== file.path) {
+                        console.log(`📝 Updating metadata for existing file: ${file.name} (Path: ${file.path})`);
+                        await db.update(documentCompanionMetadata)
+                            .set({
+                                fileName: file.name,
+                                prospectName: file.path,
+                                updatedAt: new Date()
+                            })
+                            .where(eq(documentCompanionMetadata.id, cachedDoc.id));
+                    }
+                    continue;
+                }
+
+                console.log(`📥 Downloading and indexing: ${file.name} (Path: ${file.path})`);
+                const content = await gdriveService.getFileContent(file.id, true);
+                
+                if (content && content.trim()) {
+                    const uniqueId = `kb_${file.id}`;
+                    if (cachedDoc) {
+                        await db.update(documentCompanionMetadata)
+                            .set({
+                                fileName: file.name,
+                                contentHash: fileHash,
+                                extractedProfile: content,
+                                prospectName: file.path,
+                                updatedAt: new Date()
+                            })
+                            .where(eq(documentCompanionMetadata.id, cachedDoc.id));
+                    } else {
+                        await db.insert(documentCompanionMetadata)
+                            .values({
+                                id: uniqueId,
+                                fileId: file.id,
+                                fileName: file.name,
+                                contentHash: fileHash,
+                                extractedProfile: content,
+                                company: '__SYSTEM_KB__',
+                                prospectName: file.path,
+                                createdAt: new Date(),
+                                updatedAt: new Date()
+                            });
                     }
                 }
-            } catch (e) {
-                console.warn(`⚠️ Error reading local KB dir ${dirPath}:`, e.message);
+            } catch (fileErr) {
+                console.error(`❌ Failed to sync file ${file.name}:`, fileErr.message);
             }
         }
-
-        if (allFiles.length > 0) {
-            for (const fileObj of allFiles) {
-                try {
-                    const data = fs.readFileSync(fileObj.path, 'utf8');
-                    concatenated += `  <playbook file="${fileObj.name}">\n${data}\n  </playbook>\n`;
-                } catch (e) {
-                    console.warn(`⚠️ Error reading local KB file ${fileObj.name}:`, e.message);
-                }
-            }
-        }
+        console.log('✅ Knowledge Base sync completed successfully.');
+    } catch (err) {
+        console.error('❌ Error during Knowledge Base sync:', err.message);
+    } finally {
+        isKBSyncInProgress = false;
     }
-
-    concatenated += "</knowledge_base>\n";
-
-    // 4. Cache the result for 12 hours (43200 seconds)
-    try {
-        await redisModule.setCache(cacheKey, concatenated, 43200);
-        console.log('✅ Knowledge Base cached successfully.');
-    } catch (e) {
-        console.warn('⚠️ Failed to cache Knowledge Base:', e.message);
-    }
-
-    return concatenated;
 }
 
 function isTestEnrichment(name, company) {
@@ -1106,12 +1201,17 @@ async function handleCallPrep(contactId) {
         
         console.log(`🔍 Webhook Triggered. Initiating parallel data enrichment for: ${name} at ${company}`);
         const websiteUrl = contact.properties.website || '';
-        const [ragContext, companyNewsContext, githubContext, exaContext] = await Promise.all([
+        const results = await Promise.allSettled([
             fetchTavilyRAGContext(name, company),
             fetchTavilyCompanyNews(company, websiteUrl),
             fetchGithubTechnographics(company),
             fetchExaRAGContext(name, company)
         ]);
+
+        const ragContext = results[0].status === 'fulfilled' ? results[0].value : 'Failed to fetch Tavily RAG context.';
+        const companyNewsContext = results[1].status === 'fulfilled' ? results[1].value : 'Failed to fetch company news.';
+        const githubContext = results[2].status === 'fulfilled' ? results[2].value : 'Failed to fetch GitHub technographics.';
+        const exaContext = results[3].status === 'fulfilled' ? results[3].value : 'Failed to fetch Exa RAG context.';
 
         const params = {
             name: name,
@@ -6715,6 +6815,18 @@ ${payload.intakeAnswers || ''}`;
         const cleanId = id.replace(/[^a-zA-Z0-9_\-]/g, '');
         const filePath = path.join(historyDir, `${cleanId}.json`);
         
+        if (!pgCache.has(cleanId)) {
+            try {
+                if (fs.existsSync(filePath)) {
+                    const content = fs.readFileSync(filePath, 'utf8');
+                    const parsed = JSON.parse(content);
+                    pgCache.set(cleanId, parsed);
+                }
+            } catch (fsErr) {
+                console.error(`⚠️ Failed to lazy load history item ${cleanId} from file:`, fsErr.message);
+            }
+        }
+        
         if (pgCache.has(cleanId)) {
             try {
                 const parsedRaw = pgCache.get(cleanId);
@@ -6732,6 +6844,17 @@ ${payload.intakeAnswers || ''}`;
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'History item not found.' }));
         }
+        return;
+    }
+
+    // API Knowledge Base Sync Route
+    if (pathname === '/api/sync-kb' && req.method === 'POST') {
+        res.writeHead(202, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: 'Knowledge Base sync started in background.' }));
+        
+        syncKnowledgeBaseFromGDrive().catch(err => {
+            console.error('❌ Async sync error:', err.message);
+        });
         return;
     }
 
@@ -7001,6 +7124,16 @@ ${payload.intakeAnswers || ''}`;
 
 server.listen(PORT, () => {
     console.log(`🚀 Tiny AI Proxy Server running at http://localhost:${PORT}`);
+    
+    // Initial startup sync and interval setup (every 30 minutes)
+    syncKnowledgeBaseFromGDrive().catch(err => {
+        console.error('❌ Startup Knowledge Base sync failed:', err.message);
+    });
+    setInterval(() => {
+        syncKnowledgeBaseFromGDrive().catch(err => {
+            console.error('❌ Background Knowledge Base sync failed:', err.message);
+        });
+    }, 30 * 60 * 1000);
 });
 
 // Graceful shutdown lifecycle management (for background process control)

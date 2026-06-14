@@ -5273,3 +5273,49 @@ body {
     background: rgba(239, 68, 68, 0.08) !important;
 }
 
+/* Attached files inside chat cards */
+.chat-message-attachments {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    margin-top: 0.6rem !important;
+    padding-top: 0.5rem !important;
+    border-top: 1px dashed rgba(14, 165, 233, 0.25) !important;
+}
+
+.chat-message-card.assistant .chat-message-attachments {
+    border-top-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+.chat-attachment-chip {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    padding: 0.35rem 0.6rem !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(14, 165, 233, 0.2) !important;
+    border-radius: 8px !important;
+    font-size: 0.72rem !important;
+    font-weight: 500 !important;
+    color: #0369a1 !important;
+    max-width: 200px !important;
+    overflow: hidden !important;
+}
+
+.chat-message-card.assistant .chat-attachment-chip {
+    background: #f1f5f9 !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
+    color: #475569 !important;
+}
+
+.chat-attachment-icon {
+    color: currentColor !important;
+    flex-shrink: 0 !important;
+}
+
+.chat-attachment-name {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+

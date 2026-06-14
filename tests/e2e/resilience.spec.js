@@ -130,4 +130,52 @@ test.describe('Aegis Network Resilience Tests', () => {
         );
         expect(criticalErrors.length).toBe(0);
     });
+
+    test('lazy loads history details from disk on cache miss', async ({ request }) => {
+        const fs = require('fs');
+        const path = require('path');
+        const historyDir = path.resolve('knowledge/history_test');
+        
+        // Ensure history directory exists
+        if (!fs.existsSync(historyDir)) {
+            fs.mkdirSync(historyDir, { recursive: true });
+        }
+        
+        const testId = 'lazy_load_test_' + Date.now();
+        const testFile = path.join(historyDir, `${testId}.json`);
+        const testData = {
+            id: testId,
+            name: 'Lazy Load Prospect',
+            company: 'Lazy Corp',
+            type: 'synthesis',
+            date: new Date().toISOString(),
+            content: 'Test content for lazy loading verification.'
+        };
+        
+        // Write the local file directly
+        fs.writeFileSync(testFile, JSON.stringify(testData, null, 2), 'utf8');
+        
+        try {
+            // Make request to detail endpoint
+            const res = await request.get(`/api/history/detail?id=${testId}`);
+            expect(res.status()).toBe(200);
+            
+            const json = await res.json();
+            expect(json.id).toBe(testId);
+            expect(json.company).toBe('Lazy Corp');
+            
+            // Verify it also got cached and returned in the general listing
+            const listRes = await request.get('/api/history?t=' + Date.now());
+            expect(listRes.status()).toBe(200);
+            const list = await listRes.json();
+            const found = list.find(item => item.id === testId);
+            expect(found).toBeDefined();
+            expect(found.company).toBe('Lazy Corp');
+        } finally {
+            // Cleanup the file
+            if (fs.existsSync(testFile)) {
+                fs.unlinkSync(testFile);
+            }
+        }
+    });
 });
