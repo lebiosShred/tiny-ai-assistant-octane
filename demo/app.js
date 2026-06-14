@@ -2105,8 +2105,12 @@ Rules:
             { role: 'system', content: systemPrompt }
         ];
 
-        // Add history (up to last 10 messages to save context token space)
-        const recentHistory = chatHistory.slice(-10);
+        // Add history (excluding the optimistic current user query if already pushed)
+        let recentHistory = chatHistory;
+        if (skipLocalPush && recentHistory.length > 0 && recentHistory[recentHistory.length - 1].role === 'user') {
+            recentHistory = recentHistory.slice(0, -1);
+        }
+        recentHistory = recentHistory.slice(-10);
         recentHistory.forEach(msg => {
             messages.push({
                 role: msg.role === 'user' ? 'user' : 'assistant',
@@ -2175,7 +2179,17 @@ Rules:
                 spinnerResetSpan.innerText = "Tiny is thinking...";
             }
 
-            if (!res.ok) throw new Error(data.error || 'Failed to call chat API');
+            if (!res.ok) {
+                let errMsg = 'Failed to call chat API';
+                if (data.error) {
+                    if (typeof data.error === 'object') {
+                        errMsg = data.error.message || JSON.stringify(data.error);
+                    } else {
+                        errMsg = data.error;
+                    }
+                }
+                throw new Error(errMsg);
+            }
 
             if (data.receipt) {
                 showReceiptModal(data.receipt);
@@ -2644,8 +2658,6 @@ Rules:
                 }
             } else {
                 chatUserInput.value = '';
-                chatHistory.push({ role: 'user', content: queryText, timestamp: new Date().toISOString() });
-                renderChatHistory();
                 await callTinyAPI(queryText);
             }
         } catch (err) {
