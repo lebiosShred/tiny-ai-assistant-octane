@@ -11,6 +11,11 @@ const queueModule = require('./api/queue');
 const searchService = require('./api/searchService');
 const Exa = require('exa-js').default;
 const Busboy = require('busboy');
+const { generateText, tool, stepCountIs } = require('ai');
+const { createMistral } = require('@ai-sdk/mistral');
+const { createOpenAI } = require('@ai-sdk/openai');
+const { createDeepSeek } = require('@ai-sdk/deepseek');
+const { z } = require('zod');
 
 
 const PORT = process.env.PORT || 8080;
@@ -3210,1271 +3215,957 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 }
                 
                 // Map messages to explicitly instruct the model to use the tools provided
+                const systemContents = [];
                 const dsMessages = [];
-                let hasSystem = false;
                 if (Array.isArray(payload.messages)) {
                     for (const msg of payload.messages) {
                         if (msg.role === 'system') {
-                            hasSystem = true;
-                            dsMessages.push({
-                                role: 'system',
-                                content: msg.content + '\n\nIMPORTANT: You have tools available to create prospect folders, list prospect files, create/delete prospect files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions (e.g. "Create a prospect folder for Sarah Chen", "list files for Sarah Chen", "delete prospect sample", "create file readme.md at AECOM"), you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.'
-                            });
+                            systemContents.push(msg.content + '\n\nIMPORTANT: You have tools available to create prospect folders, list prospect files, create/delete prospect files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions (e.g. "Create a prospect folder for Sarah Chen", "list files for Sarah Chen", "delete prospect sample", "create file readme.md AECOM"), you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.');
                         } else {
                             dsMessages.push(msg);
                         }
                     }
                 }
-                if (!hasSystem) {
-                    dsMessages.unshift({
-                        role: 'system',
-                        content: 'You have tools available to create prospect folders, list prospect files, create/delete prospect files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions, you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.'
-                    });
+                if (systemContents.length === 0) {
+                    systemContents.push('You have tools available to create prospect folders, list prospect files, create/delete prospect files, upload LinkedIn bios/sales briefs, and register call logs. When the user asks you to perform any of these actions, you MUST call the appropriate tool. Do not simply reply with text claiming to have performed the action.');
+                }
+                const systemInstruction = systemContents.join('\n\n');
+
+                const sdkMessages = [];
+                for (const msg of dsMessages) {
+                    if (msg.role === 'user') {
+                        sdkMessages.push({ role: 'user', content: msg.content });
+                    } else if (msg.role === 'assistant') {
+                        if (msg.tool_calls && msg.tool_calls.length > 0) {
+                            const contentParts = [];
+                            if (msg.content) {
+                                contentParts.push({ type: 'text', text: msg.content });
+                            }
+                            for (const tc of msg.tool_calls) {
+                                let parsedArgs = {};
+                                try {
+                                    parsedArgs = typeof tc.function.arguments === 'string' 
+                                        ? JSON.parse(tc.function.arguments) 
+                                        : tc.function.arguments;
+                                } catch (e) {
+                                    console.error('Failed parsing arguments for input tool call:', tc.function.arguments);
+                                }
+                                contentParts.push({
+                                    type: 'tool-call',
+                                    toolCallId: tc.id,
+                                    toolName: tc.function.name,
+                                    args: parsedArgs
+                                });
+                            }
+                            sdkMessages.push({ role: 'assistant', content: contentParts });
+                        } else {
+                            sdkMessages.push({ role: 'assistant', content: msg.content || '' });
+                        }
+                    } else if (msg.role === 'tool') {
+                        sdkMessages.push({
+                            role: 'tool',
+                            content: [
+                                {
+                                    type: 'tool-result',
+                                    toolCallId: msg.tool_call_id || msg.toolCallId,
+                                    toolName: msg.name || msg.toolName,
+                                    result: msg.content
+                                }
+                            ]
+                        });
+                    }
                 }
 
-                const dsTools = [
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'delete_prospect_folder',
-                            description: 'Deletes/removes a prospect folder and all its files from Google Drive (or local fallback). Use this when asked to delete, remove, or destroy a prospect, lead, client, or company folder.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company name'
-                                    },
-                                    prospect_name: {
-                                        type: 'string',
-                                        description: 'The prospect name (optional, if deleting a specific prospect subfolder)'
-                                    }
-                                },
-                                required: ['company']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'list_prospect_files',
-                            description: 'Lists all files inside the prospect/company folder in Google Drive (or local fallback folder). Use this when asked what files are available, what documents are in the folder, or to check the contents of a company folder.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company name'
-                                    },
-                                    prospect_name: {
-                                        type: 'string',
-                                        description: 'The prospect name'
-                                    }
-                                },
-                                required: ['company', 'prospect_name']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'create_prospect_folder',
-                            description: 'Creates a new prospect/company folder in Google Drive. Use this when asked to create a prospect, add a company, or set up a folder for a client.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company name'
-                                    },
-                                    prospect_name: {
-                                        type: 'string',
-                                        description: 'The prospect name'
-                                    }
-                                },
-                                required: ['company', 'prospect_name']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'create_prospect_file',
-                            description: 'Creates or uploads a file into the prospect\'s folder on Google Drive. Automatically creates the folder if it does not exist. Use this when asked to create or write a file (e.g., README.md).',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company name'
-                                    },
-                                    prospect_name: {
-                                        type: 'string',
-                                        description: 'The prospect name'
-                                    },
-                                    filename: {
-                                        type: 'string',
-                                        description: 'The name of the file (e.g. README.md)'
-                                    },
-                                    content: {
-                                        type: 'string',
-                                        description: 'The text content to save in the file'
-                                    }
-                                },
-                                required: ['company', 'prospect_name', 'filename', 'content']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'delete_prospect_file',
-                            description: 'Deletes/removes a specific file from the prospect\'s Google Drive folder.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company name'
-                                    },
-                                    prospect_name: {
-                                        type: 'string',
-                                        description: 'The prospect name'
-                                    },
-                                    filename: {
-                                        type: 'string',
-                                        description: 'The exact name of the file to delete'
-                                    }
-                                },
-                                required: ['company', 'prospect_name', 'filename']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'upload_linkedin_profile',
-                            description: 'Registers/uploads LinkedIn profile bio information text for a prospect.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company or prospect name'
-                                    },
-                                    contact_name: {
-                                        type: 'string',
-                                        description: 'The specific contact person\'s name, if provided'
-                                    },
-                                    content: {
-                                        type: 'string',
-                                        description: 'The LinkedIn profile text content'
-                                    }
-                                },
-                                required: ['company', 'content']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'upload_sales_brief',
-                            description: 'Registers/uploads a sales brief document for a prospect.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company or prospect name'
-                                    },
-                                    contact_name: {
-                                        type: 'string',
-                                        description: 'The specific contact person\'s name, if provided'
-                                    },
-                                    content: {
-                                        type: 'string',
-                                        description: 'The sales brief document content'
-                                    }
-                                },
-                                required: ['company', 'content']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'register_call_log',
-                            description: 'Registers/logs call notes or transcripts for a call made to a prospect and logs to HubSpot CRM if possible.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company or prospect name'
-                                    },
-                                    contact_name: {
-                                        type: 'string',
-                                        description: 'The specific contact person\'s name, if provided'
-                                    },
-                                    content: {
-                                        type: 'string',
-                                        description: 'The call notes or transcript text'
-                                    }
-                                },
-                                required: ['company', 'content']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'read_prospect_file',
-                            description: 'Reads/fetches the full text content of a specific file inside the prospect\'s folder on Google Drive.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company or prospect name'
-                                    },
-                                    filename: {
-                                        type: 'string',
-                                        description: 'The name of the file to read (e.g. requirements.pdf, notes.docx, brief.txt)'
-                                    }
-                                },
-                                required: ['company', 'filename']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'search_prospect_files',
-                            description: 'Searches for files matching a keyword/query inside the prospect\'s Google Drive folder.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company or prospect name'
-                                    },
-                                    query: {
-                                        type: 'string',
-                                        description: 'The search term or keyword to look for in file names or contents'
-                                    }
-                                },
-                                required: ['company', 'query']
-                            }
-                        }
-                    },
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'send_recap_email',
-                            description: 'Dispatches a synthesized recap email directly to the prospect.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    email: {
-                                        type: 'string',
-                                        description: 'The recipient email address'
-                                    },
-                                    name: {
-                                        type: 'string',
-                                        description: 'The recipient name'
-                                    },
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company name'
-                                    },
-                                    recapText: {
-                                        type: 'string',
-                                        description: 'The email body text containing the discussion summary'
-                                    },
-                                    rep: {
-                                        type: 'string',
-                                        description: 'The sales representative name sending the email'
-                                    }
-                                },
-                                required: ['email', 'name', 'company', 'recapText']
-                            }
-                        }
-                    },
+                let modelInstance;
+                let targetModel = payload.model || (isMistral ? 'mistral-large-latest' : 'deepseek-chat');
+                if (isMistral && (!targetModel || !targetModel.includes('mistral'))) {
+                    targetModel = process.env.MISTRAL_API_MODEL || 'mistral-large-latest';
+                }
 
-                    {
-                        type: 'function',
-                        function: {
-                            name: 'generate_proposal_file',
-                            description: 'Generates a preliminary proposal document and uploads it directly to the prospect\'s folder on Google Drive.',
-                            parameters: {
-                                type: 'object',
-                                properties: {
-                                    company: {
-                                        type: 'string',
-                                        description: 'The company name'
-                                    },
-                                    prospect_name: {
-                                        type: 'string',
-                                        description: 'The prospect name'
-                                    },
-                                    filename: {
-                                        type: 'string',
-                                        description: 'The proposal filename (e.g. Proposal_Draft.md)'
-                                    },
-                                    proposalContent: {
-                                        type: 'string',
-                                        description: 'The text content of the proposal'
+                if (isMistral) {
+                    const mistralProvider = createMistral({ apiKey: dsKey });
+                    modelInstance = mistralProvider(targetModel);
+                } else {
+                    const deepseekProvider = createDeepSeek({
+                        apiKey: dsKey
+                    });
+                    modelInstance = deepseekProvider(targetModel);
+                }
+
+                let gdriveAction = false;
+                let folderDeleted = false;
+                let deletedCompany = '';
+                const receipts = [];
+
+                const tools = {
+                    delete_prospect_folder: tool({
+                        description: 'Deletes/removes a prospect folder and all its files from Google Drive (or local fallback). Use this when asked to delete, remove, or destroy a prospect, lead, client, or company folder.',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company name'),
+                            prospect_name: z.string().optional().describe('The prospect name (optional, if deleting a specific prospect subfolder)')
+                        }),
+                        execute: async ({ company, prospect_name }) => {
+                            if (isMismatch) {
+                                console.warn(`⚠️ Blocking execution of tool delete_prospect_folder due to identity mismatch.`);
+                                return `Error: Execution of tool "delete_prospect_folder" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                            const cleanProspect = prospect_name ? prospect_name.replace(/[^a-zA-Z0-9]/g, '_') : '';
+                            console.log(`🗑️ Tool Call: Deleting folder and history for ${company} ${prospect_name ? '(' + prospect_name + ')' : ''}`);
+                            let success = false;
+                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                            
+                            const normalizeString = (str) => (str || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
+                            const targetNorm = normalizeString(company);
+                            const prospectNorm = cleanProspect ? normalizeString(cleanProspect) : '';
+
+                            if (gdriveAvailable) {
+                                try {
+                                    const drive = gdriveService.getDriveClient();
+                                    const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
+                                    const prospectsSearch = await drive.files.list({
+                                        q: `name = 'Company' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
+                                        fields: 'files(id)',
+                                        pageSize: 1
+                                    });
+                                    const prospectsFiles = prospectsSearch.data.files || [];
+                                    if (prospectsFiles.length > 0) {
+                                        const prospectsFolderId = prospectsFiles[0].id;
+                                        const clientSearch = await drive.files.list({
+                                            q: `mimeType = 'application/vnd.google-apps.folder' and '${prospectsFolderId}' in parents and trashed = false`,
+                                            fields: 'files(id, name)',
+                                            pageSize: 100
+                                        });
+                                        const clientFiles = clientSearch.data.files || [];
+                                        const matchedFolders = clientFiles.filter(f => normalizeString(f.name) === targetNorm);
+                                        for (const folder of matchedFolders) {
+                                            if (cleanProspect) {
+                                                // Delete specific prospect folder inside company folder
+                                                const subSearch = await drive.files.list({
+                                                    q: `name = '${cleanProspect.replace(/'/g, "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and '${folder.id}' in parents and trashed = false`,
+                                                    fields: 'files(id)',
+                                                    pageSize: 1
+                                                });
+                                                const subFiles = subSearch.data.files || [];
+                                                if (subFiles.length > 0) {
+                                                    await gdriveService.deleteFile(subFiles[0].id);
+                                                    gdriveService.invalidateFolderCache(subFiles[0].id);
+                                                    success = true;
+                                                }
+                                            } else {
+                                                // Delete entire company folder
+                                                await gdriveService.deleteFile(folder.id);
+                                                gdriveService.invalidateFolderCache(folder.id);
+                                                success = true;
+                                            }
+                                        }
                                     }
-                                },
-                                required: ['company', 'prospect_name', 'filename', 'proposalContent']
+                                } catch (err) {
+                                    console.warn('⚠️ GDrive folder deletion failed in tool call:', err.message);
+                                }
+                            }
+                            
+                            // Local filesystem deletion
+                            if (cleanProspect) {
+                                const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
+                                if (fs.existsSync(localFolder)) {
+                                    fs.rmSync(localFolder, { recursive: true, force: true });
+                                    success = true;
+                                }
+                            } else {
+                                if (fs.existsSync(historyDir)) {
+                                    const subdirs = fs.readdirSync(historyDir).filter(f => {
+                                         try {
+                                             return fs.statSync(path.join(historyDir, f)).isDirectory();
+                                         } catch (e) {
+                                             return false;
+                                         }
+                                     });
+                                    for (const subdir of subdirs) {
+                                        if (normalizeString(subdir) === targetNorm) {
+                                            const localFolder = path.join(historyDir, subdir);
+                                            fs.rmSync(localFolder, { recursive: true, force: true });
+                                            success = true;
+                                        }
+                                    }
+                                }
+                                const localFolder = path.join(historyDir, cleanCompany);
+                                if (fs.existsSync(localFolder)) {
+                                    fs.rmSync(localFolder, { recursive: true, force: true });
+                                    success = true;
+                                }
+                            }
+
+                            // Local session metadata deletion
+                            try {
+                                const sessionIds = Array.from(pgCache.keys());
+                                for (const id of sessionIds) {
+                                    const data = pgCache.get(id);
+                                    if (data && data.company && normalizeString(data.company) === targetNorm) {
+                                        if (cleanProspect) {
+                                            if (data.name && normalizeString(data.name) === prospectNorm) {
+                                                await deleteHistorySession(id);
+                                                console.log(`🗑️ Deleted local history session matching prospect "${prospect_name}" at company "${company}": ${id}`);
+                                                success = true;
+                                            }
+                                        } else {
+                                            await deleteHistorySession(id);
+                                            console.log(`🗑️ Deleted local history session matching company "${company}": ${id}`);
+                                            success = true;
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn(`⚠️ Error deleting local history session during folder deletion:`, e.message);
+                            }
+
+                            if (success) {
+                                historyListCache = null; // Invalidate cache on deletion
+                                gdriveAction = true;
+                                folderDeleted = true;
+                                deletedCompany = company;
+                                receipts.push(generateReceipt("DELETE", "FOLDER", company, company, company, {
+                                    initiator: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} Tool Call: delete_prospect_folder`
+                                }));
+                                return `I have successfully deleted the folder and all memory files for the prospect **${prospect_name || company}**.`;
+                            } else {
+                                return `I could not find or delete the folder/history for the prospect **${prospect_name || company}**.`;
                             }
                         }
-                    }
-                ];
+                    }),
+                    list_prospect_files: tool({
+                        description: 'Lists all files inside the prospect/company folder in Google Drive (or local fallback folder). Use this when asked what files are available, what documents are in the folder, or to check the contents of a company folder.',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company name'),
+                            prospect_name: z.string().describe('The prospect name')
+                        }),
+                        execute: async ({ company, prospect_name }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "list_prospect_files" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            console.log(`📂 Tool Call: Listing files in ${prospect_name} folder at ${company}`);
+                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                            let files = [];
+                            if (gdriveAvailable) {
+                                try {
+                                    const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                    const clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
+                                    files = await gdriveService.listFolder(clientFolderId);
+                                    
+                                    // Merge recently created files from cache to combat eventual consistency lag
+                                    const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(company);
+                                    if (cachedCreated && cachedCreated.length > 0) {
+                                        for (const cachedFile of cachedCreated) {
+                                            if (!files.some(f => f.id === cachedFile.id || f.name === cachedFile.name)) {
+                                                files.push(cachedFile);
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Filter out recently deleted files to prevent eventual consistency lag issues
+                                    const now = Date.now();
+                                    for (const [key, time] of recentlyDeletedFiles.entries()) {
+                                        if (now - time > 60000) {
+                                            recentlyDeletedFiles.delete(key);
+                                        }
+                                    }
+                                    files = files.filter(file => {
+                                        const fId = file.id ? file.id.toString().toLowerCase() : '';
+                                        const fName = file.name ? file.name.toString().toLowerCase() : '';
+                                        return !recentlyDeletedFiles.has(fId) && !recentlyDeletedFiles.has(fName);
+                                    });
+                                } catch (err) {
+                                    console.warn('⚠️ GDrive list failed in tool call:', err.message);
+                                }
+                            } else {
+                                const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                                const cleanProspect = prospect_name.replace(/[^a-zA-Z0-9]/g, '_');
+                                const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
+                                if (fs.existsSync(localFolder)) {
+                                    const localFiles = fs.readdirSync(localFolder).filter(f => {
+                                         try {
+                                             return !fs.statSync(path.join(localFolder, f)).isDirectory();
+                                         } catch (e) {
+                                             return false;
+                                         }
+                                     });
+                                    files = localFiles.map(file => ({ name: file, id: `local_${cleanCompany}_${cleanProspect}_${file}`, isFolder: false }));
+                                }
+                            }
+                            const fileItems = files.filter(f => {
+                                if (f.isFolder) return false;
+                                const fName = f.name ? f.name.toLowerCase() : '';
+                                if (fName.endsWith('.pdf.txt') || fName.endsWith('.docx.txt') || fName.endsWith('.txt.txt') || fName.endsWith('.md.txt')) {
+                                    return false;
+                                }
+                                return true;
+                            });
+                            if (fileItems.length > 0) {
+                                return `Here are the files in the folder for **${company}**:\n` +
+                                    fileItems.map(f => `- **${f.name}** (ID: \`${f.id}\`)`).join('\n');
+                            } else {
+                                return `No files were found in the folder for **${company}**.`;
+                            }
+                        }
+                    }),
+                    create_prospect_folder: tool({
+                        description: 'Creates a new prospect/company folder in Google Drive. Use this when asked to create a prospect, add a company, or set up a folder for a client.',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company name'),
+                            prospect_name: z.string().describe('The prospect name')
+                        }),
+                        execute: async ({ company, prospect_name }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "create_prospect_folder" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            console.log(`📂 Tool Call: Creating folder for ${prospect_name} at ${company}`);
+                            let folderId = null;
+                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                            if (gdriveAvailable) {
+                                const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                folderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
+                            } else {
+                                console.warn('⚠️ Google Drive not configured. Creating local folders.');
+                                const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                                const cleanProspect = prospect_name.replace(/[^a-zA-Z0-9]/g, '_');
+                                const companyFolder = path.join(historyDir, cleanCompany);
+                                
+                                const normalizeString = (str) => (str || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
+                                const targetNorm = normalizeString(prospect_name);
+                                let resolvedProspectFolder = null;
+                                if (fs.existsSync(companyFolder)) {
+                                    const existingDirs = fs.readdirSync(companyFolder).filter(f => {
+                                        try {
+                                            return fs.statSync(path.join(companyFolder, f)).isDirectory();
+                                        } catch (e) {
+                                            return false;
+                                        }
+                                    });
+                                    const matchedDir = existingDirs.find(d => normalizeString(d) === targetNorm);
+                                    if (matchedDir) {
+                                        resolvedProspectFolder = path.join(companyFolder, matchedDir);
+                                    }
+                                }
+                                const prospectFolder = resolvedProspectFolder || path.join(companyFolder, cleanProspect);
 
-                const executeDeepSeekRecursively = async (currentMessages, depth = 0, gdriveAction = false, folderDeleted = false, deletedCompany = '', receipts = []) => {
-                    if (depth >= 15) {
-                        console.warn('⚠️ Maximum tool recursion depth (15) reached.');
-                        const fallbackContent = 'I performed the requested actions but hit the maximum reasoning recursion limit. Please verify the state of your files.';
+                                if (!fs.existsSync(prospectFolder)) {
+                                    fs.mkdirSync(prospectFolder, { recursive: true });
+                                }
+                                const relPath = path.relative(historyDir, prospectFolder);
+                                folderId = `local_path_${Buffer.from(relPath, 'utf8').toString('hex')}`;
+                            }
+                            gdriveAction = true;
+                            receipts.push(generateReceipt("CREATE", "FOLDER", prospect_name, folderId, company, {
+                                initiator: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} Tool Call: create_prospect_folder`
+                            }));
+                            return `I have successfully created/resolved the folder for **${prospect_name}** at **${company}** (ID: \`${folderId}\`).`;
+                        }
+                    }),
+                    create_prospect_file: tool({
+                        description: 'Creates or uploads a file into the prospect\'s folder on Google Drive. Automatically creates the folder if it does not exist. Use this when asked to create or write a file (e.g., README.md).',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company name'),
+                            prospect_name: z.string().describe('The prospect name'),
+                            filename: z.string().describe('The name of the file (e.g. README.md)'),
+                            content: z.string().describe('The text content to save in the file')
+                        }),
+                        execute: async ({ company, prospect_name, filename, content }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "create_prospect_file" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            console.log(`📤 Tool Call: Creating file ${filename} for ${prospect_name} at ${company}`);
+                            const fileBuffer = Buffer.from(content, 'utf8');
+                            const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
+                            const clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
+                            const driveFile = await gdriveService.uploadFile(filename, 'text/plain', fileBuffer, clientFolderId);
+                            gdriveAction = true;
+                            if (driveFile) {
+                                gdriveService.registerRecentlyCreatedFile(
+                                    driveFile.id,
+                                    filename,
+                                    fileBuffer.length,
+                                    'text/plain',
+                                    driveFile.webViewLink,
+                                    company,
+                                    clientFolderId
+                                );
+                            }
+                            receipts.push(generateReceipt("UPLOAD", "FILE", filename, driveFile ? driveFile.id : null, company, {
+                                sizeBytes: fileBuffer.length,
+                                url: driveFile ? driveFile.webViewLink : null,
+                                initiator: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} Tool Call: create_prospect_file`
+                            }));
+                            return `I have successfully created and uploaded the file "**${filename}**" into the folder for **${prospect_name}** at **${company}**.`;
+                        }
+                    }),
+                    delete_prospect_file: tool({
+                        description: 'Deletes/removes a specific file from the prospect\'s Google Drive folder.',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company name'),
+                            prospect_name: z.string().describe('The prospect name'),
+                            filename: z.string().describe('The exact name of the file to delete')
+                        }),
+                        execute: async ({ company, prospect_name, filename }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "delete_prospect_file" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            console.log(`🗑️ Tool Call: Deleting file ${filename} for ${prospect_name} at ${company}`);
+                            let success = false;
+                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                            if (gdriveAvailable) {
+                                try {
+                                    const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
+                                    const clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
+                                    let files = await gdriveService.listFolder(clientFolderId);
+
+                                    const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(company);
+                                    if (cachedCreated && cachedCreated.length > 0) {
+                                        for (const cachedFile of cachedCreated) {
+                                            if (!files.some(f => f.id === cachedFile.id || f.name === cachedFile.name)) {
+                                                files.push(cachedFile);
+                                            }
+                                        }
+                                    }
+
+                                    const now = Date.now();
+                                    for (const [key, time] of recentlyDeletedFiles.entries()) {
+                                        if (now - time > 60000) {
+                                            recentlyDeletedFiles.delete(key);
+                                        }
+                                    }
+
+                                    files = files.filter(file => {
+                                        const fId = file.id ? file.id.toString().toLowerCase() : '';
+                                        const fName = file.name ? file.name.toString().toLowerCase() : '';
+                                        return !recentlyDeletedFiles.has(fId) && !recentlyDeletedFiles.has(fName);
+                                    });
+                                    const found = files.find(f => f.name.toLowerCase() === filename.toLowerCase());
+                                    if (found) {
+                                        await gdriveService.deleteFile(found.id);
+                                        success = true;
+                                    }
+                                } catch (err) {
+                                    console.warn('⚠️ GDrive deletion failed in tool call:', err.message);
+                                }
+                            } else {
+                                const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+                                const localFolder = path.join(historyDir, cleanCompany);
+                                const filePath = path.join(localFolder, filename);
+                                if (fs.existsSync(filePath)) {
+                                    fs.unlinkSync(filePath);
+                                    success = true;
+                                }
+                            }
+                            if (success) {
+                                registerRecentlyDeletedFile(filename);
+                                gdriveAction = true;
+                                receipts.push(generateReceipt("DELETE", "FILE", filename, filename, company, {
+                                    initiator: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} Tool Call: delete_prospect_file`
+                                }));
+                                return `I have successfully deleted the file "**${filename}**" from the folder for **${company}**.`;
+                            } else {
+                                return `I could not find or delete the file "**${filename}**" in the folder for **${company}**.`;
+                            }
+                        }
+                    }),
+                    upload_linkedin_profile: tool({
+                        description: 'Registers/uploads LinkedIn profile bio information text for a prospect.',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company or prospect name'),
+                            contact_name: z.string().optional().describe('The specific contact person\'s name, if provided'),
+                            content: z.string().describe('The LinkedIn profile text content')
+                        }),
+                        execute: async ({ company, contact_name, content }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "upload_linkedin_profile" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            console.log(`📤 Tool Call: Uploading LinkedIn profile for ${company}${contact_name ? ` (Contact: ${contact_name})` : ''}`);
+                            const fileName = contact_name 
+                                ? `${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_linkedin_profile.txt` 
+                                : `linkedin_profile.txt`;
+                            const driveFile = await handleFileUpload(fileName, content, company, contact_name);
+                            gdriveAction = true;
+                            receipts.push(generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
+                                sizeBytes: Buffer.byteLength(content, 'utf8'),
+                                url: driveFile.webViewLink,
+                                initiator: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} Tool Call: upload_linkedin_profile`
+                            }));
+                            return `I have successfully uploaded the LinkedIn profile bio for **${company}**${contact_name ? ` (Contact: ${contact_name})` : ''} (File ID: \`${driveFile.id}\`).`;
+                        }
+                    }),
+                    upload_sales_brief: tool({
+                        description: 'Registers/uploads a sales brief document for a prospect.',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company or prospect name'),
+                            contact_name: z.string().optional().describe('The specific contact person\'s name, if provided'),
+                            content: z.string().describe('The sales brief document content')
+                        }),
+                        execute: async ({ company, contact_name, content }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "upload_sales_brief" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            console.log(`📤 Tool Call: Uploading sales brief for ${company}${contact_name ? ` (Contact: ${contact_name})` : ''}`);
+                            const fileName = contact_name 
+                                ? `${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_sales_brief.txt` 
+                                : `sales_brief.txt`;
+                            const driveFile = await handleFileUpload(fileName, content, company, contact_name);
+                            gdriveAction = true;
+                            receipts.push(generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
+                                sizeBytes: Buffer.byteLength(content, 'utf8'),
+                                url: driveFile.webViewLink,
+                                initiator: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} Tool Call: upload_sales_brief`
+                            }));
+                            return `I have successfully uploaded the sales brief for **${company}**${contact_name ? ` (Contact: ${contact_name})` : ''} (File ID: \`${driveFile.id}\`).`;
+                        }
+                    }),
+                    register_call_log: tool({
+                        description: 'Registers/logs call notes or transcripts for a call made to a prospect and logs to HubSpot CRM if possible.',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company or prospect name'),
+                            contact_name: z.string().optional().describe('The specific contact person\'s name, if provided'),
+                            content: z.string().describe('The call notes or transcript text')
+                        }),
+                        execute: async ({ company, contact_name, content }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "register_call_log" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            console.log(`📞 Tool Call: Registering call log for ${company}${contact_name ? ` (Contact: ${contact_name})` : ''}`);
+                            const dateStr = new Date().toISOString().split('T')[0];
+                            const fileName = contact_name 
+                                ? `${dateStr}_${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_call_log_${Date.now()}.txt` 
+                                : `call_log_${Date.now()}.txt`;
+                            const driveFile = await handleFileUpload(fileName, content, company, contact_name);
+                            let hubspotLogged = false;
+
+                            if (clientEmailForGDrive && clientEmailForGDrive.includes('@')) {
+                                try {
+                                    const searchResponse = await makeHubSpotRequest('POST', '/crm/v3/objects/contacts/search', {
+                                        filterGroups: [{
+                                            filters: [{
+                                                propertyName: 'email',
+                                                operator: 'EQ',
+                                                value: clientEmailForGDrive
+                                            }]
+                                        }]
+                                    });
+                                    
+                                    if (searchResponse && searchResponse.results && searchResponse.results.length > 0) {
+                                        const contactId = searchResponse.results[0].id;
+                                        await makeHubSpotRequest('POST', '/crm/v3/objects/calls', {
+                                            properties: {
+                                                hs_call_title: `Call Note - ${clientNameForGDrive}`,
+                                                hs_call_body: content,
+                                                hs_timestamp: new Date().toISOString(),
+                                                hs_call_direction: 'OUTBOUND'
+                                            },
+                                            associations: [{
+                                                to: { id: contactId },
+                                                types: [{
+                                                    associationCategory: 'HUBSPOT_DEFINED',
+                                                    associationTypeId: 194
+                                                }]
+                                            }]
+                                        });
+                                        console.log(`✅ Tool Call: Logged call to HubSpot Contact ID: ${contactId}`);
+                                        hubspotLogged = true;
+                                    }
+                                } catch (hsErr) {
+                                    console.error('⚠️ HubSpot CRM tool-call registration failed:', hsErr.message);
+                                }
+                            }
+
+                            const trackingDest = driveFile.id.startsWith('local_') ? 'Local History Storage' : 'Google Drive';
+                            const hsStatus = hubspotLogged 
+                                ? `automatically logged this call under contact **${clientEmailForGDrive}** in HubSpot CRM`
+                                : `stored it in **${trackingDest}** context memory (HubSpot CRM log skipped or client email unassociated)`;
+
+                            gdriveAction = true;
+                            receipts.push(generateReceipt("UPLOAD", "CALL_LOG", fileName, driveFile.id, company, {
+                                sizeBytes: Buffer.byteLength(content, 'utf8'),
+                                url: driveFile.webViewLink,
+                                initiator: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} Tool Call: register_call_log`
+                            }));
+                            return `I have successfully registered the new call! I saved the call notes as "**${fileName}**" (ID: \`${driveFile.id}\`) in Google Drive and ${hsStatus}.`;
+                        }
+                    }),
+                    read_prospect_file: tool({
+                        description: 'Reads/fetches the full text content of a specific file inside the prospect\'s folder on Google Drive.',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company or prospect name'),
+                            filename: z.string().describe('The name of the file to read (e.g. requirements.pdf, notes.docx, brief.txt)')
+                        }),
+                        execute: async ({ company, filename }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "read_prospect_file" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            let resolvedCompany = company;
+                            // Dynamic name-to-company auto-resolution
+                            try {
+                                for (const [id, hParsed] of pgCache.entries()) {
+                                    if (hParsed && hParsed.name && hParsed.name.toLowerCase().trim() === company.toLowerCase().trim()) {
+                                        if (hParsed.company) {
+                                            console.log(`🔄 Resolved prospect name "${company}" to company "${hParsed.company}"`);
+                                            resolvedCompany = hParsed.company;
+                                            break;
+                                        }
+                                    }
+                                }
+                            } catch (resolveErr) {
+                                console.warn('⚠️ Name-to-company resolution failed:', resolveErr.message);
+                            }
+                            console.log(`📄 Tool Call: Reading file ${filename} for ${resolvedCompany}`);
+                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                            let files = [];
+                            let resolvedFileContent = '';
+                            let foundFile = null;
+
+                            if (gdriveAvailable) {
+                                try {
+                                    const clientFolderId = await gdriveService.findOrCreateClientFolder(resolvedCompany);
+                                    files = await listFolderRecursive(clientFolderId);
+                                    
+                                    // Check for companion summary text file first (e.g. filename.pdf.txt)
+                                    const companionName1 = filename + '.txt';
+                                    const companionName2 = filename.replace(/\.(pdf|docx|md|txt)$/i, '') + '.txt';
+                                    foundFile = files.find(f => f.name.toLowerCase() === companionName1.toLowerCase() || f.name.toLowerCase() === companionName2.toLowerCase());
+                                    
+                                    if (!foundFile && filename.toLowerCase().endsWith('.pdf')) {
+                                        foundFile = files.find(f => f.name.toLowerCase() === filename.toLowerCase() && f.mimeType === 'application/pdf');
+                                    }
+                                    if (!foundFile) {
+                                        foundFile = files.find(f => f.name.toLowerCase() === filename.toLowerCase());
+                                    }
+                                    if (foundFile) {
+                                        resolvedFileContent = await gdriveService.getFileContent(foundFile.id);
+                                    }
+                                } catch (err) {
+                                    console.warn('⚠️ GDrive file reading failed in tool call:', err.message);
+                                }
+                            } else {
+                                const cleanCompany = resolvedCompany.replace(/[^a-zA-Z0-9]/g, '_');
+                                const localFolder = path.join(historyDir, cleanCompany);
+                                if (fs.existsSync(localFolder)) {
+                                    const findFileRecursively = (dir, targetName) => {
+                                        if (!fs.existsSync(dir)) return null;
+                                        const items = fs.readdirSync(dir);
+                                        for (const item of items) {
+                                            const itemPath = path.join(dir, item);
+                                            const stat = fs.statSync(itemPath);
+                                            if (stat.isDirectory()) {
+                                                const found = findFileRecursively(itemPath, targetName);
+                                                if (found) return found;
+                                            } else if (item.toLowerCase() === targetName.toLowerCase()) {
+                                                return itemPath;
+                                            }
+                                        }
+                                        return null;
+                                    };
+
+                                    const companionName1 = filename + '.txt';
+                                    const companionName2 = filename.replace(/\.(pdf|docx|md|txt)$/i, '') + '.txt';
+                                    let localFilePath = findFileRecursively(localFolder, companionName1);
+                                    if (!localFilePath) {
+                                        localFilePath = findFileRecursively(localFolder, companionName2);
+                                    }
+                                    let matchedName = localFilePath ? path.basename(localFilePath) : null;
+                                    if (!localFilePath) {
+                                        localFilePath = findFileRecursively(localFolder, filename);
+                                        matchedName = localFilePath ? path.basename(localFilePath) : null;
+                                    }
+                                    if (localFilePath) {
+                                        foundFile = { name: matchedName };
+                                        try {
+                                            if (matchedName.endsWith('.pdf')) {
+                                                const pdfBuffer = fs.readFileSync(localFilePath);
+                                                resolvedFileContent = await gdriveService.parsePdfBuffer(pdfBuffer);
+                                            } else if (matchedName.endsWith('.docx')) {
+                                                const docxBuffer = fs.readFileSync(localFilePath);
+                                                resolvedFileContent = await gdriveService.parseDocxBuffer(docxBuffer);
+                                            } else {
+                                                resolvedFileContent = fs.readFileSync(localFilePath, 'utf8');
+                                            }
+                                        } catch (readErr) {
+                                            console.warn('⚠️ Local file reading failed:', readErr.message);
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (foundFile) {
+                                const CONTENT_BUDGET_BYTES = 50 * 1024; // 50KB cap
+                                let text = resolvedFileContent || '';
+                                if (Buffer.byteLength(text, 'utf8') > CONTENT_BUDGET_BYTES) {
+                                    text = text.substring(0, CONTENT_BUDGET_BYTES) + '\n[...TRUNCATED due to content budget limit]';
+                                }
+                                const enforcementDirective = `[STRICT ENTITY BOUNDARY ENFORCEMENT]\n` +
+                                    `This document is physically located in the Google Drive folder for Canonical Company: "${resolvedCompany}".\n` +
+                                    `You MUST treat "${resolvedCompany}" as the absolute source of truth for the prospect's company.\n` +
+                                    `If the text below claims the prospect works at a different company, you MUST NOT change their company to the new one.\n` +
+                                    `Instead, you MUST surface this discrepancy to the user by including a "🚨" emoji in your chat response, stating that the document claims a different company but they are routed to "${resolvedCompany}".\n` +
+                                    `[END ENFORCEMENT]\n\n--- DOCUMENT CONTENT ---\n`;
+                                return enforcementDirective + text;
+                            } else {
+                                return `Error: File "${filename}" not found in prospect "${resolvedCompany}" folder.`;
+                            }
+                        }
+                    }),
+                    search_prospect_files: tool({
+                        description: 'Searches for files matching a keyword/query inside the prospect\'s Google Drive folder.',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company or prospect name'),
+                            query: z.string().describe('The search term or keyword to look for in file names or contents')
+                        }),
+                        execute: async ({ company, query }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "search_prospect_files" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            let resolvedCompany = company;
+                            // Dynamic name-to-company auto-resolution
+                            if (fs.existsSync(historyDir)) {
+                                try {
+                                    const historyFiles = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
+                                    for (const hFile of historyFiles) {
+                                        const hData = fs.readFileSync(path.join(historyDir, hFile), 'utf8');
+                                        const hParsed = JSON.parse(hData);
+                                        if (hParsed.name && hParsed.name.toLowerCase().trim() === company.toLowerCase().trim()) {
+                                            if (hParsed.company) {
+                                                console.log(`🔄 Resolved prospect name "${company}" to company "${hParsed.company}"`);
+                                                resolvedCompany = hParsed.company;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                } catch (resolveErr) {
+                                    console.warn('⚠️ Name-to-company resolution failed:', resolveErr.message);
+                                }
+                            }
+                            console.log(`🔍 Tool Call: Searching files in ${resolvedCompany} folder for: "${query}"`);
+                            const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
+                            let matchedFiles = [];
+                            const searchLower = query.toLowerCase();
+
+                            if (gdriveAvailable) {
+                                try {
+                                    const clientFolderId = await gdriveService.findOrCreateClientFolder(resolvedCompany);
+                                    let files = await listFolderRecursive(clientFolderId);
+
+                                    const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(resolvedCompany);
+                                    if (cachedCreated && cachedCreated.length > 0) {
+                                        for (const cachedFile of cachedCreated) {
+                                            if (!files.some(f => f.id === cachedFile.id || f.name === cachedFile.name)) {
+                                                files.push(cachedFile);
+                                            }
+                                        }
+                                    }
+
+                                    const now = Date.now();
+                                    for (const [key, time] of recentlyDeletedFiles.entries()) {
+                                        if (now - time > 60000) {
+                                            recentlyDeletedFiles.delete(key);
+                                        }
+                                    }
+
+                                    files = files.filter(file => {
+                                        const fId = file.id ? file.id.toString().toLowerCase() : '';
+                                        const fName = file.name ? file.name.toString().toLowerCase() : '';
+                                        return !recentlyDeletedFiles.has(fId) && !recentlyDeletedFiles.has(fName);
+                                    });
+                                    
+                                    for (const file of files) {
+                                        if (file.isFolder) continue;
+                                        if (file.name.toLowerCase().includes(searchLower)) {
+                                            matchedFiles.push(file);
+                                            continue;
+                                        }
+                                        try {
+                                            const content = await gdriveService.getFileContent(file.id);
+                                            if (content && content.toLowerCase().includes(searchLower)) {
+                                                matchedFiles.push(file);
+                                            }
+                                        } catch (e) {
+                                            console.warn(`Search failed parsing file ${file.name}:`, e.message);
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.warn('⚠️ GDrive search failed in tool call:', err.message);
+                                }
+                            } else {
+                                const cleanCompany = resolvedCompany.replace(/[^a-zA-Z0-9]/g, '_');
+                                const localFolder = path.join(historyDir, cleanCompany);
+                                if (fs.existsSync(localFolder)) {
+                                    const getFilesRecursively = (dir) => {
+                                        let results = [];
+                                        if (!fs.existsSync(dir)) return results;
+                                        const list = fs.readdirSync(dir);
+                                        list.forEach(file => {
+                                            const filePath = path.join(dir, file);
+                                            const stat = fs.statSync(filePath);
+                                            if (stat.isDirectory()) {
+                                                results = results.concat(getFilesRecursively(filePath));
+                                            } else {
+                                                results.push({
+                                                    name: file,
+                                                    path: filePath,
+                                                    relPath: path.relative(historyDir, filePath)
+                                                });
+                                            }
+                                        });
+                                        return results;
+                                    };
+
+                                    const localFiles = getFilesRecursively(localFolder);
+                                    for (const fileObj of localFiles) {
+                                         const file = fileObj.name;
+                                         const filePath = fileObj.path;
+                                         const hexPath = Buffer.from(fileObj.relPath, 'utf8').toString('hex');
+                                         
+                                         if (file.toLowerCase().includes(searchLower)) {
+                                             matchedFiles.push({ name: file, id: `local_file_${hexPath}` });
+                                             continue;
+                                         }
+                                         try {
+                                             let content = '';
+                                             if (file.endsWith('.pdf')) {
+                                                 const pdfBuffer = fs.readFileSync(filePath);
+                                                 content = await gdriveService.parsePdfBuffer(pdfBuffer);
+                                             } else if (file.endsWith('.docx')) {
+                                                 const docxBuffer = fs.readFileSync(filePath);
+                                                 content = await gdriveService.parseDocxBuffer(docxBuffer);
+                                             } else {
+                                                 content = fs.readFileSync(filePath, 'utf8');
+                                             }
+                                             if (content && content.toLowerCase().includes(searchLower)) {
+                                                 matchedFiles.push({ name: file, id: `local_file_${hexPath}` });
+                                             }
+                                         } catch (e) {
+                                             console.warn(`Local search failed parsing file ${file}:`, e.message);
+                                         }
+                                    }
+                                }
+                            }
+
+                            if (matchedFiles.length > 0) {
+                                const enforcementDirective = `[STRICT ENTITY BOUNDARY ENFORCEMENT]\n` +
+                                    `These files are physically located in the Google Drive folder for Canonical Company: "${resolvedCompany}".\n` +
+                                    `You MUST treat "${resolvedCompany}" as the absolute source of truth for the prospect's company.\n` +
+                                    `If any search results below claim the prospect works at a different company, you MUST NOT change their company to the new one.\n` +
+                                    `Instead, you MUST surface this discrepancy to the user by including a "🚨" emoji in your chat response, stating that the search results claim a different company but they are routed to "${resolvedCompany}".\n` +
+                                    `[END ENFORCEMENT]\n\n`;
+                                return enforcementDirective + `I found ${matchedFiles.length} file(s) matching "${query}" in the folder for **${resolvedCompany}**:\n` +
+                                    matchedFiles.map(f => `- **${f.name}** (ID: \`${f.id}\`)`).join('\n');
+                            } else {
+                                return `No files matching "${query}" were found in the folder for **${resolvedCompany}**.`;
+                            }
+                        }
+                    }),
+                    send_recap_email: tool({
+                        description: 'Dispatches a synthesized recap email directly to the prospect.',
+                        inputSchema: z.object({
+                            email: z.string().describe('The recipient email address'),
+                            name: z.string().describe('The recipient name'),
+                            company: z.string().describe('The company name'),
+                            recapText: z.string().describe('The email body text containing the discussion summary'),
+                            rep: z.string().optional().describe('The sales representative name sending the email')
+                        }),
+                        execute: async ({ email, name, company, recapText, rep }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "send_recap_email" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            console.log(`✉️ Tool Call: Sending recap email to ${email}`);
+                            try {
+                                const success = await emailService.sendRecapEmail(email, name, company, recapText, rep);
+                                if (success) {
+                                    return `Successfully sent the recap email to **${name}** (${email}) for company **${company}**.`;
+                                } else {
+                                    return `Failed to send the recap email. Check SMTP configuration settings.`;
+                                }
+                            } catch (err) {
+                                console.error('⚠️ Recap email dispatch failed:', err.message);
+                                return `Error sending recap email: ${err.message}`;
+                            }
+                        }
+                    }),
+                    generate_proposal_file: tool({
+                        description: 'Generates a preliminary proposal document and uploads it directly to the prospect\'s folder on Google Drive.',
+                        inputSchema: z.object({
+                            company: z.string().describe('The company name'),
+                            prospect_name: z.string().describe('The prospect name'),
+                            filename: z.string().describe('The proposal filename (e.g. Proposal_Draft.md)'),
+                            proposalContent: z.string().describe('The text content of the proposal')
+                        }),
+                        execute: async ({ company, prospect_name, filename, proposalContent }) => {
+                            if (isMismatch) {
+                                return `Error: Execution of tool "generate_proposal_file" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`;
+                            }
+                            console.log(`📤 Tool Call: Generating proposal ${filename} for ${company}`);
+                            const driveFile = await handleFileUpload(filename, proposalContent, company, prospect_name);
+                            gdriveAction = true;
+                            receipts.push(generateReceipt("UPLOAD", "FILE", filename, driveFile ? driveFile.id : null, company, {
+                                sizeBytes: Buffer.byteLength(proposalContent, 'utf8'),
+                                url: driveFile ? driveFile.webViewLink : null,
+                                initiator: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} Tool Call: generate_proposal_file`
+                            }));
+                            return `I have successfully generated and uploaded the proposal file "**${filename}**" (ID: \`${driveFile.id}\`) to the folder for **${company}**.`;
+                        }
+                    })
+                };
+
+                try {
+                    const result = await generateText({
+                        model: modelInstance,
+                        system: systemInstruction,
+                        messages: sdkMessages,
+                        tools: isMismatch ? {} : tools,
+                        stopWhen: isMismatch ? stepCountIs(1) : stepCountIs(15),
+                        temperature: payload.temperature !== undefined ? payload.temperature : 0.2
+                    });
+
+                    console.log(`🤖 Vercel AI SDK steps:`, JSON.stringify(result.steps.map(s => ({
+                        text: s.text,
+                        toolCalls: s.toolCalls,
+                        toolResults: s.toolResults
+                    })), null, 2));
+
+                    injectMetadataAndSend(res, {
+                        gdriveAction: gdriveAction,
+                        folderDeleted: folderDeleted,
+                        deletedCompany: deletedCompany,
+                        receipt: receipts.length > 0 ? receipts[0] : null,
+                        choices: [{
+                            message: {
+                                role: 'assistant',
+                                content: result.text
+                            }
+                        }]
+                    });
+                } catch (sdkError) {
+                    console.warn(`⚠️ Vercel AI SDK generateText failed: ${sdkError.message}. Attempting Gemini failover...`);
+                    try {
+                        const failoverPayload = {
+                            ...payload,
+                            messages: payload.messages.map(msg => {
+                                if (msg.role === 'assistant' && msg.tool_calls && (!msg.content || msg.content.trim() === '')) {
+                                    return {
+                                        ...msg,
+                                        content: `[Invoking tools: ${msg.tool_calls.map(tc => tc.function.name).join(', ')}]`
+                                    };
+                                }
+                                return msg;
+                            })
+                        };
+                        const text = await executeGeminiFailover(failoverPayload);
                         injectMetadataAndSend(res, {
                             gdriveAction: gdriveAction,
                             folderDeleted: folderDeleted,
                             deletedCompany: deletedCompany,
                             receipt: receipts.length > 0 ? receipts[0] : null,
-                            choices: [{
-                                message: {
-                                    role: 'assistant',
-                                    content: fallbackContent
-                                }
-                            }]
+                            choices: [{ message: { role: 'assistant', content: text } }]
                         });
-                        return;
+                    } catch (geminiError) {
+                        res.writeHead(502, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} failed: ${sdkError.message}. Gemini failover failed: ${geminiError.message}` }));
                     }
-
-                    let targetModel = payload.model || (payload.provider === 'mistral' ? 'mistral-large-latest' : 'deepseek-chat');
-                    if (payload.provider === 'mistral' && (!targetModel || !targetModel.includes('mistral'))) {
-                        targetModel = process.env.MISTRAL_API_MODEL || 'mistral-large-latest';
-                    }
-
-                    const dsPayloadObj = {
-                        model: targetModel,
-                        messages: currentMessages,
-                        temperature: payload.temperature !== undefined ? payload.temperature : 0.2
-                    };
-                    if (!isMismatch) {
-                        dsPayloadObj.tools = dsTools;
-                        dsPayloadObj.tool_choice = 'auto';
-                    }
-                    const dsPayload = JSON.stringify(dsPayloadObj);
-
-                    const dsOptions = {
-                        hostname: payload.provider === 'mistral' ? 'api.mistral.ai' : 'api.deepseek.com',
-                        port: 443,
-                        path: payload.provider === 'mistral' ? '/v1/chat/completions' : '/chat/completions',
-                        method: 'POST',
-                        timeout: 15000,
-                        headers: {
-                            'Authorization': `Bearer ${dsKey}`,
-                            'Content-Type': 'application/json',
-                            'Content-Length': Buffer.byteLength(dsPayload)
-                        }
-                    };
-
-                    const proxyReq = https.request(dsOptions, (proxyRes) => {
-                        let resBody = '';
-                        proxyRes.on('data', chunk => resBody += chunk);
-                        proxyRes.on('end', async () => {
-                            if (proxyRes.statusCode !== 200) {
-                                console.warn(`⚠️ Primary ${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} API returned status ${proxyRes.statusCode} at recursion depth ${depth}. Attempting Gemini failover...`);
-                                try {
-                                    const failoverPayload = {
-                                        ...payload,
-                                        messages: currentMessages.map(msg => {
-                                            if (msg.role === 'assistant' && msg.tool_calls && (!msg.content || msg.content.trim() === '')) {
-                                                return {
-                                                    ...msg,
-                                                    content: `[Invoking tools: ${msg.tool_calls.map(tc => tc.function.name).join(', ')}]`
-                                                };
-                                            }
-                                            return msg;
-                                        })
-                                    };
-                                    const text = await executeGeminiFailover(failoverPayload);
-                                    injectMetadataAndSend(res, {
-                                        gdriveAction: gdriveAction,
-                                        folderDeleted: folderDeleted,
-                                        deletedCompany: deletedCompany,
-                                        receipt: receipts.length > 0 ? receipts[0] : null,
-                                        choices: [{ message: { role: 'assistant', content: text } }]
-                                    });
-                                } catch (geminiError) {
-                                    res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
-                                    res.end(resBody);
-                                }
-                                return;
-                            }
-
-                            try {
-                                const data = JSON.parse(resBody);
-                                const choice = data.choices && data.choices[0];
-                                const message = choice && choice.message;
-                                console.log(`🤖 DeepSeek response at depth ${depth}:`, JSON.stringify(message));
-                                if (message && message.tool_calls && message.tool_calls.length > 0) {
-                                    console.warn(`🤖 DeepSeek tool calls at depth ${depth}: ${JSON.stringify(message.tool_calls.map(tc => tc.function.name))}`);
-                                    // Append the assistant's tool-call response to history
-                                    currentMessages.push(message);
-
-                                    for (const toolCall of message.tool_calls) {
-                                        const { name, arguments: argsString } = toolCall.function;
-                                        if (isMismatch) {
-                                            console.warn(`⚠️ Blocking execution of tool "${name}" due to identity mismatch.`);
-                                            currentMessages.push({
-                                                role: 'tool',
-                                                tool_call_id: toolCall.id,
-                                                name: name,
-                                                content: `Error: Execution of tool "${name}" is blocked because of an active identity mismatch warning. You must ask the user clarifying questions and refuse to execute any tools.`
-                                            });
-                                            continue;
-                                        }
-                                        let args = {};
-                                        try {
-                                            args = JSON.parse(argsString);
-                                        } catch (e) {
-                                            console.error('Failed to parse tool call arguments:', argsString);
-                                        }
-
-                                        let toolResult = '';
-                                        if (name === 'delete_prospect_folder') {
-                                             const company = args.company;
-                                             const prospect_name = args.prospect_name;
-                                             if (company) {
-                                                 const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                                                 const cleanProspect = prospect_name ? prospect_name.replace(/[^a-zA-Z0-9]/g, '_') : '';
-                                                 console.log(`🗑️ Tool Call: Deleting folder and history for ${company} ${prospect_name ? '(' + prospect_name + ')' : ''}`);
-                                                 let success = false;
-                                                 const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
-                                                 
-                                                 const normalizeString = (str) => (str || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
-                                                 const targetNorm = normalizeString(company);
-                                                 const prospectNorm = cleanProspect ? normalizeString(cleanProspect) : '';
-
-                                                 if (gdriveAvailable) {
-                                                     try {
-                                                         const drive = gdriveService.getDriveClient();
-                                                         const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID || 'root';
-                                                         const prospectsSearch = await drive.files.list({
-                                                             q: `name = 'Company' and mimeType = 'application/vnd.google-apps.folder' and '${rootFolderId}' in parents and trashed = false`,
-                                                             fields: 'files(id)',
-                                                             pageSize: 1
-                                                         });
-                                                         const prospectsFiles = prospectsSearch.data.files || [];
-                                                         if (prospectsFiles.length > 0) {
-                                                             const prospectsFolderId = prospectsFiles[0].id;
-                                                             const clientSearch = await drive.files.list({
-                                                                 q: `mimeType = 'application/vnd.google-apps.folder' and '${prospectsFolderId}' in parents and trashed = false`,
-                                                                 fields: 'files(id, name)',
-                                                                 pageSize: 100
-                                                             });
-                                                             const clientFiles = clientSearch.data.files || [];
-                                                             const matchedFolders = clientFiles.filter(f => normalizeString(f.name) === targetNorm);
-                                                             for (const folder of matchedFolders) {
-                                                                 if (cleanProspect) {
-                                                                     // Delete specific prospect folder inside company folder
-                                                                     const subSearch = await drive.files.list({
-                                                                         q: `name = '${cleanProspect.replace(/'/g, "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and '${folder.id}' in parents and trashed = false`,
-                                                                         fields: 'files(id)',
-                                                                         pageSize: 1
-                                                                     });
-                                                                     const subFiles = subSearch.data.files || [];
-                                                                     if (subFiles.length > 0) {
-                                                                         await gdriveService.deleteFile(subFiles[0].id);
-                                                                         gdriveService.invalidateFolderCache(subFiles[0].id);
-                                                                         success = true;
-                                                                     }
-                                                                 } else {
-                                                                     // Delete entire company folder
-                                                                     await gdriveService.deleteFile(folder.id);
-                                                                     gdriveService.invalidateFolderCache(folder.id);
-                                                                     success = true;
-                                                                 }
-                                                             }
-                                                         }
-                                                     } catch (err) {
-                                                         console.warn('⚠️ GDrive folder deletion failed in tool call:', err.message);
-                                                     }
-                                                 }
-                                                 
-                                                 // Local filesystem deletion
-                                                 if (cleanProspect) {
-                                                     const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
-                                                     if (fs.existsSync(localFolder)) {
-                                                         fs.rmSync(localFolder, { recursive: true, force: true });
-                                                         success = true;
-                                                     }
-                                                 } else {
-                                                     if (fs.existsSync(historyDir)) {
-                                                         const subdirs = fs.readdirSync(historyDir).filter(f => {
-                                                              try {
-                                                                  return fs.statSync(path.join(historyDir, f)).isDirectory();
-                                                              } catch (e) {
-                                                                  return false;
-                                                              }
-                                                          });
-                                                         for (const subdir of subdirs) {
-                                                             if (normalizeString(subdir) === targetNorm) {
-                                                                 const localFolder = path.join(historyDir, subdir);
-                                                                 fs.rmSync(localFolder, { recursive: true, force: true });
-                                                                 success = true;
-                                                             }
-                                                         }
-                                                     }
-                                                     const localFolder = path.join(historyDir, cleanCompany);
-                                                     if (fs.existsSync(localFolder)) {
-                                                         fs.rmSync(localFolder, { recursive: true, force: true });
-                                                         success = true;
-                                                     }
-                                                 }
-
-                                                 // Local session metadata deletion
-                                                 try {
-                                                     const sessionIds = Array.from(pgCache.keys());
-                                                     for (const id of sessionIds) {
-                                                         const data = pgCache.get(id);
-                                                         if (data && data.company && normalizeString(data.company) === targetNorm) {
-                                                             if (cleanProspect) {
-                                                                 if (data.name && normalizeString(data.name) === prospectNorm) {
-                                                                     await deleteHistorySession(id);
-                                                                     console.log(`🗑️ Deleted local history session matching prospect "${prospect_name}" at company "${company}": ${id}`);
-                                                                     success = true;
-                                                                 }
-                                                             } else {
-                                                                 await deleteHistorySession(id);
-                                                                 console.log(`🗑️ Deleted local history session matching company "${company}": ${id}`);
-                                                                 success = true;
-                                                             }
-                                                         }
-                                                     }
-                                                 } catch (e) {
-                                                     console.warn(`⚠️ Error deleting local history session during folder deletion:`, e.message);
-                                                 }
-
-                                                 if (success) {
-                                                     historyListCache = null; // Invalidate cache on deletion
-                                                     gdriveAction = true;
-                                                     folderDeleted = true;
-                                                     deletedCompany = company;
-                                                     receipts.push(generateReceipt("DELETE", "FOLDER", company, company, company, {
-                                                         initiator: "DeepSeek Tool Call: delete_prospect_folder"
-                                                     }));
-                                                     toolResult = `I have successfully deleted the folder and all memory files for the prospect **${prospect_name || company}**.`;
-                                                 } else {
-                                                     toolResult = `I could not find or delete the folder/history for the prospect **${prospect_name || company}**.`;
-                                                 }
-                                             } else {
-                                                 toolResult = `Error: Missing 'company' parameter.`;
-                                             }
-                                         } else if (name === 'list_prospect_files') {
-                                             const { company, prospect_name } = args;
-                                             if (company && prospect_name) {
-                                                 console.log(`📂 Tool Call: Listing files in ${prospect_name} folder at ${company}`);
-                                                 const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
-                                                 let files = [];
-                                                 if (gdriveAvailable) {
-                                                     try {
-                                                         const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                         const clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
-                                                         files = await gdriveService.listFolder(clientFolderId);
-                                                         
-                                                         // Merge recently created files from cache to combat eventual consistency lag
-                                                         const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(company);
-                                                         if (cachedCreated && cachedCreated.length > 0) {
-                                                             for (const cachedFile of cachedCreated) {
-                                                                 if (!files.some(f => f.id === cachedFile.id || f.name === cachedFile.name)) {
-                                                                     files.push(cachedFile);
-                                                                 }
-                                                             }
-                                                         }
-                                                         
-                                                         // Filter out recently deleted files to prevent eventual consistency lag issues
-                                                         const now = Date.now();
-                                                         for (const [key, time] of recentlyDeletedFiles.entries()) {
-                                                             if (now - time > 60000) {
-                                                                 recentlyDeletedFiles.delete(key);
-                                                             }
-                                                         }
-                                                         files = files.filter(file => {
-                                                             const fId = file.id ? file.id.toString().toLowerCase() : '';
-                                                             const fName = file.name ? file.name.toString().toLowerCase() : '';
-                                                             return !recentlyDeletedFiles.has(fId) && !recentlyDeletedFiles.has(fName);
-                                                         });
-                                                     } catch (err) {
-                                                         console.warn('⚠️ GDrive list failed in tool call:', err.message);
-                                                     }
-                                                 } else {
-                                                     const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                                                     const cleanProspect = prospect_name.replace(/[^a-zA-Z0-9]/g, '_');
-                                                     const localFolder = path.join(historyDir, cleanCompany, cleanProspect);
-                                                     if (fs.existsSync(localFolder)) {
-                                                         const localFiles = fs.readdirSync(localFolder).filter(f => {
-                                                              try {
-                                                                  return !fs.statSync(path.join(localFolder, f)).isDirectory();
-                                                              } catch (e) {
-                                                                  return false;
-                                                              }
-                                                          });
-                                                         files = localFiles.map(file => ({ name: file, id: `local_${cleanCompany}_${cleanProspect}_${file}`, isFolder: false }));
-                                                     }
-                                                 }
-                                                 const fileItems = files.filter(f => {
-                                                     if (f.isFolder) return false;
-                                                     const fName = f.name ? f.name.toLowerCase() : '';
-                                                     if (fName.endsWith('.pdf.txt') || fName.endsWith('.docx.txt') || fName.endsWith('.txt.txt') || fName.endsWith('.md.txt')) {
-                                                         return false;
-                                                     }
-                                                     return true;
-                                                 });
-                                                 if (fileItems.length > 0) {
-                                                     toolResult = `Here are the files in the folder for **${company}**:\n` +
-                                                         fileItems.map(f => `- **${f.name}** (ID: \`${f.id}\`)`).join('\n');
-                                                 } else {
-                                                     toolResult = `No files were found in the folder for **${company}**.`;
-                                                 }
-                                             } else {
-                                                 toolResult = `Error: Missing required parameter 'company'.`;
-                                             }
-                                         } else if (name === 'create_prospect_folder') {
-                                            const { company, prospect_name } = args;
-                                            if (company && prospect_name) {
-                                                console.log(`📂 Tool Call: Creating folder for ${prospect_name} at ${company}`);
-                                                let folderId = null;
-                                                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
-                                                if (gdriveAvailable) {
-                                                    const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                    folderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
-                                                } else {
-                                                    console.warn('⚠️ Google Drive not configured. Creating local folders.');
-                                                    const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                                                    const cleanProspect = prospect_name.replace(/[^a-zA-Z0-9]/g, '_');
-                                                    const companyFolder = path.join(historyDir, cleanCompany);
-                                                    
-                                                    const normalizeString = (str) => (str || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
-                                                    const targetNorm = normalizeString(prospect_name);
-                                                    let resolvedProspectFolder = null;
-                                                    if (fs.existsSync(companyFolder)) {
-                                                        const existingDirs = fs.readdirSync(companyFolder).filter(f => {
-                                                            try {
-                                                                return fs.statSync(path.join(companyFolder, f)).isDirectory();
-                                                            } catch (e) {
-                                                                return false;
-                                                            }
-                                                        });
-                                                        const matchedDir = existingDirs.find(d => normalizeString(d) === targetNorm);
-                                                        if (matchedDir) {
-                                                            resolvedProspectFolder = path.join(companyFolder, matchedDir);
-                                                        }
-                                                    }
-                                                    const prospectFolder = resolvedProspectFolder || path.join(companyFolder, cleanProspect);
-
-                                                    if (!fs.existsSync(prospectFolder)) {
-                                                        fs.mkdirSync(prospectFolder, { recursive: true });
-                                                    }
-                                                    const relPath = path.relative(historyDir, prospectFolder);
-                                                    folderId = `local_path_${Buffer.from(relPath, 'utf8').toString('hex')}`;
-                                                }
-                                                gdriveAction = true;
-                                                receipts.push(generateReceipt("CREATE", "FOLDER", prospect_name, folderId, company, {
-                                                    initiator: "DeepSeek Tool Call: create_prospect_folder"
-                                                }));
-                                                toolResult = `I have successfully created/resolved the folder for **${prospect_name}** at **${company}** (ID: \`${folderId}\`).`;
-                                            } else {
-                                                toolResult = `Error: Missing required parameter 'company' or 'prospect_name'.`;
-                                            }
-                                        } else if (name === 'create_prospect_file') {
-                                            const { company, prospect_name, filename, content } = args;
-                                            if (company && prospect_name && filename && content) {
-                                                console.log(`📤 Tool Call: Creating file ${filename} for ${prospect_name} at ${company}`);
-                                                const fileBuffer = Buffer.from(content, 'utf8');
-                                                const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                const clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
-                                                const driveFile = await gdriveService.uploadFile(filename, 'text/plain', fileBuffer, clientFolderId);
-                                                gdriveAction = true;
-                                                if (driveFile) {
-                                                    gdriveService.registerRecentlyCreatedFile(
-                                                        driveFile.id,
-                                                        filename,
-                                                        fileBuffer.length,
-                                                        'text/plain',
-                                                        driveFile.webViewLink,
-                                                        company,
-                                                        clientFolderId
-                                                    );
-                                                }
-                                                receipts.push(generateReceipt("UPLOAD", "FILE", filename, driveFile ? driveFile.id : null, company, {
-                                                    sizeBytes: fileBuffer.length,
-                                                    url: driveFile ? driveFile.webViewLink : null,
-                                                    initiator: "DeepSeek Tool Call: create_prospect_file"
-                                                }));
-                                                toolResult = `I have successfully created and uploaded the file "**${filename}**" into the folder for **${prospect_name}** at **${company}**.`;
-                                            } else {
-                                                toolResult = `Error: Missing required parameters 'company', 'prospect_name', 'filename', or 'content'.`;
-                                            }
-                                        } else if (name === 'delete_prospect_file') {
-                                            const { company, prospect_name, filename } = args;
-                                            if (company && prospect_name && filename) {
-                                                console.log(`🗑️ Tool Call: Deleting file ${filename} for ${prospect_name} at ${company}`);
-                                                let success = false;
-                                                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
-                                                if (gdriveAvailable) {
-                                                    try {
-                                                        const companyFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                        const clientFolderId = await gdriveService.findOrCreateProspectFolder(companyFolderId, prospect_name);
-                                                        let files = await gdriveService.listFolder(clientFolderId);
-
-                                                        // Merge recently created files from cache to combat eventual consistency lag
-
-                                                        const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(company);
-
-                                                        if (cachedCreated && cachedCreated.length > 0) {
-
-                                                            for (const cachedFile of cachedCreated) {
-
-                                                                if (!files.some(f => f.id === cachedFile.id || f.name === cachedFile.name)) {
-
-                                                                    files.push(cachedFile);
-
-                                                                }
-
-                                                            }
-
-                                                        }
-
-                                                        // Filter out recently deleted files to prevent eventual consistency lag issues
-
-                                                        const now = Date.now();
-
-                                                        for (const [key, time] of recentlyDeletedFiles.entries()) {
-
-                                                            if (now - time > 60000) {
-
-                                                                recentlyDeletedFiles.delete(key);
-
-                                                            }
-
-                                                        }
-
-                                                        files = files.filter(file => {
-
-                                                            const fId = file.id ? file.id.toString().toLowerCase() : '';
-
-                                                            const fName = file.name ? file.name.toString().toLowerCase() : '';
-
-                                                            return !recentlyDeletedFiles.has(fId) && !recentlyDeletedFiles.has(fName);
-
-                                                        });
-                                                        const found = files.find(f => f.name.toLowerCase() === filename.toLowerCase());
-                                                        if (found) {
-                                                            await gdriveService.deleteFile(found.id);
-                                                            success = true;
-                                                        }
-                                                    } catch (err) {
-                                                        console.warn('⚠️ GDrive deletion failed in tool call:', err.message);
-                                                    }
-                                                } else {
-                                                    const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                                                    const localFolder = path.join(historyDir, cleanCompany);
-                                                    const filePath = path.join(localFolder, filename);
-                                                    if (fs.existsSync(filePath)) {
-                                                        fs.unlinkSync(filePath);
-                                                        success = true;
-                                                    }
-                                                }
-                                                if (success) {
-                                                    registerRecentlyDeletedFile(filename);
-                                                    gdriveAction = true;
-                                                    receipts.push(generateReceipt("DELETE", "FILE", filename, filename, company, {
-                                                        initiator: "DeepSeek Tool Call: delete_prospect_file"
-                                                    }));
-                                                    toolResult = `I have successfully deleted the file "**${filename}**" from the folder for **${company}**.`;
-                                                } else {
-                                                    toolResult = `I could not find or delete the file "**${filename}**" in the folder for **${company}**.`;
-                                                }
-                                            } else {
-                                                toolResult = `Error: Missing required parameters 'company' or 'filename'.`;
-                                            }
-                                        } else if (name === 'upload_linkedin_profile') {
-                                            const { company, content, contact_name } = args;
-                                            if (company && content) {
-                                                console.log(`\uD83D\uDCE4 Tool Call: Uploading LinkedIn profile for ${company}${contact_name ? ` (Contact: ${contact_name})` : ''}`);
-                                                const fileName = contact_name 
-                                                    ? `${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_linkedin_profile.txt` 
-                                                    : `linkedin_profile.txt`;
-                                                const driveFile = await handleFileUpload(fileName, content, company, contact_name);
-                                                gdriveAction = true;
-                                                receipts.push(generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
-                                                    sizeBytes: Buffer.byteLength(content, 'utf8'),
-                                                    url: driveFile.webViewLink,
-                                                    initiator: "DeepSeek Tool Call: upload_linkedin_profile"
-                                                }));
-                                                toolResult = `I have successfully uploaded the LinkedIn profile bio for **${company}**${contact_name ? ` (Contact: ${contact_name})` : ''} (File ID: \`${driveFile.id}\`).`;
-                                            } else {
-                                                toolResult = `Error: Missing required parameters 'company' or 'content'.`;
-                                            }
-                                        } else if (name === 'upload_sales_brief') {
-                                            const { company, content, contact_name } = args;
-                                            if (company && content) {
-                                                console.log(`\uD83D\uDCE4 Tool Call: Uploading sales brief for ${company}${contact_name ? ` (Contact: ${contact_name})` : ''}`);
-                                                const fileName = contact_name 
-                                                    ? `${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_sales_brief.txt` 
-                                                    : `sales_brief.txt`;
-                                                const driveFile = await handleFileUpload(fileName, content, company, contact_name);
-                                                gdriveAction = true;
-                                                receipts.push(generateReceipt("UPLOAD", "FILE", fileName, driveFile.id, company, {
-                                                    sizeBytes: Buffer.byteLength(content, 'utf8'),
-                                                    url: driveFile.webViewLink,
-                                                    initiator: "DeepSeek Tool Call: upload_sales_brief"
-                                                }));
-                                                toolResult = `I have successfully uploaded the sales brief for **${company}**${contact_name ? ` (Contact: ${contact_name})` : ''} (File ID: \`${driveFile.id}\`).`;
-                                            } else {
-                                                toolResult = `Error: Missing required parameters 'company' or 'content'.`;
-                                            }
-                                        } else if (name === 'register_call_log') {
-                                            const { company, content, contact_name } = args;
-                                            if (company && content) {
-                                                console.log(`\uD83D\uDCDE Tool Call: Registering call log for ${company}${contact_name ? ` (Contact: ${contact_name})` : ''}`);
-                                                const dateStr = new Date().toISOString().split('T')[0];
-                                                const fileName = contact_name 
-                                                    ? `${dateStr}_${contact_name.replace(/[^a-zA-Z0-9]/g, '_')}_call_log_${Date.now()}.txt` 
-                                                    : `call_log_${Date.now()}.txt`;
-                                                const driveFile = await handleFileUpload(fileName, content, company, contact_name);
-                                                let hubspotLogged = false;
-
-                                                if (clientEmailForGDrive && clientEmailForGDrive.includes('@')) {
-                                                    try {
-                                                        const searchResponse = await makeHubSpotRequest('POST', '/crm/v3/objects/contacts/search', {
-                                                            filterGroups: [{
-                                                                filters: [{
-                                                                    propertyName: 'email',
-                                                                    operator: 'EQ',
-                                                                    value: clientEmailForGDrive
-                                                                }]
-                                                            }]
-                                                        });
-                                                        
-                                                        if (searchResponse && searchResponse.results && searchResponse.results.length > 0) {
-                                                            const contactId = searchResponse.results[0].id;
-                                                            await makeHubSpotRequest('POST', '/crm/v3/objects/calls', {
-                                                                properties: {
-                                                                    hs_call_title: `Call Note - ${clientNameForGDrive}`,
-                                                                    hs_call_body: content,
-                                                                    hs_timestamp: new Date().toISOString(),
-                                                                    hs_call_direction: 'OUTBOUND'
-                                                                },
-                                                                associations: [{
-                                                                    to: { id: contactId },
-                                                                    types: [{
-                                                                        associationCategory: 'HUBSPOT_DEFINED',
-                                                                        associationTypeId: 194
-                                                                    }]
-                                                                }]
-                                                            });
-                                                            console.log(`✅ Tool Call: Logged call to HubSpot Contact ID: ${contactId}`);
-                                                            hubspotLogged = true;
-                                                        }
-                                                    } catch (hsErr) {
-                                                        console.error('⚠️ HubSpot CRM tool-call registration failed:', hsErr.message);
-                                                    }
-                                                }
-
-                                                const trackingDest = driveFile.id.startsWith('local_') ? 'Local History Storage' : 'Google Drive';
-                                                const hsStatus = hubspotLogged 
-                                                    ? `automatically logged this call under contact **${clientEmailForGDrive}** in HubSpot CRM`
-                                                    : `stored it in **${trackingDest}** context memory (HubSpot CRM log skipped or client email unassociated)`;
-
-                                                gdriveAction = true;
-                                                receipts.push(generateReceipt("UPLOAD", "CALL_LOG", fileName, driveFile.id, company, {
-                                                    sizeBytes: Buffer.byteLength(content, 'utf8'),
-                                                    url: driveFile.webViewLink,
-                                                    initiator: "DeepSeek Tool Call: register_call_log"
-                                                }));
-                                                toolResult = `I have successfully registered the new call! I saved the call notes as "**${fileName}**" (ID: \`${driveFile.id}\`) in Google Drive and ${hsStatus}.`;
-                                            }
-                                        } else if (name === 'read_prospect_file') {
-                                            let { company, filename } = args;
-                                            if (company && filename) {
-                                                // Dynamic name-to-company auto-resolution
-                                                try {
-                                                    for (const [id, hParsed] of pgCache.entries()) {
-                                                        if (hParsed && hParsed.name && hParsed.name.toLowerCase().trim() === company.toLowerCase().trim()) {
-                                                            if (hParsed.company) {
-                                                                console.log(`🔄 Resolved prospect name "${company}" to company "${hParsed.company}"`);
-                                                                company = hParsed.company;
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-                                                } catch (resolveErr) {
-                                                    console.warn('⚠️ Name-to-company resolution failed:', resolveErr.message);
-                                                }
-                                                console.log(`📄 Tool Call: Reading file ${filename} for ${company}`);
-                                                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
-                                                let files = [];
-                                                let resolvedFileContent = '';
-                                                let foundFile = null;
-
-                                                if (gdriveAvailable) {
-                                                    try {
-                                                        const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                        files = await listFolderRecursive(clientFolderId);
-                                                        
-                                                        // Check for companion summary text file first (e.g. filename.pdf.txt)
-                                                        const companionName1 = filename + '.txt';
-                                                        const companionName2 = filename.replace(/\.(pdf|docx|md|txt)$/i, '') + '.txt';
-                                                        foundFile = files.find(f => f.name.toLowerCase() === companionName1.toLowerCase() || f.name.toLowerCase() === companionName2.toLowerCase());
-                                                        
-                                                        if (!foundFile && filename.toLowerCase().endsWith('.pdf')) {
-                                                            foundFile = files.find(f => f.name.toLowerCase() === filename.toLowerCase() && f.mimeType === 'application/pdf');
-                                                        }
-                                                        if (!foundFile) {
-                                                            foundFile = files.find(f => f.name.toLowerCase() === filename.toLowerCase());
-                                                        }
-                                                        if (foundFile) {
-                                                            resolvedFileContent = await gdriveService.getFileContent(foundFile.id);
-                                                        }
-                                                    } catch (err) {
-                                                        console.warn('⚠️ GDrive file reading failed in tool call:', err.message);
-                                                    }
-                                                } else {
-                                                    const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                                                    const localFolder = path.join(historyDir, cleanCompany);
-                                                    if (fs.existsSync(localFolder)) {
-                                                        const findFileRecursively = (dir, targetName) => {
-                                                            if (!fs.existsSync(dir)) return null;
-                                                            const items = fs.readdirSync(dir);
-                                                            for (const item of items) {
-                                                                const itemPath = path.join(dir, item);
-                                                                const stat = fs.statSync(itemPath);
-                                                                if (stat.isDirectory()) {
-                                                                    const found = findFileRecursively(itemPath, targetName);
-                                                                    if (found) return found;
-                                                                } else if (item.toLowerCase() === targetName.toLowerCase()) {
-                                                                    return itemPath;
-                                                                }
-                                                            }
-                                                            return null;
-                                                        };
-
-                                                        const companionName1 = filename + '.txt';
-                                                        const companionName2 = filename.replace(/\.(pdf|docx|md|txt)$/i, '') + '.txt';
-                                                        let localFilePath = findFileRecursively(localFolder, companionName1);
-                                                        if (!localFilePath) {
-                                                            localFilePath = findFileRecursively(localFolder, companionName2);
-                                                        }
-                                                        let matchedName = localFilePath ? path.basename(localFilePath) : null;
-                                                        if (!localFilePath) {
-                                                            localFilePath = findFileRecursively(localFolder, filename);
-                                                            matchedName = localFilePath ? path.basename(localFilePath) : null;
-                                                        }
-                                                        if (localFilePath) {
-                                                            foundFile = { name: matchedName };
-                                                            try {
-                                                                if (matchedName.endsWith('.pdf')) {
-                                                                    const pdfBuffer = fs.readFileSync(localFilePath);
-                                                                    resolvedFileContent = await gdriveService.parsePdfBuffer(pdfBuffer);
-                                                                } else if (matchedName.endsWith('.docx')) {
-                                                                    const docxBuffer = fs.readFileSync(localFilePath);
-                                                                    resolvedFileContent = await gdriveService.parseDocxBuffer(docxBuffer);
-                                                                } else {
-                                                                    resolvedFileContent = fs.readFileSync(localFilePath, 'utf8');
-                                                                }
-                                                            } catch (readErr) {
-                                                                console.warn('⚠️ Local file reading failed:', readErr.message);
-                                                            }
-                                                        }
-                                                    }
-                                                }
-
-                                                if (foundFile) {
-                                                    const CONTENT_BUDGET_BYTES = 50 * 1024; // 50KB cap
-                                                    let text = resolvedFileContent || '';
-                                                    if (Buffer.byteLength(text, 'utf8') > CONTENT_BUDGET_BYTES) {
-                                                        text = text.substring(0, CONTENT_BUDGET_BYTES) + '\n[...TRUNCATED due to content budget limit]';
-                                                    }
-                                                    const enforcementDirective = `[STRICT ENTITY BOUNDARY ENFORCEMENT]\n` +
-                                                        `This document is physically located in the Google Drive folder for Canonical Company: "${company}".\n` +
-                                                        `You MUST treat "${company}" as the absolute source of truth for the prospect's company.\n` +
-                                                        `If the text below claims the prospect works at a different company, you MUST NOT change their company to the new one.\n` +
-                                                        `Instead, you MUST surface this discrepancy to the user by including a "🚨" emoji in your chat response, stating that the document claims a different company but they are routed to "${company}".\n` +
-                                                        `[END ENFORCEMENT]\n\n--- DOCUMENT CONTENT ---\n`;
-                                                    toolResult = enforcementDirective + text;
-                                                } else {
-                                                    toolResult = `Error: File "${filename}" not found in prospect "${company}" folder.`;
-                                                }
-                                            } else {
-                                                toolResult = `Error: Missing required parameters 'company' or 'filename'.`;
-                                            }
-                                        } else if (name === 'search_prospect_files') {
-                                            let { company, query } = args;
-                                            if (company && query) {
-                                                // Dynamic name-to-company auto-resolution
-                                                if (fs.existsSync(historyDir)) {
-                                                    try {
-                                                        const historyFiles = fs.readdirSync(historyDir).filter(f => f.endsWith('.json'));
-                                                        for (const hFile of historyFiles) {
-                                                            const hData = fs.readFileSync(path.join(historyDir, hFile), 'utf8');
-                                                            const hParsed = JSON.parse(hData);
-                                                            if (hParsed.name && hParsed.name.toLowerCase().trim() === company.toLowerCase().trim()) {
-                                                                if (hParsed.company) {
-                                                                    console.log(`🔄 Resolved prospect name "${company}" to company "${hParsed.company}"`);
-                                                                    company = hParsed.company;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                    } catch (resolveErr) {
-                                                        console.warn('⚠️ Name-to-company resolution failed:', resolveErr.message);
-                                                    }
-                                                }
-                                                console.log(`🔍 Tool Call: Searching files in ${company} folder for: "${query}"`);
-                                                const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
-                                                let matchedFiles = [];
-                                                const searchLower = query.toLowerCase();
-
-                                                if (gdriveAvailable) {
-                                                    try {
-                                                        const clientFolderId = await gdriveService.findOrCreateClientFolder(company);
-                                                        let files = await listFolderRecursive(clientFolderId);
-
-                                                        // Merge recently created files from cache to combat eventual consistency lag
-
-                                                        const cachedCreated = gdriveService.getRecentlyCreatedFilesForCompany(company);
-
-                                                        if (cachedCreated && cachedCreated.length > 0) {
-
-                                                            for (const cachedFile of cachedCreated) {
-
-                                                                if (!files.some(f => f.id === cachedFile.id || f.name === cachedFile.name)) {
-
-                                                                    files.push(cachedFile);
-
-                                                                }
-
-                                                            }
-
-                                                        }
-
-                                                        // Filter out recently deleted files to prevent eventual consistency lag issues
-
-                                                        const now = Date.now();
-
-                                                        for (const [key, time] of recentlyDeletedFiles.entries()) {
-
-                                                            if (now - time > 60000) {
-
-                                                                recentlyDeletedFiles.delete(key);
-
-                                                            }
-
-                                                        }
-
-                                                        files = files.filter(file => {
-
-                                                            const fId = file.id ? file.id.toString().toLowerCase() : '';
-
-                                                            const fName = file.name ? file.name.toString().toLowerCase() : '';
-
-                                                            return !recentlyDeletedFiles.has(fId) && !recentlyDeletedFiles.has(fName);
-
-                                                        });
-                                                        
-                                                        for (const file of files) {
-                                                            if (file.isFolder) continue;
-                                                            if (file.name.toLowerCase().includes(searchLower)) {
-                                                                matchedFiles.push(file);
-                                                                continue;
-                                                            }
-                                                            try {
-                                                                const content = await gdriveService.getFileContent(file.id);
-                                                                if (content && content.toLowerCase().includes(searchLower)) {
-                                                                    matchedFiles.push(file);
-                                                                }
-                                                            } catch (e) {
-                                                                console.warn(`Search failed parsing file ${file.name}:`, e.message);
-                                                            }
-                                                        }
-                                                    } catch (err) {
-                                                        console.warn('⚠️ GDrive search failed in tool call:', err.message);
-                                                    }
-                                                } else {
-                                                    const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-                                                    const localFolder = path.join(historyDir, cleanCompany);
-                                                    if (fs.existsSync(localFolder)) {
-                                                        const getFilesRecursively = (dir) => {
-                                                            let results = [];
-                                                            if (!fs.existsSync(dir)) return results;
-                                                            const list = fs.readdirSync(dir);
-                                                            list.forEach(file => {
-                                                                const filePath = path.join(dir, file);
-                                                                const stat = fs.statSync(filePath);
-                                                                if (stat.isDirectory()) {
-                                                                    results = results.concat(getFilesRecursively(filePath));
-                                                                } else {
-                                                                    results.push({
-                                                                        name: file,
-                                                                        path: filePath,
-                                                                        relPath: path.relative(historyDir, filePath)
-                                                                    });
-                                                                }
-                                                            });
-                                                            return results;
-                                                        };
-
-                                                        const localFiles = getFilesRecursively(localFolder);
-                                                        for (const fileObj of localFiles) {
-                                                             const file = fileObj.name;
-                                                             const filePath = fileObj.path;
-                                                             const hexPath = Buffer.from(fileObj.relPath, 'utf8').toString('hex');
-                                                             
-                                                             if (file.toLowerCase().includes(searchLower)) {
-                                                                 matchedFiles.push({ name: file, id: `local_file_${hexPath}` });
-                                                                 continue;
-                                                             }
-                                                             try {
-                                                                 let content = '';
-                                                                 if (file.endsWith('.pdf')) {
-                                                                     const pdfBuffer = fs.readFileSync(filePath);
-                                                                     content = await gdriveService.parsePdfBuffer(pdfBuffer);
-                                                                 } else if (file.endsWith('.docx')) {
-                                                                     const docxBuffer = fs.readFileSync(filePath);
-                                                                     content = await gdriveService.parseDocxBuffer(docxBuffer);
-                                                                 } else {
-                                                                     content = fs.readFileSync(filePath, 'utf8');
-                                                                 }
-                                                                 if (content && content.toLowerCase().includes(searchLower)) {
-                                                                     matchedFiles.push({ name: file, id: `local_file_${hexPath}` });
-                                                                 }
-                                                             } catch (e) {
-                                                                 console.warn(`Local search failed parsing file ${file}:`, e.message);
-                                                             }
-                                                        }
-                                                    }
-                                                }
-
-                                                if (matchedFiles.length > 0) {
-                                                    const enforcementDirective = `[STRICT ENTITY BOUNDARY ENFORCEMENT]\n` +
-                                                        `These files are physically located in the Google Drive folder for Canonical Company: "${company}".\n` +
-                                                        `You MUST treat "${company}" as the absolute source of truth for the prospect's company.\n` +
-                                                        `If any search results below claim the prospect works at a different company, you MUST NOT change their company to the new one.\n` +
-                                                        `Instead, you MUST surface this discrepancy to the user by including a "🚨" emoji in your chat response, stating that the search results claim a different company but they are routed to "${company}".\n` +
-                                                        `[END ENFORCEMENT]\n\n`;
-                                                    toolResult = enforcementDirective + `I found ${matchedFiles.length} file(s) matching "${query}" in the folder for **${company}**:\n` +
-                                                        matchedFiles.map(f => `- **${f.name}** (ID: \`${f.id}\`)`).join('\n');
-                                                } else {
-                                                    toolResult = `No files matching "${query}" were found in the folder for **${company}**.`;
-                                                }
-                                            } else {
-                                                toolResult = `Error: Missing required parameters 'company' or 'query'.`;
-                                            }
-                                        } else if (name === 'send_recap_email') {
-                                            const { email, name: clientName, company, recapText, rep } = args;
-                                            if (email && clientName && company && recapText) {
-                                                console.log(`✉️ Tool Call: Sending recap email to ${email}`);
-                                                try {
-                                                    const success = await emailService.sendRecapEmail(email, clientName, company, recapText, rep);
-                                                    if (success) {
-                                                        toolResult = `Successfully sent the recap email to **${clientName}** (${email}) for company **${company}**.`;
-                                                    } else {
-                                                        toolResult = `Failed to send the recap email. Check SMTP configuration settings.`;
-                                                    }
-                                                } catch (err) {
-                                                    console.error('⚠️ Recap email dispatch failed:', err.message);
-                                                    toolResult = `Error sending recap email: ${err.message}`;
-                                                }
-                                            } else {
-                                                toolResult = `Error: Missing required parameters 'email', 'name', 'company', or 'recapText'.`;
-                                            }
-                                        } else if (name === 'generate_proposal_file') {
-                                            const { company, prospect_name, filename, proposalContent } = args;
-                                            if (company && prospect_name && filename && proposalContent) {
-                                                console.log(`📤 Tool Call: Generating proposal ${filename} for ${company}`);
-                                                const driveFile = await handleFileUpload(filename, proposalContent, company, prospect_name);
-                                                gdriveAction = true;
-                                                receipts.push(generateReceipt("UPLOAD", "FILE", filename, driveFile ? driveFile.id : null, company, {
-                                                    sizeBytes: Buffer.byteLength(proposalContent, 'utf8'),
-                                                    url: driveFile ? driveFile.webViewLink : null,
-                                                    initiator: "DeepSeek Tool Call: generate_proposal_file"
-                                                }));
-                                                toolResult = `I have successfully generated and uploaded the proposal file "**${filename}**" (ID: \`${driveFile.id}\`) to the folder for **${company}**.`;
-                                            }
-                                        }
-
-                                        // Append the tool message to history
-                                        currentMessages.push({
-                                            role: 'tool',
-                                            tool_call_id: toolCall.id,
-                                            name: name,
-                                            content: toolResult
-                                        });
-                                    }
-
-                                    // Recurse with incremented depth
-                                    await executeDeepSeekRecursively(currentMessages, depth + 1, gdriveAction, folderDeleted, deletedCompany, receipts);
-                                } else {
-                                    // Base case: No more tool calls, return final message to client
-                                    injectMetadataAndSend(res, {
-                                        gdriveAction: gdriveAction,
-                                        folderDeleted: folderDeleted,
-                                        deletedCompany: deletedCompany,
-                                        receipt: receipts.length > 0 ? receipts[0] : null,
-                                        choices: data.choices
-                                    });
-                                }
-                            } catch (err) {
-                                console.warn('⚠️ Error parsing or executing DeepSeek tool response:', err.message);
-                                injectMetadataAndSend(res, resBody);
-                            }
-                        });
-                    });
-
-                    proxyReq.on('timeout', () => {
-                        console.warn(`⚠️ Primary ${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} API timed out at recursion depth ${depth}.`);
-                        proxyReq.destroy(); // Will trigger 'error' event and failover
-                    });
-
-                    proxyReq.on('error', async (err) => {
-                        console.warn(`⚠️ ${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} connection error at depth ${depth}: ${err.message}. Attempting Gemini failover...`);
-                        try {
-                            const failoverPayload = {
-                                ...payload,
-                                messages: currentMessages.map(msg => {
-                                    if (msg.role === 'assistant' && msg.tool_calls && (!msg.content || msg.content.trim() === '')) {
-                                        return {
-                                            ...msg,
-                                            content: `[Invoking tools: ${msg.tool_calls.map(tc => tc.function.name).join(', ')}]`
-                                        };
-                                    }
-                                    return msg;
-                                })
-                            };
-                            const text = await executeGeminiFailover(failoverPayload);
-                            injectMetadataAndSend(res, {
-                                gdriveAction: gdriveAction,
-                                folderDeleted: folderDeleted,
-                                deletedCompany: deletedCompany,
-                                receipt: receipts.length > 0 ? receipts[0] : null,
-                                choices: [{ message: { role: 'assistant', content: text } }]
-                            });
-                        } catch (geminiError) {
-                            res.writeHead(502, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ error: `${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} failed: ${err.message}. Gemini failover failed: ${geminiError.message}` }));
-                        }
-                    });
-
-                    console.log(`📡 Sending request to ${payload.provider === 'mistral' ? 'Mistral' : 'DeepSeek'} (depth ${depth})... payload length: ${Buffer.byteLength(dsPayload)}`);
-                    proxyReq.write(dsPayload);
-                    proxyReq.end();
-                };
-
-                await executeDeepSeekRecursively(dsMessages);
+                }
                 return;
             }
 
