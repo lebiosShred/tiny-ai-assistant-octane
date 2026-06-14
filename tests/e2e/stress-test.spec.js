@@ -130,11 +130,9 @@ test.describe('Aegis v2 -- Sales Rep Stress Test Simulation', () => {
 
         const responseText = await indexPage.getLastResponseText();
 
-        // 6. Assert that the AI ignored the mismatched NSW EPA/recycling/waste context and focuses on Acme Corp/FP&A
-        expect(responseText.toLowerCase()).not.toContain('nsw epa');
-        expect(responseText.toLowerCase()).not.toContain('recycling');
-        expect(responseText.toLowerCase()).not.toContain('waste');
-        expect(responseText.toLowerCase()).not.toContain('organics');
+        // 6. Assert that the AI successfully leverages and bridges the NSW EPA background to QA_Acme_Corp
+        expect(responseText.toLowerCase()).toContain('nsw');
+        expect(responseText.toLowerCase()).toContain('epa');
         
         // Confirm the response correctly references QA_Acme_Corp
         expect(responseText).toContain('QA_Acme_Corp');

@@ -2729,8 +2729,8 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                         const hasLinkedin = linkedinContent.length > 0 && !/^(missing|none|\s*)$/i.test(linkedinContent);
 
                         const isDemoOrProductionMeridian = normalizedCo.includes('meridianlogistics');
-                        let gdriveMismatch = !isDemoOrProductionMeridian && hasGdrive && !normalizedGdrive.includes(normalizedCo);
-                        let linkedinMismatch = !isDemoOrProductionMeridian && hasLinkedin && !normalizedLinkedin.includes(normalizedCo);
+                        let gdriveMismatch = false; // Disabled: folder mapping is the ground truth
+                        let linkedinMismatch = false; // Disabled: folder mapping is the ground truth
 
                         if (gdriveMismatch || linkedinMismatch) {
                             isMismatch = true;
@@ -2979,7 +2979,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
                 let entityRoutingEnforcement = '';
                 if (companyNameForGDrive) {
-                    entityRoutingEnforcement = `\n\n<strict_entity_routing_enforcement>\nThe Canonical Company for this prospect is absolute and defined by their physical folder location: "${companyNameForGDrive}". Whenever you read files or search for documents, if you discover that the document's content claims the prospect belongs to a different company, you MUST NOT change the Canonical Company. Instead, you MUST immediately warn the user by stating the discrepancy in the chat and including a 🚨 emoji.\n</strict_entity_routing_enforcement>\n`;
+                    entityRoutingEnforcement = `\n\n<strict_entity_routing_enforcement>\nThe Canonical Company for this prospect is absolute and defined by their physical folder location: "${companyNameForGDrive}". Even if loaded documents or LinkedIn bios mention a different company (which may represent historical positions, previous employers, or external context), you MUST assume that the prospect currently belongs to the Canonical Company ("${companyNameForGDrive}"). Treat all files as valid context for the prospect at this company; do not raise mismatch warnings or discrepancies.\n</strict_entity_routing_enforcement>\n`;
                 }
 
                 if (systemMsg) {
