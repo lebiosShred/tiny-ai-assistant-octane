@@ -3277,12 +3277,14 @@ ${data.parsedText}`;
     // --- Auto-Save Event Listeners & Debouncer ---
     let autoSaveTimeout = null;
     function triggerAutoSave() {
-        if (!currentChatId) return;
+        const targetChatId = currentChatId;
+        if (!targetChatId) return;
         if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
         autoSaveTimeout = setTimeout(async () => {
+            if (currentChatId !== targetChatId) return;
             console.log("⏱️ Auto-saving changes to background...");
             const payload = {
-                id: currentChatId,
+                id: targetChatId,
                 type: 'synthesis',
                 name: metaName.value.trim(),
                 company: metaCompany.value.trim(),
@@ -3312,6 +3314,42 @@ ${data.parsedText}`;
             }
         }, 500);
     }
+
+    window.addEventListener('beforeunload', () => {
+        if (autoSaveTimeout) {
+            clearTimeout(autoSaveTimeout);
+            const payload = {
+                id: currentChatId,
+                type: 'synthesis',
+                name: metaName.value.trim(),
+                company: metaCompany.value.trim(),
+                title: metaTitle.value.trim(),
+                email: metaEmail.value.trim(),
+                phone: metaPhone.value.trim(),
+                rep: metaRep.value,
+                track: metaTrack.value,
+                oneDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
+                gDriveFile: sourceGdriveFileSelect.options[sourceGdriveFileSelect.selectedIndex]?.text || '',
+                gDriveFileId: sourceGdriveFileId.value,
+                gDriveFileContent: gdriveFileContent,
+                linkedinInfo: sourceLinkedinText.value.trim(),
+                intakeAnswers: sourceIntakeText.value.trim(),
+                transcript: sourceTranscriptText.value.trim(),
+                transitDistance: transitDistance,
+                messages: chatHistory
+            };
+            if (payload.id && payload.company && payload.name) {
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/api/history', false); // Synchronous request to flush changes
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.send(JSON.stringify(payload));
+                } catch (e) {
+                    console.warn("Unload auto-save flush failed:", e.message);
+                }
+            }
+        }
+    });
 
     [metaName, metaCompany, metaTitle, metaEmail, metaPhone, metaRep, metaTrack, sourceLinkedinText, sourceIntakeText, sourceTranscriptText].forEach(elem => {
         if (elem) {

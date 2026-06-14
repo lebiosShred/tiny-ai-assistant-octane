@@ -2,7 +2,7 @@ const { z } = require('zod');
 
 // Schema for /api/history POST payloads
 const historySchema = z.object({
-  id: z.string().optional(),
+  id: z.preprocess(val => val === null ? undefined : val, z.string().optional()),
   type: z.string({ required_error: 'Type is required' }).min(1, 'Type is required'),
   company: z.string({ required_error: 'Company is required' }).min(1, 'Company is required'),
   date: z.string().optional(), // Can be ISO string or other formats, we validate presence/format downstream if needed

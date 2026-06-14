@@ -6446,7 +6446,17 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                         }
                     }
 
-                    try { await saveHistoryItem(payload); } catch (e) { console.error("⚠️ Failed to sync to Postgres:", e); }
+                    try {
+                        await saveHistoryItem(payload);
+                    } catch (e) {
+                        console.error("⚠️ Failed to sync to Postgres:", e);
+                        const isTestEnv = process.env.HISTORY_DIR === 'knowledge/history_test';
+                        if (!isTestEnv) {
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'Failed to sync session to database: ' + e.message }));
+                            return;
+                        }
+                    }
 
                     fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', async (writeErr) => {
                         if (writeErr) {
@@ -6733,6 +6743,7 @@ ${payload.intakeAnswers || ''}`;
         const filePath = path.join(historyDir, `${cleanId}.json`);
         
         if (!pgCache.has(cleanId)) {
+            let loadedFromDb = false;
             try {
                 // Try database query first
                 const { eq } = require('drizzle-orm');
@@ -6740,14 +6751,21 @@ ${payload.intakeAnswers || ''}`;
                 if (dbRows && dbRows.length > 0) {
                     const parsed = dbRows[0].data;
                     pgCache.set(cleanId, parsed);
-                } else if (fs.existsSync(filePath)) {
+                    loadedFromDb = true;
+                }
+            } catch (dbErr) {
+                console.warn(`⚠️ Failed to lazy load history item ${cleanId} from DB:`, dbErr.message);
+            }
+
+            if (!loadedFromDb && fs.existsSync(filePath)) {
+                try {
                     // Fallback to local file backup
                     const content = fs.readFileSync(filePath, 'utf8');
                     const parsed = JSON.parse(content);
                     pgCache.set(cleanId, parsed);
+                } catch (fileErr) {
+                    console.error(`⚠️ Failed to read local backup file for ${cleanId}:`, fileErr.message);
                 }
-            } catch (dbErr) {
-                console.error(`⚠️ Failed to lazy load history item ${cleanId} from DB/file:`, dbErr.message);
             }
         }
         
