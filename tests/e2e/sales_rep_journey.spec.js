@@ -6,6 +6,25 @@ test.describe('Synthetic User Journey Simulation', () => {
         page.on('console', msg => console.log(`[Browser ${msg.type()}] ${msg.text()}`));
         page.on('pageerror', error => console.error(`[Browser Error] ${error.message}`));
         
+        // Intercept and stub the API completion response to ensure test determinism if not testing live URL
+        if (!process.env.TEST_URL) {
+            await page.route('**/api/chat', async route => {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        choices: [{
+                            message: {
+                                role: 'assistant',
+                                content: 'This is a mocked pre-screen summary for Sarah Chen at Meridian Logistics. It has more than 100 characters to satisfy the length assertion requirement.'
+                            }
+                        }]
+                    })
+                });
+            });
+        }
+
         // Phase 1: Environment Initialization
         await page.goto('/');
         

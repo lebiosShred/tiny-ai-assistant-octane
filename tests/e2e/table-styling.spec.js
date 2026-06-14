@@ -58,7 +58,7 @@ test.describe('Aegis Table Styling and Parsing Spec', () => {
         await indexPage.waitForResponse(20000);
 
         // Check if a table exists in the last assistant response card
-        const table = page.locator('#chat-messages-log .chat-message-card.assistant:last-child pre.chat-message-content table');
+        const table = page.locator('#chat-messages-log .chat-message-card.assistant:last-child .chat-message-content table');
         await expect(table).toBeVisible();
 
         // Check th exists and has th contents

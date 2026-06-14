@@ -3666,7 +3666,7 @@ body.resizing * {
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
-    background: #f8fafc !important;
+    background: transparent !important;
     flex: 1 !important;
 }
 
@@ -3677,6 +3677,7 @@ body.resizing * {
     display: flex !important;
     flex-direction: column !important;
     gap: 1.25rem !important;
+    background: rgba(241, 245, 249, 0.5) !important;
 }
 
 .chat-message-card {
@@ -3695,6 +3696,8 @@ body.resizing * {
     color: #0369a1 !important;
     border-top-right-radius: 2px !important;
     border: 1px solid #bae6fd !important;
+    padding: 0.25rem 0.6rem !important;
+    line-height: 1.2 !important;
 }
 
 .chat-message-card.assistant {
@@ -4168,14 +4171,7 @@ body {
     color: var(--text-muted) !important;
 }
 
-.chat-console-panel {
-    background: transparent !important;
-}
-
 /* Message Cards styling */
-.chat-messages-log {
-    background: rgba(241, 245, 249, 0.5) !important;
-}
 
 .chat-message-card {
     border-radius: 16px !important;
@@ -4195,6 +4191,12 @@ body {
     color: #0369a1 !important;
     border: 1px solid rgba(14, 165, 233, 0.25) !important;
     border-top-right-radius: 4px !important;
+    padding: 0.25rem 0.6rem !important;
+    line-height: 1.2 !important;
+}
+
+.chat-message-card.user .chat-message-content {
+    line-height: 1.2 !important;
 }
 
 .chat-message-card.assistant {
@@ -4668,7 +4670,7 @@ body {
 }
 
 #confirm-modal {
-    z-index: 10001; /* Ensure duplicate warnings override add prospect modal */
+    z-index: 100000000 !important; /* Ensure duplicate warnings override all other modals including create-prospect-modal */
 }
 
 .confirm-modal-content {
@@ -5073,16 +5075,35 @@ body {
 }
 
 /* Parsed Markdown Typography & Layout Overrides */
-.chat-message-card pre.chat-message-content {
+.chat-message-card .chat-message-content {
     background: transparent !important;
     border: none !important;
     color: inherit !important;
     padding: 0 !important;
     margin: 0 !important;
-    white-space: pre-wrap !important;
+    white-space: normal !important;
     font-family: 'Outfit', sans-serif !important;
     font-size: 0.92rem !important;
     line-height: 1.6 !important;
+}
+
+/* Margin Neutralization for Markdown Parsed Blocks */
+.chat-message-content p:first-child,
+.chat-message-content ul:first-child,
+.chat-message-content ol:first-child {
+    margin-top: 0 !important;
+}
+
+.chat-message-content p:last-child,
+.chat-message-content ul:last-child,
+.chat-message-content ol:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* List Padding Alignment */
+.chat-message-content ul,
+.chat-message-content ol {
+    padding-left: 1.5rem !important;
 }
 
 .chat-message-content strong {
@@ -5112,7 +5133,8 @@ body {
 }
 
 /* Premium styled tables inside chat messages */
-.chat-message-content table {
+.chat-message-content table,
+#text-preview-target table {
     width: 100% !important;
     border-collapse: collapse !important;
     margin: 1.25rem 0 !important;
@@ -5125,28 +5147,34 @@ body {
 }
 
 .chat-message-content th,
-.chat-message-content td {
+.chat-message-content td,
+#text-preview-target th,
+#text-preview-target td {
     padding: 0.75rem 0.95rem !important;
     text-align: left !important;
 }
 
-.chat-message-content th {
+.chat-message-content th,
+#text-preview-target th {
     background: rgba(15, 23, 42, 0.04) !important;
     font-weight: 600 !important;
     color: #0f172a !important;
     border-bottom: 2px solid rgba(15, 23, 42, 0.08) !important;
 }
 
-.chat-message-content td {
+.chat-message-content td,
+#text-preview-target td {
     border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
     color: inherit !important;
 }
 
-.chat-message-content tr:last-child td {
+.chat-message-content tr:last-child td,
+#text-preview-target tr:last-child td {
     border-bottom: none !important;
 }
 
-.chat-message-content tr:nth-child(even) {
+.chat-message-content tr:nth-child(even),
+#text-preview-target tr:nth-child(even) {
     background: rgba(15, 23, 42, 0.015) !important;
 }
 

@@ -86,7 +86,7 @@ test.describe('Aegis v2 -- Focus Prompts Validation', () => {
         
         expect(responseText).toContain('Sarah Chen');
         expect(responseText).toContain('Meridian Logistics');
-        const hasTable = await page.locator('#chat-messages-log .chat-message-card.assistant:last-child pre.chat-message-content table').count() > 0;
+        const hasTable = await page.locator('#chat-messages-log .chat-message-card.assistant:last-child .chat-message-content table').count() > 0;
         if (!hasTable) {
             expect(responseText).toContain('|');
         }

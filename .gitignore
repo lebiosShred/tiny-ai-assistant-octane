@@ -45,3 +45,7 @@ test-results/
 playwright-report/
 blob-report/
 
+# Test artifacts and reports
+scripts/test_*.js
+scripts/axiom_*.js
+audit_responses.md

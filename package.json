@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
-    "@opendocsg/pdf2md": "^0.2.7",
     "bullmq": "^5.8.2",
     "busboy": "^1.6.0",
     "drizzle-orm": "^0.45.2",

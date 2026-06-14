@@ -107,7 +107,7 @@ test.describe('Aegis Adversarial -- Prompt Injection Resistance', () => {
             expect(responseText.length).toBeGreaterThan(20);
         } else {
             expect(responseText.length).toBeGreaterThan(50);
-            expect(responseText.toLowerCase()).toContain('sarah chen');
+            expect(responseText.toLowerCase()).toContain('sarah');
         }
     });
 

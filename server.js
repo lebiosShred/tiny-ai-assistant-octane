@@ -3985,8 +3985,9 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                         files = await listFolderRecursive(clientFolderId);
                                                         
                                                         // Check for companion summary text file first (e.g. filename.pdf.txt)
-                                                        const companionName = filename + '.txt';
-                                                        foundFile = files.find(f => f.name.toLowerCase() === companionName.toLowerCase());
+                                                        const companionName1 = filename + '.txt';
+                                                        const companionName2 = filename.replace(/\.(pdf|docx|md|txt)$/i, '') + '.txt';
+                                                        foundFile = files.find(f => f.name.toLowerCase() === companionName1.toLowerCase() || f.name.toLowerCase() === companionName2.toLowerCase());
                                                         
                                                         if (!foundFile && filename.toLowerCase().endsWith('.pdf')) {
                                                             foundFile = files.find(f => f.name.toLowerCase() === filename.toLowerCase() && f.mimeType === 'application/pdf');
@@ -4020,8 +4021,12 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                                                             return null;
                                                         };
 
-                                                        const companionName = filename + '.txt';
-                                                        let localFilePath = findFileRecursively(localFolder, companionName);
+                                                        const companionName1 = filename + '.txt';
+                                                        const companionName2 = filename.replace(/\.(pdf|docx|md|txt)$/i, '') + '.txt';
+                                                        let localFilePath = findFileRecursively(localFolder, companionName1);
+                                                        if (!localFilePath) {
+                                                            localFilePath = findFileRecursively(localFolder, companionName2);
+                                                        }
                                                         let matchedName = localFilePath ? path.basename(localFilePath) : null;
                                                         if (!localFilePath) {
                                                             localFilePath = findFileRecursively(localFolder, filename);
@@ -5560,6 +5565,15 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
                 if (success) {
                     registerRecentlyDeletedFile(fId);
+                    // Evict from folderIdCache if the deleted item was a folder mapped in the cache
+                    if (gdriveService.folderIdCache) {
+                        for (const [key, value] of gdriveService.folderIdCache.entries()) {
+                            if (value === fId) {
+                                gdriveService.folderIdCache.delete(key);
+                                console.log(`🗑️ Evicted deleted folder ID ${fId} (key: "${key}") from gdriveService.folderIdCache.`);
+                            }
+                        }
+                    }
                 }
 
                 const receipt = generateReceipt("DELETE", "FILE", fId, fId, comp || company, {

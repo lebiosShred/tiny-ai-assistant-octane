@@ -320,8 +320,13 @@ async function getFileContent(fileId, ignoreCache = false) {
                 const filePath = path.join(historyDir, relativePath);
                 
                 if (fs.existsSync(filePath)) {
-                    const companionPath = filePath + '.txt';
-                    if (fs.existsSync(companionPath)) {
+                    const companionPath1 = filePath + '.txt';
+                    const companionPath2 = filePath.replace(/\.(pdf|docx|md|txt)$/i, '') + '.txt';
+                    let companionPath = null;
+                    if (fs.existsSync(companionPath1)) companionPath = companionPath1;
+                    else if (fs.existsSync(companionPath2)) companionPath = companionPath2;
+                    
+                    if (companionPath) {
                         console.log(`⚡ Found local companion summary: ${companionPath}`);
                         content = fs.readFileSync(companionPath, 'utf8');
                     } else if (filePath.endsWith('.pdf')) {
@@ -344,8 +349,13 @@ async function getFileContent(fileId, ignoreCache = false) {
                         if (withoutPrefix.startsWith(companyPrefix)) {
                             const filename = withoutPrefix.slice(companyPrefix.length);
                             // Check for companion structured summary file first
-                            const companionPath = path.join(historyDir, subdir, filename + '.txt');
-                            if (fs.existsSync(companionPath)) {
+                            const companionPath1 = path.join(historyDir, subdir, filename + '.txt');
+                            const companionPath2 = path.join(historyDir, subdir, filename.replace(/\.(pdf|docx|md|txt)$/i, '') + '.txt');
+                            let companionPath = null;
+                            if (fs.existsSync(companionPath1)) companionPath = companionPath1;
+                            else if (fs.existsSync(companionPath2)) companionPath = companionPath2;
+                            
+                            if (companionPath) {
                                 console.log(`⚡ Found local companion summary: ${companionPath}`);
                                 content = fs.readFileSync(companionPath, 'utf8');
                                 break;
@@ -405,10 +415,11 @@ async function fetchContentInternal(fileId) {
 
     // Check for companion structured text file first for binary types
     if ((mimeType === 'application/pdf' || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || (name && (name.endsWith('.docx') || name.endsWith('.pdf')))) && parents && parents.length > 0) {
-        const companionName = name + '.txt';
+        const companionName1 = name + '.txt';
+        const companionName2 = name.replace(/\.(pdf|docx|md|txt)$/i, '') + '.txt';
         try {
             const listResponse = await drive.files.list({
-                q: `'${parents[0]}' in parents and name = '${companionName.replace(/'/g, "\\'")}' and trashed = false`,
+                q: `'${parents[0]}' in parents and (name = '${companionName1.replace(/'/g, "\\'")}' or name = '${companionName2.replace(/'/g, "\\'")}') and trashed = false`,
                 fields: 'files(id, name, mimeType)'
             });
             const companionFiles = listResponse.data.files || [];
@@ -960,13 +971,33 @@ async function uploadFile(fileName, mimeType, fileBuffer, folderId) {
             body: stream
         };
 
-        console.log(`📤 Uploading file "${fileName}" to folder ${folderId}`);
-        const response = await drive.files.create({
-            resource: fileMetadata,
-            media: media,
-            fields: 'id, name, webViewLink',
-            supportsAllDrives: true
+        console.log(`🔍 Checking if file "${fileName}" exists in folder ${folderId}`);
+        const safeFileName = fileName.replace(/'/g, "\\'");
+        const existingFiles = await drive.files.list({
+            q: `name='${safeFileName}' and '${folderId}' in parents and trashed=false`,
+            fields: 'files(id, name, webViewLink)',
+            spaces: 'drive'
         });
+
+        let response;
+        if (existingFiles.data.files && existingFiles.data.files.length > 0) {
+            const existingFileId = existingFiles.data.files[0].id;
+            console.log(`📤 Updating existing file "${fileName}" (ID: ${existingFileId})`);
+            response = await drive.files.update({
+                fileId: existingFileId,
+                media: media,
+                fields: 'id, name, webViewLink',
+                supportsAllDrives: true
+            });
+        } else {
+            console.log(`📤 Uploading new file "${fileName}" to folder ${folderId}`);
+            response = await drive.files.create({
+                resource: fileMetadata,
+                media: media,
+                fields: 'id, name, webViewLink',
+                supportsAllDrives: true
+            });
+        }
 
         recordApiSuccess();
         console.log(`✅ File uploaded successfully: "${response.data.name}" (ID: ${response.data.id})`);

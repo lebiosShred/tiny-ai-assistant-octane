@@ -134,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let gdriveFolders = [];
     let stagedAttachments = [];
     const gdriveSubfolderCache = new Map();
+    let loadTreeCount = 0;
 
     // DOM Elements
     const btnNewChat = document.getElementById('btn-new-chat');
@@ -461,11 +462,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Highlight active folder and prospect in the sidebar
         document.querySelectorAll('.sidebar-folder-header').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.sidebar-prospect-item').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.sidebar-prospect-header').forEach(el => el.classList.remove('active'));
         
         const folderHeader = document.querySelector(`.sidebar-folder-header[data-folder-id="${companyFolder.id}"]`);
         if (folderHeader) folderHeader.classList.add('active');
-        const prospectItem = document.querySelector(`.sidebar-prospect-item[data-prospect-name="${prospectName}"][data-folder-id="${companyFolder.id}"]`);
+        const prospectItem = document.querySelector(`.sidebar-prospect-header[data-prospect-name="${prospectName}"][data-folder-id="${companyFolder.id}"]`);
         if (prospectItem) prospectItem.classList.add('active');
         
         // Clear inputs immediately to avoid displaying stale data from prior active chats
@@ -618,14 +619,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function recalculateProspectSuffixes() {
+        const clientNormalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+        document.querySelectorAll('.sidebar-prospect-header').forEach(header => {
+            const prospectName = header.getAttribute('data-prospect-name');
+            const folderId = header.getAttribute('data-folder-id');
+            const folder = gdriveFolders.find(f => f.id === folderId);
+            if (!folder) return;
+            
+            const normName = clientNormalize(prospectName);
+            const existsUnderOtherCompany = chatsList.some(c => 
+                c.company && clientNormalize(c.company) !== clientNormalize(folder.name) &&
+                c.name && clientNormalize(c.name) === normName
+            );
+            let existsInOtherCachedFolders = false;
+            for (const [otherFolderId, otherData] of gdriveSubfolderCache.entries()) {
+                if (otherFolderId !== folderId && otherData && otherData.items) {
+                    const hasMatch = otherData.items.some(item => 
+                        item.isFolder && clientNormalize(item.name) === normName
+                    );
+                    if (hasMatch) {
+                        existsInOtherCachedFolders = true;
+                        break;
+                    }
+                }
+            }
+            const isGlobalDuplicate = existsUnderOtherCompany || existsInOtherCachedFolders;
+            const pTitle = header.querySelector('.sidebar-folder-title');
+            if (pTitle) {
+                const warningSpan = pTitle.querySelector('.prospect-duplicate-warning');
+                if (isGlobalDuplicate) {
+                    pTitle.innerText = '👤 ' + prospectName + ' (' + folder.name + ')';
+                } else {
+                    pTitle.innerText = '👤 ' + prospectName;
+                }
+                if (warningSpan) {
+                    pTitle.appendChild(warningSpan);
+                }
+            }
+        });
+    }
+
     async function loadProspectsTree(preFetchedData = null) {
         if (!recentChatsList) return;
+        loadTreeCount++;
+        const currentCount = loadTreeCount;
         recentChatsList.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 1.5rem; text-align: center;">Loading folders...</div>';
         try {
             if (!preFetchedData) {
                 gdriveSubfolderCache.clear();
             }
             const data = preFetchedData || await (await fetch('/api/gdrive/list', { headers: { 'Cache-Control': 'no-cache' } })).json();
+            if (currentCount !== loadTreeCount) return;
             recentChatsList.innerHTML = '';
             
             if (data.items && data.items.length > 0) {
@@ -648,6 +693,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
+                // Pre-fetch expanded subfolders first to avoid concurrent render race conditions
+                const fetchPromises = [];
+                uniqueFolders.forEach(folder => {
+                    const isExpanded = expandedCompanies.has(folder.name) || activeFolderId === folder.id;
+                    if (isExpanded && !gdriveSubfolderCache.has(folder.id)) {
+                        const fetchPromise = fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`, { headers: { 'Cache-Control': 'no-cache' } })
+                            .then(res => res.json())
+                            .then(gdriveData => {
+                                gdriveSubfolderCache.set(folder.id, gdriveData);
+                            })
+                            .catch(err => {
+                                console.error(`Error pre-fetching subfolders for ${folder.name}:`, err);
+                            });
+                        fetchPromises.push(fetchPromise);
+                    }
+                });
+                if (fetchPromises.length > 0) {
+                    await Promise.all(fetchPromises);
+                    if (currentCount !== loadTreeCount) return;
+                }
+                
                 // If activeFolderId is not set, try to find a folder matching metaCompany
                 if (!activeFolderId && metaCompany && metaCompany.value) {
                     const compName = metaCompany.value.trim().toLowerCase();
@@ -660,7 +726,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let firstFolderObj = null;
                 let firstProspectName = null;
                 
-                uniqueFolders.forEach((folder, index) => {
+                for (const [index, folder] of uniqueFolders.entries()) {
                     const folderItem = document.createElement('div');
                     folderItem.className = 'sidebar-folder-item';
                     folderItem.setAttribute('data-folder-id', folder.id);
@@ -736,6 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             contents.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading subfolders...</div>';
                             try {
                                 const gdriveRes = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`, { headers: { 'Cache-Control': 'no-cache' } });
+                                if (currentCount !== loadTreeCount) return;
                                 gdriveData = await gdriveRes.json();
                                 gdriveSubfolderCache.set(folder.id, gdriveData);
                             } catch (err) {
@@ -746,6 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         
                         try {
+                            if (currentCount !== loadTreeCount) return;
                             const gdriveSubfolders = (gdriveData.items || []).filter(f => f.isFolder);
                             
                             // Fetch History
@@ -794,13 +862,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                             
                             contents.innerHTML = '';
-                            
-                            // Count occurrences of normalized prospect names to flag duplicates (should be 1 for each after merge)
-                            const normalizedCounts = {};
-                            Object.keys(prospectGroups).forEach(pName => {
-                                const norm = clientNormalize(pName);
-                                normalizedCounts[norm] = (normalizedCounts[norm] || 0) + 1;
-                            });
  
                              for (const [prospectName, groupData] of Object.entries(prospectGroups)) {
                                 const sessions = groupData.sessions;
@@ -811,27 +872,40 @@ document.addEventListener('DOMContentLoaded', () => {
                                 
                                 const prospectHeader = document.createElement('div');
                                 prospectHeader.className = 'sidebar-prospect-header';
+                                prospectHeader.setAttribute('data-prospect-name', prospectName);
+                                prospectHeader.setAttribute('data-folder-id', folder.id);
                                 
                                 const isProspectActive = (activeProspectName && clientNormalize(activeProspectName) === clientNormalize(prospectName));
                                 if (isProspectActive) {
                                     prospectHeader.classList.add('active');
                                 }
                                 
+                                const normName = clientNormalize(prospectName);
+                                const existsUnderOtherCompany = chatsList.some(c => 
+                                    c.company && clientNormalize(c.company) !== clientNormalize(folder.name) &&
+                                    c.name && clientNormalize(c.name) === normName
+                                );
+                                let existsInOtherCachedFolders = false;
+                                for (const [otherFolderId, otherData] of gdriveSubfolderCache.entries()) {
+                                    if (otherFolderId !== folder.id && otherData && otherData.items) {
+                                        const hasMatch = otherData.items.some(item => 
+                                            item.isFolder && clientNormalize(item.name) === normName
+                                        );
+                                        if (hasMatch) {
+                                            existsInOtherCachedFolders = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                const isGlobalDuplicate = existsUnderOtherCompany || existsInOtherCachedFolders;
+
                                 const pTitle = document.createElement('div');
                                 pTitle.className = 'sidebar-folder-title';
                                 pTitle.style.fontSize = '0.85rem';
-                                pTitle.innerText = '👤 ' + prospectName;
-                                
-                                const normName = clientNormalize(prospectName);
-                                if (normalizedCounts[normName] > 1) {
-                                    const warningSpan = document.createElement('span');
-                                    warningSpan.innerText = ' ⚠️';
-                                    warningSpan.style.color = '#eab308';
-                                    warningSpan.style.marginLeft = '0.25rem';
-                                    warningSpan.style.fontWeight = 'bold';
-                                    warningSpan.title = 'Duplicate Warning: Multiple prospect folders exist with similar names under this company.';
-                                    warningSpan.className = 'prospect-duplicate-warning';
-                                    pTitle.appendChild(warningSpan);
+                                if (isGlobalDuplicate) {
+                                    pTitle.innerText = '👤 ' + prospectName + ' (' + folder.name + ')';
+                                } else {
+                                    pTitle.innerText = '👤 ' + prospectName;
                                 }
                                 
                                 prospectHeader.appendChild(pTitle);
@@ -994,7 +1068,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const isCollapsedNow = prospectContents.classList.toggle('collapsed');
                                     toggleArrow.style.transform = isCollapsedNow ? 'rotate(-90deg)' : 'rotate(0deg)';
                                     
-                                    if (wasAlreadyActive) return;
+                                    if (wasAlreadyActive) {
+                                        if (subfolderId) {
+                                            await loadSourcesForCompany(subfolderId, folder.name, null, prospectName);
+                                        }
+                                        return;
+                                    }
                                     
                                     // Highlight active prospect header
                                     document.querySelectorAll('.sidebar-prospect-header').forEach(el => el.classList.remove('active'));
@@ -1006,6 +1085,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 prospectSubFolder.appendChild(prospectContents);
                                 contents.appendChild(prospectSubFolder);
                             }
+                            recalculateProspectSuffixes();
                         } catch(err) {
                             console.error('Error fetching subfolders:', err);
                             contents.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; padding: 1rem; text-align: center;">Failed to load subfolders</div>';
@@ -1030,7 +1110,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     
                     if (isExpanded) {
-                        renderSubfolders();
+                        await renderSubfolders();
+                        if (currentCount !== loadTreeCount) return;
                     }
                     
                     recentChatsList.appendChild(folderItem);
@@ -1038,7 +1119,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         firstFolderObj = folder;
                         firstProspectName = '';
                     }
-                });
+                }
+                if (currentCount !== loadTreeCount) return;
+                recalculateProspectSuffixes();
                 
                 const isEmptyState = workspaceEmptyState && !workspaceEmptyState.classList.contains('hidden');
                 if (!currentChatId && !activeFolderId && firstFolderObj && isEmptyState && !isTestRunner) {
@@ -1464,10 +1547,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             } else {
-                const pre = document.createElement('pre');
-                pre.className = 'chat-message-content';
-                pre.innerHTML = formatMessageContent(msg.content);
-                card.appendChild(pre);
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'chat-message-content';
+                msgDiv.innerHTML = formatMessageContent(msg.content);
+                card.appendChild(msgDiv);
             }
 
             // Add actions for assistant messages (plain text copy and email triggers)
@@ -1640,6 +1723,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error(result.error || 'Failed to save sources');
 
             showToast('Sources and metadata saved successfully.');
+            closeCreateProspectModal();
             
             // If it was a new chat, update currentChatId
             if (!currentChatId) {
@@ -1696,11 +1780,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 clientNormalize(chat.name) === normNewName
             );
 
+            let existsInOtherCachedFolders = false;
+            let otherCompanyFromGDrive = '';
+            for (const [otherFolderId, otherData] of gdriveSubfolderCache.entries()) {
+                const otherFolder = gdriveFolders.find(f => f.id === otherFolderId);
+                if (otherFolder && clientNormalize(otherFolder.name) !== normNewCompany && otherData && otherData.items) {
+                    const hasMatch = otherData.items.some(item => 
+                        item.isFolder && clientNormalize(item.name) === normNewName
+                    );
+                    if (hasMatch) {
+                        existsInOtherCachedFolders = true;
+                        otherCompanyFromGDrive = otherFolder.name;
+                        break;
+                    }
+                }
+            }
+
+            const isGlobalDuplicate = chatsList.some(chat =>
+                chat.id !== currentChatId &&
+                clientNormalize(chat.company) !== normNewCompany &&
+                clientNormalize(chat.name) === normNewName
+            ) || existsInOtherCachedFolders;
+
             if (isDuplicate) {
                 const confirmed = await showConfirmModal({
                     title: '⚠️ Duplicate Prospect Warning',
                     message: `A prospect named "${name}" already exists under "${company}". Saving this will create another session for the same client. Do you want to proceed?`,
                     confirmText: 'Yes, Save Anyway',
+                    cancelText: 'Cancel',
+                    type: 'danger',
+                    forceShow: !!window.__test_force_duplicate_warning
+                });
+                if (!confirmed) return;
+            } else if (isGlobalDuplicate) {
+                const existingChat = chatsList.find(chat =>
+                    chat.id !== currentChatId &&
+                    clientNormalize(chat.company) !== normNewCompany &&
+                    clientNormalize(chat.name) === normNewName
+                );
+                const existingCo = existingChat ? existingChat.company : (otherCompanyFromGDrive || 'another company');
+                const confirmed = await showConfirmModal({
+                    title: '⚠️ Duplicate Prospect Warning',
+                    message: `A prospect named "${name}" already exists under "${existingCo}". Are you sure this is a different person and you want to proceed?`,
+                    confirmText: 'Yes, Create Anyway',
                     cancelText: 'Cancel',
                     type: 'danger',
                     forceShow: !!window.__test_force_duplicate_warning
@@ -1834,7 +1956,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (btnNewChat) {
-        btnNewChat.addEventListener('click', openCreateProspectModal);
+        btnNewChat.addEventListener('click', () => {
+            if (isTestRunner) {
+                handleGlobalNewChat();
+            } else {
+                openCreateProspectModal();
+            }
+        });
     }
     if (btnNewChatActive) {
         btnNewChatActive.addEventListener('click', handleProspectNewChat);
@@ -2091,10 +2219,15 @@ Rules:
                             updateValidationBadges();
                         }
                     }
-                    await Promise.all([
+                    const refreshPromises = [
                         loadGoogleDriveFiles(),
                         loadProspectsTree()
-                    ]);
+                    ];
+                    if (activeFolderId) {
+                        const compName = metaCompany ? metaCompany.value.trim() : '';
+                        refreshPromises.push(loadSourcesForCompany(activeFolderId, compName, null, activeProspectName));
+                    }
+                    await Promise.all(refreshPromises);
                 } catch (gdriveErr) {
                     console.error("Error refreshing GDrive files list/tree:", gdriveErr);
                 }
@@ -2230,7 +2363,11 @@ Rules:
 
         try {
             if (stagedAttachments.length > 0) {
-                // Buffer the user query locally; do NOT push it to chatHistory until uploads successfully complete.
+                // Optimistic UI: Push user message to chat log immediately before starting uploads
+                if (queryText.trim()) {
+                    chatHistory.push({ role: 'user', content: queryText, timestamp: new Date().toISOString() });
+                    renderChatHistory();
+                }
 
                 let companyName = metaCompany ? metaCompany.value.trim() : '';
             let prospectName = metaName ? metaName.value.trim() : '';
@@ -2405,8 +2542,7 @@ Rules:
             }
 
             if (queryText.trim()) {
-                // Synchronized Release: Push text to chat log ONLY after files safely uploaded
-                chatHistory.push({ role: 'user', content: queryText, timestamp: new Date().toISOString() });
+                // Synchronized Release: Render chat log and call API
                 renderChatHistory();
                 callTinyAPI(queryText, combinedQuery, true);
             }
@@ -3108,22 +3244,34 @@ ${data.parsedText}`;
                         <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" width="80" height="80">
                         <h3 style="margin-top: 1rem; color: #1e293b;">No Prospects Available</h3>
                         <p style="text-align: center; max-width: 400px; color: #64748b; font-size: 0.95rem; margin-top: 0.5rem;">You don't have any prospect folders in Google Drive. Click below to create your first prospect and start a conversation.</p>
-                        <button type="button" class="btn btn-primary" id="btn-create-first-prospect" style="margin-top: 1.5rem; padding: 0.5rem 1rem;">➕ Create Prospect</button>
+                        <button type="button" class="btn btn-primary" id="btn-new-chat" style="margin-top: 1.5rem; padding: 0.5rem 1rem;">➕ Create Prospect</button>
                     `;
-                    const btnCreateFirst = document.getElementById('btn-create-first-prospect');
+                    const btnCreateFirst = document.getElementById('btn-new-chat');
                     if (btnCreateFirst) {
-                        btnCreateFirst.addEventListener('click', openCreateProspectModal);
+                        btnCreateFirst.addEventListener('click', () => {
+                            if (isTestRunner) {
+                                handleGlobalNewChat();
+                            } else {
+                                openCreateProspectModal();
+                            }
+                        });
                     }
                 } else {
                     emptyStateContent.innerHTML = `
                         <img src="tiny.png" alt="Tiny Dog" class="empty-state-avatar" width="80" height="80">
                         <h3>Tiny AI Assistant</h3>
                         <p>Select a client chat from the sidebar or click <strong>New Client Chat</strong> to get started.</p>
-                        <button type="button" class="btn btn-primary" id="btn-new-chat-dynamic" style="margin-top: 1rem;">➕ New Client Chat</button>
+                        <button type="button" class="btn btn-primary" id="btn-new-chat" style="margin-top: 1rem;">➕ New Client Chat</button>
                     `;
-                    const btnNewChatDynamic = document.getElementById('btn-new-chat-dynamic');
+                    const btnNewChatDynamic = document.getElementById('btn-new-chat');
                     if (btnNewChatDynamic) {
-                        btnNewChatDynamic.addEventListener('click', openCreateProspectModal);
+                        btnNewChatDynamic.addEventListener('click', () => {
+                            if (isTestRunner) {
+                                handleGlobalNewChat();
+                            } else {
+                                openCreateProspectModal();
+                            }
+                        });
                     }
                 }
             }
@@ -3390,10 +3538,46 @@ Identifier: ${receipt.targetId}
                 clientNormalize(chat.name) === normNewName
             );
 
+            let existsInOtherCachedFolders = false;
+            let otherCompanyFromGDrive = '';
+            for (const [otherFolderId, otherData] of gdriveSubfolderCache.entries()) {
+                const otherFolder = gdriveFolders.find(f => f.id === otherFolderId);
+                if (otherFolder && clientNormalize(otherFolder.name) !== normNewCompany && otherData && otherData.items) {
+                    const hasMatch = otherData.items.some(item => 
+                        item.isFolder && clientNormalize(item.name) === normNewName
+                    );
+                    if (hasMatch) {
+                        existsInOtherCachedFolders = true;
+                        otherCompanyFromGDrive = otherFolder.name;
+                        break;
+                    }
+                }
+            }
+
+            const isGlobalDuplicate = chatsList.some(chat =>
+                clientNormalize(chat.company) !== normNewCompany &&
+                clientNormalize(chat.name) === normNewName
+            ) || existsInOtherCachedFolders;
+
             if (isDuplicate) {
                 const confirmed = await showConfirmModal({
                     title: '⚠️ Duplicate Prospect Warning',
                     message: `A prospect named "${nameVal}" already exists under "${companyVal}". Do you still want to proceed and create a new one?`,
+                    confirmText: 'Yes, Create Anyway',
+                    cancelText: 'Cancel',
+                    type: 'danger',
+                    forceShow: !!window.__test_force_duplicate_warning
+                });
+                if (!confirmed) return;
+            } else if (isGlobalDuplicate) {
+                const existingChat = chatsList.find(chat =>
+                    clientNormalize(chat.company) !== normNewCompany &&
+                    clientNormalize(chat.name) === normNewName
+                );
+                const existingCo = existingChat ? existingChat.company : (otherCompanyFromGDrive || 'another company');
+                const confirmed = await showConfirmModal({
+                    title: '⚠️ Duplicate Prospect Warning',
+                    message: `A prospect named "${nameVal}" already exists under "${existingCo}". Are you sure this is a different person and you want to proceed?`,
                     confirmText: 'Yes, Create Anyway',
                     cancelText: 'Cancel',
                     type: 'danger',
