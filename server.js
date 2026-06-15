@@ -92,6 +92,15 @@ const { sessions, documentCompanionMetadata } = require('./src/db/schema.js');
 let pgCache = new Map();
 let pgCacheSyncPromise = null;
 let redisSubClient = null;
+const activeTokens = new Map();
+setInterval(() => {
+    const now = Date.now();
+    for (const [token, meta] of activeTokens.entries()) {
+        if (now > meta.expiry) {
+            activeTokens.delete(token);
+        }
+    }
+}, 5 * 60 * 1000);
 
 async function syncPgCache() {
     try {
@@ -1779,14 +1788,45 @@ const server = http.createServer(async (req, res) => {
     const pathname = parsedUrl.pathname;
 
     // Lightweight API Security Guard
-    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/config/pricing')) {
+    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/config/pricing') && !pathname.startsWith('/api/auth/token')) {
         const apiKey = req.headers['x-api-key'];
         const validKey = process.env.API_KEY;
-        if (validKey && apiKey !== validKey) {
+        let isAuthorized = validKey && apiKey === validKey;
+        
+        if (!isAuthorized && activeTokens.has(apiKey)) {
+            const tokenMeta = activeTokens.get(apiKey);
+            if (Date.now() <= tokenMeta.expiry) {
+                isAuthorized = true;
+            } else {
+                activeTokens.delete(apiKey);
+            }
+        }
+        
+        if (!validKey && !apiKey) {
+            isAuthorized = true;
+        }
+
+        if (!isAuthorized) {
             res.writeHead(401, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Unauthorized API Access. Missing or invalid x-api-key header.' }));
+            res.end(JSON.stringify({ error: 'Unauthorized API Access. Missing or invalid authorization token.' }));
             return;
         }
+    }
+
+    // Dynamic Token Issuance Route
+    if (pathname === '/api/auth/token' && req.method === 'POST') {
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiry = Date.now() + 15 * 60 * 1000;
+        
+        activeTokens.set(token, {
+            expiry: expiry,
+            ip: req.socket.remoteAddress,
+            userAgent: req.headers['user-agent']
+        });
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ token: token, expiry: expiry }));
+        return;
     }
 
     // API Pricing Catalog Route

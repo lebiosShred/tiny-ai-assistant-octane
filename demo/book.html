@@ -36,19 +36,39 @@
         body {
             padding-top: 64px;
         }
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes dash {
+            0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+            50% { stroke-dasharray: 89, 200; stroke-dashoffset: -35px; }
+            100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124px; }
+        }
     </style>
     <script>
-        // Lightweight API Security: Inject API Key into all fetch requests
+        // Lightweight API Security: Fetch and inject dynamic auth token into all API calls
         const originalFetch = window.fetch;
         window.fetch = async function() {
             let [resource, config] = arguments;
             if (typeof resource === 'string' && resource.startsWith('/api/')) {
                 config = config || {};
                 config.headers = config.headers || {};
-                config.headers['x-api-key'] = 'octane-secret-key-2026';
+                const token = window.sessionToken || 'octane-secret-key-2026';
+                config.headers['x-api-key'] = token;
             }
             return originalFetch(resource, config);
         };
+        (async function() {
+            try {
+                const res = await originalFetch('/api/auth/token', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    window.sessionToken = data.token;
+                }
+            } catch (err) {
+                console.error("Failed to fetch dynamic auth token:", err.message);
+            }
+        })();
     </script>
 </head>
 <body>
@@ -141,6 +161,14 @@
                         </div>
                         <div class="scheduler-container" id="hubspot-calendar-wrapper" style="min-height: 650px; position: relative; border-radius: 8px; overflow: hidden;">
                             <div class="meetings-iframe-container" data-src="https://octanesolutions.com.au/meetings/albert-francis/requirement-session-albert?embed=true"></div>
+                            <div id="calendar-loading-spinner" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; display: flex; justify-content: center; align-items: center; z-index: 10; transition: opacity 0.3s ease; opacity: 1;">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                                    <svg class="spinner" width="50" height="50" viewBox="0 0 50 50" style="animation: rotate 2s linear infinite;">
+                                        <circle cx="25" cy="25" r="20" fill="none" stroke="#1A73E2" stroke-width="4" stroke-linecap="round" style="stroke-dasharray: 80, 200; stroke-dashoffset: 0; animation: dash 1.5s ease-in-out infinite;"></circle>
+                                    </svg>
+                                    <span style="font-size: 0.95rem; font-weight: 600; color: #1a73e2; font-family: sans-serif;">Loading Booking Calendar...</span>
+                                </div>
+                            </div>
                             <script>
                                 (function() {
                                     var albertUrl = "https://octanesolutions.com.au/meetings/albert-francis/requirement-session-albert?embed=true";
@@ -163,6 +191,11 @@
                                         var btnIsha = document.getElementById('tab-isha');
                                         var iframe = container.querySelector('iframe');
                                         var targetUrl = host === 'isha' ? ishaUrl : albertUrl;
+                                        var spinner = document.getElementById('calendar-loading-spinner');
+                                        if (spinner) {
+                                            spinner.style.display = 'flex';
+                                            spinner.style.opacity = '1';
+                                        }
                                         if (host === 'isha') {
                                             btnIsha.classList.add('active');
                                             btnAlbert.classList.remove('active');
@@ -180,6 +213,26 @@
                                         var btnAlbert = document.getElementById('tab-albert');
                                         var btnIsha = document.getElementById('tab-isha');
                                         var recommendationDesc = document.getElementById('recommendation-desc');
+                                        var spinner = document.getElementById('calendar-loading-spinner');
+                                        
+                                        // Capture load events on container for nested dynamic iframe
+                                        container.addEventListener('load', function(e) {
+                                            if (e.target.tagName === 'IFRAME') {
+                                                if (spinner) {
+                                                    spinner.style.opacity = '0';
+                                                    setTimeout(function() { spinner.style.display = 'none'; }, 300);
+                                                }
+                                            }
+                                        }, true);
+
+                                        // Safety timeout
+                                        setTimeout(function() {
+                                            if (spinner && spinner.style.display !== 'none') {
+                                                spinner.style.opacity = '0';
+                                                setTimeout(function() { spinner.style.display = 'none'; }, 300);
+                                            }
+                                        }, 6000);
+
                                         if (isIshaOptimal) {
                                             btnIsha.classList.add('active');
                                             btnAlbert.classList.remove('active');

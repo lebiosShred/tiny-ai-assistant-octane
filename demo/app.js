@@ -318,6 +318,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatUploadProgressBar = document.getElementById('chat-upload-progress-bar');
     const chatUploadProgressText = document.getElementById('chat-upload-progress-text');
     const chatPendingAttachments = document.getElementById('chat-pending-attachments');
+ 
+    // Auto Scroll Lock Observer
+    if (chatMessagesLog) {
+        const observer = new MutationObserver(() => {
+            const threshold = 120;
+            const isNearBottom = chatMessagesLog.scrollHeight - chatMessagesLog.clientHeight - chatMessagesLog.scrollTop <= threshold;
+            const isStreaming = chatMessagesLog.getAttribute('data-state') === 'streaming';
+            if (isNearBottom || isStreaming) {
+                chatMessagesLog.scrollTop = chatMessagesLog.scrollHeight;
+            }
+        });
+        observer.observe(chatMessagesLog, { childList: true, subtree: true });
+    }
 
     function renderStagingArea() {
         if (!chatPendingAttachments) return;
@@ -329,6 +342,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
         chatPendingAttachments.classList.remove('hidden');
         chatPendingAttachments.innerHTML = '';
+
+        // Add header with Clear All button
+        const header = document.createElement('div');
+        header.className = 'staging-area-header';
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.width = '100%';
+        header.style.marginBottom = '6px';
+        header.style.padding = '0 4px';
+
+        const title = document.createElement('span');
+        title.innerText = `📎 Staged Files (${stagedAttachments.length})`;
+        title.style.fontSize = '0.8rem';
+        title.style.fontWeight = '600';
+        title.style.color = '#64748b';
+
+        const clearAllBtn = document.createElement('button');
+        clearAllBtn.type = 'button';
+        clearAllBtn.innerText = 'Clear All';
+        clearAllBtn.className = 'btn-clear-all-staged';
+        clearAllBtn.style.background = 'none';
+        clearAllBtn.style.border = 'none';
+        clearAllBtn.style.color = '#ef4444';
+        clearAllBtn.style.fontSize = '0.8rem';
+        clearAllBtn.style.fontWeight = '600';
+        clearAllBtn.style.cursor = 'pointer';
+        clearAllBtn.style.padding = '2px 6px';
+        clearAllBtn.style.borderRadius = '4px';
+        clearAllBtn.addEventListener('click', () => {
+            stagedAttachments = [];
+            renderStagingArea();
+        });
+
+        header.appendChild(title);
+        header.appendChild(clearAllBtn);
+        chatPendingAttachments.appendChild(header);
 
         stagedAttachments.forEach((file, index) => {
             const chip = document.createElement('div');
@@ -2856,10 +2906,12 @@ CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly fo
             document.body.classList.add('opacity-50', 'pointer-events-none');
         }
 
+        let backupAttachments = [];
         try {
             if (stagedAttachments.length > 0) {
                 // Atomic Clear: clear the input text and staged files simultaneously
                 chatUserInput.value = '';
+                backupAttachments = [...stagedAttachments];
                 const attachmentsToUpload = [...stagedAttachments];
                 stagedAttachments = [];
                 renderStagingArea();
@@ -2970,6 +3022,12 @@ CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly fo
                     } catch (initErr) {
                         console.error('Failed to auto-initialize chat session on file select:', initErr);
                         showToast(`Failed to initialize session: ${initErr.message}`);
+                        if (backupAttachments.length > 0) {
+                            stagedAttachments = [...backupAttachments];
+                            renderStagingArea();
+                        }
+                        chatHistory.pop();
+                        renderChatHistory();
                         return;
                     }
                 }
@@ -3107,6 +3165,10 @@ CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly fo
         } catch (err) {
             console.error('Error in sendUserQuery:', err);
             chatUserInput.value = queryText;
+            if (backupAttachments.length > 0) {
+                stagedAttachments = [...backupAttachments];
+                renderStagingArea();
+            }
             showToast(`Failed to send query: ${err.message}`);
         } finally {
             isSending = false;
