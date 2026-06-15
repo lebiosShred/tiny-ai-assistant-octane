@@ -3242,20 +3242,17 @@ CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly fo
  
             let promptText = '';
             if (promptType === 'recapEmail') {
-                promptText = `Generate a Recap Email to the client.
+                promptText = `Generate a Recap Email to the client based strictly on the transcript.
 Format exactly as:
+[Subject] observations from 🧐 our session
 Hey [client's name],
- 
 I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
-- [Takeaway 1]
-- [Takeaway 2]
-- [Takeaway 3]
- 
-I have also recorded a video briefing summarizing our discussion, which you can review here: [OneDrive Screencast Link]
- 
-You should have received an invitation confirming our appointment together.
- 
-Kind regards,`;
+. [Takeaway 1].
+. [Takeaway 2].
+. [Takeaway 3].
+Shortly I will send you some time slots for our upcoming demo.
+Kind regards,
+[Rep Name].`;
             } else if (promptType === 'migration') {
                 promptText = `Execute a comprehensive, enterprise-grade Migration/Modernisation assessment based strictly on the transcript. Format as a professional consulting brief:
 1. EXECUTIVE SUMMARY: High-level technical objective and strategic business drivers.

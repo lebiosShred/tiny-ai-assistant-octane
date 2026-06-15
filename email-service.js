@@ -270,22 +270,96 @@ async function sendRecapEmail(recipient, clientName, company, recapText, rep) {
         return false;
     }
     
-    const subject = `Recap of our call: Octane & ${company}`;
+    // 1. Extract subject line from recapText if present
+    let subject = `observations from 🧐 our session`;
+    let cleanText = recapText.trim();
     
+    const subjectRegex = /(?:\[Subject\]\s*[\r\n]*)([^\r\n]+)/i;
+    const subjectMatch = cleanText.match(subjectRegex);
+    if (subjectMatch) {
+        subject = subjectMatch[1].trim();
+        cleanText = cleanText.replace(subjectMatch[0], '').trim();
+    } else {
+        cleanText = cleanText.replace(/\[Subject\]/gi, '').trim();
+    }
+
+    // 2. Convert plain-text lines to elegant HTML elements
+    const lines = cleanText.split(/\r?\n/);
+    let bodyHtml = '';
+    let inList = false;
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        
+        // Detect bullet points (starting with dot, dash, asterisk, or digit followed by dot/parenthesis)
+        const isBullet = line.startsWith('.') || 
+                         line.startsWith('-') || 
+                         line.startsWith('*') || 
+                         /^\d+[\.\)]/.test(line);
+        if (isBullet) {
+            if (!inList) {
+                bodyHtml += '<ul style="margin: 0 0 20px 0; padding-left: 20px; color: #334155;">';
+                inList = true;
+            }
+            let content = line;
+            if (line.startsWith('.') || line.startsWith('-') || line.startsWith('*')) {
+                content = line.substring(1).trim();
+            } else {
+                content = line.replace(/^\d+[\.\)]\s*/, '').trim();
+            }
+            bodyHtml += `<li style="margin-bottom: 12px; font-size: 16px; line-height: 1.6;">${content}</li>`;
+        } else {
+            if (inList) {
+                bodyHtml += '</ul>';
+                inList = false;
+            }
+            if (line === '') {
+                continue;
+            }
+            bodyHtml += `<p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #334155;">${line}</p>`;
+        }
+    }
+    if (inList) {
+        bodyHtml += '</ul>';
+    }
+
+    // Add fallback greeting if missing
+    if (!/\bhey\b/i.test(bodyHtml) && !/\bhi\b/i.test(bodyHtml)) {
+        bodyHtml = `<p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #334155;">Hey ${clientName},</p>` + bodyHtml;
+    }
+
+    // Add fallback signature if missing
+    if (!/\bkind\s+regards\b/i.test(bodyHtml) && !/\bbest\s+regards\b/i.test(bodyHtml)) {
+        bodyHtml += `<p style="margin: 20px 0 0 0; font-size: 16px; line-height: 1.6; color: #334155;">Kind regards,<br>${rep || 'Anthony'}</p>`;
+    }
+
     const htmlBody = `
     <!DOCTYPE html>
     <html>
-    <head><meta charset="utf-8"></head>
-    <body style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2>Hi ${clientName},</h2>
-        <p>Thank you for taking the time to speak with us. Below is the summary and key takeaways from our conversation:</p>
-        <div style="background-color: #f8fafc; border-left: 4px solid #0284c7; padding: 15px; margin: 15px 0; white-space: pre-wrap; font-family: inherit; font-size: 0.9rem; color: #1e293b; border-radius: 4px;">${recapText}</div>
-        <p>If you have any questions or would like to add feedback, feel free to reply directly to this email.</p>
-        <br>
-        <p>Best regards,<br>${rep || 'Anthony'} / Octane Software Solutions</p>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #334155; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #ffffff;">
+        <div style="margin: 0 auto; padding: 10px 0;">
+            ${bodyHtml}
+        </div>
     </body>
     </html>
     `;
+
+    // Unconditionally write simulated recap email to scratch folder for verification/E2E test assertion
+    try {
+        const scratchDir = path.join(__dirname, 'scratch');
+        if (!fs.existsSync(scratchDir)) fs.mkdirSync(scratchDir, { recursive: true });
+        const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
+        const emailLogPath = path.join(scratchDir, `Recap_Email_${cleanCompany}.html`);
+        fs.writeFileSync(emailLogPath, htmlBody, 'utf8');
+        console.log(`📁 Simulated Recap Email successfully saved locally: file:///${emailLogPath.replace(/\\/g, '/')}`);
+    } catch (err) {
+        console.error('⚠️ Failed to write local recap email simulation file:', err.message);
+    }
 
     const useSmtp = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
     
@@ -313,26 +387,11 @@ async function sendRecapEmail(recipient, clientName, company, recapText, rep) {
         }
     }
 
-    // Fallback developer workflow
-    try {
-        const scratchDir = path.join(__dirname, 'scratch');
-        if (!fs.existsSync(scratchDir)) fs.mkdirSync(scratchDir, { recursive: true });
-        
-        const cleanCompany = company.replace(/[^a-zA-Z0-9]/g, '_');
-        const emailLogPath = path.join(scratchDir, `Recap_Email_${cleanCompany}.html`);
-        
-        fs.writeFileSync(emailLogPath, htmlBody, 'utf8');
-        
-        console.log('\n================ RECAP EMAIL FALLBACK ================');
-        console.log(`✉️ Subject: ${subject}`);
-        console.log(`✉️ Recipient: ${recipient}`);
-        console.log(`📁 Simulated Recap Email: file:///${emailLogPath.replace(/\\/g, '/')}`);
-        console.log('======================================================\n');
-        return true;
-    } catch (err) {
-        console.error('⚠️ Failed to write recap email simulation file:', err.message);
-        return false;
-    }
+    console.log('\n================ RECAP EMAIL FALLBACK ================');
+    console.log(`✉️ Subject: ${subject}`);
+    console.log(`✉️ Recipient: ${recipient}`);
+    console.log('======================================================\n');
+    return true;
 }
 
 module.exports = {

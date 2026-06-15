@@ -1624,24 +1624,17 @@ Format exactly as:
 
 [DOCUMENT: RECAP_EMAIL]
 Generate a concise, client-facing recap email based on the observations from the call. Replace '. xx .' placeholders in the template below with the 3 most important takeaways from the session. 
+Format exactly as:
+[Subject] observations from 🧐 our session
 Hey [client's name],
 I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
-. xx .
-. xx .
-. xx .
-You should have received an invitation confirming our appointment together.
+. [Takeaway 1].
+. [Takeaway 2].
+. [Takeaway 3].
+Shortly I will send you some time slots for our upcoming demo.
 Kind regards,
-Anthony.
-Format exactly as:
-<p>Hey [client's name],</p>
-<p>I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.</p>
-<ul>
-    <li>[Takeaway 1]</li>
-    <li>[Takeaway 2]</li>
-    <li>[Takeaway 3]</li>
-</ul>
-<p>You should have received an invitation confirming our appointment together.</p>
-<p>Kind regards,<br>Anthony.</p>
+[Rep Name].
+
 
 [DOCUMENT: SUMMARY_SHEET]
 Generate a brief, structured internal summary sheet:
@@ -6309,10 +6302,12 @@ ${payload.intakeAnswers || ''}`;
 
     // API Google Drive / Gmail Recap Dispatch Route
     if (pathname === '/api/email/recap' && req.method === 'POST') {
+        console.log("📨 [Server] POST /api/email/recap endpoint matched!");
         const MAX_PAYLOAD_SIZE = 1024 * 100; // 100KB limit
         let body = '';
         let bodyLength = 0;
         req.on('data', chunk => {
+            console.log(`📨 [Server] POST /api/email/recap: Received data chunk of size ${chunk.length}`);
             bodyLength += chunk.length;
             if (bodyLength > MAX_PAYLOAD_SIZE) {
                 res.writeHead(413, { 'Content-Type': 'application/json' });
@@ -6323,19 +6318,25 @@ ${payload.intakeAnswers || ''}`;
             body += chunk;
         });
         req.on('end', async () => {
+            console.log("📨 [Server] POST /api/email/recap: Data stream end reached. Parsing payload...");
             try {
                 const payload = JSON.parse(body);
                 const { email, name, company, recapText, rep } = payload;
+                console.log(`📨 [Server] POST /api/email/recap: Params: email=${email}, name=${name}, company=${company}, rep=${rep}`);
                 if (!email || !name || !company || !recapText) {
+                    console.error("📨 [Server] POST /api/email/recap: Missing parameters!");
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: 'Missing required parameters: email, name, company, recapText' }));
                     return;
                 }
                 
+                console.log("📨 [Server] POST /api/email/recap: Calling emailService.sendRecapEmail...");
                 const success = await emailService.sendRecapEmail(email, name, company, recapText, rep);
+                console.log(`📨 [Server] POST /api/email/recap: emailService.sendRecapEmail success = ${success}`);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: success ? 'success' : 'failed' }));
             } catch (e) {
+                console.error("📨 [Server] POST /api/email/recap: Error caught in handler:", e.message);
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Invalid JSON payload.' }));
             }
