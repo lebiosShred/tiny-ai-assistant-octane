@@ -2479,7 +2479,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                                 choices: [{
                                     message: {
                                         role: 'assistant',
-                                        content: `I have successfully registered the new call! I saved the call notes as "**${fileName}**" (ID: \`${driveFile.id}\`) in Google Drive and ${hsStatus}.`
+                                        content: `I have successfully registered the new call! I saved the call notes as "**${fileName}**" (ID: \`${driveFile.id}\`) in Google Drive and ${hsStatus}.\n\nWould you like me to generate the recap email now?`
                                     }
                                 }]
                             }));
@@ -4412,6 +4412,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
 
     // API Google Drive List Route
     if (pathname === '/api/gdrive/list' && req.method === 'GET') {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
         let folderId = parsedUrl.searchParams.get('folderId');
         const company = parsedUrl.searchParams.get('company');
         let resolvedCompany = company;
@@ -5957,6 +5958,7 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
 
     // API History Routes
     if (pathname === '/api/history') {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
         if (req.method === 'GET') {
             const bypassCache = parsedUrl.searchParams.has('t') || req.headers['cache-control'] === 'no-cache';
             // Return cached list if available to avoid expensive GCS roundtrips
