@@ -124,135 +124,19 @@
  
                 <!-- Right Column: Interactive Booking Widget -->
                 <div class="hero__calendar" id="booking-widget-container">
-                    
-                    <!-- STEP 1: Select Booking Reason -->
-                    <div id="booking-step-reason" class="booking-step">
-                        <div class="hero__calendar-header">Book a Meeting</div>
-                        <div class="hero__calendar-body">
-                            <label for="meeting-reason" class="booking-label">What is the reason for your meeting?</label>
-                            <div class="select-wrapper custom-select-container">
-                                <select id="meeting-reason" class="booking-select" required style="display: none;">
-                                    <option value="" disabled>Select an option...</option>
-                                    <option value="Requirements Meeting | 30 mins" selected>Requirements Meeting | 30 mins</option>
-                                </select>
-                                <div class="custom-select-trigger" id="custom-reason-trigger">Requirements Meeting | 30 mins</div>
-                                <div class="custom-select-options" id="custom-reason-options">
-                                    <div class="custom-option" data-value="Requirements Meeting | 30 mins">Requirements Meeting | 30 mins</div>
-                                </div>
-                            </div>
-
-                            <!-- Host is auto-assigned to Round Robin Sales Reps (Albert / Isha) based on availability -->
-                            <input type="hidden" id="meeting-host" value="Round Robin">
- 
-                            <!-- Custom Text Field (Shown only when 'Other' is selected) -->
-                            <div id="other-reason-wrapper" class="other-reason-wrapper" style="display: none;">
-                                <label for="other-reason" class="booking-label">Please specify your reason:</label>
-                                <textarea id="other-reason" class="booking-textarea" rows="3" placeholder="Describe what you need help with..."></textarea>
-                            </div>
- 
-                            <button type="button" id="btn-next-step" class="booking-btn booking-btn--primary" disabled>
-                                Next: View Availability <span>→</span>
-                            </button>
+                    <div class="hero__calendar-header">Requirements Meeting</div>
+                    <div class="hero__calendar-body">
+                        <div class="selected-meeting-info-card" style="margin-bottom: 1rem;">
+                            <div class="selected-meeting-title">Albert Francis</div>
+                            <div class="selected-meeting-desc">Please choose a convenient date and time on the calendar below.</div>
+                        </div>
+                        <div class="scheduler-container" id="hubspot-calendar-wrapper" style="min-height: 650px; position: relative; border-radius: 8px; overflow: hidden;">
+                            <div class="meetings-iframe-container" data-src="https://octanesolutions.com.au/meetings/albert-francis/requirement-session-albert?embed=true"></div>
+                            <script type="text/javascript" src="https://static.hsappstatic.net/MeetingsEmbed/ex/MeetingsEmbedCode.js" async></script>
                         </div>
                     </div>
-
-                    <!-- STEP 2: Calendar Selection (HubSpot Embed) -->
-                    <div id="booking-step-calendar" class="booking-step" style="display: none;">
-                        <div class="hero__calendar-header hero__calendar-header--with-back">
-                            <button type="button" id="btn-back-step" class="btn-back" title="Go back" aria-label="Go back">←</button>
-                            <div class="header-details">
-                                <div class="header-details__title">Requirements Meeting</div>
-                                <div class="header-details__subtitle" id="selected-reason-display">Requirements Meeting | 30 mins</div>
-                            </div>
-                        </div>
-                        <div class="hero__calendar-body">
-                            <div class="selected-meeting-info-card">
-                                <div class="selected-meeting-title" id="selected-meeting-title">Requirements Meeting</div>
-                                <div class="selected-meeting-desc" id="selected-meeting-desc">30-minute introductory call to discuss your business challenges, data architecture, and potential alignment with Octane.</div>
-                            </div>
-
-                            <div class="scheduler-container" id="hubspot-calendar-wrapper" style="min-height: 650px; position: relative; border-radius: 8px; overflow: hidden; margin-top: 1rem;">
-                                <!-- HubSpot Script will be injected dynamically here after step 2 -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- STEP 3: Contact details form -->
-                    <div id="booking-step-details" class="booking-step" style="display: none;">
-                        <div class="hero__calendar-header hero__calendar-header--with-back">
-                            <button type="button" id="btn-back-details" class="btn-back" title="Go back" aria-label="Go back">←</button>
-                            <div class="header-details">
-                                <div class="header-details__title">Your Details</div>
-                                <div class="header-details__subtitle" id="details-reason-display">Reason: None</div>
-                            </div>
-                        </div>
-                        <div class="hero__calendar-body">
-                            <form id="details-form">
-                                <div class="form-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
-                                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-firstname" class="booking-label">first name *</label>
-                                        <input type="text" id="booking-firstname" class="booking-input" required placeholder="sarah">
-                                    </div>
-                                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-lastname" class="booking-label">last name *</label>
-                                        <input type="text" id="booking-lastname" class="booking-input" required placeholder="chen">
-                                    </div>
-                                </div>
-                                <div class="form-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
-                                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-email" class="booking-label">company email *</label>
-                                        <input type="email" id="booking-email" class="booking-input" required placeholder="sarah.chen@company.com">
-                                    </div>
-                                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-position" class="booking-label">your role *</label>
-                                        <input type="text" id="booking-position" class="booking-input" required placeholder="head of fp&a">
-                                    </div>
-                                </div>
-                                <div class="form-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
-                                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-track" class="booking-label">area of interest *</label>
-                                        <div class="select-wrapper">
-                                            <select id="booking-track" class="booking-select" required>
-                                                <option value="planning & analytics (tm1)">planning & analytics (tm1)</option>
-                                                <option value="AI">AI</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                                        <label for="booking-phone" class="booking-label">phone number *</label>
-                                        <input type="tel" id="booking-phone" class="booking-input" required placeholder="e.g. +61 2 9876 5432">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="booking-discuss" class="booking-label">What would you like to discuss? *</label>
-                                    <textarea id="booking-discuss" class="booking-textarea" required rows="5" placeholder="Give us a few sentences."></textarea>
-                                </div>
-                                <button type="submit" id="btn-submit-booking" class="booking-btn booking-btn--primary">
-                                    Confirm Booking <span>✓</span>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- STEP 4: Success / Confirmation Summary (For Sales Team paste) -->
-                    <div id="booking-step-success" class="booking-step" style="display: none;">
-                        <div class="hero__calendar-header">Booking Confirmed!</div>
-                        <div class="hero__calendar-body" style="gap: 1rem; overflow-y: auto; max-height: 480px; justify-content: center; align-items: center; text-align: center;">
-                            <div class="success-icon" style="font-size: 3rem; color: #00c853; margin-bottom: 0.5rem;">🎉</div>
-                            <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Thank you, <span id="success-name-display">Client</span>!</h4>
-                            <p style="font-size: 0.9rem; color: var(--accent); margin-bottom: 0.5rem;" id="success-time-display">Your meeting is scheduled for May 26 @ 10:30 AM.</p>
-                            
-                            <div class="success-prospect-message" style="padding: 0.5rem;">
-                                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; margin: 0.5rem 0;">
-                                    A calendar invitation with the video call link has been sent to your email. We look forward to exploring how Octane can help optimize your operations.
-                                </p>
-                            </div>
-
-                            <button type="button" id="btn-book-another" class="booking-btn booking-btn--primary" style="margin-top: 1rem;">Book Another Meeting</button>
-                        </div>
-                    </div>
-
                 </div>
+            </div>
 
             </div>
         </div>
@@ -334,390 +218,59 @@
     (function() {
         'use strict';
 
-        // === Booking Widget Flow & Calendar State DOM Elements ===
-        const stepReason = document.getElementById('booking-step-reason');
-        const stepCalendar = document.getElementById('booking-step-calendar');
-        const stepDetails = document.getElementById('booking-step-details');
-        const stepSuccess = document.getElementById('booking-step-success');
-        const btnBackDetails = document.getElementById('btn-back-details');
-        const detailsReasonDisplay = document.getElementById('details-reason-display');
-        const detailsForm = document.getElementById('details-form');
-        const bookingFirstName = document.getElementById('booking-firstname');
-        const bookingLastName = document.getElementById('booking-lastname');
-        const bookingEmail = document.getElementById('booking-email');
-        const bookingPosition = document.getElementById('booking-position');
-        const bookingTrack = document.getElementById('booking-track');
-        const bookingPhone = document.getElementById('booking-phone');
-        const bookingDiscuss = document.getElementById('booking-discuss');
-        
-        const successNameDisplay = document.getElementById('success-name-display');
-        const successTimeDisplay = document.getElementById('success-time-display');
-        const btnBookAnother = document.getElementById('btn-book-another');
-
-        const selectReason = document.getElementById('meeting-reason');
-        const selectHost = document.getElementById('meeting-host');
-        
-        const hostsDisplayPanel = document.getElementById('hosts-display-panel');
-        const hostsAvatarsContainer = document.getElementById('hosts-avatars-container');
-        const hostsDisplayTitle = document.getElementById('hosts-display-title');
-        const hostsDisplaySubtitle = document.getElementById('hosts-display-subtitle');
-
-        const otherReasonWrapper = document.getElementById('other-reason-wrapper');
-        const otherReasonText = document.getElementById('other-reason');
-        const btnNext = document.getElementById('btn-next-step');
-        const btnBack = document.getElementById('btn-back-step');
-        const selectedReasonDisplay = document.getElementById('selected-reason-display');
-        const selectedMeetingTitle = document.getElementById('selected-meeting-title');
-        const selectedMeetingDesc = document.getElementById('selected-meeting-desc');
-
-
-
-        // Reasons details mapping
-        const reasonDetails = {
-            'Requirements Meeting | 30 mins': {
-                title: 'Requirements Meeting',
-                desc: '30-minute introductory call to discuss your business challenges, data architecture, and potential alignment with Octane.'
-            },
-            'Positional Meeting | 45 mins': {
-                title: 'Positional Meeting',
-                desc: '45-minute deep-dive consultation with a senior systems architect. We will review your analytics/TM1 requirements in detail.'
-            },
-            'TM1 Demo Session | 60 mins': {
-                title: 'TM1 Demo Session',
-                desc: '1-hour live demonstration of Octane\'s custom planning templates, dynamic dashboarding, and integration platforms.'
-            },
-            'Planning & Analytics Consultation | 45 mins': {
-                title: 'Planning & Analytics Consultation',
-                desc: '45-minute technical roadmap session focusing on budgeting automation, reporting modernization, and TM1 licensing.'
-            },
-            'AI Solutions Discussion | 45 mins': {
-                title: 'AI Solutions Discussion',
-                desc: '45-minute expert session reviewing how generative AI, agentic tools, and LLMs can optimize your corporate workflows.'
-            }
-        };
-
-        const hostsProfiles = {
-            'Round Robin': {
-                title: 'Meeting Hosts',
-                subtitle: 'You will be matched with Albert or Isha based on availability.',
-                html: `
-                    <div class="host-avatar-circle" id="host-avatar-1">
-                        <img src="/albert.png" alt="Albert" class="host-img">
-                    </div>
-                    <div class="host-avatar-circle host-avatar-circle--overlap" id="host-avatar-2">
-                        <img src="/isha.png" alt="Isha" class="host-img host-img--tall">
-                    </div>
-                `
-            },
-            'Steny': {
-                title: 'Meeting Host',
-                subtitle: 'Your call will be hosted by Steny, Director of AI Solutions.',
-                html: `
-                    <div class="host-avatar-circle" id="host-avatar-1" style="border: 2px solid var(--primary);">
-                        <div class="host-avatar-placeholder" style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), #0284c7); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; border-radius: 50%;">S</div>
-                    </div>
-                `
-            }
-        };
-
-        // Define function to initialize host display panel
-        function initHostDisplay() {
-            const profile = hostsProfiles['Round Robin'];
-            if (profile) {
-                hostsDisplayTitle.textContent = profile.title;
-                hostsDisplaySubtitle.textContent = profile.subtitle;
-                hostsAvatarsContainer.innerHTML = profile.html;
-            }
-            updateCalendarDatesForHost('Round Robin');
-        }
-
-        // Enable button based on selection validity
-        function validateSelection() {
-            const val = selectReason.value;
-            if (!val) {
-                btnNext.disabled = true;
-            } else if (val === 'other') {
-                btnNext.disabled = !otherReasonText.value.trim();
-            } else {
-                btnNext.disabled = false;
-            }
-        }
-
-        selectReason.addEventListener('change', () => {
-            if (selectReason.value === 'other') {
-                otherReasonWrapper.style.display = 'block';
-                otherReasonText.setAttribute('required', 'true');
-                otherReasonText.focus();
-            } else {
-                otherReasonWrapper.style.display = 'none';
-                otherReasonText.removeAttribute('required');
-            }
-            
-            const val = selectReason.value;
-            const activeHost = 'Round Robin';
-            
-            const profile = hostsProfiles[activeHost];
-            if (profile) {
-                hostsDisplayTitle.textContent = profile.title;
-                hostsDisplaySubtitle.textContent = profile.subtitle;
-                hostsAvatarsContainer.innerHTML = profile.html;
-            }
-            updateCalendarDatesForHost(activeHost);
-
-            validateSelection();
-        });
-
-        otherReasonText.addEventListener('input', validateSelection);
-
-        btnNext.addEventListener('click', () => {
-            const val = selectReason.value || 'Requirements Meeting | 30 mins';
-            let displayReason = val === 'other' ? otherReasonText.value.trim() : val;
-            
-            // Pre-fill track selection based on booking reason keyword
-            const reasonLower = displayReason.toLowerCase();
-            if (reasonLower.includes('ai') || reasonLower.includes('artificial') || reasonLower.includes('watsonx')) {
-                bookingTrack.value = 'AI';
-            } else {
-                bookingTrack.value = 'planning & analytics (tm1)';
-            }
-            bookingTrack.dispatchEvent(new Event('change'));
-            
-            detailsReasonDisplay.textContent = `Reason: ${displayReason}`;
-
-            // Transition views directly to Details Form (inverting the flow)
-            stepReason.style.display = 'none';
-            stepDetails.style.display = 'block';
-        });
-
-        btnBack.addEventListener('click', () => {
-            stepCalendar.style.display = 'none';
-            stepDetails.style.display = 'block';
-        });
-
-        function updateCalendarDatesForHost(host) {
-            // No-op for now since calendar is dynamically loaded from HubSpot
-        }
-
-        // Initialize default calendar state and host display panel
-        initHostDisplay();
-
-        bookingTrack.addEventListener('change', () => {
-            const activeHost = 'Round Robin';
-            const profile = hostsProfiles[activeHost];
-            if (profile) {
-                hostsDisplayTitle.textContent = profile.title;
-                hostsDisplaySubtitle.textContent = profile.subtitle;
-                hostsAvatarsContainer.innerHTML = profile.html;
-            }
-        });
-
-        btnBackDetails.addEventListener('click', () => {
-            stepDetails.style.display = 'none';
-            stepReason.style.display = 'block';
-        });
-
-        detailsForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const firstName = bookingFirstName.value.trim();
-            const lastName = bookingLastName.value.trim();
-            const name = `${firstName} ${lastName}`;
-            const email = bookingEmail.value.trim();
-            const position = bookingPosition.value.trim();
-            const track = bookingTrack.value;
-            const phone = bookingPhone.value.trim();
-            const discuss = bookingDiscuss.value.trim();
-            const host = 'Round Robin';
-            const monthText = document.getElementById('calendar-month-display').textContent.split(' ')[0];
-            
-            // Calculate assigned Sales Representative (Round Robin load balancing across their shared shift)
-            let assignedRep = Math.random() > 0.5 ? "Albert" : "Isha";
-
-            // Format intake summary dynamically from form inputs
-            const summaryText = `Service track interest: ${track === 'AI' ? 'AI' : 'Planning & Analytics (TM1)'}
-Workflow description: ${discuss}
-Position: ${position}
-Email: ${email}
-Phone: ${phone}
-Name: ${name}
-Booking Host: ${assignedRep}`;
-
-            // Save booking dossier automatically to the backend
-            fetch('/api/history', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    type: 'dossier',
-                    stage: 'prep',
-                    name: name,
-                    title: position,
-                    company: '',
-                    email: email,
-                    phone: phone,
-                    url: '',
-                    track: track === 'AI' ? 'AI' : 'Planning & Analytics (TM1)',
-                    rep: assignedRep,
-                    intakeAnswers: summaryText
-                })
-            })
-            .then(res => {
-                if (!res.ok) console.error("Failed to automatically save booking dossier.");
-            })
-            .catch(err => {
-                console.error("Network error saving booking dossier:", err);
-            });
-
-            // Prepare Calendar Step Title
-            const val = selectReason.value || 'Requirements Meeting | 30 mins';
-            let displayReason = val === 'other' ? otherReasonText.value.trim() : val;
-            let title = 'Custom Consultation';
-            let desc = 'Please choose a convenient date and time on the calendar below.';
-            if (val === 'other') {
-                title = 'Custom Consultation';
-                desc = `Special request details: "${displayReason}"`;
-            } else if (reasonDetails[val]) {
-                title = reasonDetails[val].title;
-                desc = reasonDetails[val].desc;
-            }
-            selectedMeetingTitle.textContent = title;
-            selectedMeetingDesc.textContent = desc;
-
-            // Load HubSpot Calendar iframe dynamically
-            const wrapper = document.getElementById('hubspot-calendar-wrapper');
-            wrapper.innerHTML = ''; // Clear previous
-            
-            // Construct query params to pre-fill HubSpot Form
-            const qs = new URLSearchParams({
-                firstName: firstName,
-                lastName: lastName,
-                email: email
-            }).toString();
-
-            const targetMeetingUrl = 'https://octanesolutions.com.au/meetings/albert-francis?uuid=fee9c796-fcee-4cc9-beaa-6dbad06b4017';
-            
-            const hsDiv = document.createElement('div');
-            hsDiv.className = 'meetings-iframe-container';
-            hsDiv.setAttribute('data-src', `${targetMeetingUrl}&embed=true&${qs}`);
-            wrapper.appendChild(hsDiv);
-            
-            const hsScript = document.createElement('script');
-            hsScript.src = 'https://static.hsappstatic.net/MeetingsEmbed/ex/MeetingsEmbedCode.js';
-            hsScript.type = 'text/javascript';
-            hsScript.async = true;
-            document.body.appendChild(hsScript);
-            
-            stepDetails.style.display = 'none';
-            stepCalendar.style.display = 'block';
-        });
-
-        btnBookAnother.addEventListener('click', () => {
-            // Reset fields
-            selectReason.value = 'Requirements Meeting | 30 mins';
-            // Host stays as Round Robin (auto-assigned)
-            otherReasonText.value = '';
-            otherReasonWrapper.style.display = 'none';
-            btnNext.disabled = true;
-            detailsForm.reset();
-            
-            // Clear previous calendar selections and re-render slots
-            updateCalendarDatesForHost('Round Robin');
-            
-            stepSuccess.style.display = 'none';
-            stepCalendar.style.display = 'block';
-        });
-
-
         // === QR Code Generation ===
         const bookingUrl = window.location.href.split('#')[0].split('?')[0];
         const qrBox = document.getElementById('qr-code-box');
         const qrBtn = document.getElementById('qr-download-btn');
 
-        try {
-            const qr = qrcode(0, 'M');
-            qr.addData(bookingUrl);
-            qr.make();
+        if (qrBox && qrBtn) {
+            try {
+                const qr = qrcode(0, 'M');
+                qr.addData(bookingUrl);
+                qr.make();
 
-            const moduleCount = qr.getModuleCount();
-            const cellSize = 6;
-            const margin = 12;
-            const size = moduleCount * cellSize + margin * 2;
+                const moduleCount = qr.getModuleCount();
+                const cellSize = 6;
+                const margin = 12;
+                const size = moduleCount * cellSize + margin * 2;
 
-            const canvas = document.createElement('canvas');
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext('2d');
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
 
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, size, size);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, size, size);
 
-            ctx.fillStyle = '#1A1A1A';
-            for (let r = 0; r < moduleCount; r++) {
-                for (let c = 0; c < moduleCount; c++) {
-                    if (qr.isDark(r, c)) {
-                        ctx.fillRect(margin + c * cellSize, margin + r * cellSize, cellSize, cellSize);
+                ctx.fillStyle = '#1A1A1A';
+                for (let r = 0; r < moduleCount; r++) {
+                    for (let c = 0; c < moduleCount; c++) {
+                        if (qr.isDark(r, c)) {
+                            ctx.fillRect(margin + c * cellSize, margin + r * cellSize, cellSize, cellSize);
+                        }
                     }
                 }
+
+                qrBox.appendChild(canvas);
+
+                qrBtn.addEventListener('click', () => {
+                    const link = document.createElement('a');
+                    link.download = 'octane-booking-qr.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            } catch (e) {
+                const img = document.createElement('img');
+                img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(bookingUrl) + '&color=1A1A1A&bgcolor=FFFFFF';
+                img.alt = 'QR Code';
+                qrBox.appendChild(img);
+
+                qrBtn.addEventListener('click', () => {
+                    window.open(img.src, '_blank');
+                });
             }
-
-            qrBox.appendChild(canvas);
-
-            qrBtn.addEventListener('click', () => {
-                const link = document.createElement('a');
-                link.download = 'octane-booking-qr.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        } catch (e) {
-            const img = document.createElement('img');
-            img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(bookingUrl) + '&color=1A1A1A&bgcolor=FFFFFF';
-            img.alt = 'QR Code';
-            qrBox.appendChild(img);
-
-            qrBtn.addEventListener('click', () => {
-                window.open(img.src, '_blank');
-            });
         }
     })();
-    </script>
-    <script>
-        // Custom Dropdown Logic
-        document.addEventListener('DOMContentLoaded', () => {
-            const trigger = document.getElementById('custom-reason-trigger');
-            const optionsPanel = document.getElementById('custom-reason-options');
-            const nativeSelect = document.getElementById('meeting-reason');
-            const options = document.querySelectorAll('.custom-option');
-
-            trigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                trigger.classList.toggle('open');
-                optionsPanel.classList.toggle('open');
-            });
-
-            options.forEach(opt => {
-                opt.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const val = opt.getAttribute('data-value');
-                    const text = opt.textContent;
-                    
-                    // Update trigger UI
-                    trigger.textContent = text;
-                    trigger.classList.add('selected');
-                    trigger.classList.remove('open');
-                    optionsPanel.classList.remove('open');
-                    
-                    // Update native hidden select and dispatch change event
-                    nativeSelect.value = val;
-                    nativeSelect.dispatchEvent(new Event('change'));
-                });
-            });
-
-            document.addEventListener('click', () => {
-                trigger.classList.remove('open');
-                optionsPanel.classList.remove('open');
-            });
-        });
     </script>
 </body>
 </html>
