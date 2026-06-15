@@ -4244,8 +4244,7 @@ Identifier: ${receipt.targetId}
 
     if (btnQuickAddProspect) {
         btnQuickAddProspect.addEventListener('click', () => {
-            const btnNewChat = document.getElementById('btn-new-chat');
-            if (btnNewChat) btnNewChat.click();
+            handleGlobalNewChat();
             quickMetaName.value = '';
             quickMetaCompany.value = '';
             quickMetaCompany.removeAttribute('readonly');

@@ -1,0 +1,20 @@
+# Exclude backend files to prevent Vercel from attempting to build server.js as a Serverless Function
+server.js
+email-service.js
+gdrive-service.js
+src/
+api/
+tests/
+prompts/
+drizzle/
+drizzle.config.js
+Dockerfile
+docker-compose.yml
+deploy.sh
+test_failover.js
+test_gemini.js
+run_evaluation.js
+package-lock.json
+package.json
+node_modules/
+# Keep only demo assets and middleware

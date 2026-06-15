@@ -18,7 +18,7 @@ async function sendLeadNotificationEmail(lead) {
         return true;
     }
 
-    const recipient = process.env.ADMIN_NOTIFY_EMAIL || 'amiel.lebios@octanesolutions.com.au';
+    const recipient = process.env.ADMIN_NOTIFY_EMAIL || null;
     const timestamp = new Date().toLocaleString();
     
     const subject = `🔔 [New Booking Alert] discovery call scheduled for ${lead.company}`;
@@ -78,7 +78,7 @@ async function sendLeadNotificationEmail(lead) {
     `;
 
     // 1. Check if SMTP configuration variables are active in .env
-    const useSmtp = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+    const useSmtp = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && recipient;
     
     if (useSmtp) {
         try {
@@ -176,9 +176,9 @@ async function sendProspectConfirmationEmail(lead) {
         `DTSTART:${dtstart}`,
         `DTEND:${dtend}`,
         `SUMMARY:Discovery Call: Octane & ${lead.company}`,
-        `ORGANIZER;CN="Octane SDR Team":mailto:hello@octanesolutions.com.au`,
+        `ORGANIZER;CN="Octane SDR Team":mailto:${process.env.SMTP_FROM || 'hello@octanesolutions.com.au'}`,
         `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN="${lead.name}":mailto:${lead.email}`,
-        `UID:${Date.now()}@octanesolutions.com.au`,
+        `UID:${Date.now()}@${(process.env.SMTP_FROM || 'hello@octanesolutions.com.au').split('@')[1] || 'octanesolutions.com.au'}`,
         'DESCRIPTION:Thank you for scheduling a discovery call. We will review your requirements for ' + (lead.track || 'Planning & Analytics (TM1)') + '.',
         'LOCATION:Microsoft Teams (Link to follow)',
         'STATUS:CONFIRMED',
