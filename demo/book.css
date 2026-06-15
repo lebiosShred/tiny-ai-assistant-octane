@@ -731,9 +731,17 @@ a:hover {
 
 /* Scheduler Layout */
 .scheduler-container {
-  display: flex;
-  gap: 1.5rem;
+  display: block;
   width: 100%;
+}
+
+.meetings-iframe-container {
+  width: 100%;
+  min-width: 100%;
+}
+
+.meetings-iframe-container iframe {
+  width: 100% !important;
 }
 
 .calendar-mock-iframe {
@@ -1272,4 +1280,30 @@ a:hover {
   color: var(--text-white);
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   text-transform: uppercase;
+}
+
+/* HubSpot Calendar Integration Dark Theme Alignment */
+#booking-widget-container {
+  background: #000000;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+}
+
+#booking-widget-container .hero__calendar-header {
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#booking-widget-container .selected-meeting-info-card {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+#booking-widget-container .selected-meeting-title {
+  color: #ffffff;
+}
+
+#booking-widget-container .selected-meeting-desc {
+  color: #9ca3af;
 }
