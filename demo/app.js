@@ -574,15 +574,59 @@ document.addEventListener('DOMContentLoaded', () => {
                     const detailRes = results[0];
                     const filesRes = results.length > 1 ? results[1] : null;
                     
-                    if (!detailRes.ok) throw new Error('Failed to load chat details');
-                    detailData = await detailRes.json();
-                    
-                    if (filesRes) {
-                        if (!filesRes.ok) throw new Error('Failed to list files');
-                        resolvedFilesData = filesData || await filesRes.json();
+                    if (!detailRes.ok) {
+                        if (detailRes.status === 404) {
+                            console.warn(`Stale session ${matchSession.id} not found on server. Reverting to new session.`);
+                            showToast('Previous session not found. Starting a new session.');
+                            chatsList = chatsList.filter(c => c.id !== matchSession.id);
+                            renderChatsList();
+                            
+                            // Setup a fallback new session state
+                            currentChatId = null;
+                            workspaceEmptyState.classList.add('hidden');
+                            workspaceActiveChat.classList.remove('hidden');
+                            chatMessagesLog.innerHTML = '';
+                            chatHistory = [];
+                            renderChatHistory();
+                            
+                            if (metaName) metaName.value = prospectName || '';
+                            if (metaTitle) metaTitle.value = '';
+                            if (metaEmail) metaEmail.value = '';
+                            if (metaPhone) metaPhone.value = '';
+                            if (metaRep) metaRep.value = '';
+                            if (metaTrack) metaTrack.value = '';
+                            
+                            if (activeChatClientTitle) {
+                                activeChatClientTitle.innerText = prospectName ? `${companyFolder.name} (${prospectName})` : companyFolder.name;
+                            }
+                            if (activeChatClientMeta) {
+                                activeChatClientMeta.innerText = '';
+                            }
+                            
+                            if (targetFolderId) {
+                                try {
+                                    resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
+                                } catch (fileErr) {
+                                    console.error('Failed to load files for fallback new session:', fileErr);
+                                }
+                            }
+                        } else {
+                            throw new Error('Failed to load chat details');
+                        }
+                    } else {
+                        detailData = await detailRes.json();
+                        
+                        if (filesRes) {
+                            if (filesRes.ok) {
+                                resolvedFilesData = filesData || await filesRes.json();
+                            } else {
+                                console.warn('Failed to list files from GDrive during session selection.');
+                                showToast('Warning: Failed to load prospect files.');
+                            }
+                        }
+                        
+                        await selectChat(matchSession.id, detailData, resolvedFilesData);
                     }
-                    
-                    await selectChat(matchSession.id, detailData, resolvedFilesData);
                 } else {
                     currentChatId = null;
                     workspaceEmptyState.classList.add('hidden');
@@ -607,6 +651,56 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (targetFolderId) {
                         resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
+                        
+                        // Clear text areas first for new sessions to avoid displaying stale data from prior active chats
+                        if (sourceLinkedinText) sourceLinkedinText.value = '';
+                        if (sourceIntakeText) sourceIntakeText.value = '';
+                        if (sourceTranscriptText) sourceTranscriptText.value = '';
+                        
+                        // Lock inputs during ingestion
+                        if (chatUserInput) chatUserInput.disabled = true;
+                        if (chatSendBtn) chatSendBtn.disabled = true;
+                        
+                        // Show ingestion spinner in sources panel
+                        const ingestSpinner = document.createElement('div');
+                        ingestSpinner.className = 'ingest-loading-spinner-container';
+                        ingestSpinner.style.cssText = 'display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; margin-bottom: 0.5rem; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 6px; font-size: 0.8rem;';
+                        ingestSpinner.innerHTML = `
+                            <div class="spinner" style="width: 14px; height: 14px; border: 2px solid rgba(22, 101, 52, 0.2); border-top-color: #166534; border-radius: 50%; animation: rotate 1s linear infinite; box-sizing: border-box;"></div>
+                            <span>Auto-ingesting document files...</span>
+                        `;
+                        if (sourcesList && sourcesList.firstChild) {
+                            sourcesList.insertBefore(ingestSpinner, sourcesList.firstChild);
+                        } else if (sourcesList) {
+                            sourcesList.appendChild(ingestSpinner);
+                        }
+
+                        // Auto-ingest content from GDrive files in batch for new session path
+                        try {
+                            const batchRes = await fetch(`/api/gdrive/batch-read?folderId=${encodeURIComponent(targetFolderId)}&ignoreCache=true`);
+                            if (batchRes.ok) {
+                                const batchData = await batchRes.json();
+                                if (batchData.linkedin && sourceLinkedinText) {
+                                    sourceLinkedinText.value = batchData.linkedin;
+                                    console.log(`📄 Auto-ingested LinkedIn Profile content for new session`);
+                                }
+                                if (batchData.intake && sourceIntakeText) {
+                                    sourceIntakeText.value = batchData.intake;
+                                    console.log(`📄 Auto-ingested Intake Answers content for new session`);
+                                }
+                                if (batchData.transcript && sourceTranscriptText) {
+                                    sourceTranscriptText.value = batchData.transcript;
+                                    console.log(`📄 Auto-ingested Call Transcript content for new session`);
+                                }
+                                if (typeof updateValidationBadges === 'function') updateValidationBadges();
+                            }
+                        } catch (autoIngestErr) {
+                            console.error('Failed auto-ingestion for new session:', autoIngestErr);
+                        } finally {
+                            if (chatUserInput) chatUserInput.disabled = false;
+                            if (chatSendBtn) chatSendBtn.disabled = false;
+                            if (ingestSpinner) ingestSpinner.remove();
+                        }
                     }
                 }
                 
@@ -1099,23 +1193,24 @@ document.addEventListener('DOMContentLoaded', () => {
                                 
                                 prospectHeader.addEventListener('click', async (e) => {
                                     e.stopPropagation();
-                                    const wasAlreadyActive = prospectHeader.classList.contains('active');
                                     const isCollapsedNow = prospectContents.classList.toggle('collapsed');
                                     toggleArrow.style.transform = isCollapsedNow ? 'rotate(-90deg)' : 'rotate(0deg)';
                                     
                                     const isChatPanelActive = !workspaceActiveChat.classList.contains('hidden');
-                                    if (wasAlreadyActive && isChatPanelActive) {
+                                    const isCurrentlyDisplayed = (activeProspectName === prospectName && activeFolderId === folder.id);
+                                    
+                                    if (isCurrentlyDisplayed && isChatPanelActive) {
                                         if (subfolderId) {
                                             await loadSourcesForCompany(subfolderId, folder.name, null, prospectName);
                                         }
                                         return;
                                     }
                                     
-                                    // Highlight active prospect header
-                                    document.querySelectorAll('.sidebar-prospect-header').forEach(el => el.classList.remove('active'));
-                                    prospectHeader.classList.add('active');
-                                    
-                                    await selectProspect(folder, prospectName, subfolderId);
+                                    try {
+                                        await selectProspect(folder, prospectName, subfolderId);
+                                    } catch (err) {
+                                        console.error('Click handler: Failed to select prospect:', err);
+                                    }
                                 });
                                 
                                 prospectSubFolder.appendChild(prospectContents);
@@ -1434,6 +1529,24 @@ document.addEventListener('DOMContentLoaded', () => {
             // --- AUTO-INGEST: If textareas are empty, try loading content from GDrive files in batch ---
             // This bridges the gap where files exist in GDrive but were never saved in the session JSON.
             if (activeFolderId && (!sourceLinkedinText.value.trim() || !sourceIntakeText.value.trim() || !sourceTranscriptText.value.trim())) {
+                // Lock inputs during ingestion
+                if (chatUserInput) chatUserInput.disabled = true;
+                if (chatSendBtn) chatSendBtn.disabled = true;
+                
+                // Show ingestion spinner in sources panel
+                const ingestSpinner = document.createElement('div');
+                ingestSpinner.className = 'ingest-loading-spinner-container';
+                ingestSpinner.style.cssText = 'display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; margin-bottom: 0.5rem; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 6px; font-size: 0.8rem;';
+                ingestSpinner.innerHTML = `
+                    <div class="spinner" style="width: 14px; height: 14px; border: 2px solid rgba(22, 101, 52, 0.2); border-top-color: #166534; border-radius: 50%; animation: rotate 1s linear infinite; box-sizing: border-box;"></div>
+                    <span>Auto-ingesting document files...</span>
+                `;
+                if (sourcesList && sourcesList.firstChild) {
+                    sourcesList.insertBefore(ingestSpinner, sourcesList.firstChild);
+                } else if (sourcesList) {
+                    sourcesList.appendChild(ingestSpinner);
+                }
+
                 try {
                     const batchRes = await fetch(`/api/gdrive/batch-read?folderId=${encodeURIComponent(activeFolderId)}&ignoreCache=true`);
                     if (batchRes.ok) {
@@ -1464,6 +1577,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } catch (autoIngestErr) {
                     console.warn('⚠️ Auto-ingestion from GDrive batch-read failed:', autoIngestErr.message);
+                } finally {
+                    if (chatUserInput) chatUserInput.disabled = false;
+                    if (chatSendBtn) chatSendBtn.disabled = false;
+                    if (ingestSpinner) ingestSpinner.remove();
                 }
             }
 
@@ -1788,6 +1905,60 @@ document.addEventListener('DOMContentLoaded', () => {
             if (activeChatClientMeta) activeChatClientMeta.innerText = '';
             renderChatHistory();
 
+            // --- AUTO-INGEST: If textareas are empty, try loading content from GDrive files in batch ---
+            if (activeFolderId && (!sourceLinkedinText.value.trim() || !sourceIntakeText.value.trim() || !sourceTranscriptText.value.trim())) {
+                if (chatUserInput) chatUserInput.disabled = true;
+                if (chatSendBtn) chatSendBtn.disabled = true;
+                
+                const ingestSpinner = document.createElement('div');
+                ingestSpinner.className = 'ingest-loading-spinner-container';
+                ingestSpinner.style.cssText = 'display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; margin-bottom: 0.5rem; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 6px; font-size: 0.8rem;';
+                ingestSpinner.innerHTML = `
+                    <div class="spinner" style="width: 14px; height: 14px; border: 2px solid rgba(22, 101, 52, 0.2); border-top-color: #166534; border-radius: 50%; animation: rotate 1s linear infinite; box-sizing: border-box;"></div>
+                    <span>Auto-ingesting document files...</span>
+                `;
+                if (sourcesList && sourcesList.firstChild) {
+                    sourcesList.insertBefore(ingestSpinner, sourcesList.firstChild);
+                } else if (sourcesList) {
+                    sourcesList.appendChild(ingestSpinner);
+                }
+
+                try {
+                    const batchRes = await fetch(`/api/gdrive/batch-read?folderId=${encodeURIComponent(activeFolderId)}&ignoreCache=true`);
+                    if (batchRes.ok) {
+                        const batchData = await batchRes.json();
+                        let updated = false;
+
+                        if (batchData.linkedin && !sourceLinkedinText.value.trim()) {
+                            sourceLinkedinText.value = batchData.linkedin;
+                            console.log(`📄 Auto-ingested LinkedIn Profile content for newly initialized session`);
+                            updated = true;
+                        }
+                        if (batchData.intake && !sourceIntakeText.value.trim()) {
+                            sourceIntakeText.value = batchData.intake;
+                            console.log(`📄 Auto-ingested Intake Answers content for newly initialized session`);
+                            updated = true;
+                        }
+                        if (batchData.transcript && !sourceTranscriptText.value.trim()) {
+                            sourceTranscriptText.value = batchData.transcript;
+                            console.log(`📄 Auto-ingested Call Transcript content for newly initialized session`);
+                            updated = true;
+                        }
+
+                        if (updated) {
+                            if (typeof updateValidationBadges === 'function') updateValidationBadges();
+                            if (typeof triggerAutoSave === 'function') triggerAutoSave();
+                        }
+                    }
+                } catch (autoIngestErr) {
+                    console.error('Failed auto-ingestion for newly initialized session:', autoIngestErr);
+                } finally {
+                    if (chatUserInput) chatUserInput.disabled = false;
+                    if (chatSendBtn) chatSendBtn.disabled = false;
+                    if (ingestSpinner) ingestSpinner.remove();
+                }
+            }
+
         } catch (err) {
             console.error('Error saving sources:', err);
             showToast(`Error saving sources: ${err.message}`);
@@ -2089,7 +2260,7 @@ Reference Catalog & Services Specifications (SOLE SOURCE OF TRUTH):
 
 Rules:
 1. NEVER quote numerical prices, rates, or dollar values in any output. Focus exclusively on qualitative service specifications.
-2. Produce deliverables in PLAIN TEXT. Do NOT use HTML formatting, custom markdown styling, or branding guidelines. Use simple headers, dashes, and spacing.
+2. Produce deliverables using clean, standard Markdown. Use bold labels (e.g., **Key:** Value), clear subheadings (e.g., ### Section), bulleted lists, and tables. Ensure double newlines between paragraphs to prevent text from running together. Do NOT use raw HTML tags.
 3. Be concise and factual. Do not make up facts. Use the client details provided.
 4. If the required input data for the requested report or query is missing from the sources (e.g., LinkedIn and Intake are both empty when generating a Lead Sheet, or the transcript is empty when generating a recap email, migration assessment, action items, summary sheet, notes, or proposal), you MUST output exactly '[INSUFFICIENT_DATA_FOR_REPORT]'. Do NOT fabricate, placeholder, or assume any information.
 5. If the user asks for focus prompts or query sections, resolve them using these specific guidelines:
@@ -2389,6 +2560,73 @@ Rules:
         return null;
     }
 
+    function getLeadSheetPrompt() {
+        return `Generate A Lead Sheet for the prospect. Include the heading "### === LEAD SHEET ===" at the very top.
+Use the following markdown template exactly for layout and structure, placing headings outside the tables and ensuring double newlines between sections.
+CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly forbidden from outputting "Suggested Next Steps" or "Recommended Services" as lists. Do NOT output a separate "Suggested Next Steps" section at all. All recommendations must be inside the tables.
+
+### === LEAD SHEET ===
+
+### Prospect Overview
+| Attribute | Detail |
+| --- | --- |
+| **Client Name** | ${metaName.value.trim() || 'Unknown'} |
+| **Company** | ${metaCompany.value.trim() || 'Unknown'} |
+| **Job Title** | ${metaTitle.value.trim() || 'Unknown'} |
+| **Email** | ${metaEmail.value.trim() || 'Unknown'} |
+| **Phone** | ${metaPhone.value.trim() || 'Unknown'} |
+| **Service Track** | ${metaTrack.value.trim() || 'Unknown'} |
+
+### 1. Type of sale
+| Attribute | Detail |
+| --- | --- |
+| **Type of Sale** | [Decide: TM1 / AI / Hybrid TM1 + AI] |
+
+### 2. Business activity
+| Parameter | Value |
+| --- | --- |
+| **Industry Sector** | [Identify industry sector] |
+| **Estimated Revenue** | [Estimate revenue] |
+| **Estimated Headcount** | [Estimate headcount] |
+| **Business Description** | [Brief description of their business] |
+| **Products & Services** | [Key products & services with brief descriptions (one sentence each)] |
+
+### 3. Customer match
+| Metric | Assessment |
+| --- | --- |
+| **Profile Fit** | [How well does this customer match to our list of customer profiles?] |
+| **Historical Reference** | [Have we served this organisation or a similar organisation in the past?] |
+
+### 4. Assessment
+| Area | Analysis |
+| --- | --- |
+| **TM1 / AI Relevance** | [How does their business activity relate to TM1 or AI?] |
+| **Recommended Services** | [What services should we offer them from our catalog qualitatively? (never quote pricing values)] |
+| **Likely Pain Points** | [Identify primary pain points, slow monthly cycles, model maintenance burdens, etc.] |
+
+### 5. Conversation starter
+| ID | Connection Point | Vector Details |
+| --- | --- | --- |
+| 1 | [Starter 1 Title] | [Connection detail/brief description] |
+| 2 | [Starter 2 Title] | [Connection detail/brief description] |
+| 3 | [Starter 3 Title] | [Connection detail/brief description] |
+
+### 6. Complementary applications
+| Application | Complementary Use Case |
+| --- | --- |
+| [Application 1] | [How it complements our TM1 or AI offering] |
+
+### 7. Competing applications
+| Application | Competing Threat |
+| --- | --- |
+| [Application 1] | [Why it is a competing application] |
+
+### 8. Competing consulting firms
+| Consulting Firm | Competitive Notes |
+| --- | --- |
+| [Firm Name] | [Details regarding competing consulting firms (e.g. did the client mention they are working with a firm competing with us?), or mention if none] |`;
+    }
+
     // --- Custom Chat Prompt send ---
     let isSending = false;
 
@@ -2418,11 +2656,45 @@ Rules:
             return;
         }
 
+        const isLeadSheetQuery = /generate\s+(?:a\s+)?lead(?:\s+sheet)?/i.test(queryText);
+        if (isLeadSheetQuery) {
+            chatUserInput.value = '';
+            const confirmed = await showConfirmModal({
+                title: 'Generate Lead Sheet',
+                message: 'Are you sure you want to generate a Lead Sheet for the active prospect?',
+                confirmText: 'Generate',
+                cancelText: 'Cancel',
+                type: 'primary'
+            });
+            if (!confirmed) {
+                chatUserInput.value = queryText;
+                return;
+            }
+        }
+
         isSending = true;
 
         // --- ATOMIC TRANSACTION LOCK ---
         chatUserInput.disabled = true;
         chatSendBtn.disabled = true;
+
+        let originalText = '';
+        if (isLeadSheetQuery) {
+            const uploadOverlay = document.getElementById('upload-loading-overlay');
+            const uploadProgressEl = document.getElementById('upload-loading-progress');
+            if (uploadOverlay) {
+                const uploadTextEl = uploadOverlay.querySelector('.upload-loading-text');
+                if (uploadTextEl) {
+                    originalText = uploadTextEl.textContent;
+                    uploadTextEl.textContent = 'Generating Lead Sheet Please Wait A Moment';
+                }
+                if (uploadProgressEl) {
+                    uploadProgressEl.style.display = 'none';
+                }
+                uploadOverlay.classList.remove('modal-hidden');
+            }
+            document.body.classList.add('opacity-50', 'pointer-events-none');
+        }
 
         try {
             if (stagedAttachments.length > 0) {
@@ -2625,7 +2897,8 @@ Rules:
                 await loadSourcesForCompany(activeFolderId, companyName, null, prospectName);
                 document.body.classList.remove('opacity-50', 'pointer-events-none');
 
-                const combinedQuery = queryText + (documentPayload ? `\n\n[Uploaded Document Context]:\n${documentPayload}` : "");
+                const baseQueryText = isLeadSheetQuery ? getLeadSheetPrompt() : queryText;
+                const combinedQuery = baseQueryText + (documentPayload ? `\n\n[Uploaded Document Context]:\n${documentPayload}` : "");
                 
                 // ALWAYS save the updated context to the server so subsequent queries have access to it
                 const savePayload = {
@@ -2665,7 +2938,11 @@ Rules:
                 }
             } else {
                 chatUserInput.value = '';
-                await callTinyAPI(queryText);
+                if (isLeadSheetQuery) {
+                    await callTinyAPI(queryText, getLeadSheetPrompt());
+                } else {
+                    await callTinyAPI(queryText);
+                }
             }
         } catch (err) {
             console.error('Error in sendUserQuery:', err);
@@ -2676,6 +2953,22 @@ Rules:
             chatUserInput.disabled = false;
             chatSendBtn.disabled = false;
             chatUserInput.focus();
+            
+            if (isLeadSheetQuery) {
+                const overlay = document.getElementById('upload-loading-overlay');
+                if (overlay) {
+                    overlay.classList.add('modal-hidden');
+                    const textEl = overlay.querySelector('.upload-loading-text');
+                    if (textEl && originalText) {
+                        textEl.textContent = originalText;
+                    }
+                    const progressEl = document.getElementById('upload-loading-progress');
+                    if (progressEl) {
+                        progressEl.style.display = '';
+                    }
+                }
+                document.body.classList.remove('opacity-50', 'pointer-events-none');
+            }
         }
     }
 
@@ -2853,27 +3146,55 @@ Structure the document rigorously:
 4. **REQUIRED RESOURCES**: Identify the key personnel profiles needed from both Octane and the client.
 5. **DISCOVERY GAPS & ASSUMPTIONS**: List any critical missing information that must be clarified before finalizing a binding contract.`;
             } else if (promptType === 'leadSheet') {
-                promptText = `Generate A Lead Sheet for the prospect. Provide the following details of the prospect:
-
-1. Identify the type of sale - Are we selling them TM1 planning analytics or artificial intelligence?
-
-2. Business activity - Scan the client's website. Tell me which industry sector they belong to. Estimate their revenue and size of their headcount. Give me a brief description of their business. Tell me specifically each of their products and services. Give me one sentence for each.
-
-3. Customer match - How well does this customer match to our list of customer profiles? Have we served this organisation or a similar organisation in the past?
-
-4. Assessment - How does their business activity relate to TM1 or AI? What services should we offer them? What are their likely pain points we need to address?
-
-5. Conversation starter - Scan the client's website and their personal LinkedIn profile. Find news or interesting stories that I can use to connect with them. Provide three stories at a personal level. Look at their past working history and see if there are organisations that we have done work for and cite the work that we did. If not at a personal level, offer stories involving the organisation. These can be found on their news and press release pages on the website. Stories regarding the organisation need to connect to our subject matter TM1 and AI. Otherwise, they are not relevant.
-
-6. Complementary applications - In the customers current stack, identify applications they are using that are complementary with us.
-
-7. Competing applications - In the customers current stack, identify applications they are using that are competing with us.
-
-8. Competing consulting firms - Did the client mention they are working with a firm competing with us?`;
+                promptText = getLeadSheetPrompt();
             }
  
             if (promptText) {
-                callTinyAPI(promptText);
+                if (promptType === 'leadSheet') {
+                    showConfirmModal({
+                        title: 'Generate Lead Sheet',
+                        message: 'Are you sure you want to generate a Lead Sheet for the active prospect?',
+                        confirmText: 'Generate',
+                        cancelText: 'Cancel',
+                        type: 'primary'
+                    }).then(async (confirmed) => {
+                        if (!confirmed) return;
+                        
+                        const uploadOverlay = document.getElementById('upload-loading-overlay');
+                        const uploadTextEl = uploadOverlay ? uploadOverlay.querySelector('.upload-loading-text') : null;
+                        const uploadProgressEl = document.getElementById('upload-loading-progress');
+                        let originalText = '';
+                        
+                        if (uploadOverlay) {
+                            if (uploadTextEl) {
+                                originalText = uploadTextEl.textContent;
+                                uploadTextEl.textContent = 'Generating Lead Sheet Please Wait A Moment';
+                            }
+                            if (uploadProgressEl) {
+                                uploadProgressEl.style.display = 'none';
+                            }
+                            uploadOverlay.classList.remove('modal-hidden');
+                        }
+                        document.body.classList.add('opacity-50', 'pointer-events-none');
+                        
+                        try {
+                            await callTinyAPI(promptText);
+                        } finally {
+                            if (uploadOverlay) {
+                                uploadOverlay.classList.add('modal-hidden');
+                                if (uploadTextEl && originalText) {
+                                    uploadTextEl.textContent = originalText;
+                                }
+                                if (uploadProgressEl) {
+                                    uploadProgressEl.style.display = '';
+                                }
+                            }
+                            document.body.classList.remove('opacity-50', 'pointer-events-none');
+                        }
+                    });
+                } else {
+                    callTinyAPI(promptText);
+                }
             }
         });
     }
