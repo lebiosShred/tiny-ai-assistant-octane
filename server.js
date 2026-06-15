@@ -4607,7 +4607,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         // Merge recently created files from cache to combat eventual consistency lag
             if (!resolvedCompany && folderId) {
                 for (const [key, val] of gdriveService.folderIdCache.entries()) {
-                    if (val === folderId) {
+                    if (val === folderId && !key.startsWith('prospect_')) {
                         resolvedCompany = key;
                         break;
                     }
@@ -4626,12 +4626,31 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                     }
                 }
                 
-                // Axiom Fix: Merge prospect folders from local history to combat GDrive eventual consistency
+                // Axiom Fix: Merge prospect folders from local history to combat GDrive eventual consistency (bounded to 5-minute TTL)
                 const prospects = new Set();
+                const nowTime = Date.now();
                 for (const [id, data] of pgCache.entries()) {
                     try {
                         if (data && data.company && data.company.toLowerCase() === resolvedCompany.toLowerCase() && data.name) {
-                            prospects.add(data.name.trim());
+                            let isRecent = false;
+                            if (data.date) {
+                                const sessionTime = new Date(data.date).getTime();
+                                if (!isNaN(sessionTime) && (nowTime - sessionTime < 300000)) {
+                                    isRecent = true;
+                                }
+                            }
+                            if (!isRecent && id) {
+                                const parts = id.split('_');
+                                if (parts.length >= 3) {
+                                    const ts = parseInt(parts[parts.length - 2], 10);
+                                    if (!isNaN(ts) && ts > 1000000000000 && (nowTime - ts < 300000)) {
+                                        isRecent = true;
+                                    }
+                                }
+                            }
+                            if (isRecent) {
+                                prospects.add(data.name.trim());
+                            }
                         }
                     } catch (e) {}
                 }
@@ -6096,9 +6115,7 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                             const gdriveAvailable = gdriveService.getDriveClient ? gdriveService.getDriveClient() : false;
                             if (gdriveAvailable) {
                                 const companyFolderId = await gdriveService.findOrCreateClientFolder(payload.company);
-                                if (!payload.gDriveFolderId) {
-                                    payload.gDriveFolderId = companyFolderId;
-                                }
+                                payload.gDriveFolderId = companyFolderId;
                                 // Ensure the prospect subfolder is also created
                                 if (payload.name) {
                                     await gdriveService.findOrCreateProspectFolder(companyFolderId, payload.name);
@@ -6136,10 +6153,8 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                                 if (!fs.existsSync(prospectFolder)) {
                                     fs.mkdirSync(prospectFolder, { recursive: true });
                                 }
-                                if (!payload.gDriveFolderId) {
-                                    const relPath = path.relative(historyDir, prospectFolder);
-                                    payload.gDriveFolderId = `local_path_${Buffer.from(relPath, 'utf8').toString('hex')}`;
-                                }
+                                const relPath = path.relative(historyDir, prospectFolder);
+                                payload.gDriveFolderId = `local_path_${Buffer.from(relPath, 'utf8').toString('hex')}`;
                             } catch (fallbackErr) {
                                 console.error('⚠️ Local folder fallback creation failed:', fallbackErr.message);
                             }

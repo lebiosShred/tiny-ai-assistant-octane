@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (matchSession) {
                     const promises = [ fetch(`/api/history/detail?id=${encodeURIComponent(matchSession.id)}`) ];
                     if (targetFolderId) {
-                        promises.push(filesData ? Promise.resolve({ ok: true, json: () => filesData }) : fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`, { headers: { 'Cache-Control': 'no-cache' } }));
+                        promises.push(filesData ? Promise.resolve({ ok: true, json: () => filesData }) : fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}&company=${encodeURIComponent(companyFolder.name)}`, { headers: { 'Cache-Control': 'no-cache' } }));
                     }
                     
                     const results = await Promise.all(promises);
@@ -605,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             if (targetFolderId) {
                                 try {
-                                    resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
+                                    resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}&company=${encodeURIComponent(companyFolder.name)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
                                 } catch (fileErr) {
                                     console.error('Failed to load files for fallback new session:', fileErr);
                                 }
@@ -650,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     if (targetFolderId) {
-                        resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
+                        resolvedFilesData = filesData || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}&company=${encodeURIComponent(companyFolder.name)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
                         
                         // Clear text areas first for new sessions to avoid displaying stale data from prior active chats
                         if (sourceLinkedinText) sourceLinkedinText.value = '';
@@ -827,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 uniqueFolders.forEach(folder => {
                     const isExpanded = expandedCompanies.has(folder.name) || activeFolderId === folder.id;
                     if (isExpanded && !gdriveSubfolderCache.has(folder.id)) {
-                        const fetchPromise = fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`, { headers: { 'Cache-Control': 'no-cache' } })
+                        const fetchPromise = fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}&company=${encodeURIComponent(folder.name)}`, { headers: { 'Cache-Control': 'no-cache' } })
                             .then(res => res.json())
                             .then(gdriveData => {
                                 gdriveSubfolderCache.set(folder.id, gdriveData);
@@ -930,7 +930,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!gdriveData) {
                             contents.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading subfolders...</div>';
                             try {
-                                const gdriveRes = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}`, { headers: { 'Cache-Control': 'no-cache' } });
+                                const gdriveRes = await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folder.id)}&company=${encodeURIComponent(folder.name)}`, { headers: { 'Cache-Control': 'no-cache' } });
                                 if (currentCount !== loadTreeCount) return;
                                 gdriveData = await gdriveRes.json();
                                 gdriveSubfolderCache.set(folder.id, gdriveData);
@@ -1271,7 +1271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!sourcesList) return;
         sourcesList.innerHTML = '<div style="color: #64748b; font-size: 0.75rem; padding: 1rem; text-align: center;">Loading files...</div>';
         try {
-            const data = preFetchedFiles || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folderId)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
+            const data = preFetchedFiles || await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(folderId)}&company=${encodeURIComponent(companyName)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
             sourcesList.innerHTML = '';
             
             const files = data.items ? data.items.filter(f => !f.isFolder) : [];
@@ -1420,7 +1420,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sourcesList.innerHTML = `<div style="color: #64748b; font-size: 0.85rem; padding: 2rem 1rem; text-align: center; border: 1px dashed #cbd5e1; border-radius: 8px; margin-top: 1rem;">No subfolder found. Please create a folder named "<b>${prospectName}</b>" inside "<b>${companyFolder.name}</b>" to add files.</div>`;
             } else {
                 const targetFolderId = subfolderId;
-                const resolvedFilesData = await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
+                const resolvedFilesData = await (await fetch(`/api/gdrive/list?folderId=${encodeURIComponent(targetFolderId)}&company=${encodeURIComponent(companyFolder.name)}`, { headers: { 'Cache-Control': 'no-cache' } })).json();
                 await loadSourcesForCompany(targetFolderId, companyFolder.name, resolvedFilesData, prospectName);
             }
         } catch(e) {
@@ -1677,6 +1677,152 @@ document.addEventListener('DOMContentLoaded', () => {
         return htmlResult;
     }
 
+    function downloadLeadSheetPDF(text, clientName) {
+        function stripHtmlTags(str) {
+            if (!str) return '';
+            return str.replace(/<\/?[^>]+(>|$)/g, '').trim();
+        }
+
+        const requiredSections = [
+            'type of sale',
+            'business activity',
+            'customer match',
+            'assessment',
+            'conversation starter',
+            'complementary applications',
+            'competing applications',
+            'competing consulting firms'
+        ];
+        
+        const textLower = text.toLowerCase();
+        const missingSections = requiredSections.filter(sec => !textLower.includes(sec));
+        if (missingSections.length > 0) {
+            console.warn('PDF Schema validation warning: missing sections:', missingSections);
+        }
+
+        const lines = text.split('\n');
+        const content = [];
+        let currentTable = null;
+        
+        const styles = {
+            title: { fontSize: 18, bold: true, margin: [0, 0, 0, 15], color: '#1e3a8a' },
+            heading: { fontSize: 13, bold: true, margin: [0, 15, 0, 8], color: '#2563eb' },
+            subheading: { fontSize: 11, bold: true, margin: [0, 10, 0, 6], color: '#1e293b' },
+            text: { fontSize: 10, margin: [0, 0, 0, 8] }
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (!line) continue;
+            
+            // 1. Strip lists and next steps completely
+            if (line.startsWith('-') || line.startsWith('*')) {
+                continue;
+            }
+            const lowerLine = line.toLowerCase();
+            if (lowerLine.includes('suggested next steps') || lowerLine.includes('next steps')) {
+                continue;
+            }
+
+            // 2. Identify the LEAD SHEET title or headings
+            if (line.includes('=== LEAD SHEET ===')) {
+                if (currentTable) {
+                    content.push(currentTable);
+                    currentTable = null;
+                }
+                content.push({ text: 'LEAD SHEET', style: 'title' });
+            } else if (line.startsWith('### ')) {
+                if (currentTable) {
+                    content.push(currentTable);
+                    currentTable = null;
+                }
+                const headingText = stripHtmlTags(line.replace('### ', '').replace(/\*\*/g, '').trim());
+                content.push({ text: headingText, style: 'heading' });
+            } else if (line.startsWith('#### ')) {
+                if (currentTable) {
+                    content.push(currentTable);
+                    currentTable = null;
+                }
+                const subheadingText = stripHtmlTags(line.replace('#### ', '').replace(/\*\*/g, '').trim());
+                content.push({ text: subheadingText, style: 'subheading' });
+            } else if (line.startsWith('|')) {
+                // Table parsing
+                const cols = line.split('|').map(c => c.trim()).filter((c, idx, arr) => idx > 0 && idx < arr.length - 1);
+                if (cols.length === 0) continue;
+                
+                // Ignore separator line like | --- | --- |
+                if (cols.every(c => /^[:-]+$/.test(c))) {
+                    continue;
+                }
+                
+                if (!currentTable) {
+                    const tableHeaders = cols.map(c => stripHtmlTags(c.replace(/\*\*/g, '')));
+                    let widths = [150, '*'];
+                    if (tableHeaders.length === 3) {
+                        widths = [30, 120, '*'];
+                    } else if (tableHeaders.length > 3) {
+                        widths = Array(tableHeaders.length).fill('*');
+                    }
+                    currentTable = {
+                        table: {
+                            widths: widths,
+                            body: [
+                                tableHeaders.map(h => ({ text: h, bold: true, fillColor: '#f1f5f9', margin: [5, 5, 5, 5] }))
+                            ]
+                        },
+                        margin: [0, 5, 0, 15],
+                        layout: {
+                            hLineWidth: function (i, node) {
+                                return (i === 0 || i === node.table.body.length) ? 1.5 : 0.5;
+                            },
+                            vLineWidth: function (i, node) {
+                                return 0.5;
+                            },
+                            hLineColor: function (i, node) {
+                                return (i === 0 || i === node.table.body.length) ? '#1e3a8a' : '#cbd5e1';
+                            },
+                            vLineColor: function () {
+                                return '#cbd5e1';
+                            }
+                        }
+                    };
+                } else {
+                    const expectedCols = currentTable.table.widths.length;
+                    const rowCells = [];
+                    for (let colIdx = 0; colIdx < expectedCols; colIdx++) {
+                        const cellVal = cols[colIdx] || '';
+                        const isBold = cellVal.startsWith('**') && cellVal.endsWith('**');
+                        const cleanText = stripHtmlTags(cellVal.replace(/\*\*/g, ''));
+                        rowCells.push({ text: cleanText, bold: isBold, margin: [5, 5, 5, 5] });
+                    }
+                    currentTable.table.body.push(rowCells);
+                }
+            } else {
+                if (currentTable) {
+                    content.push(currentTable);
+                    currentTable = null;
+                }
+                const cleanText = stripHtmlTags(line.replace(/\*\*/g, ''));
+                content.push({ text: cleanText, style: 'text' });
+            }
+        }
+        
+        if (currentTable) {
+            content.push(currentTable);
+        }
+        
+        const docDefinition = {
+            content: content,
+            styles: styles
+        };
+        
+        if (window.pdfMake) {
+            pdfMake.createPdf(docDefinition).download(`Lead_Sheet_${clientName.replace(/\s+/g, '_')}.pdf`);
+        } else {
+            showToast('PDF generation library not loaded.');
+        }
+    }
+
     function renderChatHistory() {
         chatMessagesLog.innerHTML = '';
         chatHistory.forEach((msg, idx) => {
@@ -1720,6 +1866,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Copied to clipboard!');
                 });
                 actions.appendChild(btnCopy);
+
+                // Add PDF download button if it matches Lead Sheet format
+                const isLeadSheet = msg.content.includes('=== LEAD SHEET ===');
+                if (isLeadSheet) {
+                    const btnDownloadPdf = document.createElement('button');
+                    btnDownloadPdf.type = 'button';
+                    btnDownloadPdf.className = 'chat-message-btn';
+                    btnDownloadPdf.innerText = '📄 Download PDF';
+                    btnDownloadPdf.addEventListener('click', () => {
+                        const clientName = (metaName && metaName.value.trim()) || 'Prospect';
+                        downloadLeadSheetPDF(msg.content, clientName);
+                    });
+                    actions.appendChild(btnDownloadPdf);
+                }
 
                 // Add recap email dispatcher button if it matches email format
                 const isRecapEmail = msg.content.includes('takeaways') || 

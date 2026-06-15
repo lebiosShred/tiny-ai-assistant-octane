@@ -74,5 +74,9 @@ test.describe('Aegis v2 -- Lead Sheet Button and Validation Flow', () => {
         const responseText = await indexPage.getLastResponseText();
         expect(responseText).toContain('=== LEAD SHEET ===');
         expect(responseText.toLowerCase()).toContain('type of sale');
+
+        // 6. Verify "Download PDF" button is visible under the lead sheet assistant message
+        const downloadPdfBtn = page.locator('button:has-text("Download PDF")');
+        await expect(downloadPdfBtn).toBeVisible();
     });
 });
