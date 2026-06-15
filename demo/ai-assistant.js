@@ -436,19 +436,17 @@ Format exactly as:
 <p><strong>RED FLAGS:</strong> [Red flags text]</p>
 
 [DOCUMENT: RECAP_EMAIL]
-Generate a concise, client-facing recap email based on the observations from the call. Replace '. xx .' placeholders in the template below with the 3 most important takeaways from the session. 
-Also, you MUST explicitly insert a paragraph at the bottom referencing the Screencast Link if provided, wrapped in a proper HTML hyperlink tag.
+Generate a concise, client-facing recap email based on the observations from the call. Replace '. xx .' placeholders in the template below with the 3 most important takeaways from the session.
 Format exactly as:
-<p>Hey [client's name],</p>
-<p>I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.</p>
-<ul>
-    <li>[Takeaway 1]</li>
-    <li>[Takeaway 2]</li>
-    <li>[Takeaway 3]</li>
-</ul>
-<p>I have also recorded a video briefing summarizing our discussion, which you can review here: <a href="LINK">LINK</a></p>
-<p>You should have received an invitation confirming our appointment together.</p>
-<p>Kind regards,<br>Anthony.</p>
+[Subject] observations from 🧐 our session
+Hey [client's name],
+I have some takeaways I’d like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
+. [Takeaway 1].
+. [Takeaway 2].
+. [Takeaway 3].
+Shortly I will send you some time slots for our upcoming demo.
+Kind regards,
+[Rep Name].
 
 [DOCUMENT: SUMMARY_SHEET]
 Generate a brief, structured internal summary sheet:
@@ -592,30 +590,29 @@ Format: HTML with <h4> section headers, <p> paragraphs, and <ul>/<li> lists. Ens
         const config = { ...DEFAULT_CONFIG, ...customConfig };
         const prompt = `You are a sales professional at Octane Software Solutions.
 Generate a concise, client-facing recap email based on the call transcript.
+[Subject] observations from 🧐 our session
 Hey [client's name],
 I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
-- [Takeaway 1]
-- [Takeaway 2]
-- [Takeaway 3]
-[Reference to Screencast Link: ${screencastUrl || "Not provided"}]
-You should have received an invitation confirming our appointment together.
+. [Takeaway 1].
+. [Takeaway 2].
+. [Takeaway 3].
+Shortly I will send you some time slots for our upcoming demo.
 Kind regards,
-Anthony.
+[Rep Name].
 
 Transcript:
 ${transcript}
 
-Format: HTML exactly as:
-<p>Hey [client's name],</p>
-<p>I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.</p>
-<ul>
-    <li>[Takeaway 1]</li>
-    <li>[Takeaway 2]</li>
-    <li>[Takeaway 3]</li>
-</ul>
-${screencastUrl ? `<p>I have also recorded a video briefing summarizing our discussion, which you can review here: <a href="${screencastUrl}">${screencastUrl}</a></p>` : ''}
-<p>You should have received an invitation confirming our appointment together.</p>
-<p>Kind regards,<br>Anthony.</p>`;
+Format exactly as:
+[Subject] observations from 🧐 our session
+Hey [client's name],
+I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
+. [Takeaway 1].
+. [Takeaway 2].
+. [Takeaway 3].
+Shortly I will send you some time slots for our upcoming demo.
+Kind regards,
+[Rep Name].`;
 
         const messages = [
             { role: "system", content: config.synthSystemPrompt },
@@ -911,16 +908,15 @@ Format: Generate clean HTML using standard tags (<h4>, <p>, <ul>, <li>, <strong>
             octaneBrandGuideline: `<p>Brand Blue: #4daeeb, Black background: #000000, White background: #ffffff, alternating slides.</p>`,
             examplesOfOctaneBrandGuideline: `<p>Inject global CSS polygons fill: #ffffff and color: #000000 overrides.</p>`,
             
-            recapEmail: `<p>Hey ${leadName},</p>
-<p>I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.</p>
-<ul>
-    <li>You are currently running ${erpSystem}, but all budgeting and consolidation is done in ${sheetsCount}, taking ${timeWasted}.</li>
-    <li>We can automate this process entirely, saving your team days of manual copy-pasting every month.</li>
-    <li>We aim to have this solved before your Q3 planning cycle kicks off in two months.</li>
-</ul>
-${screencastSegment}
-<p>You should have received an invitation confirming our appointment together.</p>
-<p>Kind regards,<br>${leadRep}.</p>`,
+            recapEmail: `[Subject] observations from 🧐 our session
+Hey ${leadName},
+I have some takeaways I’d like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
+. You are currently running ${erpSystem}, but all budgeting and consolidation is done in ${sheetsCount}, taking ${timeWasted}.
+. We can automate this process entirely, saving your team days of manual copy-pasting every month.
+. We aim to have this solved before your Q3 planning cycle kicks off in two months.
+Shortly I will send you some time slots for our upcoming demo.
+Kind regards,
+${leadRep}.`,
 
             summarySheet: `<p><strong>SUMMARY:</strong> ${leadCompany} — ${new Date().toLocaleDateString()}</p>
 <ul>
