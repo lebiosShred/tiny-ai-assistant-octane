@@ -937,8 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (addBtn) {
                         addBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
-                            const btnNewChat = document.getElementById('btn-new-chat');
-                            if (btnNewChat) btnNewChat.click();
+                            handleGlobalNewChat();
                             
                             const addProspectModal = document.getElementById('add-prospect-modal');
                             const quickMetaName = document.getElementById('quick-meta-name');
