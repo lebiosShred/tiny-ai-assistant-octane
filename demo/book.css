@@ -1307,3 +1307,25 @@ a:hover {
 #booking-widget-container .selected-meeting-desc {
   color: #9ca3af;
 }
+
+/* Tab Buttons styling */
+.calendar-tab-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.calendar-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.calendar-tab-btn.active {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 16px rgba(77, 174, 235, 0.35);
+}

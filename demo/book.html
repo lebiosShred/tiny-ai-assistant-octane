@@ -126,12 +126,76 @@
                 <div class="hero__calendar" id="booking-widget-container">
                     <div class="hero__calendar-header">Requirements Meeting</div>
                     <div class="hero__calendar-body">
+                        <div class="calendar-tabs-wrapper" style="margin-bottom: 1rem;">
+                            <div class="calendar-tabs" style="display: flex; gap: 8px; width: 100%;">
+                                <button class="calendar-tab-btn" id="tab-albert" onclick="switchCalendar('albert')" style="flex: 1; padding: 12px; font-weight: 600; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                                    Albert Francis (Morning)
+                                </button>
+                                <button class="calendar-tab-btn" id="tab-isha" onclick="switchCalendar('isha')" style="flex: 1; padding: 12px; font-weight: 600; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                                    Isha Singh (Evening)
+                                </button>
+                            </div>
+                        </div>
                         <div class="selected-meeting-info-card" style="margin-bottom: 1rem;">
-                            <div class="selected-meeting-title">Albert Francis</div>
-                            <div class="selected-meeting-desc">Please choose a convenient date and time on the calendar below.</div>
+                            <div class="selected-meeting-desc" id="recommendation-desc">Detecting the optimal scheduling slot for your timezone...</div>
                         </div>
                         <div class="scheduler-container" id="hubspot-calendar-wrapper" style="min-height: 650px; position: relative; border-radius: 8px; overflow: hidden;">
                             <div class="meetings-iframe-container" data-src="https://octanesolutions.com.au/meetings/albert-francis/requirement-session-albert?embed=true"></div>
+                            <script>
+                                (function() {
+                                    var albertUrl = "https://octanesolutions.com.au/meetings/albert-francis/requirement-session-albert?embed=true";
+                                    var ishaUrl = "https://meetings.hubspot.com/isha-singh1/requirement-session-isha?uuid=62252c56-b140-4e3f-a0e3-a541e6c65a38&embed=true";
+                                    var timezoneOffset = new Date().getTimezoneOffset();
+                                    var isIshaOptimal = false;
+                                    if (timezoneOffset >= -360 && timezoneOffset <= 120) {
+                                        isIshaOptimal = true;
+                                    }
+                                    if (timezoneOffset <= -600) {
+                                        var hour = new Date().getHours();
+                                        if (hour >= 14) {
+                                            isIshaOptimal = true;
+                                        }
+                                    }
+                                    var container = document.querySelector('.meetings-iframe-container');
+                                    container.setAttribute('data-src', isIshaOptimal ? ishaUrl : albertUrl);
+                                    window.switchCalendar = function(host) {
+                                        var btnAlbert = document.getElementById('tab-albert');
+                                        var btnIsha = document.getElementById('tab-isha');
+                                        var iframe = container.querySelector('iframe');
+                                        var targetUrl = host === 'isha' ? ishaUrl : albertUrl;
+                                        if (host === 'isha') {
+                                            btnIsha.classList.add('active');
+                                            btnAlbert.classList.remove('active');
+                                        } else {
+                                            btnAlbert.classList.add('active');
+                                            btnIsha.classList.remove('active');
+                                        }
+                                        if (iframe) {
+                                            iframe.src = targetUrl;
+                                        } else {
+                                            container.setAttribute('data-src', targetUrl);
+                                        }
+                                    };
+                                    document.addEventListener("DOMContentLoaded", function() {
+                                        var btnAlbert = document.getElementById('tab-albert');
+                                        var btnIsha = document.getElementById('tab-isha');
+                                        var recommendationDesc = document.getElementById('recommendation-desc');
+                                        if (isIshaOptimal) {
+                                            btnIsha.classList.add('active');
+                                            btnAlbert.classList.remove('active');
+                                            if (recommendationDesc) {
+                                                recommendationDesc.textContent = "Defaulted to Isha Singh (Sydney Afternoon/Evening shift, optimal for your timezone). You can switch to Albert Francis's shift above.";
+                                            }
+                                        } else {
+                                            btnAlbert.classList.add('active');
+                                            btnIsha.classList.remove('active');
+                                            if (recommendationDesc) {
+                                                recommendationDesc.textContent = "Defaulted to Albert Francis (Sydney Morning/Afternoon shift, optimal for your timezone). You can switch to Isha Singh's shift above.";
+                                            }
+                                        }
+                                    });
+                                })();
+                            </script>
                             <script type="text/javascript" src="https://static.hsappstatic.net/MeetingsEmbed/ex/MeetingsEmbedCode.js" async></script>
                         </div>
                     </div>
