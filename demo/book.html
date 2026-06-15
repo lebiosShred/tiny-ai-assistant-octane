@@ -171,11 +171,12 @@
                             </div>
                             <script>
                                 (function() {
-                                    var albertUrl = "https://octanesolutions.com.au/meetings/albert-francis/requirement-session-albert?embed=true";
-                                    var ishaUrl = "https://meetings.hubspot.com/isha-singh1/requirement-session-isha?uuid=62252c56-b140-4e3f-a0e3-a541e6c65a38&embed=true";
+                                    var todayStr = new Date().toISOString().split('T')[0];
+                                    var albertUrl = "https://octanesolutions.com.au/meetings/albert-francis/requirement-session-albert?embed=true&date=" + todayStr;
+                                    var ishaUrl = "https://meetings.hubspot.com/isha-singh1/requirement-session-isha?uuid=62252c56-b140-4e3f-a0e3-a541e6c65a38&embed=true&date=" + todayStr;
                                     var timezoneOffset = new Date().getTimezoneOffset();
                                     var isIshaOptimal = false;
-                                    if (timezoneOffset >= -360 && timezoneOffset <= 120) {
+                                    if (timezoneOffset >= -540 && timezoneOffset <= 120) {
                                         isIshaOptimal = true;
                                     }
                                     if (timezoneOffset <= -600) {
@@ -185,6 +186,25 @@
                                         }
                                     }
                                     var container = document.querySelector('.meetings-iframe-container');
+                                    
+                                    // Mutation Observer to programmatically add title and aria-label to the iframe for accessibility compliance
+                                    var observer = new MutationObserver(function(mutations) {
+                                        mutations.forEach(function(mutation) {
+                                            if (mutation.addedNodes) {
+                                                mutation.addedNodes.forEach(function(node) {
+                                                    if (node.tagName === 'IFRAME') {
+                                                        node.setAttribute('title', 'HubSpot Meeting Calendar');
+                                                        node.setAttribute('aria-label', 'Meeting Calendar');
+                                                        console.log('♿ Programmatically applied title and aria-label to HubSpot iframe');
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    });
+                                    if (container) {
+                                        observer.observe(container, { childList: true });
+                                    }
+
                                     container.setAttribute('data-src', isIshaOptimal ? ishaUrl : albertUrl);
                                     window.switchCalendar = function(host) {
                                         var btnAlbert = document.getElementById('tab-albert');
@@ -205,6 +225,8 @@
                                         }
                                         if (iframe) {
                                             iframe.src = targetUrl;
+                                            iframe.setAttribute('title', 'HubSpot Meeting Calendar');
+                                            iframe.setAttribute('aria-label', 'Meeting Calendar');
                                         } else {
                                             container.setAttribute('data-src', targetUrl);
                                         }

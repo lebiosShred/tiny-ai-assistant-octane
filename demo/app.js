@@ -2102,72 +2102,79 @@ document.addEventListener('DOMContentLoaded', () => {
                 expandedCompanies.add(payload.company);
             }
 
-            // Force reload of folder explorer tree
+            // Force reload of folder explorer tree and run heavy loading tasks asynchronously in the background
             gdriveFolders = [];
             
-            await loadChatsList();
-            await Promise.all([
-                loadProspectsTree(),
-                loadGoogleDriveFiles()
-            ]);
-            // Setup Header Info directly to prevent clearing chat history and race conditions
-            if (activeChatClientTitle) activeChatClientTitle.innerText = `${payload.company} (${payload.name})`;
-            if (activeChatClientMeta) activeChatClientMeta.innerText = '';
-            renderChatHistory();
-
-            // --- AUTO-INGEST: If textareas are empty, try loading content from GDrive files in batch ---
-            if (activeFolderId && (!sourceLinkedinText.value.trim() || !sourceIntakeText.value.trim() || !sourceTranscriptText.value.trim())) {
-                if (chatUserInput) chatUserInput.disabled = true;
-                if (chatSendBtn) chatSendBtn.disabled = true;
-                
-                const ingestSpinner = document.createElement('div');
-                ingestSpinner.className = 'ingest-loading-spinner-container';
-                ingestSpinner.style.cssText = 'display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; margin-bottom: 0.5rem; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 6px; font-size: 0.8rem;';
-                ingestSpinner.innerHTML = `
-                    <div class="spinner" style="width: 14px; height: 14px; border: 2px solid rgba(22, 101, 52, 0.2); border-top-color: #166534; border-radius: 50%; animation: rotate 1s linear infinite; box-sizing: border-box;"></div>
-                    <span>Auto-ingesting document files...</span>
-                `;
-                if (sourcesList && sourcesList.firstChild) {
-                    sourcesList.insertBefore(ingestSpinner, sourcesList.firstChild);
-                } else if (sourcesList) {
-                    sourcesList.appendChild(ingestSpinner);
-                }
-
+            (async () => {
                 try {
-                    const batchRes = await fetch(`/api/gdrive/batch-read?folderId=${encodeURIComponent(activeFolderId)}&ignoreCache=true`);
-                    if (batchRes.ok) {
-                        const batchData = await batchRes.json();
-                        let updated = false;
+                    await loadChatsList();
+                    await Promise.all([
+                        loadProspectsTree(),
+                        loadGoogleDriveFiles()
+                    ]);
+                    
+                    // Setup Header Info directly to prevent clearing chat history and race conditions
+                    if (activeChatClientTitle) activeChatClientTitle.innerText = `${payload.company} (${payload.name})`;
+                    if (activeChatClientMeta) activeChatClientMeta.innerText = '';
+                    renderChatHistory();
 
-                        if (batchData.linkedin && !sourceLinkedinText.value.trim()) {
-                            sourceLinkedinText.value = batchData.linkedin;
-                            console.log(`📄 Auto-ingested LinkedIn Profile content for newly initialized session`);
-                            updated = true;
-                        }
-                        if (batchData.intake && !sourceIntakeText.value.trim()) {
-                            sourceIntakeText.value = batchData.intake;
-                            console.log(`📄 Auto-ingested Intake Answers content for newly initialized session`);
-                            updated = true;
-                        }
-                        if (batchData.transcript && !sourceTranscriptText.value.trim()) {
-                            sourceTranscriptText.value = batchData.transcript;
-                            console.log(`📄 Auto-ingested Call Transcript content for newly initialized session`);
-                            updated = true;
+                    // --- AUTO-INGEST: If textareas are empty, try loading content from GDrive files in batch ---
+                    if (activeFolderId && (!sourceLinkedinText.value.trim() || !sourceIntakeText.value.trim() || !sourceTranscriptText.value.trim())) {
+                        if (chatUserInput) chatUserInput.disabled = true;
+                        if (chatSendBtn) chatSendBtn.disabled = true;
+                        
+                        const ingestSpinner = document.createElement('div');
+                        ingestSpinner.className = 'ingest-loading-spinner-container';
+                        ingestSpinner.style.cssText = 'display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; margin-bottom: 0.5rem; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 6px; font-size: 0.8rem;';
+                        ingestSpinner.innerHTML = `
+                            <div class="spinner" style="width: 14px; height: 14px; border: 2px solid rgba(22, 101, 52, 0.2); border-top-color: #166534; border-radius: 50%; animation: rotate 1s linear infinite; box-sizing: border-box;"></div>
+                            <span>Auto-ingesting document files...</span>
+                        `;
+                        if (sourcesList && sourcesList.firstChild) {
+                            sourcesList.insertBefore(ingestSpinner, sourcesList.firstChild);
+                        } else if (sourcesList) {
+                            sourcesList.appendChild(ingestSpinner);
                         }
 
-                        if (updated) {
-                            if (typeof updateValidationBadges === 'function') updateValidationBadges();
-                            if (typeof triggerAutoSave === 'function') triggerAutoSave();
+                        try {
+                            const batchRes = await fetch(`/api/gdrive/batch-read?folderId=${encodeURIComponent(activeFolderId)}&ignoreCache=true`);
+                            if (batchRes.ok) {
+                                const batchData = await batchRes.json();
+                                let updated = false;
+
+                                if (batchData.linkedin && !sourceLinkedinText.value.trim()) {
+                                    sourceLinkedinText.value = batchData.linkedin;
+                                    console.log(`📄 Auto-ingested LinkedIn Profile content for newly initialized session`);
+                                    updated = true;
+                                }
+                                if (batchData.intake && !sourceIntakeText.value.trim()) {
+                                    sourceIntakeText.value = batchData.intake;
+                                    console.log(`📄 Auto-ingested Intake Answers content for newly initialized session`);
+                                    updated = true;
+                                }
+                                if (batchData.transcript && !sourceTranscriptText.value.trim()) {
+                                    sourceTranscriptText.value = batchData.transcript;
+                                    console.log(`📄 Auto-ingested Call Transcript content for newly initialized session`);
+                                    updated = true;
+                                }
+
+                                if (updated) {
+                                    if (typeof updateValidationBadges === 'function') updateValidationBadges();
+                                    if (typeof triggerAutoSave === 'function') triggerAutoSave();
+                                }
+                            }
+                        } catch (autoIngestErr) {
+                            console.error('Failed auto-ingestion for newly initialized session:', autoIngestErr);
+                        } finally {
+                            if (chatUserInput) chatUserInput.disabled = false;
+                            if (chatSendBtn) chatSendBtn.disabled = false;
+                            if (ingestSpinner) ingestSpinner.remove();
                         }
                     }
-                } catch (autoIngestErr) {
-                    console.error('Failed auto-ingestion for newly initialized session:', autoIngestErr);
-                } finally {
-                    if (chatUserInput) chatUserInput.disabled = false;
-                    if (chatSendBtn) chatSendBtn.disabled = false;
-                    if (ingestSpinner) ingestSpinner.remove();
+                } catch (backgroundErr) {
+                    console.error('Error running background sources load:', backgroundErr);
                 }
-            }
+            })();
 
         } catch (err) {
             console.error('Error saving sources:', err);

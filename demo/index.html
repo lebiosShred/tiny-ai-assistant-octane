@@ -72,7 +72,7 @@
                 </div>
                 <div class="panel-body">
                     <div class="sidebar-search">
-                        <input type="text" id="chat-search" class="search-input" placeholder="Search prospects...">
+                        <input type="text" id="chat-search" class="search-input" placeholder="Search prospects..." aria-label="Search prospects">
                     </div>
                     <div class="recent-chats-label">Recent Prospects</div>
                     <div class="recent-chats-list" id="recent-chats-list" role="region" tabindex="0" aria-label="Recent Prospects">
@@ -132,7 +132,7 @@
                         </div>
                         <div class="chat-header-actions" style="display: flex; gap: 0.5rem; align-items: center; position: relative;">
                             <button type="button" class="btn btn-primary" id="btn-new-chat-active" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; line-height: 1.2;">➕ New Chat</button>
-                            <button type="button" id="btn-toggle-sources" style="position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: 0 !important; opacity: 0.0001 !important; border: none !important; cursor: default !important; z-index: 10000000 !important; pointer-events: auto !important;" aria-label="Toggle Sources"></button>
+                            <button type="button" class="btn btn-secondary" id="btn-toggle-sources" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; line-height: 1.2;" aria-label="Toggle Sources">📁 Sources</button>
                         </div>
                     </div>
 
@@ -179,11 +179,11 @@
 
                             <!-- User Input Area -->
                             <div class="chat-input-area">
-                                <textarea id="chat-user-input" class="chat-input-field" rows="2" placeholder="Ask Tiny anything about this prospect..."></textarea>
+                                <textarea id="chat-user-input" class="chat-input-field" rows="2" placeholder="Ask Tiny anything about this prospect..." aria-label="Ask Tiny anything about this prospect"></textarea>
                                 <button type="button" class="btn btn-chat-attach" id="chat-attach-btn" aria-label="Attach files" title="Attach audio, video, documents...">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                                 </button>
-                                <input type="file" id="chat-attach-file" multiple style="display: none;">
+                                <input type="file" id="chat-attach-file" multiple style="display: none;" aria-label="Attach file">
                                 <button type="button" class="btn btn-primary btn-chat-send" id="chat-send-btn">⚡ Send</button>
                             </div>
                             <div class="chat-upload-progress hidden" id="chat-upload-progress">
