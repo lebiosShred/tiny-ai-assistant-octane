@@ -2358,7 +2358,19 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     const uploadMatch = trimmedMsg.match(uploadRegex);
                     const linkedinMatch = trimmedMsg.match(linkedinRegex);
                     const briefMatch = trimmedMsg.match(briefRegex);
-                    const callMatch = trimmedMsg.match(callRegex);
+                    let callMatch = trimmedMsg.match(callRegex);
+
+                    // Heuristic Transcript Matcher: If no command prefix exists, but the content contains
+                    // at least 3 speaker turns and conversational transcript words,
+                    // automatically classify it as a call log registration to prevent fall-throughs.
+                    if (!callMatch && !uploadMatch && !linkedinMatch && !briefMatch) {
+                        const speakerTurns = (trimmedMsg.match(/(?:^[a-zA-Z0-9\s\(\)\.\-_]+:\s+|[\r\n]+[a-zA-Z0-9\s\(\)\.\-_]+:\s+)/gm) || []).length;
+                        const hasConversationalWords = /\b(hi|hello|thanks|yes|no|our|we|you|i|me|struggling|variance|demo|talk|call|meeting|requirements|planning)\b/i.test(trimmedMsg);
+                        if (speakerTurns >= 3 && hasConversationalWords) {
+                            console.log(`🔍 Heuristic match: Detected raw transcript with ${speakerTurns} speaker turns. Routing to call registration.`);
+                            callMatch = [trimmedMsg, trimmedMsg];
+                        }
+                    }
 
 
                     // Extraction of companyNameForGDrive, clientNameForGDrive, clientEmailForGDrive, and company has been lifted to the outer scope of the request handler.
