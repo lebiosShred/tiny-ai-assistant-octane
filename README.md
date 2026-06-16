@@ -159,22 +159,103 @@ Backend builds compile a docker image and deploy it with GCS storage mounts:
 
 ---
 
-## 7. Required Services & Developer Accounts
+## 7. Required Services & Developer Account Handover
 
-To migrate this application from a personal deployment to a team-managed production environment, developers must create accounts with the following providers and configure the corresponding environment variables in the `.env` file:
+To migrate this application from a personal deployment to a team-managed production
+environment, developers must create corporate accounts and configure the environment variables
+detailed below.
 
-| Service Provider | Env Variable Keys | Purpose |
-| --- | --- | --- |
-| **Google Cloud Console** | `GDRIVE_CLIENT_ID`, `GDRIVE_CLIENT_SECRET`, `GDRIVE_REFRESH_TOKEN`, `GDRIVE_ROOT_FOLDER_ID` | Connects Google Drive API for company folder creation and prospect file uploads. |
-| **Google AI Studio** | `GOOGLE_API_KEYS` | Provides API keys for Gemini LLM completions (supports comma-separated rotation list). |
-| **Neon Console** | `DATABASE_URL`, `MIGRATION_DATABASE_URL` | Serverless Postgres database for relational chat session history storage. |
-| **Resend** | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Handles SMTP email dispatch for recap emails. |
-| **Tavily AI** | `TAVILY_API_KEY` | Search API provider used for RAG research. |
-| **Exa AI** | `EXA_API_KEY` | Search API provider used for RAG research. |
-| **Jina AI** | `JINA_API_KEY` | Reader API used to scrape website URLs. |
-| **DeepSeek** | `DEEPSEEK_API_KEY` | DeepSeek LLM API for zero-cost model failover testing. |
-| **OpenRouter** | `OPENROUTER_API_KEY` | LLM router provider used for fallback completions. |
-| **Mapbox** | `MAPBOX_API_KEY` | Mapbox developer API used to compute travel times and routing distances. |
-| **Fathom Video** | `FATHOM_API_KEY` | Fathom meeting transcription API integrations. |
-| **HubSpot Developer Portal** | `HUBSPOT_ACCESS_TOKEN` | Private App Access Token for CRM sync. |
-| **Redis Provider** | `REDIS_URL` | Managed Redis server (like Upstash) for socket session broadcasts. |
+### 7.1 Hosting & Infrastructure
+
+#### Google Cloud Platform (GCP)
+* **Usage**: Cloud Run backend, Cloud Storage buckets, and Google Drive API integration.
+* **Handover**:
+  1. Create a corporate GCP billing account and project.
+  2. Enable Cloud Run, Cloud Build, Cloud Storage, and Google Drive APIs.
+  3. Create a GCS bucket named `tiny-ai-knowledge-base` for document storage.
+  4. Create a service account with Storage Object Viewer and Storage Object Creator roles.
+  5. Invite team members' email addresses under IAM & Admin with Owner/Editor permissions.
+* **Affected Variables**: GCP Project ID, GCS Bucket Name.
+
+#### Vercel
+* **Usage**: Frontend SPA static hosting and global CDN edge routing.
+* **Handover**:
+  1. Create a Vercel Team Account (Pro plan recommended).
+  2. Transfer the project from the personal workspace to the Vercel Team workspace.
+  3. Invite team members as Owners or Developers.
+  4. Configure production environment variables in the Team dashboard.
+* **Affected Variables**: Frontend environment variables (pointing to Cloud Run backend URL).
+
+### 7.2 Databases & Caching
+
+#### Neon PostgreSQL
+* **Usage**: Relational database for session history storage.
+* **Handover**:
+  1. Register a Neon Organization or Shared Account.
+  2. Provision a new PostgreSQL project (e.g., `tiny-ai-db`).
+  3. Run migrations (`npx drizzle-kit push`) to set up tables.
+  4. Add team members to the Neon project dashboard.
+* **Affected Variables**: `DATABASE_URL`, `MIGRATION_DATABASE_URL`.
+
+#### Redis Provider (e.g., Upstash)
+* **Usage**: Managed Redis server for socket session updates and pub/sub broadcast.
+* **Handover**:
+  1. Create an Upstash Team Account.
+  2. Provision a new Redis database with SSL enabled.
+  3. Invite team members and configure the connection URL.
+* **Affected Variables**: `REDIS_URL`.
+
+### 7.3 Communication & Integrations
+
+#### Resend (SMTP & Email Delivery)
+* **Usage**: Recap email dispatch and prospect briefing summaries.
+* **Handover**:
+  1. Register a corporate Resend account.
+  2. Verify the corporate domain via DNS TXT/MX records in Resend settings.
+  3. Generate production API/SMTP credentials.
+  4. Update the authorized sender address.
+* **Affected Variables**: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
+
+#### Google Workspace & Drive OAuth
+* **Usage**: Automated Google Drive folders, docx/xlsx briefings, and file uploads.
+* **Handover**:
+  1. Set up an OAuth consent screen (Internal) in the corporate GCP console.
+  2. Create an OAuth Client ID of type Web Application.
+  3. Add the Google OAuth Playground (`https://developers.google.com/oauthplayground`) to Redirect URIs.
+  4. Authorize the client to get a permanent `GDRIVE_REFRESH_TOKEN` for the corporate shared drive.
+  5. Specify the shared root folder ID in the configuration.
+* **Affected Variables**: `GDRIVE_CLIENT_ID`, `GDRIVE_CLIENT_SECRET`, `GDRIVE_REFRESH_TOKEN`, `GDRIVE_ROOT_FOLDER_ID`.
+
+### 7.4 AI Engines & RAG APIs
+
+#### Google AI Studio (Gemini)
+* **Usage**: Primary LLM reasoning, document analysis, and safety audits.
+* **Handover**: Generate Gemini API keys in the corporate Google account. Enable billing/quotas.
+* **Affected Variables**: `GOOGLE_API_KEYS` (supports a comma-separated key rotation list).
+
+#### DeepSeek & OpenRouter
+* **Usage**: Backup reasoning models and zero-cost failover validation.
+* **Handover**: Create team accounts, deposit credits, and generate team API keys.
+* **Affected Variables**: `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`.
+
+#### Search & Reader Providers (Tavily, Exa, Jina)
+* **Usage**: Real-time web search for competitor analysis and web page parsing/crawling.
+* **Handover**: Create corporate accounts, select pricing tiers, and generate production keys.
+* **Affected Variables**: `TAVILY_API_KEY`, `EXA_API_KEY`, `JINA_API_KEY`.
+
+### 7.5 Business & Location APIs
+
+#### Mapbox
+* **Usage**: Travel time routing calculations and office/lead distance validation.
+* **Handover**: Create a corporate Mapbox developer account and generate a public access token.
+* **Affected Variables**: `MAPBOX_API_KEY`.
+
+#### Fathom Video
+* **Usage**: Syncing meeting transcripts from recorded Zoom or Teams calls.
+* **Handover**: Create a corporate Fathom account and generate an API key under Fathom Settings.
+* **Affected Variables**: `FATHOM_API_KEY`.
+
+#### HubSpot CRM
+* **Usage**: Sales CRM synchronization, contact creation, and notes logging.
+* **Handover**: Create a Private App in the corporate HubSpot portal with contacts/companies read/write scopes.
+* **Affected Variables**: `HUBSPOT_ACCESS_TOKEN`.
