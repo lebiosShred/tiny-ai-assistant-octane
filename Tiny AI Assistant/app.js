@@ -2925,13 +2925,24 @@ CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly fo
 
         const parsedDelete = parseDeleteQuery(queryText);
         if (parsedDelete && parsedDelete.type === 'folder') {
+            const normalizeCompanyName = (name) => {
+                if (!name) return '';
+                return name.toLowerCase().trim()
+                    .replace(/\s+(?:company|folder|directory|client|prospect)$/i, '')
+                    .trim();
+            };
+
             const targetCompany = parsedDelete.name;
-            const normalizedTarget = targetCompany.toLowerCase().trim();
+            const normalizedTarget = normalizeCompanyName(targetCompany);
             
             // Find all prospects under this company name in chatsList
-            const matchedSessions = chatsList.filter(c => 
-                c.company && c.company.toLowerCase().trim() === normalizedTarget
-            );
+            const matchedSessions = chatsList.filter(c => {
+                if (!c.company) return false;
+                const normalizedCo = normalizeCompanyName(c.company);
+                return normalizedCo === normalizedTarget || 
+                       normalizedCo.includes(normalizedTarget) || 
+                       normalizedTarget.includes(normalizedCo);
+            });
             
             // Delineate the list of unique prospect names
             const prospectsList = [...new Set(matchedSessions.map(c => c.name || 'Unknown Prospect'))];
