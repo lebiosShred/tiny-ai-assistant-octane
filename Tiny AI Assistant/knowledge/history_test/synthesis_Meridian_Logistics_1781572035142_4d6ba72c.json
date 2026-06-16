@@ -1,0 +1,43 @@
+{
+  "id": "synthesis_Meridian_Logistics_1781572035142_4d6ba72c",
+  "type": "synthesis",
+  "name": "Sarah Chen",
+  "company": "Meridian Logistics",
+  "title": "",
+  "email": "sarah@meridian.com",
+  "phone": "",
+  "rep": "",
+  "track": "",
+  "oneDriveFile": "No files in client folder",
+  "gDriveFile": "No files in client folder",
+  "gDriveFileId": "",
+  "gDriveFileContent": "",
+  "linkedinInfo": "",
+  "intakeAnswers": "",
+  "transcript": "",
+  "transitDistance": "Destination is unreachable by driving from origin.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "analyze sarah chen's linkedin pdf",
+      "timestamp": "2026-06-16T01:07:15.261Z"
+    },
+    {
+      "role": "assistant",
+      "content": "Here is the analysis of Sarah Chens profile.",
+      "timestamp": "2026-06-16T01:07:15.783Z"
+    },
+    {
+      "role": "user",
+      "content": "tell me her information",
+      "timestamp": "2026-06-16T01:07:16.162Z"
+    },
+    {
+      "role": "assistant",
+      "content": "Here is the analysis of Sarah Chens profile.",
+      "timestamp": "2026-06-16T01:07:16.668Z"
+    }
+  ],
+  "stage": "reports",
+  "gDriveFolderId": "local_path_4d6572696469616e5f4c6f676973746963735c53617261685f4368656e"
+}

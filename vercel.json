@@ -3,7 +3,23 @@
   "cleanUrls": true,
   "builds": [
     {
-      "src": "demo/**",
+      "src": "Tiny Booking/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "Tiny AI Assistant/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "Tiny AI Documentation/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "Tiny AI Assistant/assets/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "Tiny AI Documentation/screencast/**",
       "use": "@vercel/static"
     }
   ],
@@ -13,8 +29,48 @@
       "destination": "https://tiny-ai-assistant-351972137415.us-central1.run.app/api/$1"
     },
     {
+      "source": "/assets/(.*)",
+      "destination": "/Tiny AI Assistant/assets/$1"
+    },
+    {
+      "source": "/screencast/(.*)",
+      "destination": "/Tiny AI Documentation/screencast/$1"
+    },
+    {
+      "source": "/projects",
+      "destination": "/Tiny AI Assistant/github_projects.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/Tiny AI Assistant/admin_setup.html"
+    },
+    {
+      "source": "/audit",
+      "destination": "/Tiny AI Assistant/audit_log.html"
+    },
+    {
+      "source": "/analytics",
+      "destination": "/Tiny AI Assistant/analytics_dashboard.html"
+    },
+    {
+      "source": "/book",
+      "destination": "/Tiny Booking/index.html"
+    },
+    {
+      "source": "/book/(.*)",
+      "destination": "/Tiny Booking/$1"
+    },
+    {
+      "source": "/docs",
+      "destination": "/Tiny AI Documentation/index.html"
+    },
+    {
+      "source": "/docs/(.*)",
+      "destination": "/Tiny AI Documentation/$1"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/demo/$1"
+      "destination": "/Tiny AI Assistant/$1"
     }
   ]
 }

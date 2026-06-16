@@ -1,0 +1,33 @@
+{
+  "id": "synthesis_AECOM_1781572026729_4a5d0491",
+  "type": "synthesis",
+  "name": "Kyle Fouche",
+  "company": "AECOM",
+  "title": "",
+  "email": "kyle.fouche@aecom.com",
+  "phone": "",
+  "rep": "",
+  "track": "",
+  "oneDriveFile": "No files in client folder",
+  "gDriveFile": "No files in client folder",
+  "gDriveFileId": "file-123",
+  "gDriveFileContent": "This SOW covers TM1 Flight Check for AECOM.",
+  "linkedinInfo": "",
+  "intakeAnswers": "",
+  "transcript": "AECOM transcription details: Kyle is the main contact.",
+  "transitDistance": "Destination is unreachable by driving from origin.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Generate a Recap Email to the client based strictly on the transcript.\nFormat exactly as:\n[Subject] observations from 🧐 our session\nHey [client's name],\nI have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.\n. [Takeaway 1].\n. [Takeaway 2].\n. [Takeaway 3].\nShortly I will send you some time slots for our upcoming demo.\nKind regards,\n[Rep Name].",
+      "timestamp": "2026-06-16T01:07:06.840Z"
+    },
+    {
+      "role": "assistant",
+      "content": "Here is your call summary and takeaways:\n- Discussed TM1 Flight Check\n- Estimated timeline: 6 days\n\nKind regards,\nAlbert",
+      "timestamp": "2026-06-16T01:07:06.871Z"
+    }
+  ],
+  "stage": "reports",
+  "gDriveFolderId": "local_path_4145434f4d5c4b796c655f466f75636865"
+}

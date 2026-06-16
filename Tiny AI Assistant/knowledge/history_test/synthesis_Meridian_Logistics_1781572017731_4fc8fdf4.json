@@ -1,0 +1,33 @@
+{
+  "id": "synthesis_Meridian_Logistics_1781572017731_4fc8fdf4",
+  "type": "synthesis",
+  "name": "Sarah Chen",
+  "company": "Meridian Logistics",
+  "title": "",
+  "email": "sarah@meridian.com",
+  "phone": "",
+  "rep": "",
+  "track": "",
+  "oneDriveFile": "No files in client folder",
+  "gDriveFile": "No files in client folder",
+  "gDriveFileId": "",
+  "gDriveFileContent": "",
+  "linkedinInfo": "",
+  "intakeAnswers": "",
+  "transcript": "",
+  "transitDistance": "Destination is unreachable by driving from origin.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Suggest a conversation starter",
+      "timestamp": "2026-06-16T01:06:57.842Z"
+    },
+    {
+      "role": "assistant",
+      "content": "1. Citing past work: Mentioned previous optimization work at Steric.\n2. Story connection: Address recent warehouse AI algorithms launched by Meridian.",
+      "timestamp": "2026-06-16T01:06:57.866Z"
+    }
+  ],
+  "stage": "reports",
+  "gDriveFolderId": "local_path_4d6572696469616e5f4c6f676973746963735c53617261685f4368656e"
+}

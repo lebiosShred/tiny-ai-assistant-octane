@@ -1,0 +1,33 @@
+{
+  "id": "synthesis_Meridian_Logistics_1781572018985_e7fbd53f",
+  "type": "synthesis",
+  "name": "Sarah Chen",
+  "company": "Meridian Logistics",
+  "title": "",
+  "email": "sarah@meridian.com",
+  "phone": "",
+  "rep": "",
+  "track": "",
+  "oneDriveFile": "No files in client folder",
+  "gDriveFile": "No files in client folder",
+  "gDriveFileId": "",
+  "gDriveFileContent": "",
+  "linkedinInfo": "",
+  "intakeAnswers": "",
+  "transcript": "",
+  "transitDistance": "Destination is unreachable by driving from origin.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Generate Lead Sheet",
+      "timestamp": "2026-06-16T01:06:59.123Z"
+    },
+    {
+      "role": "assistant",
+      "content": "[INSUFFICIENT_DATA_FOR_REPORT]",
+      "timestamp": "2026-06-16T01:06:59.145Z"
+    }
+  ],
+  "stage": "reports",
+  "gDriveFolderId": "local_path_4d6572696469616e5f4c6f676973746963735c53617261685f4368656e"
+}
