@@ -2394,7 +2394,8 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                     if (rememberMatch) {
                         const instruction = rememberMatch[1].trim();
                         try {
-                            const sessionData = pgCache.get(instructionSessionId) || { id: instructionSessionId, customInstructions: [] };
+                            const sessionDataRaw = pgCache.get(instructionSessionId);
+                            const sessionData = (typeof sessionDataRaw === 'string' ? JSON.parse(sessionDataRaw) : sessionDataRaw) || { id: instructionSessionId, customInstructions: [] };
                             if (!sessionData.customInstructions) sessionData.customInstructions = [];
                             
                             if (!sessionData.customInstructions.includes(instruction)) {
@@ -2427,7 +2428,8 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 
                     if (showRememberMatch) {
                         try {
-                            const sessionData = pgCache.get(instructionSessionId) || {};
+                            const sessionDataRaw = pgCache.get(instructionSessionId);
+                            const sessionData = (typeof sessionDataRaw === 'string' ? JSON.parse(sessionDataRaw) : sessionDataRaw) || {};
                             const instructions = sessionData.customInstructions || [];
                             
                             let contentStr = '';
@@ -2457,7 +2459,8 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 
                     if (forgetMatch) {
                         try {
-                            const sessionData = pgCache.get(instructionSessionId) || { id: instructionSessionId };
+                            const sessionDataRaw = pgCache.get(instructionSessionId);
+                            const sessionData = (typeof sessionDataRaw === 'string' ? JSON.parse(sessionDataRaw) : sessionDataRaw) || { id: instructionSessionId };
                             sessionData.customInstructions = [];
                             await saveHistoryItem(sessionData);
                             pgCache.set(instructionSessionId, sessionData);
@@ -3105,7 +3108,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                 let customInstructionsStr = '';
                 try {
                     const instructionSessionId = 'memory_' + (companyNameForGDrive || 'unknown_company').toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + (clientNameForGDrive || 'unknown_name').toLowerCase().replace(/[^a-z0-9]/g, '_');
-                    const sessionData = pgCache.get(instructionSessionId) || {};
+                    const sessionDataRaw = pgCache.get(instructionSessionId);
+                    const sessionData = (typeof sessionDataRaw === 'string' ? JSON.parse(sessionDataRaw) : sessionDataRaw) || {};
                     const instructions = sessionData.customInstructions || [];
                     if (instructions.length > 0) {
                         customInstructionsStr = `\n\n<custom_instructions>\n` + 
@@ -3567,7 +3571,8 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                             try {
                                 const sessionIds = Array.from(pgCache.keys());
                                 for (const id of sessionIds) {
-                                    const data = pgCache.get(id);
+                                    const dataRaw = pgCache.get(id);
+                                    const data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
                                     if (data && data.company && normalizeString(data.company) === targetNorm) {
                                         if (cleanProspect) {
                                             if (data.name && normalizeString(data.name) === prospectNorm) {
