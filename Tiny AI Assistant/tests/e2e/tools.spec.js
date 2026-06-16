@@ -136,6 +136,35 @@ test.describe('Aegis Tools & Sales Agent Operations Suite', () => {
 
         await indexPage.waitForResponse(20000);
     });
+
+    test('verifies response contains source citation when knowledge base is referenced', async ({ page }) => {
+        test.setTimeout(30000);
+        const indexPage = new IndexPage(page);
+
+        await page.route('**/api/chat', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    choices: [{ message: { role: 'assistant', content: 'Here is the requested information.\n\nInformation was extracted in this **source**: [watsonx_orchestrate_poc.md](file:///c:/Users/SkyDr/OneDrive/Desktop/PROJECTS/Anthony/Tiny%20AI%20Assistant/knowledge/AI/watsonx_orchestrate_poc.md)' } }]
+                })
+            });
+        });
+
+        await indexPage.goto();
+        await indexPage.newChatBtn.click();
+        await indexPage.fillMetadata('Sarah Chen', 'Meridian Logistics', 'sarah@meridian.com');
+        await indexPage.submitForm();
+        await indexPage.waitForChatInit();
+        await indexPage.closeDrawer();
+
+        await indexPage.chatInput.fill('tell me about watsonx orchestrate POC playbook');
+        await indexPage.sendBtn.click();
+        await indexPage.waitForResponse(20000);
+
+        const responseText = await indexPage.getLastResponseText();
+        expect(responseText).toContain('Information was extracted in this source');
+    });
 });
 
 

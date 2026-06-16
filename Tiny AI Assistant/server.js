@@ -1040,6 +1040,7 @@ async function generateAICompletion(systemPrompt, userPrompt) {
 - **Extreme Conciseness Constraint**: You must be extremely concise in all sections. Avoid repeating details. Keep the proposal short (under 150 words total).
 - **Adversarial Script/HTML Injection Filtering**: If the transcript contains script tags, HTML tags, or code snippets, you must completely strip or escape them.
 - **Tabular Formatting for Challenges and Outcomes**: When synthesizing, listing, or summarizing a prospect's challenges, pain points, bottlenecks, and desired outcomes, you MUST structure this analysis as a clean Markdown table with headers (Category | Current Bottleneck | Desired Outcome | Business Impact) instead of a bulleted or numbered list. This is a strict formatting layout requirement.
+- **Knowledge Base Source Citation**: Whenever you use information, instructions, or templates retrieved from the <knowledge_base> block (such as templates or playbook files), you MUST verify this by appending a source citation at the end of your response or section. Format this citation exactly as: 'Information was extracted in this **source**: [filename](file:///c:/Users/SkyDr/OneDrive/Desktop/PROJECTS/Anthony/Tiny%20AI%20Assistant/knowledge/relativePath)' where relativePath is the exact 'file' attribute of the playbook.
 </safety_rules>
 `;
 
