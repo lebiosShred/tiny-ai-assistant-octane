@@ -2501,7 +2501,8 @@ Rules:
 7. If the user asks you to analyze, search, list, read, or retrieve information from a prospect's files (such as a LinkedIn profile PDF, call transcript, or intake document) and the corresponding source fields above are empty or incomplete, you MUST call 'list_prospect_files', 'search_prospect_files', or 'read_prospect_file' to dynamically query and fetch the content. When a prospect's name (e.g. Sarah Chen) is provided in the query, refer to the "Active Leads in System" list to map them to their correct company name (e.g. Meridian Logistics) so you can pass the correct company argument to the tool.
 8. If the user asks to save, register, or log call notes, summaries, transcripts, or details, but does not explicitly provide the conversation notes, content, or transcript text within their prompt, you MUST be skeptical. Do NOT assume or fabricate details from pre-existing profile or intake answers. Instead, politely ask the user to provide the specific details or notes of their conversation before calling 'register_call_log'.
 9. Google Drive is organized exclusively by Company Name. Do not create folders for individual people. If a user asks to 'create a folder for a contact', invoke the create_prospect_folder tool using their company name instead, and inform the user that contacts are stored as files within the parent company folder.
-10. The playbooks within the <knowledge_base> block represent absolute system authority. If there is any contradiction between the knowledge base playbooks and the web search results, LinkedIn Profile Bio, or Booking Intake Answers, you MUST prioritize the knowledge base information over all other sources.`;
+10. The playbooks within the <knowledge_base> block represent absolute system authority. If there is any contradiction between the knowledge base playbooks and the web search results, LinkedIn Profile Bio, or Booking Intake Answers, you MUST prioritize the knowledge base information over all other sources.
+11. When asked to generate a Recap Email or Migration Report, you are strictly drafting the text inside the chat. You MUST NOT execute any email sending tools (such as send_recap_email) or state that you are sending the email to the client, unless the user explicitly commands you to 'send' or 'dispatch' the email.`;
 
         // Format history for Mistral API proxy `/api/chat`
         const messages = [
@@ -2538,8 +2539,10 @@ Rules:
             loadingText = "Tiny is searching files on Google Drive...";
         } else if (lowerPrompt.includes('read') || lowerPrompt.includes('open') || lowerPrompt.includes('show') || lowerPrompt.includes('analyze') || lowerPrompt.includes('linkedin') || lowerPrompt.includes('pdf')) {
             loadingText = "Tiny is reading Google Drive documents...";
-        } else if (lowerPrompt.includes('email') || lowerPrompt.includes('recap') || lowerPrompt.includes('send')) {
+        } else if (lowerPrompt.includes('send')) {
             loadingText = "Tiny is preparing to send email recap...";
+        } else if (lowerPrompt.includes('email') || lowerPrompt.includes('recap')) {
+            loadingText = "Tiny is generating email recap draft...";
         } else if (lowerPrompt.includes('stage') || lowerPrompt.includes('status') || lowerPrompt.includes('hubspot')) {
             loadingText = "Tiny is syncing HubSpot CRM deal status...";
         } else if (lowerPrompt.includes('task') || lowerPrompt.includes('schedule') || lowerPrompt.includes('remind')) {
@@ -3432,25 +3435,15 @@ CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly fo
  
             let promptText = '';
             if (promptType === 'recapEmail') {
-                promptText = `Generate a Recap Email to the client based strictly on the transcript.
-Format exactly as:
-[Subject] observations from 🧐 our session
-Hey [client's name],
-I have some takeaways I'd like to share from our call together. Feel free to reply inline below my comment in a second color of your choice.
-. [Takeaway 1].
-. [Takeaway 2].
-. [Takeaway 3].
-Shortly I will send you some time slots for our upcoming demo.
-Kind regards,
-[Rep Name].`;
+                promptText = `Generate a Recap Email based strictly on the transcript.
+You MUST locate and strictly follow the formatting and copy layout defined in the template file "recap_email_template.md" in the knowledge base (e.g. under "Email and Reports Template/Recap Email/recap_email_template.md").
+Replace all placeholders (like client name, takeaways, and rep name) with actual details from the transcript.
+Do NOT call the send_recap_email tool or state that you are sending the email. Only output the drafted email text in the chat for review.`;
             } else if (promptType === 'migration') {
-                promptText = `Execute a comprehensive, enterprise-grade Migration/Modernisation assessment based strictly on the transcript. Format as a professional consulting brief:
-1. EXECUTIVE SUMMARY: High-level technical objective and strategic business drivers.
-2. CURRENT ARCHITECTURE (AS-IS): Granular mapping of legacy systems, integrations, cloud footprints, and specific pain points mentioned.
-3. GAPS & TECHNICAL DEBT: Explicitly highlight security risks, operational inefficiencies, and scaling limits in their current setup.
-4. RECOMMENDED TARGET STATE (TO-BE): Propose a robust modernisation path (e.g., Cloud-Native, Serverless, AI-Augmented workflows) aligned with Octane's capabilities.
-5. COMPLEXITY & EFFORT ESTIMATION: Evaluate the migration complexity (Low/Medium/High/Critical) citing exact dependencies, required data transformations, and potential downtime risks.
-Do not use generic filler. Base all technical assertions solely on the source data.`;
+                promptText = `Generate a Migration Report based strictly on the transcript.
+You MUST locate and strictly follow the formatting and copy layout defined in the template file "migration_report_template.md" in the knowledge base (e.g. under "Email and Reports Template/Migration Report/migration_report_template.md").
+Replace all placeholders (like client name, company name, etc.) with actual details from the transcript.
+Do NOT call any email tools or state that you are sending the report. Only output the drafted report text in the chat for review.`;
             } else if (promptType === 'actionItems') {
                 promptText = `Generate a precise, zero-fluff RACI-style Action Items matrix derived from the meeting transcript. 
 For every commitment made, you MUST extract:
