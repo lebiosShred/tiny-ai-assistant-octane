@@ -2938,7 +2938,7 @@ CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly fo
 
             chatUserInput.value = '';
             
-            let htmlMsg = `<div style="text-align: left; font-family: 'Inter', sans-serif; font-size: 0.9rem; line-height: 1.5; color: #1e293b;">`;
+            let htmlMsg = `<div style="text-align: left; font-family: 'Inter', sans-serif; font-size: 0.9rem; line-height: 1.5; color: #e2e8f0;">`;
             htmlMsg += `<p>Are you sure you want to delete the company folder <strong>"${targetCompany}"</strong> and all its cached memory?</p>`;
             if (prospectsList.length > 0) {
                 htmlMsg += `<p style="margin-top: 12px; font-weight: 600; color: #ef4444;">The following prospects will be permanently deleted:</p>`;
@@ -2948,7 +2948,7 @@ CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly fo
                 });
                 htmlMsg += `</ul>`;
             } else {
-                htmlMsg += `<p style="margin-top: 12px; font-style: italic; color: #64748b;">No active prospects were found associated with this company, but any underlying files/history matching "${targetCompany}" will be purged.</p>`;
+                htmlMsg += `<p style="margin-top: 12px; font-style: italic; color: #94a3b8;">No active prospects were found associated with this company, but any underlying files/history matching "${targetCompany}" will be purged.</p>`;
             }
             htmlMsg += `</div>`;
 
