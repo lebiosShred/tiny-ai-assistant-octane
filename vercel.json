@@ -3,23 +3,11 @@
   "cleanUrls": true,
   "builds": [
     {
-      "src": "Tiny Booking/**",
-      "use": "@vercel/static"
-    },
-    {
       "src": "Tiny AI Assistant/**",
       "use": "@vercel/static"
     },
     {
-      "src": "Tiny AI Documentation/**",
-      "use": "@vercel/static"
-    },
-    {
       "src": "Tiny AI Assistant/assets/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "Tiny AI Documentation/screencast/**",
       "use": "@vercel/static"
     }
   ],
@@ -33,29 +21,8 @@
       "destination": "/Tiny%20AI%20Assistant/assets/$1"
     },
     {
-      "source": "/screencast/(.*)",
-      "destination": "/Tiny%20AI%20Documentation/screencast/$1"
-    },
-    {
       "source": "/projects",
       "destination": "/Tiny%20AI%20Assistant/github_projects.html"
-    },
-
-    {
-      "source": "/book",
-      "destination": "/Tiny%20Booking/index.html"
-    },
-    {
-      "source": "/book/(.*)",
-      "destination": "/Tiny%20Booking/$1"
-    },
-    {
-      "source": "/docs",
-      "destination": "/Tiny%20AI%20Documentation/index.html"
-    },
-    {
-      "source": "/docs/(.*)",
-      "destination": "/Tiny%20AI%20Documentation/$1"
     },
     {
       "source": "/(.*)",
