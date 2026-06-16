@@ -3214,10 +3214,22 @@ CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly fo
 
                 // Consolidate the upload message to prevent UI chat spam
                 if (uploadedFileNames.length > 0) {
-                    const formattedNames = uploadedFileNames.map(name => `"${name}"`).join(', ');
+                    const hasTranscript = uploadedFileNames.some(name => {
+                        const lowName = name.toLowerCase();
+                        return lowName.includes('transcript') || lowName.includes('call');
+                    });
+
+                    let assistantContent;
+                    if (hasTranscript) {
+                        assistantContent = "I have received your call transcript, do you want to generate a recap email or migration report?";
+                    } else {
+                        const formattedNames = uploadedFileNames.map(name => `"${name}"`).join(', ');
+                        assistantContent = `[SYSTEM: Document Uploaded] I have successfully uploaded and indexed ${formattedNames} into the Google Drive memory folder for ${companyName}. I can now search and answer questions based on these files!`;
+                    }
+
                     chatHistory.push({
                         role: 'assistant',
-                        content: `[SYSTEM: Document Uploaded] I have successfully uploaded and indexed ${formattedNames} into the Google Drive memory folder for ${companyName}. I can now search and answer questions based on these files!`,
+                        content: assistantContent,
                         timestamp: new Date().toISOString()
                     });
                 }
