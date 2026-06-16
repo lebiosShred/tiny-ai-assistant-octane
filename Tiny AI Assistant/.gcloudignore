@@ -1,0 +1,23 @@
+# Exclude node_modules
+node_modules/
+
+# Exclude local configs and logs
+.env
+.env.vercel
+.git
+.gitignore
+.gcloudignore
+.vercelignore
+
+# Exclude testing and cache artifacts
+playwright-report/
+chrome-debug-profile/
+test-results/
+.npmrc
+*.log
+
+# Exclude document backups and scratch files
+scratch/
+tests/
+drizzle/
+node_modules/

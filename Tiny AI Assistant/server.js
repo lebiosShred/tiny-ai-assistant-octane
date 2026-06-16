@@ -1847,10 +1847,8 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith('/api/') && !pathname.startsWith('/api/config/pricing') && !pathname.startsWith('/api/auth/token')) {
         const apiKey = req.headers['x-api-key'];
         const validKey = process.env.API_KEY;
-        const cookieHeader = req.headers.cookie || '';
-        const hasValidSession = cookieHeader.includes('admin_session=5827c79d9e801e1f748aa638543c78b06ecce21f27fd449268e706d00204c92f');
         
-        let isAuthorized = hasValidSession || (validKey && apiKey === validKey);
+        let isAuthorized = (validKey && apiKey === validKey);
         
         if (!isAuthorized && apiKey && activeTokens.has(apiKey)) {
             const tokenMeta = activeTokens.get(apiKey);
@@ -1861,7 +1859,7 @@ const server = http.createServer(async (req, res) => {
             }
         }
         
-        if (!validKey && !apiKey && !hasValidSession) {
+        if (!validKey && !apiKey) {
             isAuthorized = true;
         }
 
@@ -1889,13 +1887,11 @@ const server = http.createServer(async (req, res) => {
         }
         limitData.count++;
 
-        // Secure issuance check: require API key or admin session
+        // Secure issuance check: require API key
         const apiKey = req.headers['x-api-key'];
         const validKey = process.env.API_KEY;
-        const cookieHeader = req.headers.cookie || '';
-        const hasValidSession = cookieHeader.includes('admin_session=5827c79d9e801e1f748aa638543c78b06ecce21f27fd449268e706d00204c92f');
         
-        let canIssue = !validKey || hasValidSession || (apiKey && apiKey === validKey);
+        let canIssue = !validKey || (apiKey && apiKey === validKey);
         if (!canIssue) {
             res.writeHead(401, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Unauthorized to request auth token.' }));
@@ -6981,12 +6977,6 @@ ${payload.intakeAnswers || ''}`;
         relativePath = pathname.replace(/^\/screencast/, '/Tiny AI Documentation/screencast');
     } else if (pathname === '/projects') {
         relativePath = '/Tiny AI Assistant/github_projects.html';
-    } else if (pathname === '/admin') {
-        relativePath = '/Tiny AI Assistant/admin_setup.html';
-    } else if (pathname === '/audit') {
-        relativePath = '/Tiny AI Assistant/audit_log.html';
-    } else if (pathname === '/analytics') {
-        relativePath = '/Tiny AI Assistant/analytics_dashboard.html';
     } else {
         if (pathname === '/' || pathname === '') {
             relativePath = '/Tiny AI Assistant/index.html';

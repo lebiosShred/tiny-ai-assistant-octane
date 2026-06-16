@@ -40,18 +40,7 @@
       "source": "/projects",
       "destination": "/Tiny%20AI%20Assistant/github_projects.html"
     },
-    {
-      "source": "/admin",
-      "destination": "/Tiny%20AI%20Assistant/admin_setup.html"
-    },
-    {
-      "source": "/audit",
-      "destination": "/Tiny%20AI%20Assistant/audit_log.html"
-    },
-    {
-      "source": "/analytics",
-      "destination": "/Tiny%20AI%20Assistant/analytics_dashboard.html"
-    },
+
     {
       "source": "/book",
       "destination": "/Tiny%20Booking/index.html"
