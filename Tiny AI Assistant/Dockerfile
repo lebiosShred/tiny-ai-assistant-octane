@@ -17,7 +17,7 @@ COPY server.js ./
 COPY gdrive-service.js ./
 COPY email-service.js ./
 COPY openapi.json ./
-COPY index.html app.js styles.css ai-assistant.js audit_log.html analytics_dashboard.html ./
+COPY index.html app.js styles.css ai-assistant.js ./
 COPY assets/ ./assets/
 COPY config/ ./config/
 COPY knowledge/ ./knowledge/
