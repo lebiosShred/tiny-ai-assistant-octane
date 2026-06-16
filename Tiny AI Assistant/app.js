@@ -586,6 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!prospectName) {
                 currentChatId = null;
                 workspaceEmptyState.classList.remove('hidden');
+                if (emptyStateContent) emptyStateContent.classList.remove('hidden');
                 workspaceActiveChat.classList.add('hidden');
                 chatMessagesLog.innerHTML = '';
                 chatHistory = [];
@@ -1510,6 +1511,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectProspect(activeFolder, activeProspectName);
                     } else {
                         workspaceEmptyState.classList.remove('hidden');
+                        if (emptyStateContent) emptyStateContent.classList.remove('hidden');
                         workspaceActiveChat.classList.add('hidden');
                     }
                 }
