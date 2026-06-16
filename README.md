@@ -156,3 +156,25 @@ Backend builds compile a docker image and deploy it with GCS storage mounts:
    gcloud beta run deploy tiny-ai-assistant --image gcr.io/tiny-ai-assistant-proj-12345/tiny-ai-assistant --region us-central1 --execution-environment gen2 --add-volume "name=knowledge-vol,type=cloud-storage,bucket=tiny-ai-knowledge-base,mount-options=stat-cache-ttl=0" --add-volume-mount "volume=knowledge-vol,mount-path=/app/knowledge" --allow-unauthenticated
    ```
    Or run the automated deployment script [deploy.sh](file:///c:/Users/SkyDr/OneDrive/Desktop/PROJECTS/Anthony/Tiny%20AI%20Assistant/deploy.sh) in a compatible bash shell.
+
+---
+
+## 7. Required Services & Developer Accounts
+
+To migrate this application from a personal deployment to a team-managed production environment, developers must create accounts with the following providers and configure the corresponding environment variables in the `.env` file:
+
+| Service Provider | Env Variable Keys | Purpose |
+| --- | --- | --- |
+| **Google Cloud Console** | `GDRIVE_CLIENT_ID`, `GDRIVE_CLIENT_SECRET`, `GDRIVE_REFRESH_TOKEN`, `GDRIVE_ROOT_FOLDER_ID` | Connects Google Drive API for company folder creation and prospect file uploads. |
+| **Google AI Studio** | `GOOGLE_API_KEYS` | Provides API keys for Gemini LLM completions (supports comma-separated rotation list). |
+| **Neon Console** | `DATABASE_URL`, `MIGRATION_DATABASE_URL` | Serverless Postgres database for relational chat session history storage. |
+| **Resend** | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Handles SMTP email dispatch for recap emails. |
+| **Tavily AI** | `TAVILY_API_KEY` | Search API provider used for RAG research. |
+| **Exa AI** | `EXA_API_KEY` | Search API provider used for RAG research. |
+| **Jina AI** | `JINA_API_KEY` | Reader API used to scrape website URLs. |
+| **DeepSeek** | `DEEPSEEK_API_KEY` | DeepSeek LLM API for zero-cost model failover testing. |
+| **OpenRouter** | `OPENROUTER_API_KEY` | LLM router provider used for fallback completions. |
+| **Mapbox** | `MAPBOX_API_KEY` | Mapbox developer API used to compute travel times and routing distances. |
+| **Fathom Video** | `FATHOM_API_KEY` | Fathom meeting transcription API integrations. |
+| **HubSpot Developer Portal** | `HUBSPOT_ACCESS_TOKEN` | Private App Access Token for CRM sync. |
+| **Redis Provider** | `REDIS_URL` | Managed Redis server (like Upstash) for socket session broadcasts. |
