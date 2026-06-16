@@ -30,47 +30,47 @@
     },
     {
       "source": "/assets/(.*)",
-      "destination": "/Tiny AI Assistant/assets/$1"
+      "destination": "/Tiny%20AI%20Assistant/assets/$1"
     },
     {
       "source": "/screencast/(.*)",
-      "destination": "/Tiny AI Documentation/screencast/$1"
+      "destination": "/Tiny%20AI%20Documentation/screencast/$1"
     },
     {
       "source": "/projects",
-      "destination": "/Tiny AI Assistant/github_projects.html"
+      "destination": "/Tiny%20AI%20Assistant/github_projects.html"
     },
     {
       "source": "/admin",
-      "destination": "/Tiny AI Assistant/admin_setup.html"
+      "destination": "/Tiny%20AI%20Assistant/admin_setup.html"
     },
     {
       "source": "/audit",
-      "destination": "/Tiny AI Assistant/audit_log.html"
+      "destination": "/Tiny%20AI%20Assistant/audit_log.html"
     },
     {
       "source": "/analytics",
-      "destination": "/Tiny AI Assistant/analytics_dashboard.html"
+      "destination": "/Tiny%20AI%20Assistant/analytics_dashboard.html"
     },
     {
       "source": "/book",
-      "destination": "/Tiny Booking/index.html"
+      "destination": "/Tiny%20Booking/index.html"
     },
     {
       "source": "/book/(.*)",
-      "destination": "/Tiny Booking/$1"
+      "destination": "/Tiny%20Booking/$1"
     },
     {
       "source": "/docs",
-      "destination": "/Tiny AI Documentation/index.html"
+      "destination": "/Tiny%20AI%20Documentation/index.html"
     },
     {
       "source": "/docs/(.*)",
-      "destination": "/Tiny AI Documentation/$1"
+      "destination": "/Tiny%20AI%20Documentation/$1"
     },
     {
       "source": "/(.*)",
-      "destination": "/Tiny AI Assistant/$1"
+      "destination": "/Tiny%20AI%20Assistant/$1"
     }
   ]
 }
