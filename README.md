@@ -1,4 +1,4 @@
-# Tiny AI Assistant -- Comprehensive Documentation
+# Tiny AI Assistant
 
 Welcome to the official documentation for the **Tiny AI Assistant**. This document covers the architecture, tech stack, core features, security guardrails, E2E testing framework, and deployment pipelines.
 
@@ -17,6 +17,61 @@ Tiny AI Assistant is an enterprise-grade sales enablement application designed f
 - **Data & Caching**: Serverless Neon PostgreSQL (via Drizzle ORM) for
   session persistence, with an ioredis layer for pub/sub session
   updates and local in-memory fallbacks.
+
+### Architecture Flow Diagram
+
+```mermaid
+graph TD
+    subgraph ClientLayer [Client Layer]
+        User([Sales Rep / Client Browser])
+    end
+
+    subgraph FrontendLayer [Frontend Hosting - Vercel]
+        Vercel[Vercel CDN]
+        indexHTML[index.html <br> Fetch Interceptor & Loop Protection]
+        appJS[app.js <br> Chat UI & Document Card Parser]
+        stylesCSS[styles.css <br> Premium Visual Theme]
+    end
+
+    subgraph BackendLayer [Backend Hosting - Google Cloud Run]
+        CloudRun[Node.js API Server <br> server.js]
+        Drizzle[Drizzle ORM]
+    end
+
+    subgraph DataStorageLayer [Data & Caching Layer]
+        NeonDB[(Neon Postgres <br> relational session store)]
+        RedisCache[(Redis Cache <br> pub/sub update sync)]
+        GCSBucket[(GCS Knowledge Base <br> mounted at /app/knowledge)]
+    end
+
+    subgraph ExternalIntegrations [External APIs & Services]
+        AISDK[Vercel AI SDK <br> Deepseek / Mistral / OpenAI]
+        GDrive[Google Drive API <br> Company folders sync]
+        HubSpot[HubSpot CRM <br> Sales contact logging]
+        Nodemailer[Nodemailer SMTP <br> Recap email dispatch]
+    end
+
+    %% Client Interactions
+    User -->|HTTPS GET| Vercel
+    Vercel -->|Serves Static Files| indexHTML
+    User -->|API Requests <br> x-api-key| CloudRun
+
+    %% Frontend Assets
+    indexHTML --> appJS
+    indexHTML --> stylesCSS
+
+    %% Backend Operations
+    CloudRun -->|Query & Sync| Drizzle
+    Drizzle --> NeonDB
+    CloudRun -->|Pub/Sub Sync| RedisCache
+    CloudRun -->|Direct Directory Reads| GCSBucket
+
+    %% Backend Integrations
+    CloudRun -->|Generative RAG Completion| AISDK
+    CloudRun -->|Folder/File Creation| GDrive
+    CloudRun -->|Sync Log Entries| HubSpot
+    CloudRun -->|Send Recap Email| Nodemailer
+```
 
 ---
 
