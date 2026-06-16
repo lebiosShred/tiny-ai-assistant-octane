@@ -2,9 +2,9 @@ name: Aegis CI -- E2E & LLM Quality Gate
 
 on:
   push:
-    branches: [build-local-ai-assistant]
+    branches: [tiny-ai-assistant]
   pull_request:
-    branches: [build-local-ai-assistant]
+    branches: [tiny-ai-assistant]
 
 jobs:
   aegis-e2e:

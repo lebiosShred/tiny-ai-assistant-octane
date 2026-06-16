@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - build-local-ai-assistant
+      - tiny-ai-assistant
   workflow_dispatch:
 
 jobs:
