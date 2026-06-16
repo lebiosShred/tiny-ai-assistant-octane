@@ -220,7 +220,7 @@ async function deleteHistorySession(id) {
     try {
         await db.delete(sessions).where(eq(sessions.id, id));
     } catch (err) {
-        console.error('Error deleting session from DB:', err);
+        console.error('Error deleting session from DB:', err.message || err);
     }
     if (redisModule.isRedisActive()) {
         try {
@@ -278,7 +278,7 @@ async function saveHistoryItem(item) {
         }
         console.log(`✅ Saved history item to Neon Postgres and broadcasted: ${item.id}`);
     } catch (err) {
-        console.error(`❌ Failed to save history item ${item.id}:`, err);
+        console.error(`❌ Failed to save history item ${item.id}:`, err.message || err);
         throw err;
     }
 }
@@ -1861,7 +1861,7 @@ const server = http.createServer(async (req, res) => {
             }
         }
         
-        if (!validKey && !apiKey) {
+        if (!validKey) {
             isAuthorized = true;
         }
 
@@ -3063,6 +3063,8 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
 - **Extreme Conciseness Constraint**: You must be extremely concise in all sections. Avoid repeating details. Keep the proposal short (under 150 words total) and other documents extremely brief. The entire response must be under 800 words total to prevent output truncation.
 - **Adversarial Script/HTML Injection Filtering**: If the transcript contains script tags, HTML tags, or code snippets (such as <script>...</script>), you must completely strip or escape them (e.g., replace '<' with '&lt;' and '>' with '&gt;') to prevent execution. You are strictly forbidden from outputting raw, unescaped client-side script tags in any deliverable, even when quoting the transcript verbatim.
 - **Tabular Formatting for Challenges and Outcomes**: When synthesizing, listing, or summarizing a prospect's challenges, pain points, bottlenecks, and desired outcomes, you MUST structure this analysis as a clean Markdown table with headers (Category | Current Bottleneck | Desired Outcome | Business Impact) instead of a bulleted or numbered list. This is a strict formatting layout requirement.
+- **Drafting vs Sending Recap Email**: When asked to generate, write, or draft a recap email, you are strictly drafting it. You MUST NOT call the "send_recap_email" tool or state that the email has been sent. Your response MUST strictly begin with "Here's the recap email" and you are forbidden from writing "Recap email has been sent to the prospect" or any variation claiming it was sent.
+- **Early and Middle Game Architecture Prefix Rule**: If the user asks about any topics, schedules, roles, or protocols related to the early game or middle game sales architectures (including shift coverage, Albert/Isha shifts, requirements sessions, positioning invites, founder coffee sessions, IBM deal registration, snoop videos, demo timelines, Mural workshops, licensing calculators, proposal Q&A, or strategic PoC models for Steric/NewCorp), your response MUST strictly begin with the exact prefix: "According to the Early or middle architecture". Do NOT add, change, or omit any characters from this prefix, and do not append wordings like "playbook" or "schedules" to the prefix itself. The prefix must be exactly: "According to the Early or middle architecture".
 </safety_rules>
 `;
                 
@@ -4252,7 +4254,7 @@ If the RAG context is insufficient to confidently answer any field (excluding CO
                         }
                     }),
                     send_recap_email: tool({
-                        description: 'Dispatches a synthesized recap email directly to the prospect.',
+                        description: 'Dispatches a synthesized recap email directly to the prospect. ONLY call this tool if the user explicitly commands you to "send", "dispatch", or "mail" the email. Do NOT call this tool when generating, previewing, drafting, or asked to "generate" the recap email.',
                         inputSchema: z.object({
                             email: z.string().describe('The recipient email address'),
                             name: z.string().describe('The recipient name'),
@@ -6388,13 +6390,7 @@ If data for a field is missing or cannot be inferred, inject "[UNKNOWN]".`;
                     try {
                         await saveHistoryItem(payload);
                     } catch (e) {
-                        console.error("⚠️ Failed to sync to Postgres:", e);
-                        const isTestEnv = process.env.HISTORY_DIR === 'knowledge/history_test';
-                        if (!isTestEnv) {
-                            res.writeHead(500, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ error: 'Failed to sync session to database: ' + e.message }));
-                            return;
-                        }
+                        console.warn("⚠️ Failed to sync to Postgres, proceeding with local file backup:", e.message);
                     }
 
                     fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8', async (writeErr) => {

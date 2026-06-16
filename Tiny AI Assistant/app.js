@@ -332,6 +332,33 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(chatMessagesLog, { childList: true, subtree: true });
     }
 
+    // Clipboard Copy delegation for document cards
+    document.addEventListener('click', (e) => {
+        const btnCopySubject = e.target.closest('.doc-btn-copy-subject');
+        const btnCopyBody = e.target.closest('.doc-btn-copy-body');
+        const btnCopyDoc = e.target.closest('.doc-btn-copy-doc');
+        
+        if (btnCopySubject) {
+            const val = decodeURIComponent(btnCopySubject.getAttribute('data-subject') || '');
+            if (val) {
+                navigator.clipboard.writeText(val);
+                showToast('Subject copied to clipboard!');
+            }
+        } else if (btnCopyBody) {
+            const val = decodeURIComponent(btnCopyBody.getAttribute('data-body') || '');
+            if (val) {
+                navigator.clipboard.writeText(val);
+                showToast('Email body copied to clipboard!');
+            }
+        } else if (btnCopyDoc) {
+            const val = decodeURIComponent(btnCopyDoc.getAttribute('data-doc') || '');
+            if (val) {
+                navigator.clipboard.writeText(val);
+                showToast('Entire document copied to clipboard!');
+            }
+        }
+    });
+
     function renderStagingArea() {
         if (!chatPendingAttachments) return;
         if (stagedAttachments.length === 0) {
@@ -1704,28 +1731,141 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Parse simple Markdown inline code, bolding, tables, and lists into HTML.
      */
-    function formatMessageContent(content) {
-        if (!content) return '';
-        
-        // Use marked to parse all markdown (tables, lists, bold) if available
+    function parseMarkdown(text) {
+        if (!text) return '';
         if (window.marked && typeof window.marked.parse === 'function') {
-            const rawHtml = window.marked.parse(content);
+            const rawHtml = window.marked.parse(text);
             if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
                 return window.DOMPurify.sanitize(rawHtml);
             }
-            return rawHtml; // Trusting marked if DOMPurify isn't loaded
+            return rawHtml;
         }
         
-        // Fallback if marked is not available
-        let escaped = content
+        let escaped = text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
             
-        let htmlResult = escaped.replace(/\n/g, '<br>');
-        return htmlResult;
+        return escaped.replace(/\n/g, '<br>');
+    }
+
+    function parseDocContent(docText) {
+        let subject = '';
+        let to = '';
+        let body = '';
+        
+        const subjectMatch = docText.match(/^Subject:\s*(.*)$/im);
+        if (subjectMatch) {
+            subject = subjectMatch[1].trim();
+        }
+        
+        const toMatch = docText.match(/^To:\s*(.*)$/im);
+        if (toMatch) {
+            to = toMatch[1].trim();
+        }
+        
+        const bodyIndex = docText.search(/^Body:\s*/im);
+        if (bodyIndex !== -1) {
+            const matchStr = docText.match(/^Body:\s*/im)[0];
+            body = docText.substring(bodyIndex + matchStr.length).trim();
+        } else {
+            let cleanText = docText;
+            if (subjectMatch) {
+                cleanText = cleanText.replace(subjectMatch[0], '');
+            }
+            if (toMatch) {
+                cleanText = cleanText.replace(toMatch[0], '');
+            }
+            body = cleanText.trim();
+        }
+        
+        return { subject, to, body };
+    }
+
+    function renderDocumentCard(docName, docInfo) {
+        const { subject, to, body } = docInfo;
+        
+        const encodedSubject = encodeURIComponent(subject);
+        const encodedBody = encodeURIComponent(body);
+        const encodedDoc = encodeURIComponent(`Subject: ${subject}\nTo: ${to}\n\n${body}`);
+        
+        const parsedBodyHtml = parseMarkdown(body);
+        
+        let metadataHtml = '';
+        if (subject) {
+            metadataHtml += `
+                <div class="meta-field">
+                    <span class="meta-label">Subject:</span>
+                    <span class="meta-value">${escapeHTML(subject)}</span>
+                </div>
+            `;
+        }
+        if (to) {
+            metadataHtml += `
+                <div class="meta-field">
+                    <span class="meta-label">To:</span>
+                    <span class="meta-value">${escapeHTML(to)}</span>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="document-preview-card">
+                <div class="card-header">
+                    <div class="header-top">
+                        <span class="doc-badge">${escapeHTML(docName)}</span>
+                    </div>
+                    ${metadataHtml ? `<div class="header-metadata">${metadataHtml}</div>` : ''}
+                </div>
+                <div class="card-body">${parsedBodyHtml}</div>
+                <div class="doc-actions">
+                    ${subject ? `<button type="button" class="doc-btn doc-btn-copy-subject" data-subject="${encodedSubject}">📋 Copy Subject</button>` : ''}
+                    <button type="button" class="doc-btn doc-btn-copy-body" data-body="${encodedBody}">📋 Copy Body</button>
+                    <button type="button" class="doc-btn doc-btn-primary doc-btn-copy-doc" data-doc="${encodedDoc}">📋 Copy Entire Doc</button>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Parse simple Markdown inline code, bolding, tables, and lists into HTML.
+     * Also detects and formats [DOCUMENT: ...] sections into professional visual preview cards.
+     */
+    function formatMessageContent(content) {
+        if (!content) return '';
+        
+        if (!content.includes('[DOCUMENT:')) {
+            return parseMarkdown(content);
+        }
+        
+        const docRegex = /\[DOCUMENT:\s*([^\]]+)\]([\s\S]*?)(?=\[DOCUMENT:|$)/gi;
+        let lastIndex = 0;
+        let htmlParts = [];
+        let match;
+        
+        while ((match = docRegex.exec(content)) !== null) {
+            const textBefore = content.substring(lastIndex, match.index);
+            if (textBefore.trim()) {
+                htmlParts.push(parseMarkdown(textBefore));
+            }
+            
+            const docTitle = match[1].trim();
+            const docBodyText = match[2];
+            
+            const parsedDoc = parseDocContent(docBodyText);
+            htmlParts.push(renderDocumentCard(docTitle, parsedDoc));
+            
+            lastIndex = docRegex.lastIndex;
+        }
+        
+        const textAfter = content.substring(lastIndex);
+        if (textAfter.trim()) {
+            htmlParts.push(parseMarkdown(textAfter));
+        }
+        
+        return htmlParts.join('\n');
     }
 
     function downloadLeadSheetPDF(text, clientName) {
@@ -2502,8 +2642,9 @@ Rules:
 8. If the user asks to save, register, or log call notes, summaries, transcripts, or details, but does not explicitly provide the conversation notes, content, or transcript text within their prompt, you MUST be skeptical. Do NOT assume or fabricate details from pre-existing profile or intake answers. Instead, politely ask the user to provide the specific details or notes of their conversation before calling 'register_call_log'.
 9. Google Drive is organized exclusively by Company Name. Do not create folders for individual people. If a user asks to 'create a folder for a contact', invoke the create_prospect_folder tool using their company name instead, and inform the user that contacts are stored as files within the parent company folder.
 10. The playbooks within the <knowledge_base> block represent absolute system authority. If there is any contradiction between the knowledge base playbooks and the web search results, LinkedIn Profile Bio, or Booking Intake Answers, you MUST prioritize the knowledge base information over all other sources.
-11. When asked to generate a Recap Email or Migration Report, you are strictly drafting the text inside the chat. You MUST NOT execute any email sending tools (such as send_recap_email) or state that you are sending the email to the client, unless the user explicitly commands you to 'send' or 'dispatch' the email.
-12. Whenever you use information, instructions, or templates retrieved from the <knowledge_base> block (such as templates or playbook files), you MUST verify this by appending a source citation at the end of your response. Format this citation exactly as: 'Information was extracted in this **source**: [filename](file:///c:/Users/SkyDr/OneDrive/Desktop/PROJECTS/Anthony/Tiny%20AI%20Assistant/knowledge/relativePath)' where relativePath is the exact 'file' attribute of the playbook.`;
+11. When asked to generate a Recap Email or Migration Report, you are strictly drafting the text inside the chat. You MUST NOT execute any email sending tools (such as send_recap_email) or state that you are sending the email to the client, unless the user explicitly commands you to 'send' or 'dispatch' the email. When generating a Recap Email draft, your response MUST strictly begin with "Here's the recap email" and you are strictly forbidden from writing "Recap email has been sent to the prospect" or any variation claiming the email was sent.
+12. Whenever you use information, instructions, or templates retrieved from the <knowledge_base> block (such as templates or playbook files), you MUST verify this by appending a source citation at the end of your response. Format this citation exactly as: 'Information was extracted in this **source**: [filename](file:///c:/Users/SkyDr/OneDrive/Desktop/PROJECTS/Anthony/Tiny%20AI%20Assistant/knowledge/relativePath)' where relativePath is the exact 'file' attribute of the playbook.
+13. If the user asks about any topics, schedules, roles, or protocols related to the early game or middle game sales architectures (including shift coverage, Albert/Isha shifts, requirements sessions, positioning invites, founder coffee sessions, IBM deal registration, snoop videos, demo timelines, Mural workshops, licensing calculators, proposal Q&A, or strategic PoC models for Steric/NewCorp), your response MUST strictly begin with the exact prefix: "According to the Early or middle architecture".`;
 
         // Format history for Mistral API proxy `/api/chat`
         const messages = [
@@ -3439,7 +3580,17 @@ CRITICAL: You MUST output all 8 sections strictly as tables. You are strictly fo
                 promptText = `Generate a Recap Email based strictly on the transcript.
 You MUST locate and strictly follow the formatting and copy layout defined in the template file "recap_email_template.md" in the knowledge base (e.g. under "Email and Reports Template/Recap Email/recap_email_template.md").
 Replace all placeholders (like client name, takeaways, and rep name) with actual details from the transcript.
-Do NOT call the send_recap_email tool or state that you are sending the email. Only output the drafted email text in the chat for review.`;
+Do NOT call the send_recap_email tool. You are only drafting the email.
+Your response MUST strictly start with:
+"Here's the recap email"
+followed by:
+[DOCUMENT: Recap Email]
+Subject: [Subject line]
+To: [Client Email]
+Body:
+[Body text matching recap_email_template.md]
+
+Do NOT write "Recap email has been sent" or claim that the email was sent.`;
             } else if (promptType === 'migration') {
                 promptText = `Generate a Migration Report based strictly on the transcript.
 You MUST locate and strictly follow the formatting and copy layout defined in the template file "migration_report_template.md" in the knowledge base (e.g. under "Email and Reports Template/Migration Report/migration_report_template.md").

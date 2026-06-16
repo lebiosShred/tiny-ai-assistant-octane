@@ -5338,3 +5338,155 @@ body {
     text-overflow: ellipsis !important;
 }
 
+/* Document Preview Card */
+.document-preview-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    margin: 1.25rem 0 !important;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08) !important;
+    overflow: hidden !important;
+    font-family: 'Inter', sans-serif !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.document-preview-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12) !important;
+}
+
+.document-preview-card .card-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 1rem 1.25rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+}
+
+.document-preview-card .header-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.document-preview-card .doc-badge {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: #0284c7 !important;
+    background: #e0f2fe !important;
+    padding: 0.25rem 0.6rem !important;
+    border-radius: 6px !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+.document-preview-card .header-metadata {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.4rem !important;
+}
+
+.document-preview-card .meta-field {
+    font-size: 0.88rem !important;
+    color: #334155 !important;
+    line-height: 1.4 !important;
+}
+
+.document-preview-card .meta-label {
+    font-weight: 600 !important;
+    color: #475569 !important;
+    width: 65px !important;
+    display: inline-block !important;
+}
+
+.document-preview-card .meta-value {
+    color: #0f172a !important;
+}
+
+.document-preview-card .card-body {
+    padding: 1.25rem !important;
+    background: #ffffff !important;
+    color: #334155 !important;
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+    white-space: pre-wrap !important;
+}
+
+/* Make markdown elements inside body look premium */
+.document-preview-card .card-body p {
+    margin-bottom: 0.75rem !important;
+}
+
+.document-preview-card .card-body ul, .document-preview-card .card-body ol {
+    margin-left: 1.5rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.document-preview-card .card-body li {
+    margin-bottom: 0.35rem !important;
+}
+
+.document-preview-card .card-body h1, 
+.document-preview-card .card-body h2, 
+.document-preview-card .card-body h3 {
+    color: #0f172a !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    margin: 1rem 0 0.5rem 0 !important;
+}
+
+.document-preview-card .card-body h1:first-child, 
+.document-preview-card .card-body h2:first-child, 
+.document-preview-card .card-body h3:first-child {
+    margin-top: 0 !important;
+}
+
+.document-preview-card .doc-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.6rem !important;
+    padding: 0.75rem 1.25rem !important;
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    align-items: center !important;
+}
+
+.document-preview-card .doc-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    padding: 0.45rem 0.85rem !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.document-preview-card .doc-btn:hover {
+    color: #0f172a !important;
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    transform: translateY(-0.5px) !important;
+}
+
+.document-preview-card .doc-btn-primary {
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #0284c7, #0369a1) !important;
+    border-color: #0284c7 !important;
+}
+
+.document-preview-card .doc-btn-primary:hover {
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #0369a1, #075985) !important;
+    border-color: #0369a1 !important;
+}
+

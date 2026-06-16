@@ -25,11 +25,33 @@
                 const token = window.sessionToken || '';
                 config.headers['x-api-key'] = token;
             }
-            return originalFetch(resource, config);
+            let response = await originalFetch(resource, config);
+            
+            // Auto-refresh token and retry on 401 Unauthorized
+            if (response.status === 401 && typeof resource === 'string' && resource.startsWith('/api/') && !resource.endsWith('/auth/token')) {
+                config = config || {};
+                config._retryCount = config._retryCount || 0;
+                if (config._retryCount < 1) {
+                    config._retryCount++;
+                    try {
+                        const tokenRes = await originalFetch('/api/auth/token', { method: 'POST', headers: { 'Content-Length': '0' } });
+                        if (tokenRes.ok) {
+                            const data = await tokenRes.json();
+                            window.sessionToken = data.token;
+                            config.headers = config.headers || {};
+                            config.headers['x-api-key'] = data.token;
+                            response = await originalFetch(resource, config);
+                        }
+                    } catch (err) {
+                        console.error("Failed to auto-refresh auth token:", err.message);
+                    }
+                }
+            }
+            return response;
         };
         (async function() {
             try {
-                const res = await originalFetch('/api/auth/token', { method: 'POST' });
+                const res = await originalFetch('/api/auth/token', { method: 'POST', headers: { 'Content-Length': '0' } });
                 if (res.ok) {
                     const data = await res.json();
                     window.sessionToken = data.token;
