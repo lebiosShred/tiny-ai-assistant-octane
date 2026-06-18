@@ -238,10 +238,30 @@ detailed below.
 * **Handover**: Create team accounts, deposit credits, and generate team API keys.
 * **Affected Variables**: `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`.
 
+#### Mistral AI
+* **Usage**: Alternative LLM reasoning model for specific RAG operations.
+* **Handover**: Create a Mistral developer account, establish billing, and generate API keys.
+* **Affected Variables**: `MISTRAL_API_KEY`, `MISTRAL_API_MODEL`.
+
+#### Anthropic Console (Claude)
+* **Usage**: Alternative LLM reasoning for high-fidelity recap drafting and formatting.
+* **Handover**: Create an Anthropic Console team account and generate an API key.
+* **Affected Variables**: `ANTHROPIC_API_KEY`.
+
 #### Search & Reader Providers (Tavily, Exa, Jina)
 * **Usage**: Real-time web search for competitor analysis and web page parsing/crawling.
 * **Handover**: Create corporate accounts, select pricing tiers, and generate production keys.
 * **Affected Variables**: `TAVILY_API_KEY`, `EXA_API_KEY`, `JINA_API_KEY`.
+
+#### IBM Watsonx Orchestrate
+* **Usage**: Optional integration for enterprise assistant flows.
+* **Handover**: Create an IBM Cloud/Watsonx account and generate API credentials.
+* **Affected Variables**: `WATSONX_API_KEY`, `WATSONX_AGENT_ID`, `WATSONX_URL`.
+
+#### Portkey / AI Gateway
+* **Usage**: Optional LLM routing, observability, and caching layer.
+* **Handover**: Register on Portkey, setup your gateway configuration, and obtain API keys.
+* **Affected Variables**: `AI_GATEWAY_URL`, `AI_GATEWAY_API_KEY`, `PORTKEY_API_KEY`, `PORTKEY_PROVIDER`.
 
 ### 7.5 Business & Location APIs
 
@@ -250,12 +270,15 @@ detailed below.
 * **Handover**: Create a corporate Mapbox developer account and generate a public access token.
 * **Affected Variables**: `MAPBOX_API_KEY`.
 
-#### Fathom Video
-* **Usage**: Syncing meeting transcripts from recorded Zoom or Teams calls.
-* **Handover**: Create a corporate Fathom account and generate an API key under Fathom Settings.
-* **Affected Variables**: `FATHOM_API_KEY`.
 
 #### HubSpot CRM
 * **Usage**: Sales CRM synchronization, contact creation, and notes logging.
 * **Handover**: Create a Private App in the corporate HubSpot portal with contacts/companies read/write scopes.
-* **Affected Variables**: `HUBSPOT_ACCESS_TOKEN`.
+* **Affected Variables**: `HUBSPOT_ACCESS_TOKEN`, `HUBSPOT_CLIENT_SECRET`.
+
+### 7.6 Security & Authentication
+
+#### Application API Key
+* **Usage**: Custom header authorization used to protect node backend API endpoints.
+* **Handover**: Set up a custom long secure string value to validate incoming client requests.
+* **Affected Variables**: `API_KEY`.

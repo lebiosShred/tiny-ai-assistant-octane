@@ -1943,94 +1943,6 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // Fathom Webhook - Automated Proposal Generator (Component 05)
-    if (pathname === '/api/fathom/webhook' && req.method === 'POST') {
-        let body = '';
-        req.on('data', chunk => body += chunk);
-        req.on('end', async () => {
-            let payload;
-            try { payload = JSON.parse(body); } catch(e) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'Invalid JSON' }));
-                return;
-            }
-            
-            // Fathom Webhook Handshake / Event verification
-            if (payload.event !== 'meeting.finished' || !payload.recording_id) {
-                res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate' });
-                res.end(JSON.stringify({ status: 'ignored', message: 'Not a completed meeting event.' }));
-                return;
-            }
-
-            // Immediately acknowledge webhook to prevent timeouts
-            res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate' });
-            res.end(JSON.stringify({ status: 'processing' }));
-            
-            // Asynchronous Processing (Fire and Forget)
-            (async () => {
-                try {
-                    const apiKey = (process.env.FATHOM_API_KEY || '').trim();
-                    if (!apiKey) throw new Error("FATHOM_API_KEY missing");
-                    
-                    let transcriptText = payload.transcript || '';
-                    if (!transcriptText) {
-                        try {
-                            // Fetch transcript from Fathom API
-                            const transUrl = `https://api.fathom.video/v1/recordings/${payload.recording_id}/transcript`;
-                            const transRes = await fetch(transUrl, {
-                                headers: { 'Authorization': `Bearer ${apiKey}` },
-                                signal: AbortSignal.timeout(30000) // 30s timeout for massive transcripts
-                            });
-                            if (!transRes.ok) throw new Error(`Fathom API error: ${transRes.status}`);
-                            
-                            // Prevent OOM from gigabyte JSON strings
-                            const contentLength = transRes.headers.get('content-length');
-                            if (contentLength && parseInt(contentLength, 10) > 10 * 1024 * 1024) {
-                                throw new Error("Fathom transcript exceeds safe memory limits (>10MB).");
-                            }
-                            
-                            const transData = await transRes.json();
-                            transcriptText = transData.transcript || JSON.stringify(transData);
-                        } catch (e) {
-                            console.error("❌ Fathom Transcript Extraction Failed:", e.message);
-                            transcriptText = "[TRANSCRIPT EXTRACTION FAILED DUE TO TIMEOUT OR PAYLOAD SIZE]";
-                        }
-                    }
-                    
-                    const systemPrompt = `You are a Senior Solutions Architect at Octane Software Solutions.
-You will be provided with a raw meeting transcript.
-Generate a strictly formatted Proposal Document.
-Output ONLY the following 4 sections in Markdown, anchored to the Octane brand requirements:
-
-### I. Objective
-(Single, high-density paragraph defining the primary goal of the engagement).
-
-### II. Background
-(An opening statement followed by bullet points outlining empirical data, intent gaps, or pain points uncovered in the transcript).
-
-### III. Contributor Scope of Work
-(A Markdown table with column headers: "Task" | "Reasons". List tactical delivery tasks mapped to the background pain points).
-
-### IV. Client's Scope of Work
-(A bulleted list of dependencies, assets, or briefings required from the prospect).`;
-
-                    const userPrompt = `--- BEGIN TRANSCRIPT ---\n${transcriptText}\n--- END TRANSCRIPT ---\n\nGenerate the Proposal.`;
-                    
-                    const proposal = await generateAICompletion(systemPrompt, userPrompt);
-                    
-                    // In a production environment, this proposal would be saved to HubSpot, emailed, or written to a dashboard DB.
-                    // For now, we write it to the local disk as an artifact of the process.
-                    const proposalPath = path.join(__dirname, 'knowledge', `proposal_${payload.recording_id}.md`);
-                    fs.writeFileSync(proposalPath, proposal, 'utf8');
-                    console.log(`[Component 05] Proposal successfully generated and saved to ${proposalPath}`);
-                    
-                } catch (err) {
-                    console.error("[Component 05] Fathom Webhook Error:", err.message);
-                }
-            })();
-        });
-        return;
-    }
 
     // Geolocation Routing API Route (Powered by Mapbox)
     if (pathname === '/api/calculate-distance' && req.method === 'POST') {
@@ -2686,7 +2598,7 @@ Output ONLY the following 4 sections in Markdown, anchored to the Octane brand r
                             tempComp = tempComp.split(/\b(with|for|to|containing)\b/i)[0].trim();
                         }
                         chatDetails.company = tempComp;
-                    } else if (userMsg.content.includes('--- SPEAKER IDENTIFICATION ---') || userMsg.content.includes('Fathom / Jamie AI Call Transcript')) {
+                    } else if (userMsg.content.includes('--- SPEAKER IDENTIFICATION ---')) {
                         chatAction = 'SYNTHESIZE_CALL';
                         const companyMatch = userMsg.content.match(/SUMMARY:\s*([^—\n]+)/i);
                         chatDetails.company = companyMatch ? companyMatch[1].trim() : 'Unknown';
