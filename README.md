@@ -34,7 +34,19 @@ To start the local development server:
 
 ---
 
-## 3. Database Operations (Neon Postgres)
+## 3. Modifying the Frontend
+
+If you are looking to tweak the frontend, just look for these files in the `Tiny AI Assistant` folder:
+- **HTML Structure**: [index.html](./Tiny%20AI%20Assistant/index.html)
+  Defines sidebar panels, input areas, modals, and container wrappers.
+- **UI Logic & Events**: [app.js](./Tiny%20AI%20Assistant/app.js)
+  Handles chat logic, message rendering, file upload listeners, and PDF previews.
+- **CSS Styling & Layouts**: [styles.css](./Tiny%20AI%20Assistant/styles.css)
+  Manages dark-themed colors, custom fonts, element spacing, and responsive grids.
+
+---
+
+## 4. Database Operations (Neon Postgres)
 
 The application uses **Neon Postgres** to persist session history. The schemas are managed via **Drizzle ORM**.
 
@@ -45,7 +57,7 @@ The application uses **Neon Postgres** to persist session history. The schemas a
 
 ---
 
-## 4. Running Tests
+## 5. Running Tests
 
 We use **Playwright** for E2E testing:
 
@@ -57,7 +69,7 @@ We use **Playwright** for E2E testing:
 
 ---
 
-## 5. Deployment Pipelines
+## 6. Deployment Pipelines
 
 - **Frontend static assets**: Deployed on **Vercel** (`https://octane-tiny-assistant.vercel.app/`).
   Deploy production updates using:
