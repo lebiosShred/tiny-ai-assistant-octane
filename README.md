@@ -65,7 +65,29 @@ If you are looking to tweak the backend logic or API routing, look for these fil
 
 ---
 
-## 5. Deployment Pipelines
+## 5. Required External Services & API Configuration
+
+All API keys are configured via environment variables in the `.env` file.
+To modify integration logic, look for the corresponding service files listed below.
+
+- **AI Models (Gemini, DeepSeek, Mistral)**:
+  Adjust prompt logic and fallbacks in [ai-assistant.js](./Tiny%20AI%20Assistant/ai-assistant.js).
+- **Web Search (Tavily, Exa)**:
+  Configure search query filters in [ai-assistant.js](./Tiny%20AI%20Assistant/ai-assistant.js).
+- **Neon Postgres**:
+  DB connection and schema logic are in [schema.js](./Tiny%20AI%20Assistant/src/db/schema.js).
+- **Upstash Redis**:
+  Socket and memory sync logic are managed in [server.js](./Tiny%20AI%20Assistant/server.js).
+- **Google Workspace (Drive)**:
+  Google Drive OAuth logic is in [gdrive-service.js](./Tiny%20AI%20Assistant/gdrive-service.js).
+- **Resend (SMTP)**:
+  SMTP setup and templates are in [email-service.js](./Tiny%20AI%20Assistant/email-service.js).
+- **HubSpot CRM**:
+  CRM api routes and syncing are configured in [server.js](./Tiny%20AI%20Assistant/server.js).
+
+---
+
+## 6. Deployment Pipelines
 
 - **Frontend static assets**: Deployed on **Vercel** (`https://octane-tiny-assistant.vercel.app/`).
   Deploy production updates using:
