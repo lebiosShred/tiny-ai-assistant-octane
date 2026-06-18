@@ -56,8 +56,9 @@ If you are looking to tweak the backend logic or API routing, look for these fil
   Boots the server, manages API keys, sets up middleware, and defines session routes.
 - **Gemini RAG & AI Engine**: [ai-assistant.js](./Tiny%20AI%20Assistant/ai-assistant.js)
   Implements the RAG architecture, model configurations, safety rules, and prompts.
-- **Database Schema & Migrations**: [schema.js](./Tiny%20AI%20Assistant/src/db/schema.js)
-  Defines table schemas. To push schema changes to Neon Postgres, run: `npx drizzle-kit push`
+- **Database Schema & Drizzle ORM**: [schema.js](./Tiny%20AI%20Assistant/src/db/schema.js)
+  Defines SQL tables for chat sessions and document metadata.
+  To apply changes to Neon Postgres, run: `npx drizzle-kit push`
 - **Google Drive Integration**: [gdrive-service.js](./Tiny%20AI%20Assistant/gdrive-service.js)
   Handles folder structure management and file uploads.
 - **Email Generation**: [email-service.js](./Tiny%20AI%20Assistant/email-service.js)
@@ -74,8 +75,9 @@ To modify integration logic, look for the corresponding service files listed bel
   Adjust prompt logic and fallbacks in [ai-assistant.js](./Tiny%20AI%20Assistant/ai-assistant.js).
 - **Web Search (Tavily, Exa)**:
   Configure search query filters in [ai-assistant.js](./Tiny%20AI%20Assistant/ai-assistant.js).
-- **Neon Postgres**:
-  DB connection and schema logic are in [schema.js](./Tiny%20AI%20Assistant/src/db/schema.js).
+- **Neon Postgres & Drizzle ORM**:
+  Drizzle ORM is used to connect and query PostgreSQL tables.
+  Database connection and schemas are in [schema.js](./Tiny%20AI%20Assistant/src/db/schema.js).
 - **Upstash Redis**:
   Socket and memory sync logic are managed in [server.js](./Tiny%20AI%20Assistant/server.js).
 - **Google Workspace (Drive)**:
