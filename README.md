@@ -56,8 +56,8 @@ If you are looking to tweak the backend logic or API routing, look for these fil
   Boots the server, manages API keys, sets up middleware, and defines session routes.
 - **Gemini RAG & AI Engine**: [ai-assistant.js](./Tiny%20AI%20Assistant/ai-assistant.js)
   Implements the RAG architecture, model configurations, safety rules, and prompts.
-- **Database Schema**: [schema.js](./Tiny%20AI%20Assistant/src/db/schema.js)
-  Defines table schemas using Drizzle ORM for PostgreSQL.
+- **Database Schema & Migrations**: [schema.js](./Tiny%20AI%20Assistant/src/db/schema.js)
+  Defines table schemas. To push schema changes to Neon Postgres, run: `npx drizzle-kit push`
 - **Google Drive Integration**: [gdrive-service.js](./Tiny%20AI%20Assistant/gdrive-service.js)
   Handles folder structure management and file uploads.
 - **Email Generation**: [email-service.js](./Tiny%20AI%20Assistant/email-service.js)
@@ -65,30 +65,7 @@ If you are looking to tweak the backend logic or API routing, look for these fil
 
 ---
 
-## 5. Database Operations (Neon Postgres)
-
-The application uses **Neon Postgres** to persist session history. The schemas are managed via **Drizzle ORM**.
-
-- If you modify database schemas, apply the changes to the database by running:
-  ```powershell
-  npx drizzle-kit push
-  ```
-
----
-
-## 6. Running Tests
-
-We use **Playwright** for E2E testing:
-
-- Run E2E verification tests:
-  ```powershell
-  npx playwright test
-  ```
-  *(Note: All legacy Aegis tests and video pipelines have been deleted to keep the project clean).*
-
----
-
-## 7. Deployment Pipelines
+## 5. Deployment Pipelines
 
 - **Frontend static assets**: Deployed on **Vercel** (`https://octane-tiny-assistant.vercel.app/`).
   Deploy production updates using:
