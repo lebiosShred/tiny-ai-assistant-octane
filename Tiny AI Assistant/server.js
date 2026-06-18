@@ -6875,22 +6875,8 @@ ${payload.intakeAnswers || ''}`;
 
     // Legacy Static Files Resolution
     let relativePath = pathname;
-    if (pathname.startsWith('/book')) {
-        if (pathname === '/book' || pathname === '/book/') {
-            relativePath = '/Tiny Booking/index.html';
-        } else {
-            relativePath = pathname.replace(/^\/book/, '/Tiny Booking');
-        }
-    } else if (pathname.startsWith('/docs')) {
-        if (pathname === '/docs' || pathname === '/docs/') {
-            relativePath = '/Tiny AI Documentation/index.html';
-        } else {
-            relativePath = pathname.replace(/^\/docs/, '/Tiny AI Documentation');
-        }
-    } else if (pathname.startsWith('/assets/')) {
+    if (pathname.startsWith('/assets/')) {
         relativePath = pathname.replace(/^\/assets/, '/Tiny AI Assistant/assets');
-    } else if (pathname.startsWith('/screencast/')) {
-        relativePath = pathname.replace(/^\/screencast/, '/Tiny AI Documentation/screencast');
     } else if (pathname === '/projects') {
         relativePath = '/Tiny AI Assistant/github_projects.html';
     } else {
