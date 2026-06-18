@@ -1,7 +1,4 @@
 # Handover Guide for Deepanshu)
-
-Hey Deepanshu, welcome to the codebase! I've simplified this repository by removing legacy tests, empty placeholders, and inactive screencast workflows to make it as clean and straightforward as possible for you. 
-
 Here is exactly how the app works and the steps you need to take to run and deploy it.
 
 ---
