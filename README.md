@@ -1,4 +1,7 @@
-# Handover Guide for Deepanshu)
+# Welcome to Tiny AI Assistant (Handover Guide for Deepanshu)
+
+Hey Deepanshu, welcome to the codebase! I've simplified this repository by removing legacy tests, empty placeholders, and inactive screencast workflows to make it as clean and straightforward as possible for you. 
+
 Here is exactly how the app works and the steps you need to take to run and deploy it.
 
 ---
@@ -46,7 +49,23 @@ If you are looking to tweak the frontend, just look for these files in the `Tiny
 
 ---
 
-## 4. Database Operations (Neon Postgres)
+## 4. Modifying the Backend
+
+If you are looking to tweak the backend logic or API routing, look for these files in the `Tiny AI Assistant` folder:
+- **Server Routing & API Entry**: [server.js](./Tiny%20AI%20Assistant/server.js)
+  Boots the server, manages API keys, sets up middleware, and defines session routes.
+- **Gemini RAG & AI Engine**: [ai-assistant.js](./Tiny%20AI%20Assistant/ai-assistant.js)
+  Implements the RAG architecture, model configurations, safety rules, and prompts.
+- **Database Schema**: [schema.js](./Tiny%20AI%20Assistant/src/db/schema.js)
+  Defines table schemas using Drizzle ORM for PostgreSQL.
+- **Google Drive Integration**: [gdrive-service.js](./Tiny%20AI%20Assistant/gdrive-service.js)
+  Handles folder structure management and file uploads.
+- **Email Generation**: [email-service.js](./Tiny%20AI%20Assistant/email-service.js)
+  Handles SMTP setups and outbound Resend/Nodemailer integrations.
+
+---
+
+## 5. Database Operations (Neon Postgres)
 
 The application uses **Neon Postgres** to persist session history. The schemas are managed via **Drizzle ORM**.
 
@@ -57,7 +76,7 @@ The application uses **Neon Postgres** to persist session history. The schemas a
 
 ---
 
-## 5. Running Tests
+## 6. Running Tests
 
 We use **Playwright** for E2E testing:
 
@@ -69,7 +88,7 @@ We use **Playwright** for E2E testing:
 
 ---
 
-## 6. Deployment Pipelines
+## 7. Deployment Pipelines
 
 - **Frontend static assets**: Deployed on **Vercel** (`https://octane-tiny-assistant.vercel.app/`).
   Deploy production updates using:
