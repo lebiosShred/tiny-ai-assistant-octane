@@ -1,32 +1,105 @@
 {
   "version": 2,
   "cleanUrls": true,
-  "builds": [
+  "redirects": [
     {
-      "src": "Tiny AI Assistant/**",
-      "use": "@vercel/static"
+      "source": "/book",
+      "destination": "https://www.octanesolutions.com.au/book-a-demo-octane-software-solutions-ibm-gold-partner",
+      "permanent": true
     },
     {
-      "src": "Tiny AI Assistant/assets/**",
-      "use": "@vercel/static"
+      "source": "/book",
+      "has": [
+        {
+          "type": "host",
+          "value": "octane-tiny-assistant.vercel.app"
+        }
+      ],
+      "destination": "https://sales.octanesolutions.com.au/book",
+      "permanent": true
+    },
+    {
+      "source": "/book/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "octane-tiny-assistant.vercel.app"
+        }
+      ],
+      "destination": "https://sales.octanesolutions.com.au/book/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/book",
+      "has": [
+        {
+          "type": "host",
+          "value": "octane-tiny-assistant-lebiosshreds-projects.vercel.app"
+        }
+      ],
+      "destination": "https://sales.octanesolutions.com.au/book",
+      "permanent": true
+    },
+    {
+      "source": "/book/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "octane-tiny-assistant-lebiosshreds-projects.vercel.app"
+        }
+      ],
+      "destination": "https://sales.octanesolutions.com.au/book/:path*",
+      "permanent": true
     }
   ],
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://tiny-ai-assistant-351972137415.us-central1.run.app/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://tiny-ai-assistant-351972137415.us-central1.run.app/api/:path*"
     },
     {
-      "source": "/assets/(.*)",
-      "destination": "/Tiny%20AI%20Assistant/assets/$1"
+      "source": "/assets/:path*",
+      "destination": "/Tiny%20AI%20Assistant/assets/:path*"
     },
     {
       "source": "/projects",
       "destination": "/Tiny%20AI%20Assistant/github_projects.html"
     },
     {
-      "source": "/(.*)",
-      "destination": "/Tiny%20AI%20Assistant/$1"
+      "source": "/book",
+      "destination": "/Tiny-Booking"
+    },
+    {
+      "source": "/book/:path*",
+      "destination": "/Tiny-Booking/:path*"
+    },
+    {
+      "source": "/",
+      "destination": "/Tiny%20AI%20Assistant"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/Tiny%20AI%20Assistant"
+    },
+    {
+      "source": "/styles.css",
+      "destination": "/Tiny%20AI%20Assistant/styles.css"
+    },
+    {
+      "source": "/app.js",
+      "destination": "/Tiny%20AI%20Assistant/app.js"
+    },
+    {
+      "source": "/tiny.png",
+      "destination": "/Tiny%20AI%20Assistant/tiny.png"
+    },
+    {
+      "source": "/executive-summary.html",
+      "destination": "/Tiny%20AI%20Assistant/executive-summary.html"
+    },
+    {
+      "source": "/USER_GUIDE.md",
+      "destination": "/Tiny%20AI%20Assistant/USER_GUIDE.md"
     }
   ]
 }

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Requirements Meeting with Octane Software Solutions</title>
+    <meta name="description" content="Schedule a free 30-minute Requirements Meeting with Octane Software Solutions. Discuss your Planning & Analytics (TM1) or AI needs -- no obligation, zero pressure.">
+    <meta property="og:title" content="Book a Requirements Meeting with Octane Software Solutions">
+    <meta property="og:description" content="Schedule a free 30-minute Requirements Meeting. Let's explore how Octane can help your organisation grow.">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/book/book.css">
+    <link rel="icon" type="image/png" href="/book/tiny.png">
+    <style>
+        /* Custom Select Overlay */
+        .custom-select-container { position: relative; width: 100%; user-select: none; }
+        .custom-select-trigger {
+            width: 100%; padding: 12px; background: #fff; border: 1px solid rgba(0, 0, 0, 0.1); 
+            border-radius: 6px; font-size: 0.95rem; color: #555; cursor: pointer; transition: all 0.2s;
+            display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;
+        }
+        .custom-select-trigger::after { content: "▼"; font-size: 0.7rem; color: #999; }
+        .custom-select-trigger.open { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,115,232,0.15); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .custom-select-trigger.selected { color: #000; font-weight: 500; }
+        .custom-select-options {
+            position: absolute; top: 100%; left: 0; width: 100%; background: #fff; 
+            border: 1px solid rgba(26,115,232,0.3); border-top: none; border-bottom-left-radius: 6px; 
+            border-bottom-right-radius: 6px; z-index: 100; display: none; max-height: 250px; 
+            overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box;
+        }
+        .custom-select-options.open { display: block; }
+        .custom-option { padding: 10px 12px; font-size: 0.9rem; color: #333; cursor: pointer; transition: background 0.2s; }
+        .custom-option:hover { background: rgba(26,115,232,0.05); color: var(--primary); }
+        body {
+            padding-top: 64px;
+        }
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes dash {
+            0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+            50% { stroke-dasharray: 89, 200; stroke-dashoffset: -35px; }
+            100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124px; }
+        }
+    </style>
+    <script>
+        // Lightweight API Security: Fetch and inject dynamic auth token into all API calls
+        const originalFetch = window.fetch;
+        window.fetch = async function() {
+            let [resource, config] = arguments;
+            if (typeof resource === 'string' && resource.startsWith('/api/')) {
+                config = config || {};
+                config.headers = config.headers || {};
+                const token = window.sessionToken || 'octane-secret-key-2026';
+                config.headers['x-api-key'] = token;
+            }
+            return originalFetch(resource, config);
+        };
+        (async function() {
+            try {
+                const res = await originalFetch('/api/auth/token', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    window.sessionToken = data.token;
+                }
+            } catch (err) {
+                console.error("Failed to fetch dynamic auth token:", err.message);
+            }
+        })();
+    </script>
+</head>
+<body>
+
+    <!-- ====== Top Navigation Header ====== -->
+    <header class="booking-header">
+        <div class="container" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <a href="/" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #1A1D20; font-weight: 700; font-size: 1.1rem;">
+                <img src="/book/tiny.png" alt="Tiny AI Assistant Logo" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid #4daeeb;">
+                <span>Octane Booking</span>
+            </a>
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <a href="/book" id="nav-booking-page" class="nav-link active">Booking Page</a>
+                <a href="/docs" id="nav-docs-page" target="_blank" class="nav-link">Documentation</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ====== Hero: Two-Column Layout (Context + Calendar) ====== -->
+    <section class="hero" id="hero">
+        <div class="container">
+            <div class="hero__grid">
+
+                <!-- Left Column: Context -->
+                <div class="hero__context">
+                    <h1 class="hero__title">
+                        Get ready for
+                        <span>your demo</span>
+                    </h1>
+
+                    <p class="hero__desc">
+                        <strong>Talk to us about your requirements and we will book you a custom demonstration.</strong>
+                    </p>
+
+                    <p class="hero__desc">
+                        Octane is an IBM Gold Partner offering TM1 Planning Analytics and Watson Orchestrate. We cover traditional TM1 support and help CFOs begin using AI and automation tools.
+                    </p>
+                    <p class="hero__desc" style="font-style: italic; color: var(--accent); margin-top: -0.5rem; font-weight: 500;">
+                        We go the extra mile so you can go the distance.
+                    </p>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+                        <a href="tel:+61290020455" style="display: flex; align-items: center; gap: 0.75rem; font-weight: 600; color: var(--text-white);">
+                            <span class="hero__social-link hero__social-link--phone" style="margin: 0; flex-shrink: 0;">
+                                <svg viewBox="0 0 24 24"><path d="M20 22.621l-3.521-6.795c-.008.004-1.974.97-2.064 1.011-2.24 1.086-6.753-7.859-4.509-8.948.025-.013 1.992-.98 2.003-.986l-3.521-6.795c-.012.006-2.133 1.054-2.193 1.085-3.696 1.808-1.513 10.609 3.011 19.349 4.526 8.741 12.186 10.231 15.879 8.423.059-.029 2.115-1.042 2.214-1.091-.01-.004-2.1-1.011-2.299-1.134z"/></svg>
+                            </span>
+                            +61 2 9002 0455
+                        </a>
+                        <a href="mailto:media@octanesolutions.com.au" style="display: flex; align-items: center; gap: 0.75rem; font-weight: 600; color: var(--text-white);">
+                            <span class="hero__social-link hero__social-link--email" style="margin: 0; flex-shrink: 0;">
+                                <svg viewBox="0 0 24 24"><path d="M12 12.713l-11.985-9.713h23.97l-11.985 9.713zm0 2.574l-12-9.725v15.438h24v-15.438l-12 9.725z"/></svg>
+                            </span>
+                            media@octanesolutions.com.au
+                        </a>
+                    </div>
+
+                    <!-- Sales Team Hosts Display -->
+                    <div class="hosts-display" id="hosts-display-panel">
+                        <div class="hosts-avatars" id="hosts-avatars-container">
+                            <div class="host-avatar-circle" id="host-avatar-1">
+                                <img src="/book/albert.png" alt="Albert" class="host-img">
+                            </div>
+                            <div class="host-avatar-circle host-avatar-circle--overlap" id="host-avatar-2">
+                                <img src="/book/isha.png" alt="Isha" class="host-img host-img--tall">
+                            </div>
+                        </div>
+                        <div class="hosts-text">
+                            <p class="hosts-title" id="hosts-display-title">Meeting Hosts</p>
+                            <p class="hosts-subtitle" id="hosts-display-subtitle">You will be matched with Albert or Isha based on availability.</p>
+                        </div>
+                    </div>
+                </div>
+ 
+                <!-- Right Column: Interactive Booking Widget -->
+                <div class="hero__calendar" id="booking-widget-container">
+                    <div class="hero__calendar-header">Requirements Meeting</div>
+                    <div class="hero__calendar-body">
+                        <div class="calendar-tabs-wrapper" style="margin-bottom: 1rem;">
+                            <div class="calendar-tabs" style="display: flex; gap: 8px; width: 100%;">
+                                <button class="calendar-tab-btn" id="tab-albert" onclick="switchCalendar('albert')" style="flex: 1; padding: 12px; font-weight: 600; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                                    Albert Francis (Morning)
+                                </button>
+                                <button class="calendar-tab-btn" id="tab-isha" onclick="switchCalendar('isha')" style="flex: 1; padding: 12px; font-weight: 600; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                                    Isha Singh (Evening)
+                                </button>
+                            </div>
+                        </div>
+                        <div class="selected-meeting-info-card" style="margin-bottom: 1rem;">
+                            <div class="selected-meeting-desc" id="recommendation-desc">Detecting the optimal scheduling slot for your timezone...</div>
+                        </div>
+                        <div class="scheduler-container" id="hubspot-calendar-wrapper" style="min-height: 650px; position: relative; border-radius: 8px; overflow: hidden;">
+                            <div class="meetings-iframe-container" data-src="https://octanesolutions.com.au/meetings/albert-francis/requirement-session-albert?embed=true"></div>
+                            <div id="calendar-loading-spinner" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; display: flex; justify-content: center; align-items: center; z-index: 10; transition: opacity 0.3s ease; opacity: 1;">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                                    <svg class="spinner" width="50" height="50" viewBox="0 0 50 50" style="animation: rotate 2s linear infinite;">
+                                        <circle cx="25" cy="25" r="20" fill="none" stroke="#1A73E2" stroke-width="4" stroke-linecap="round" style="stroke-dasharray: 80, 200; stroke-dashoffset: 0; animation: dash 1.5s ease-in-out infinite;"></circle>
+                                    </svg>
+                                    <span style="font-size: 0.95rem; font-weight: 600; color: #1a73e2; font-family: sans-serif;">Loading Booking Calendar...</span>
+                                </div>
+                            </div>
+                            <script>
+                                (function() {
+                                    var todayStr = new Date().toISOString().split('T')[0];
+                                    var albertUrl = "https://octanesolutions.com.au/meetings/albert-francis/requirement-session-albert?embed=true&date=" + todayStr;
+                                    var ishaUrl = "https://meetings.hubspot.com/isha-singh1/requirement-session-isha?uuid=62252c56-b140-4e3f-a0e3-a541e6c65a38&embed=true&date=" + todayStr;
+                                    var timezoneOffset = new Date().getTimezoneOffset();
+                                    var isIshaOptimal = false;
+                                    if (timezoneOffset >= -540 && timezoneOffset <= 120) {
+                                        isIshaOptimal = true;
+                                    }
+                                    if (timezoneOffset <= -600) {
+                                        var hour = new Date().getHours();
+                                        if (hour >= 14) {
+                                            isIshaOptimal = true;
+                                        }
+                                    }
+                                    var container = document.querySelector('.meetings-iframe-container');
+                                    
+                                    // Mutation Observer to programmatically add title and aria-label to the iframe for accessibility compliance
+                                    var observer = new MutationObserver(function(mutations) {
+                                        mutations.forEach(function(mutation) {
+                                            if (mutation.addedNodes) {
+                                                mutation.addedNodes.forEach(function(node) {
+                                                    if (node.tagName === 'IFRAME') {
+                                                        node.setAttribute('title', 'HubSpot Meeting Calendar');
+                                                        node.setAttribute('aria-label', 'Meeting Calendar');
+                                                        console.log('♿ Programmatically applied title and aria-label to HubSpot iframe');
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    });
+                                    if (container) {
+                                        observer.observe(container, { childList: true });
+                                    }
+
+                                    container.setAttribute('data-src', isIshaOptimal ? ishaUrl : albertUrl);
+                                    window.switchCalendar = function(host) {
+                                        var btnAlbert = document.getElementById('tab-albert');
+                                        var btnIsha = document.getElementById('tab-isha');
+                                        var iframe = container.querySelector('iframe');
+                                        var targetUrl = host === 'isha' ? ishaUrl : albertUrl;
+                                        var spinner = document.getElementById('calendar-loading-spinner');
+                                        if (spinner) {
+                                            spinner.style.display = 'flex';
+                                            spinner.style.opacity = '1';
+                                        }
+                                        if (host === 'isha') {
+                                            btnIsha.classList.add('active');
+                                            btnAlbert.classList.remove('active');
+                                        } else {
+                                            btnAlbert.classList.add('active');
+                                            btnIsha.classList.remove('active');
+                                        }
+                                        if (iframe) {
+                                            iframe.src = targetUrl;
+                                            iframe.setAttribute('title', 'HubSpot Meeting Calendar');
+                                            iframe.setAttribute('aria-label', 'Meeting Calendar');
+                                        } else {
+                                            container.setAttribute('data-src', targetUrl);
+                                        }
+                                    };
+                                    document.addEventListener("DOMContentLoaded", function() {
+                                        var btnAlbert = document.getElementById('tab-albert');
+                                        var btnIsha = document.getElementById('tab-isha');
+                                        var recommendationDesc = document.getElementById('recommendation-desc');
+                                        var spinner = document.getElementById('calendar-loading-spinner');
+                                        
+                                        // Capture load events on container for nested dynamic iframe
+                                        container.addEventListener('load', function(e) {
+                                            if (e.target.tagName === 'IFRAME') {
+                                                if (spinner) {
+                                                    spinner.style.opacity = '0';
+                                                    setTimeout(function() { spinner.style.display = 'none'; }, 300);
+                                                }
+                                            }
+                                        }, true);
+
+                                        // Safety timeout
+                                        setTimeout(function() {
+                                            if (spinner && spinner.style.display !== 'none') {
+                                                spinner.style.opacity = '0';
+                                                setTimeout(function() { spinner.style.display = 'none'; }, 300);
+                                            }
+                                        }, 6000);
+
+                                        if (isIshaOptimal) {
+                                            btnIsha.classList.add('active');
+                                            btnAlbert.classList.remove('active');
+                                            if (recommendationDesc) {
+                                                recommendationDesc.textContent = "Defaulted to Isha Singh (Sydney Afternoon/Evening shift, optimal for your timezone). You can switch to Albert Francis's shift above.";
+                                            }
+                                        } else {
+                                            btnAlbert.classList.add('active');
+                                            btnIsha.classList.remove('active');
+                                            if (recommendationDesc) {
+                                                recommendationDesc.textContent = "Defaulted to Albert Francis (Sydney Morning/Afternoon shift, optimal for your timezone). You can switch to Isha Singh's shift above.";
+                                            }
+                                        }
+                                    });
+                                })();
+                            </script>
+                            <script type="text/javascript" src="https://static.hsappstatic.net/MeetingsEmbed/ex/MeetingsEmbedCode.js" async></script>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- ====== Testimonials ====== -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <h2 class="testimonials__heading"><strong>See Why Our Clients Would Recommend Us...</strong></h2>
+            <div class="testimonials__grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-card__quote-mark">&ldquo;</div>
+                    <p class="testimonial-card__text">
+                        Exceptional attention to detail and deep understanding of our planning requirements. The team delivered a solution that transformed our budgeting process completely.
+                    </p>
+                    <div class="testimonial-card__author">
+                        <div class="testimonial-card__avatar">JM</div>
+                        <div>
+                            <div class="testimonial-card__name">James M.</div>
+                            <div class="testimonial-card__company">CFO, Enterprise Client</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-card__quote-mark">&ldquo;</div>
+                    <p class="testimonial-card__text">
+                        Working with Octane has been a game-changer. Their TM1 expertise combined with AI-driven insights gave us visibility we never had before.
+                    </p>
+                    <div class="testimonial-card__author">
+                        <div class="testimonial-card__avatar">SK</div>
+                        <div>
+                            <div class="testimonial-card__name">Sarah K.</div>
+                            <div class="testimonial-card__company">Head of Analytics</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-card__quote-mark">&ldquo;</div>
+                    <p class="testimonial-card__text">
+                        Professional, responsive, and genuinely invested in our success. The implementation was seamless and ROI was visible within the first quarter.
+                    </p>
+                    <div class="testimonial-card__author">
+                        <div class="testimonial-card__avatar">DP</div>
+                        <div>
+                            <div class="testimonial-card__name">Daniel P.</div>
+                            <div class="testimonial-card__company">Operations Director</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- ====== QR Code ====== -->
+    <section class="qr-section" id="qr">
+        <div class="container">
+            <div class="qr-wrapper">
+                <div class="qr-box" id="qr-code-box"></div>
+                <div class="qr-info">
+                    <div class="qr-info__title">Share This Page</div>
+                    <p class="qr-info__desc">Scan or download the QR code for business cards, brochures, or event collateral.</p>
+                    <button class="qr-btn" id="qr-download-btn" type="button">⬇ Download PNG</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- ====== QR Code Library ====== -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+    <!-- ====== Page Script ====== -->
+    <script>
+    (function() {
+        'use strict';
+
+        // === QR Code Generation ===
+        const bookingUrl = window.location.href.split('#')[0].split('?')[0];
+        const qrBox = document.getElementById('qr-code-box');
+        const qrBtn = document.getElementById('qr-download-btn');
+
+        if (qrBox && qrBtn) {
+            try {
+                const qr = qrcode(0, 'M');
+                qr.addData(bookingUrl);
+                qr.make();
+
+                const moduleCount = qr.getModuleCount();
+                const cellSize = 6;
+                const margin = 12;
+                const size = moduleCount * cellSize + margin * 2;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, size, size);
+
+                ctx.fillStyle = '#1A1A1A';
+                for (let r = 0; r < moduleCount; r++) {
+                    for (let c = 0; c < moduleCount; c++) {
+                        if (qr.isDark(r, c)) {
+                            ctx.fillRect(margin + c * cellSize, margin + r * cellSize, cellSize, cellSize);
+                        }
+                    }
+                }
+
+                qrBox.appendChild(canvas);
+
+                qrBtn.addEventListener('click', () => {
+                    const link = document.createElement('a');
+                    link.download = 'octane-booking-qr.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            } catch (e) {
+                const img = document.createElement('img');
+                img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(bookingUrl) + '&color=1A1A1A&bgcolor=FFFFFF';
+                img.alt = 'QR Code';
+                qrBox.appendChild(img);
+
+                qrBtn.addEventListener('click', () => {
+                    window.open(img.src, '_blank');
+                });
+            }
+        }
+    })();
+    </script>
+</body>
+</html>
