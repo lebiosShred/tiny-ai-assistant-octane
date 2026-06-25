@@ -1,0 +1,33 @@
+{
+  "id": "synthesis_Meridian_Logistics_1781589302461_f54be8a3",
+  "type": "synthesis",
+  "name": "Sarah Chen",
+  "company": "Meridian Logistics",
+  "title": "",
+  "email": "sarah@meridian.com",
+  "phone": "",
+  "rep": "",
+  "track": "",
+  "oneDriveFile": "No files in client folder",
+  "gDriveFile": "No files in client folder",
+  "gDriveFileId": "",
+  "gDriveFileContent": "",
+  "linkedinInfo": "",
+  "intakeAnswers": "",
+  "transcript": "",
+  "transitDistance": "Destination is unreachable by driving from origin.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Show me the stack applications",
+      "timestamp": "2026-06-16T05:55:02.726Z"
+    },
+    {
+      "role": "assistant",
+      "content": "=== COMPLEMENTARY APPLICATIONS ===\nNetSuite, SAP ERP, Power BI\n=== COMPETING APPLICATIONS ===\nAnaplan, Workday Adaptive Planning",
+      "timestamp": "2026-06-16T05:55:02.774Z"
+    }
+  ],
+  "stage": "reports",
+  "gDriveFolderId": "local_path_4d6572696469616e5f4c6f676973746963735c53617261685f4368656e"
+}

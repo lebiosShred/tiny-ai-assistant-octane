@@ -34,7 +34,7 @@
         .custom-option { padding: 10px 12px; font-size: 0.9rem; color: #333; cursor: pointer; transition: background 0.2s; }
         .custom-option:hover { background: rgba(26,115,232,0.05); color: var(--primary); }
         body {
-            padding-top: 64px;
+            padding-top: 0;
         }
         @keyframes rotate {
             100% { transform: rotate(360deg); }
@@ -73,19 +73,7 @@
 </head>
 <body>
 
-    <!-- ====== Top Navigation Header ====== -->
-    <header class="booking-header">
-        <div class="container" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-            <a href="/" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #1A1D20; font-weight: 700; font-size: 1.1rem;">
-                <img src="/book/tiny.png" alt="Tiny AI Assistant Logo" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid #4daeeb;">
-                <span>Octane Booking</span>
-            </a>
-            <div style="display: flex; align-items: center; gap: 1.5rem;">
-                <a href="/book" id="nav-booking-page" class="nav-link active">Booking Page</a>
-                <a href="/docs" id="nav-docs-page" target="_blank" class="nav-link">Documentation</a>
-            </div>
-        </div>
-    </header>
+
 
     <!-- ====== Hero: Two-Column Layout (Context + Calendar) ====== -->
     <section class="hero" id="hero">
@@ -297,7 +285,6 @@
                         <div class="testimonial-card__avatar">JM</div>
                         <div>
                             <div class="testimonial-card__name">James M.</div>
-                            <div class="testimonial-card__company">CFO, Enterprise Client</div>
                         </div>
                     </div>
                 </div>
@@ -310,7 +297,6 @@
                         <div class="testimonial-card__avatar">SK</div>
                         <div>
                             <div class="testimonial-card__name">Sarah K.</div>
-                            <div class="testimonial-card__company">Head of Analytics</div>
                         </div>
                     </div>
                 </div>
@@ -323,7 +309,6 @@
                         <div class="testimonial-card__avatar">DP</div>
                         <div>
                             <div class="testimonial-card__name">Daniel P.</div>
-                            <div class="testimonial-card__company">Operations Director</div>
                         </div>
                     </div>
                 </div>

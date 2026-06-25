@@ -1,0 +1,33 @@
+{
+  "id": "synthesis_Scraper_Corp_1781758594424_3d3be28e",
+  "type": "synthesis",
+  "name": "QA Test Scraper",
+  "company": "Scraper Corp",
+  "title": "",
+  "email": "scraper@test.com",
+  "phone": "",
+  "rep": "",
+  "track": "",
+  "oneDriveFile": "No files in client folder",
+  "gDriveFile": "No files in client folder",
+  "gDriveFileId": "",
+  "gDriveFileContent": "",
+  "linkedinInfo": "",
+  "intakeAnswers": "",
+  "transcript": "",
+  "transitDistance": "Destination is unreachable by driving from origin.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "scan google.com",
+      "timestamp": "2026-06-18T04:56:34.507Z"
+    },
+    {
+      "role": "assistant",
+      "content": "Here's what I found from scanning **google.com** and the available data for **QA Test Scraper at Scraper Corp**:\n\n---\n\n### Company Overview (google.com)\n\nGoogle is a global technology leader headquartered in Mountain View, California. It specializes in internet-related services and products including online advertising, search engine technology, cloud computing, software, and hardware.\n\n**Key Products & Services:**\n- **Google Search** — The world's largest search engine, indexing billions of web pages.\n- **Google Cloud Platform (GCP)** — Enterprise cloud infrastructure, data analytics, and AI/ML services.\n- **Google Workspace** — Productivity and collaboration tools (Gmail, Docs, Drive, Meet, Calendar).\n- **YouTube** — The largest video-sharing platform globally.\n- **Android** — The world's most widely used mobile operating system.\n- **Google Maps** — Navigation, local business discovery, and geospatial data services.\n- **Google Ads** — Digital advertising and marketing platform.\n- **Gemini (formerly Bard)** — Generative AI assistant integrated across Google products.\n\n---\n\n### Client Data Status\n\n| Field | Status |\n|---|---|\n| **LinkedIn Profile Bio** | Empty — no profile uploaded |\n| **Booking Intake Answers** | Empty — no intake form data |\n| **Call Transcript** | Empty — no call recorded |\n| **Service Track** | Not specified |\n| **Google Drive SOW** | No files in client folder |\n\n---\n\n### Assessment\n\nSince the LinkedIn profile, intake answers, and call transcript are all empty, I cannot generate a full lead sheet, conversation starters, pain point analysis, or customer match assessment. To proceed, I'd need you to provide:\n\n1. **LinkedIn profile** (text or PDF) for QA Test Scraper\n2. **Booking intake answers** or context on what they're looking for\n3. **Company URL** (if different from google.com)\n\nWould you like to upload any of these details?",
+      "timestamp": "2026-06-18T04:56:44.001Z"
+    }
+  ],
+  "stage": "reports",
+  "gDriveFolderId": "local_path_536372617065725f436f72705c51415f546573745f53637261706572"
+}

@@ -1,4 +1,5 @@
 {
+  "id": "synthesis_Meridian_Logistics_1781758615982_caff72cb",
   "type": "synthesis",
   "name": "Sarah Chen",
   "company": "Meridian Logistics",
@@ -15,9 +16,18 @@
   "intakeAnswers": "",
   "transcript": "",
   "transitDistance": "Destination is unreachable by driving from origin.",
-  "messages": [],
-  "id": "synthesis_Meridian_Logistics_1781572010853_5b2380f8",
-  "date": "2026-06-16T01:06:50.853Z",
+  "messages": [
+    {
+      "role": "user",
+      "content": "what files do we have in Google Drive?",
+      "timestamp": "2026-06-18T04:56:56.147Z"
+    },
+    {
+      "role": "assistant",
+      "content": "Here are the files in the folder for Meridian Logistics:\n- **Statement_Of_Work_2025.pdf** (ID: `mock_gdrive_sample_id`)",
+      "timestamp": "2026-06-18T04:56:56.170Z"
+    }
+  ],
   "stage": "reports",
   "gDriveFolderId": "local_path_4d6572696469616e5f4c6f676973746963735c53617261685f4368656e"
 }

@@ -1,0 +1,34 @@
+{
+  "type": "synthesis",
+  "name": "Alice Smith",
+  "company": "Acme Systems",
+  "title": "",
+  "email": "alice@acmesystems.com",
+  "phone": "",
+  "rep": "",
+  "track": "",
+  "oneDriveFile": "No files in client folder",
+  "gDriveFile": "No files in client folder",
+  "gDriveFileId": "",
+  "gDriveFileContent": "",
+  "linkedinInfo": "",
+  "intakeAnswers": "",
+  "transcript": "",
+  "transitDistance": "Destination is unreachable by driving from origin.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hi Tiny, tell me about DevOps Blue Support.",
+      "timestamp": "2026-06-18T04:55:51.644Z"
+    },
+    {
+      "role": "assistant",
+      "content": "\n=== DOSSIER SUMMARY ===\n- Prospect: Sarah Chen\n- Company: Meridian Logistics\n- Pain Points: Manual spreadsheets bottleneck\n                ",
+      "timestamp": "2026-06-18T04:55:51.665Z"
+    }
+  ],
+  "id": "synthesis_Acme_Systems_1781758556810_6861e252",
+  "date": "2026-06-18T04:55:56.810Z",
+  "stage": "reports",
+  "gDriveFolderId": "local_path_41636d655f53797374656d735c416c6963655f536d697468"
+}

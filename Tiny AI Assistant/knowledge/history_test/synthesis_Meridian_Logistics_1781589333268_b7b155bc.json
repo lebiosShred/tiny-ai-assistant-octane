@@ -1,5 +1,5 @@
 {
-  "id": "synthesis_Meridian_Logistics_1781572005223_4a8508a8",
+  "id": "synthesis_Meridian_Logistics_1781589333268_b7b155bc",
   "type": "synthesis",
   "name": "Sarah Chen",
   "company": "Meridian Logistics",
@@ -19,23 +19,13 @@
   "messages": [
     {
       "role": "user",
-      "content": "Recommend DevOps Blue and Training",
-      "timestamp": "2026-06-16T01:06:45.327Z"
+      "content": "Show me the list of leads",
+      "timestamp": "2026-06-16T05:55:33.457Z"
     },
     {
       "role": "assistant",
-      "content": "We recommend DevOps Blue Support and Custom Training.",
-      "timestamp": "2026-06-16T01:06:45.350Z"
-    },
-    {
-      "role": "user",
-      "content": "Quote Gold Tier",
-      "timestamp": "2026-06-16T01:06:50.440Z"
-    },
-    {
-      "role": "assistant",
-      "content": "For Gold Tier Custom Migration, the scope and terms will be determined by discovery.",
-      "timestamp": "2026-06-16T01:06:50.454Z"
+      "content": "\n| Client Name | Company | Service Track |\n|-------------|---------|---------------|\n| Sarah Chen  | Meridian Logistics | TM1 & AI |\n                    ",
+      "timestamp": "2026-06-16T05:55:33.489Z"
     }
   ],
   "stage": "reports",

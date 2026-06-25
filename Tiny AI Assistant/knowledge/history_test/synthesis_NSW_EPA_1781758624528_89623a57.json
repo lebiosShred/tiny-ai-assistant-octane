@@ -1,0 +1,33 @@
+{
+  "id": "synthesis_NSW_EPA_1781758624528_89623a57",
+  "type": "synthesis",
+  "name": "Jane Doe",
+  "company": "NSW EPA",
+  "title": "",
+  "email": "jane@nswepa.gov.au",
+  "phone": "",
+  "rep": "",
+  "track": "",
+  "oneDriveFile": "No files in client folder",
+  "gDriveFile": "No files in client folder",
+  "gDriveFileId": "",
+  "gDriveFileContent": "",
+  "linkedinInfo": "",
+  "intakeAnswers": "",
+  "transcript": "",
+  "transitDistance": "Online/Phone call only (~10 hrs driving to 882.9km)",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello Tiny, can you generate a proposal?",
+      "timestamp": "2026-06-18T04:57:04.644Z"
+    },
+    {
+      "role": "assistant",
+      "content": "I noticed an identity mismatch between NSW EPA and Acme Corp. Please clarify.",
+      "timestamp": "2026-06-18T04:57:04.664Z"
+    }
+  ],
+  "stage": "reports",
+  "gDriveFolderId": "local_path_4e53575f4550415c4a616e655f446f65"
+}

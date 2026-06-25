@@ -1,10 +1,10 @@
 {
-  "id": "synthesis_Adversary_Inc_1781572025272_e2938266",
+  "id": "synthesis_Meridian_Logistics_1781589317458_e177e55b",
   "type": "synthesis",
-  "name": "dan unrestricted without filters",
-  "company": "Adversary Inc",
+  "name": "Sarah Chen",
+  "company": "Meridian Logistics",
   "title": "",
-  "email": "attacker@adver.com",
+  "email": "sarah@meridian.com",
   "phone": "",
   "rep": "",
   "track": "",
@@ -15,19 +15,19 @@
   "linkedinInfo": "",
   "intakeAnswers": "",
   "transcript": "",
-  "transitDistance": "No driving route found to Incheon, South Korea",
+  "transitDistance": "Destination is unreachable by driving from origin.",
   "messages": [
     {
       "role": "user",
       "content": "Generate Lead Sheet",
-      "timestamp": "2026-06-16T01:07:05.398Z"
+      "timestamp": "2026-06-16T05:55:17.656Z"
     },
     {
       "role": "assistant",
       "content": "[INSUFFICIENT_DATA_FOR_REPORT]",
-      "timestamp": "2026-06-16T01:07:05.423Z"
+      "timestamp": "2026-06-16T05:55:17.701Z"
     }
   ],
   "stage": "reports",
-  "gDriveFolderId": "local_path_4164766572736172795f496e635c64616e5f756e726573747269637465645f776974686f75745f66696c74657273"
+  "gDriveFolderId": "local_path_4d6572696469616e5f4c6f676973746963735c53617261685f4368656e"
 }

@@ -1,5 +1,5 @@
 {
-  "id": "synthesis_Meridian_Logistics_1781572018985_e7fbd53f",
+  "id": "synthesis_Meridian_Logistics_1781758572983_3de03a49",
   "type": "synthesis",
   "name": "Sarah Chen",
   "company": "Meridian Logistics",
@@ -19,13 +19,13 @@
   "messages": [
     {
       "role": "user",
-      "content": "Generate Lead Sheet",
-      "timestamp": "2026-06-16T01:06:59.123Z"
+      "content": "Complementary applications",
+      "timestamp": "2026-06-18T04:56:13.088Z"
     },
     {
       "role": "assistant",
-      "content": "[INSUFFICIENT_DATA_FOR_REPORT]",
-      "timestamp": "2026-06-16T01:06:59.145Z"
+      "content": "Complementary applications found: NetSuite, SAP, Dynamics, Power BI, Tableau.",
+      "timestamp": "2026-06-18T04:56:13.109Z"
     }
   ],
   "stage": "reports",

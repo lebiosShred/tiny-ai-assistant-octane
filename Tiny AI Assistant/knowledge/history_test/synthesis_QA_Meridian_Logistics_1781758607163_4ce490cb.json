@@ -1,0 +1,33 @@
+{
+  "id": "synthesis_QA_Meridian_Logistics_1781758607163_4ce490cb",
+  "type": "synthesis",
+  "name": "Sarah Chen",
+  "company": "QA_Meridian_Logistics",
+  "title": "",
+  "email": "sarah@meridian.com",
+  "phone": "",
+  "rep": "",
+  "track": "",
+  "oneDriveFile": "-- Select File from GDrive --",
+  "gDriveFile": "-- Select File from GDrive --",
+  "gDriveFileId": "",
+  "gDriveFileContent": "",
+  "linkedinInfo": "",
+  "intakeAnswers": "",
+  "transcript": "",
+  "transitDistance": "Destination is unreachable by driving from origin.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "made call: client is interested in IBM TM1 Support and watsonx orchestrate pilot",
+      "timestamp": "2026-06-18T04:56:47.262Z"
+    },
+    {
+      "role": "assistant",
+      "content": "I have successfully registered the new call (File ID: call_log_12345.txt).",
+      "timestamp": "2026-06-18T04:56:47.293Z"
+    }
+  ],
+  "stage": "reports",
+  "gDriveFolderId": "local_path_51415f4d6572696469616e5f4c6f676973746963735c53617261685f4368656e"
+}

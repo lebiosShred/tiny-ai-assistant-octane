@@ -1,0 +1,43 @@
+{
+  "id": "synthesis_QA_Meridian_Logistics_1781758599990_a9b824ff",
+  "type": "synthesis",
+  "name": "Sarah Chen",
+  "company": "QA_Meridian_Logistics",
+  "title": "",
+  "email": "sarah@meridian.com",
+  "phone": "",
+  "rep": "",
+  "track": "",
+  "oneDriveFile": "No files in client folder",
+  "gDriveFile": "No files in client folder",
+  "gDriveFileId": "",
+  "gDriveFileContent": "",
+  "linkedinInfo": "",
+  "intakeAnswers": "",
+  "transcript": "",
+  "transitDistance": "Destination is unreachable by driving from origin.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "upload file prompt_test.txt with content 'Active prospect verification details'",
+      "timestamp": "2026-06-18T04:56:40.100Z"
+    },
+    {
+      "role": "assistant",
+      "content": "I have successfully uploaded the prospect information file \"prompt_test.txt\" (ID: `mock_prompt_test_id`) to Google Drive (Client folder: *QA_Meridian_Logistics*). It is now indexed and available in the client memory context!",
+      "timestamp": "2026-06-18T04:56:40.136Z"
+    },
+    {
+      "role": "user",
+      "content": "delete file prompt_test.txt",
+      "timestamp": "2026-06-18T04:56:45.211Z"
+    },
+    {
+      "role": "assistant",
+      "content": "I have successfully deleted the file \"prompt_test.txt\" (ID: `mock_prompt_test_id`) from Google Drive (Client folder: *QA_Meridian_Logistics*).",
+      "timestamp": "2026-06-18T04:56:45.235Z"
+    }
+  ],
+  "stage": "reports",
+  "gDriveFolderId": "local_path_51415f4d6572696469616e5f4c6f676973746963735c53617261685f4368656e"
+}

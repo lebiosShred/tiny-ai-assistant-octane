@@ -1,5 +1,4 @@
 {
-  "id": "synthesis_Meridian_Logistics_1781572028212_b7a47ef7",
   "type": "synthesis",
   "name": "Sarah Chen",
   "company": "Meridian Logistics",
@@ -16,18 +15,9 @@
   "intakeAnswers": "",
   "transcript": "",
   "transitDistance": "Destination is unreachable by driving from origin.",
-  "messages": [
-    {
-      "role": "user",
-      "content": "Show me the list of leads",
-      "timestamp": "2026-06-16T01:07:08.312Z"
-    },
-    {
-      "role": "assistant",
-      "content": "\n| Client Name | Company | Service Track |\n|-------------|---------|---------------|\n| Sarah Chen  | Meridian Logistics | TM1 & AI |\n                    ",
-      "timestamp": "2026-06-16T01:07:08.334Z"
-    }
-  ],
+  "messages": [],
+  "id": "synthesis_Meridian_Logistics_1781758619471_d63c56cf",
+  "date": "2026-06-18T04:56:59.472Z",
   "stage": "reports",
   "gDriveFolderId": "local_path_4d6572696469616e5f4c6f676973746963735c53617261685f4368656e"
 }
